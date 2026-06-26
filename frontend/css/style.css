@@ -1,0 +1,106 @@
+/* Importar una fuente más moderna */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f8fafc;
+}
+
+/* Tarjeta principal */
+.card-producto {
+    background: white;
+    padding: 1.25rem;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card-producto:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e1;
+}
+
+/* Imágenes */
+.img-contenedor {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    object-cover: cover;
+    background-color: #f1f5f9;
+    flex-shrink: 0;
+}
+
+/* Bloques de precios */
+.bloque-normal, .bloque-distribuidor {
+    padding: 10px;
+    border-radius: 10px;
+    margin-top: 8px;
+}
+
+.bloque-normal {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #bfdbfe;
+}
+
+.bloque-distribuidor {
+    background: linear-gradient(135deg, #fffaf5 0%, #ffedd5 100%);
+    border: 1px solid #fed7aa;
+}
+
+/* Grilla interna de precios */
+.grid-precios {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    text-align: center;
+}
+
+.label-precio {
+    font-size: 9px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.monto-precio {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.text-normal { color: #1e40af; }
+.text-dist { color: #9a3412; }
+
+/* Botones de Filtro */
+.btn-tipo {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.btn-tipo:hover {
+    background-color: #f1f5f9;
+}
+
+.btn-tipo.activo {
+    background-color: #1e40af;
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(30, 64, 175, 0.2);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Mejora para que la tarjeta no se vea vacía al filtrar */
+.seccion-precios {
+    transition: all 0.3s ease;
+    min-height: 50px; /* Evita que la tarjeta colapse feo */
+}
