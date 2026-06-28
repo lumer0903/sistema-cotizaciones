@@ -1,18 +1,20 @@
 const express = require('express');
-const router = express.Router();
-const c = require('../controllers/cotizacion.controller');
-const auth = require('../middlewares/auth.middleware');
+const cotizacionController = require('../controllers/cotizacion.controller');
+const autenticarToken = require('../middlewares/auth.middleware');
 
-router.get('/', auth, c.obtenerCotizaciones);
-router.post('/', auth, c.crearCotizacion);
-router.get('/:id', auth, c.obtenerCotizacion);
-router.post('/:id/productos', auth, c.agregarProducto);
-router.delete('/:id/productos/:id_detalle', auth, c.eliminarProducto);
-router.patch('/:id/estado', auth, c.actualizarEstado);
-router.post('/ia/recomendar', auth, c.obtenerRecomendaciones);
-router.patch('/:id/info', auth, c.actualizarInfoCotizacion);
-router.patch('/:id/productos/:id_detalle', auth, c.editarProducto);
-router.post('/:id/ia-interaccion', auth, c.registrarInteraccionIA);
-router.get('/:id/pdf', c.generarPDF);
+const router = express.Router();
+
+router.use(autenticarToken);
+
+router.get('/', cotizacionController.listar);
+router.post('/', cotizacionController.crear);
+router.get('/:id', cotizacionController.obtener);
+router.get('/:id/pdf', cotizacionController.generarPdf);
+router.put('/:id/estado', cotizacionController.cambiarEstado);
+router.get('/:id/buscar-productos', cotizacionController.buscarProductos);
+router.get('/:id/recomendaciones/:idProducto', cotizacionController.recomendar);
+router.post('/:id/detalle', cotizacionController.agregarDetalle);
+router.put('/:id/detalle/:idDetalle', cotizacionController.actualizarDetalle);
+router.delete('/:id/detalle/:idDetalle', cotizacionController.eliminarDetalle);
 
 module.exports = router;

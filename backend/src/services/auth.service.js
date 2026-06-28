@@ -1,41 +1,69 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const UserModel = require('../models/user.model');
+const usuarioModel = require('../models/usuario.model');
 
-class AuthService {
-    static async login(email, password) {
-        if (!email || !password) {
-            throw new Error('Completa todos los campos');
-        }
+const JWT_SECRET = process.env.JWT_SECRET || 'goldcontinent_dev_secret_change_me';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
 
-        const usuario = await UserModel.findByEmail(email);
+function quitarDatosSensibles(usuario) {
+    if (!usuario) return null;
 
-        if (!usuario) {
-            throw new Error('Credenciales incorrectas');
-        }
-
-        const passwordValida = await bcrypt.compare(password, usuario.password_hash);
-
-        if (!passwordValida) {
-            throw new Error('Credenciales incorrectas');
-        }
-
-        const token = jwt.sign(
-            { id: usuario.id_usuario, rol: usuario.rol },
-            process.env.JWT_SECRET,
-            { expiresIn: '8h' }
-        );
-
-        return {
-            token,
-            usuario: {
-                id: usuario.id_usuario,
-                nombre: usuario.nombre,
-                email: usuario.email,
-                rol: usuario.rol
-            }
-        };
-    }
+    const { password_hash, ...usuarioSeguro } = usuario;
+    return usuarioSeguro;
 }
 
-module.exports = AuthService;
+function crearToken(usuario) {
+    return jwt.sign(
+        {
+            id_usuario: usuario.id_usuario,
+            email: usuario.email,
+            rol: usuario.rol
+        },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES_IN }
+    );
+}
+
+async function login(email, password) {
+    const usuario = await usuarioModel.buscarPorEmail(email);
+
+    if (!usuario || !usuario.activo) {
+        const error = new Error('Credenciales incorrectas');
+        error.status = 401;
+        throw error;
+    }
+
+    const passwordValido = await bcrypt.compare(password, usuario.password_hash);
+
+    if (!passwordValido) {
+        const error = new Error('Credenciales incorrectas');
+        error.status = 401;
+        throw error;
+    }
+
+    const usuarioSeguro = quitarDatosSensibles(usuario);
+
+    return {
+        token: crearToken(usuarioSeguro),
+        usuario: usuarioSeguro
+    };
+}
+
+async function obtenerSesion(idUsuario) {
+    const usuario = await usuarioModel.buscarPorId(idUsuario);
+
+    if (!usuario || !usuario.activo) {
+        const error = new Error('Sesion no valida');
+        error.status = 401;
+        throw error;
+    }
+
+    return usuario;
+}
+
+module.exports = {
+    login,
+    obtenerSesion,
+    quitarDatosSensibles,
+    JWT_SECRET
+};

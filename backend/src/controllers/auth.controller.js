@@ -1,53 +1,42 @@
-const db = require('../config/db');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const authService = require('../services/auth.service');
 
-const login = async (req, res) => {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-        return res.status(400).json({ error: 'Completa todos los campos' });
-    }
-
+async function login(req, res, next) {
     try {
-        // Mejor práctica: Seleccionar explícitamente solo las columnas necesarias
-        const [usuarios] = await db.query(
-            'SELECT id_usuario, nombre, email, rol, password_hash FROM usuarios WHERE email = ? AND activo = 1',
-            [email]
-        );
+        const { email, password } = req.body;
 
-        if (usuarios.length === 0) {
-            return res.status(401).json({ error: 'Credenciales incorrectas' });
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email y password son obligatorios'
+            });
         }
 
-        const usuario = usuarios[0];
-
-        const passwordValida = await bcrypt.compare(password, usuario.password_hash);
-
-        if (!passwordValida) {
-            return res.status(401).json({ error: 'Credenciales incorrectas' });
-        }
-
-        const token = jwt.sign(
-            { id: usuario.id_usuario, rol: usuario.rol },
-            process.env.JWT_SECRET,
-            { expiresIn: '8h' }
-        );
+        const resultado = await authService.login(email.trim().toLowerCase(), password);
 
         res.json({
-            token,
-            usuario: {
-                id: usuario.id_usuario,
-                nombre: usuario.nombre,
-                email: usuario.email,
-                rol: usuario.rol
-            }
+            success: true,
+            message: 'Inicio de sesion correcto',
+            data: resultado
         });
-
     } catch (error) {
-        console.error('❌ Error en login:', error);
-        res.status(500).json({ error: 'Error del servidor' });
+        next(error);
     }
-};
+}
 
-module.exports = { login };
+async function me(req, res, next) {
+    try {
+        const usuario = await authService.obtenerSesion(req.usuario.id_usuario);
+
+        res.json({
+            success: true,
+            data: { usuario }
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+module.exports = {
+    login,
+    me
+};

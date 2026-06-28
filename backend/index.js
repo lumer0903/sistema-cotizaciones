@@ -1,45 +1,65 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const path = require('path');
 
 dotenv.config();
 
-const app = express();
-
-// Middlewares
-app.use(cors());
-app.use(express.json());
-
-// Archivos estáticos
-app.use(express.static(path.join(__dirname, '../frontend')));
-app.use('/pages', express.static(path.join(__dirname, '../frontend/pages')));
-app.use('/js', express.static(path.join(__dirname, '../frontend/js')));
-app.use('/css', express.static(path.join(__dirname, '../frontend/css')));
-app.use('/assets', express.static(path.join(__dirname, '../frontend/assets')));
-
-// Rutas API
 const authRoutes = require('./src/routes/auth.routes');
-const polizaRoutes = require('./src/routes/poliza.routes');
+const productoRoutes = require('./src/routes/producto.routes');
 const cotizacionRoutes = require('./src/routes/cotizacion.routes');
-const clienteRoutes = require('./src/routes/cliente.routes');
+const dashboardRoutes = require('./src/routes/dashboard.routes');
+const usuarioRoutes = require('./src/routes/usuario.routes');
+
+const app = express();
+const PORT = Number(process.env.PORT) || 3000;
+const frontendPath = path.join(__dirname, '..', 'frontend');
+
+app.use(cors({
+    origin: process.env.CLIENT_URL || true,
+    credentials: true
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(frontendPath));
+
+app.get('/api/health', (_req, res) => {
+    res.json({ status: 'ok', service: 'goldcontinent-api' });
+});
 
 app.use('/api/auth', authRoutes);
-app.use('/api', polizaRoutes);
+app.use('/api/productos', productoRoutes);
 app.use('/api/cotizaciones', cotizacionRoutes);
-app.use('/api/clientes', clienteRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/usuarios', usuarioRoutes);
 
-// Ruta raíz
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+app.get('/', (_req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
-// 404 — siempre al final
 app.use((req, res) => {
-    res.status(404).json({ error: 'Ruta no encontrada' });
+    res.status(404).json({
+        success: false,
+        message: `Ruta no encontrada: ${req.method} ${req.originalUrl}`
+    });
 });
 
-const PORT = process.env.PORT || 3000;
+app.use((err, _req, res, _next) => {
+    console.error('Error interno:', err);
+
+    if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({
+            success: false,
+            message: 'El archivo supera el limite permitido de 2 MB'
+        });
+    }
+
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || 'Error interno del servidor'
+    });
+});
+
 app.listen(PORT, () => {
-    console.log(`✅ Servidor en http://localhost:${PORT}`);
+    console.log(`Servidor Gold Continent activo en http://localhost:${PORT}`);
 });

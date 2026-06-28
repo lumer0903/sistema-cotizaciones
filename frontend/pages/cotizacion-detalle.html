@@ -1,312 +1,115 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gold Continent - Detalle Cotización</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/css/global.css">
-    <link rel="stylesheet" href="/css/components.css">
+    <title>Crear Cotizacion - Artes & Flores</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/cotizaciones.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
+
 <body>
-<div class="layout">
-
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <div class="sidebar-logo">
-            <div class="logo-icon">
-                <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="12" stroke="#7B1C1C" stroke-width="3"/>
-                    <path d="M16 9v7l4 4" stroke="#7B1C1C" stroke-width="2.5" stroke-linecap="round"/>
-                </svg>
+    <div class="app-layout">
+        <aside class="main-sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-logo-wrapper"><img src="../assets/icon.png" alt="Artes & Flores" class="sidebar-logo" onerror="this.style.display='none'"></div>
+                <nav class="sidebar-menu">
+                    <a href="dashboard.html" class="menu-item"><div class="menu-item-content"><i data-lucide="layout-grid" class="icon-left"></i><span>Dashboard</span></div></a>
+                    <a href="productos.html" class="menu-item"><div class="menu-item-content"><i data-lucide="package" class="icon-left"></i><span>Productos</span></div><i data-lucide="chevron-right" class="icon-arrow"></i></a>
+                    <a href="consulta_precios.html" class="menu-item"><div class="menu-item-content"><i data-lucide="search" class="icon-left"></i><span>Consulta de precios</span></div><i data-lucide="chevron-right" class="icon-arrow"></i></a>
+                    <a href="cotizaciones.html" class="menu-item active"><div class="menu-item-content"><i data-lucide="file-text" class="icon-left"></i><span>Cotizaciones</span></div><i data-lucide="chevron-down" class="icon-arrow"></i></a>
+                    <a href="crear-cotizacion.html" class="menu-item submenu-item active-sub"><div class="menu-item-content"><span>Crear cotizacion</span></div></a>
+                    <a href="cotizaciones.html" class="menu-item submenu-item"><div class="menu-item-content"><span>Mis cotizaciones</span></div></a>
+                    <a href="usuarios.html" class="menu-item"><div class="menu-item-content"><i data-lucide="users" class="icon-left"></i><span>Usuarios</span></div><i data-lucide="chevron-right" class="icon-arrow"></i></a>
+                </nav>
             </div>
-            <div>
-                <div class="logo-title">Gold Continent</div>
-                <div class="logo-sub">Sistema de Gestión</div>
-            </div>
-        </div>
-        <nav class="sidebar-nav">
-            <div class="nav-section">Principal</div>
-            <a href="/pages/dashboard.html" class="nav-item">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor"/>
-                    <rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.6"/>
-                    <rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.6"/>
-                    <rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.4"/>
-                </svg>
-                Dashboard
-            </a>
-            <div class="nav-section">Módulos</div>
-            <a href="/pages/precios.html" class="nav-item">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/>
-                    <path d="M10 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-                Consulta de Precios
-            </a>
-            <a href="/pages/cotizaciones.html" class="nav-item active">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
-                    <path d="M5 8h6M5 5h3M5 11h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                </svg>
-                Cotizaciones
-            </a>
-            <a href="/pages/clientes.html" class="nav-item">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <circle cx="8" cy="6" r="3" stroke="currentColor" stroke-width="1.5"/>
-                    <path d="M3 13c0-2.5 2.2-4 5-4s5 1.5 5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-                Clientes
-            </a>
-            <div class="nav-section">Importación</div>
-            <a href="/pages/poliza.html" class="nav-item">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M3 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-                Subir Póliza
-            </a>
-        </nav>
-        <div class="sidebar-footer">
-            <div class="sidebar-user">
-                <div class="user-avatar" id="userAvatar">AD</div>
-                <div>
-                    <div class="user-name" id="userName">Administrador</div>
-                    <div class="user-role" id="userRole">admin</div>
-                </div>
-            </div>
-            <button onclick="cerrarSesion()" class="btn-logout">Cerrar sesión</button>
-        </div>
-    </aside>
+            <div class="sidebar-footer"><a href="login.html" class="menu-item logout-link"><div class="menu-item-content"><i data-lucide="log-out" class="icon-left"></i><span>Cerrar Sesion</span></div></a></div>
+        </aside>
 
-    <!-- CONTENIDO -->
-    <main class="main-content">
+        <div class="main-viewport">
+            <header class="main-navbar">
+                <div class="nav-page-title"><h1>Cotizaciones &gt; Crear Cotizacion</h1></div>
+                <div class="nav-user-area"><span class="nav-role">Administrador</span><div class="nav-icons-group"><button class="nav-icon-btn"><i data-lucide="user"></i></button><button class="nav-icon-btn"><i data-lucide="settings"></i></button></div></div>
+            </header>
 
-        <!-- TOPBAR -->
-        <div class="topbar">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <a href="/pages/cotizaciones.html"
-                   style="color:#7B1C1C; font-size:13px; font-weight:600; text-decoration:none;">
-                    ← Volver
-                </a>
-                <h1 class="topbar-title" id="tituloCotizacion">Cotización</h1>
-                <span class="estado-badge estado-borrador" id="estadoBadge">borrador</span>
-            </div>
-            <div style="display:flex; gap:8px; align-items:center;">
-                <select id="selectEstado" onchange="cambiarEstado(this.value)"
-                        class="form-input" style="width:auto; padding:8px 12px; font-size:13px;">
-                    <option value="borrador">Borrador</option>
-                    <option value="enviada">Enviada</option>
-                    <option value="aprobada">Pagada</option>
-                    <option value="rechazada">Rechazada</option>
-                </select>
-                <button onclick="generarPDF()" class="btn-primary">📄 Exportar PDF</button>
-            </div>
-        </div>
-
-        <!-- GRID PRINCIPAL: izquierda + derecha fija -->
-        <div class="cot-layout">
-
-            <!-- COLUMNA IZQUIERDA -->
-            <div class="cot-left">
-
-                <!-- INFO PEDIDO -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <span class="panel-title">Información del Pedido</span>
-                        <button onclick="guardarInfoPedido()"
-                                class="btn-primary" style="padding:6px 14px; font-size:12px;">
-                            Guardar
-                        </button>
-                    </div>
-                    <div class="info-grid">
-                        <div class="form-group">
-                            <label class="form-label">Nombre del Cliente</label>
-                            <input id="infoNombre" type="text" placeholder="Nombre completo..." class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Teléfono</label>
-                            <input id="infoTelefono" type="text" placeholder="999 999 999" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Email</label>
-                            <input id="infoEmail" type="email" placeholder="correo@ejemplo.com" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">RUC / DNI</label>
-                            <input id="infoRucDni" type="text" placeholder="20xxxxxxxxx" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Tipo de Precio</label>
-                            <select id="infoTipoPrecio" class="form-input" onchange="cambiarTipoPrecio(this.value)">
-                                <option value="normal">Cliente Normal</option>
-                                <option value="distribuidor">Distribuidor</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Aplica IGV</label>
-                            <select id="infoIgv" class="form-input">
-                                <option value="1">Sí (18%)</option>
-                                <option value="0">No</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="grid-column:1/-1;">
-                            <label class="form-label">Observaciones</label>
-                            <textarea id="infoObservaciones" rows="2"
-                                      placeholder="Notas adicionales..." class="form-input"></textarea>
-                        </div>
-                    </div>
+            <main class="page-content">
+                <div class="detail-heading">
+                    <div class="quote-number"><span id="numeroCotizacion">COT-000000</span><select class="quote-status-select" id="selectEstadoDetalle"><option value="borrador">BORRADOR</option><option value="enviada">ENVIADO</option><option value="aprobada">ACEPTADO</option><option value="rechazada">RECHAZADO</option></select></div>
+                    <button class="quote-primary-btn" id="btnExportarPdf"><i data-lucide="file-down"></i>EXPORTAR PDF</button>
                 </div>
 
-                <!-- BUSCADOR -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <span class="panel-title">Agregar Producto</span>
-                    </div>
-                    <div class="search-bar" style="margin-bottom:12px;">
-                        <div class="search-input-wrapper">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="search-icon">
-                                <circle cx="6" cy="6" r="4" stroke="#9ca3af" stroke-width="1.5"/>
-                                <path d="M10 10l3 3" stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round"/>
-                            </svg>
-                            <input id="inputBusqueda" type="text"
-                                   placeholder="Buscar por código o descripción..."
-                                   class="search-input">
+                <section class="final-pdf-section hidden" id="finalPdfSection">
+                    <div class="final-pdf-toolbar">
+                        <div>
+                            <h2>Cotizacion final enviada</h2>
+                            <p>Este registro muestra el PDF asociado a la cotizacion final.</p>
                         </div>
+                        <button class="quote-primary-btn" id="btnDescargarPdfFinal"><i data-lucide="download"></i>DESCARGAR PDF</button>
                     </div>
-                    <div id="resultadosBusqueda" class="resultados-busqueda"></div>
-                </div>
+                    <iframe id="pdfPreviewFrame" title="PDF de cotizacion"></iframe>
+                </section>
 
-                <!-- LISTA PRODUCTOS -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <span class="panel-title">Productos en Cotización</span>
-                    </div>
-                    <div id="listaDetalle">
-                        <p style="color:#9ca3af; font-size:13px; text-align:center; padding:20px;">
-                            Agrega productos desde el buscador
-                        </p>
-                    </div>
-                    <div class="totales-box" id="totalesBox" style="display:none;">
-                        <div class="total-row"><span>Subtotal</span><span id="subtotalVal">S/ 0.00</span></div>
-                        <div class="total-row"><span>IGV (18%)</span><span id="igvVal">S/ 0.00</span></div>
-                        <div class="total-row total-final"><span>TOTAL</span><span id="totalVal">S/ 0.00</span></div>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- COLUMNA DERECHA FIJA: IA -->
-            <div class="cot-right">
-                <div class="panel" style="position:sticky; top:24px;">
-                    <div class="panel-header">
-                        <span class="panel-title">🤖 Sugerencias IA</span>
-                    </div>
-                    <div id="panelIAContenido">
-                        <div style="text-align:center; padding:40px 20px;">
-                            <div style="font-size:32px; margin-bottom:12px;">🤖</div>
-                            <p style="color:#9ca3af; font-size:13px;">
-                                Haz clic en un producto de la lista para ver sugerencias
-                            </p>
+                <section class="quote-detail-grid" id="editorCotizacionSection">
+                    <div>
+                        <div class="quote-card">
+                            <div class="quote-card-title">AGREGAR PRODUCTO</div>
+                            <label class="add-product-search"><i data-lucide="search"></i><input id="inputBuscarProductoCot" placeholder="Buscar por codigo"></label>
+                            <div class="search-results" id="resultadosProductos"></div>
                         </div>
+
+                        <h3 style="margin:22px 0 12px;">CARRO</h3>
+                        <table class="cart-table">
+                            <thead><tr><th>IMAGEN</th><th>NOMBRE</th><th>CANTIDAD</th><th>PRECIO</th><th>ACCIONES</th></tr></thead>
+                            <tbody id="tablaDetalleCotizacion"><tr><td colspan="5">Agrega productos desde el buscador.</td></tr></tbody>
+                        </table>
                     </div>
-                </div>
-            </div>
 
-        </div>
-    </main>
-</div>
-
-<!-- MODAL AGREGAR PRODUCTO -->
-<div id="modalAgregar" class="modal-overlay hidden">
-    <div class="modal">
-        <div class="modal-header">
-            <h2 class="modal-title">Agregar Producto</h2>
-            <button onclick="cerrarModalAgregar()" class="modal-close">✕</button>
-        </div>
-        <div class="modal-body">
-            <div id="modalProductoInfo"
-                 style="background:#f8fafc; border-radius:10px; padding:12px; margin-bottom:16px;">
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                <div class="form-group">
-                    <label class="form-label">Tipo de Venta</label>
-                    <select id="modalTipoVenta" class="form-input" onchange="actualizarPrecioModal()">
-                        <option value="unidad">Unidad</option>
-                        <option value="docena">Docena (12 und)</option>
-                        <option value="mayor">Por Mayor</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Cantidad</label>
-                    <input id="modalCantidad" type="number" min="1" value="1"
-                           class="form-input" oninput="actualizarSubtotalModal()">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Precio Unitario (S/)</label>
-                    <input id="modalPrecio" type="number" step="0.01"
-                           class="form-input" oninput="actualizarSubtotalModal()">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Subtotal</label>
-                    <input id="modalSubtotal" type="text" readonly
-                           class="form-input" style="background:#f3f4f6; font-weight:700; color:#7B1C1C;">
-                </div>
-            </div>
-            <div id="preciosReferencia" style="margin-top:8px; background:#fef2f2; border-radius:8px; padding:10px; font-size:11px; color:#7B1C1C;">
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button onclick="cerrarModalAgregar()" class="btn-secondary">Cancelar</button>
-            <button onclick="confirmarAgregar()" class="btn-primary">Agregar</button>
+                    <aside class="side-panel">
+                        <div class="recommendation-card">
+                            <div class="side-title"><i data-lucide="bot"></i>RECOMENDACIONES</div>
+                            <div id="panelRecomendaciones">Haz clic en un producto para ver sugerencias</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="side-title"><i data-lucide="receipt-text"></i>RESUMEN DE LA ORDEN</div>
+                            <div id="resumenOrden"></div>
+                        </div>
+                    </aside>
+                </section>
+            </main>
         </div>
     </div>
-</div>
 
-<!-- MODAL EDITAR PRODUCTO -->
-<div id="modalEditar" class="modal-overlay hidden">
-    <div class="modal">
-        <div class="modal-header">
-            <h2 class="modal-title">Editar Producto</h2>
-            <button onclick="cerrarModalEditar()" class="modal-close">✕</button>
-        </div>
-        <div class="modal-body">
-            <div id="modalEditarInfo"
-                 style="background:#f8fafc; border-radius:10px; padding:12px; margin-bottom:16px;">
+    <div class="quote-modal-overlay hidden" id="modalProducto">
+        <div class="quote-modal small">
+            <div class="quote-modal-header"><h2 id="modalProductoTitulo">Agregar Producto</h2><button class="quote-close" id="cerrarModalProducto"><i data-lucide="x"></i></button></div>
+            <div class="quote-modal-body">
+                <div class="product-modal-head" id="modalProductoHead"></div>
+                <div class="product-modal-grid">
+                    <div class="quote-field"><label>TIPO DE VENTA</label><select class="quote-input select" id="modalTipoVenta"><option value="unidad">UNIDAD</option><option value="docena">DOCENA</option><option value="mayor">MAYOR</option></select></div>
+                    <div class="quote-field"><label>CANTIDAD</label><input class="quote-input" type="number" min="1" id="modalCantidad"></div>
+                    <div class="quote-field"><label>PRECIO UNITARIO (S/)</label><input class="quote-input" type="number" step="0.01" min="0" id="modalPrecio"></div>
+                    <div class="quote-field"><label>SUBTOTAL</label><div class="subtotal-box" id="modalSubtotal">S/0.00</div></div>
+                </div>
+                <div class="price-reference" id="modalPreciosReferencia"></div>
+                <div class="modal-actions"><button class="quote-secondary-btn" id="cancelarModalProducto">Cancelar</button><button class="quote-primary-btn" id="guardarModalProducto">Agregar</button></div>
             </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                <div class="form-group">
-                    <label class="form-label">Tipo de Venta</label>
-                    <select id="editarTipoVenta" class="form-input" onchange="actualizarPrecioEditar()">
-                        <option value="unidad">Unidad</option>
-                        <option value="docena">Docena (12 und)</option>
-                        <option value="mayor">Por Mayor</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Cantidad</label>
-                    <input id="editarCantidad" type="number" min="1"
-                           class="form-input" oninput="actualizarSubtotalEditar()">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Precio Unitario (S/)</label>
-                    <input id="editarPrecio" type="number" step="0.01"
-                           class="form-input" oninput="actualizarSubtotalEditar()">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Subtotal</label>
-                    <input id="editarSubtotal" type="text" readonly
-                           class="form-input" style="background:#f3f4f6; font-weight:700; color:#7B1C1C;">
-                </div>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button onclick="cerrarModalEditar()" class="btn-secondary">Cancelar</button>
-            <button onclick="confirmarEditar()" class="btn-primary">Guardar Cambios</button>
         </div>
     </div>
-</div>
 
-<script src="/js/cotizacion-detalle.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        Auth.protegerPagina(['admin', 'gerente', 'vendedor']);
+        Auth.pintarUsuario();
+        Auth.prepararLogout();
+        lucide.createIcons();
+    </script>
+    <script src="../js/cotizacion-detalle.js"></script>
 </body>
+
 </html>
+

@@ -4,24 +4,35 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'goldcontinent',
     port: Number(process.env.DB_PORT) || 3306,
     waitForConnections: true,
     connectionLimit: 10,
     charset: 'utf8mb4'
 });
 
-// Verificar conexión
 pool.getConnection((err, connection) => {
     if (err) {
-        console.error('❌ Error conectando a la BD:', err.message);
+        console.error('Error conectando a la BD:', err.message);
         return;
     }
-    console.log('✅ Conexión a MySQL exitosa');
+
+    console.log('Conexion a MySQL exitosa');
     connection.release();
 });
+
+function ejecutarAjuste(sql, descripcion) {
+    pool.query(sql, (err) => {
+        if (err && err.code !== 'ER_DUP_FIELDNAME') {
+            console.error(`No se pudo aplicar ajuste ${descripcion}:`, err.message);
+        }
+    });
+}
+
+ejecutarAjuste('ALTER TABLE productos ADD COLUMN stock_minimo INT DEFAULT 10', 'stock_minimo en productos');
+ejecutarAjuste("ALTER TABLE usuarios MODIFY rol enum('admin','gerente','vendedor') DEFAULT 'vendedor'", 'roles de usuarios');
 
 module.exports = pool.promise();

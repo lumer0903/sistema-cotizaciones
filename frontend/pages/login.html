@@ -1,65 +1,50 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gold Continent - Iniciar Sesión</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/css/login.css">
+    <title>Iniciar Sesión - Artes & Flores</title>
+    
+    <link rel="stylesheet" href="../css/login.css">
+    
+    <script src="../js/login.js" defer></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div class="login-bg">
-        <div class="login-wrapper">
-
-            <!-- Logo -->
-            <div class="logo-area">
-                <div class="logo-icon">
-                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                        <circle cx="16" cy="16" r="12" stroke="#7B1C1C" stroke-width="3"/>
-                        <path d="M16 9v7l4 4" stroke="#7B1C1C" stroke-width="2.5" stroke-linecap="round"/>
-                    </svg>
-                </div>
-                <h1 class="logo-title">Gold Continent</h1>
-                <p class="logo-sub">Sistema de Gestión</p>
+    <div class="login-container">
+        <div class="login-card">
+            
+            <div class="logo-wrapper">
+                <img src="../assets/icon.png" alt="Artes & Flores Decoraciones" class="logo-img">
             </div>
 
-            <!-- Card -->
-            <div class="login-card">
-                <h2 class="card-title">Iniciar sesión</h2>
+            <h2>Iniciar sesión</h2>
 
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input id="email" type="email" placeholder="admin@goldcontinent.com" class="form-input">
+            <form class="login-form">
+                <div class="input-group">
+                    <label for="email">EMAIL</label>
+                    <input type="email" id="email" placeholder="admin@goldcontinent.com" required>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Contraseña</label>
-                    <div class="input-password">
-                        <input id="password" type="password" placeholder="••••••••" class="form-input">
-                        <button onclick="togglePassword()" class="btn-eye">
-                            <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                        </button>
+                <div class="input-group">
+                    <label for="password">CONTRASEÑA</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" placeholder="••••••••" required>
+                        <span class="password-icon" id="togglePassword">
+                            <img src="../assets/eye-off.png" id="eyeIcon" alt="Mostrar contraseña" />
+                        </span>
                     </div>
                 </div>
 
-                <div id="mensajeError" class="error-msg hidden">
-                    Email o contraseña incorrectos
-                </div>
+                <button type="submit" class="btn-submit">INGRESAR</button>
+            </form>
 
-                <button onclick="iniciarSesion()" class="btn-login">
-                    Ingresar al sistema
-                </button>
-            </div>
-
-            <p class="footer-text">© 2026 Gold Continent EIRL</p>
         </div>
     </div>
 
-    <script src="/js/login.js"></script>
 </body>
 </html>

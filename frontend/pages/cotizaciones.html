@@ -1,176 +1,143 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gold Continent - Cotizaciones</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/css/global.css">
-    <link rel="stylesheet" href="/css/components.css">
+    <title>Cotizaciones - Artes & Flores</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/cotizaciones.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
+
 <body>
-
-<div class="layout">
-
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <div class="sidebar-logo">
-            <div class="logo-icon">
-                <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="12" stroke="#7B1C1C" stroke-width="3"/>
-                    <path d="M16 9v7l4 4" stroke="#7B1C1C" stroke-width="2.5" stroke-linecap="round"/>
-                </svg>
-            </div>
-            <div>
-                <div class="logo-title">Gold Continent</div>
-                <div class="logo-sub">Sistema de Gestión</div>
-            </div>
-        </div>
-
-        <nav class="sidebar-nav">
-            <div class="nav-section">Principal</div>
-            <a href="/pages/dashboard.html" class="nav-item">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <rect x="1" y="1" width="6" height="6" rx="1" fill="currentColor"/>
-                    <rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity="0.6"/>
-                    <rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.6"/>
-                    <rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity="0.4"/>
-                </svg>
-                Dashboard
-            </a>
-
-            <div class="nav-section">Módulos</div>
-            <a href="/pages/precios.html" class="nav-item">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/>
-                    <path d="M10 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-                Consulta de Precios
-            </a>
-            <a href="/pages/cotizaciones.html" class="nav-item active">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
-                    <path d="M5 8h6M5 5h3M5 11h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                </svg>
-                Cotizaciones
-            </a>
-            <a href="/pages/clientes.html" class="nav-item">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <circle cx="8" cy="6" r="3" stroke="currentColor" stroke-width="1.5"/>
-                    <path d="M3 13c0-2.5 2.2-4 5-4s5 1.5 5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-                Clientes
-            </a>
-
-            <div class="nav-section">Importación</div>
-            <a href="/pages/poliza.html" class="nav-item">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M3 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-                Subir Póliza
-            </a>
-        </nav>
-
-        <div class="sidebar-footer">
-            <div class="sidebar-user">
-                <div class="user-avatar" id="userAvatar">AD</div>
-                <div>
-                    <div class="user-name" id="userName">Administrador</div>
-                    <div class="user-role" id="userRole">admin</div>
+    <div class="app-layout">
+        <aside class="main-sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-logo-wrapper">
+                    <img src="../assets/icon.png" alt="Artes & Flores" class="sidebar-logo" onerror="this.style.display='none'">
                 </div>
+                <nav class="sidebar-menu">
+                    <a href="dashboard.html" class="menu-item"><div class="menu-item-content"><i data-lucide="layout-grid" class="icon-left"></i><span>Dashboard</span></div></a>
+                    <a href="productos.html" class="menu-item"><div class="menu-item-content"><i data-lucide="package" class="icon-left"></i><span>Productos</span></div><i data-lucide="chevron-right" class="icon-arrow"></i></a>
+                    <a href="consulta_precios.html" class="menu-item"><div class="menu-item-content"><i data-lucide="search" class="icon-left"></i><span>Consulta de precios</span></div><i data-lucide="chevron-right" class="icon-arrow"></i></a>
+                    <a href="cotizaciones.html" class="menu-item active"><div class="menu-item-content"><i data-lucide="file-text" class="icon-left"></i><span>Cotizaciones</span></div><i data-lucide="chevron-down" class="icon-arrow"></i></a>
+                    <a href="crear-cotizacion.html" class="menu-item submenu-item"><div class="menu-item-content"><span>Crear cotizacion</span></div></a>
+                    <a href="cotizaciones.html" class="menu-item submenu-item active-sub"><div class="menu-item-content"><span>Mis cotizaciones</span></div></a>
+                    <a href="usuarios.html" class="menu-item"><div class="menu-item-content"><i data-lucide="users" class="icon-left"></i><span>Usuarios</span></div><i data-lucide="chevron-right" class="icon-arrow"></i></a>
+                </nav>
             </div>
-            <button onclick="cerrarSesion()" class="btn-logout">Cerrar sesión</button>
-        </div>
-    </aside>
+            <div class="sidebar-footer">
+                <a href="login.html" class="menu-item logout-link"><div class="menu-item-content"><i data-lucide="log-out" class="icon-left"></i><span>Cerrar Sesion</span></div></a>
+            </div>
+        </aside>
 
-    <!-- CONTENIDO -->
-    <main class="main-content">
-
-        <!-- TOPBAR -->
-        <div class="topbar">
-            <h1 class="topbar-title">Cotizaciones</h1>
-            <button onclick="abrirModalNueva()" class="btn-primary">
-                + Nueva Cotización
-            </button>
-        </div>
-
-        <!-- LISTA DE COTIZACIONES -->
-        <div class="panel">
-            <div class="panel-header">
-                <span class="panel-title">Historial de Cotizaciones</span>
-                <div class="filter-tabs">
-                    <button onclick="filtrarEstado('todos', this)" class="filter-tab active">Todas</button>
-                    <button onclick="filtrarEstado('borrador', this)" class="filter-tab">Borrador</button>
-                    <button onclick="filtrarEstado('enviada', this)" class="filter-tab">Enviadas</button>
-                    <button onclick="filtrarEstado('aprobada', this)" class="filter-tab">Aprobadas</button>
+        <div class="main-viewport">
+            <header class="main-navbar">
+                <div class="nav-page-title"><h1>Cotizaciones &gt; Mis cotizaciones</h1></div>
+                <div class="nav-user-area">
+                    <span class="nav-role">Administrador</span>
+                    <div class="nav-icons-group">
+                        <button class="nav-icon-btn"><i data-lucide="user"></i></button>
+                        <button class="nav-icon-btn"><i data-lucide="settings"></i></button>
+                    </div>
                 </div>
-            </div>
+            </header>
 
-            <table class="tabla-cotizaciones">
-                <thead>
-                    <tr>
-                        <th>Número</th>
-                        <th>Cliente</th>
-                        <th>Tipo</th>
-                        <th>Total</th>
-                        <th>Estado</th>
-                        <th>Fecha</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaCotizaciones">
-                    <tr>
-                        <td colspan="7" class="text-center text-gray-400 py-8">
-                            Cargando cotizaciones...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+            <main class="page-content">
+                <section class="quotes-wrapper">
+                    <div class="quotes-toolbar">
+                        <label class="quote-search">
+                            <i data-lucide="search"></i>
+                            <input id="inputBuscarCotizacion" type="text" placeholder="Buscar cotizacion">
+                        </label>
+                        <label class="quote-date-filter">
+                            <span>FECHA</span>
+                            <input id="inputFechaCotizacion" type="date">
+                        </label>
+                        <label class="quote-state-filter">
+                            <span>ESTADO</span>
+                            <select id="selectEstadoFiltro">
+                            <option value="todos">ESTADO</option>
+                            <option value="borrador">BORRADOR</option>
+                            <option value="enviada">ENVIADO</option>
+                            <option value="aprobada">ACEPTADO</option>
+                            <option value="rechazada">RECHAZADO</option>
+                            </select>
+                        </label>
+                        <button class="quote-new-btn" id="btnNuevaCotizacion"><i data-lucide="plus"></i>NUEVA COTIZACION</button>
+                    </div>
 
-    </main>
-</div>
-
-<!-- MODAL NUEVA COTIZACIÓN -->
-<div id="modalNueva" class="modal-overlay hidden">
-    <div class="modal">
-        <div class="modal-header">
-            <h2 class="modal-title">Nueva Cotización</h2>
-            <button onclick="cerrarModalNueva()" class="modal-close">✕</button>
-        </div>
-
-        <div class="modal-body">
-            <div class="form-group">
-                <label class="form-label">Tipo de Cliente</label>
-                <select id="tipoPrecio" class="form-input">
-                    <option value="normal">Cliente Normal</option>
-                    <option value="distribuidor">Distribuidor</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Cliente (opcional)</label>
-                <input id="nombreCliente" type="text" 
-                       placeholder="Nombre del cliente..."
-                       class="form-input">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Observaciones</label>
-                <textarea id="observaciones" rows="3"
-                          placeholder="Notas adicionales..."
-                          class="form-input"></textarea>
-            </div>
-        </div>
-
-        <div class="modal-footer">
-            <button onclick="cerrarModalNueva()" class="btn-secondary">Cancelar</button>
-            <button onclick="crearCotizacion()" class="btn-primary">Crear Cotización</button>
+                    <table class="quotes-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>CLIENTE</th>
+                                <th>FECHA</th>
+                                <th>TIPO</th>
+                                <th>TOTAL</th>
+                                <th>ESTADO</th>
+                                <th>ACCIONES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaCotizaciones">
+                            <tr><td colspan="7">Cargando cotizaciones...</td></tr>
+                        </tbody>
+                    </table>
+                    <strong id="contadorCotizaciones">0 Resultados</strong>
+                </section>
+            </main>
         </div>
     </div>
-</div>
 
-<script src="/js/cotizaciones.js"></script>
+    <div class="quote-modal-overlay hidden" id="modalNuevaCotizacion">
+        <div class="quote-modal">
+            <div class="quote-modal-header">
+                <h2>Nueva Cotizacion</h2>
+                <button class="quote-close" id="cerrarNuevaCotizacion"><i data-lucide="x"></i></button>
+            </div>
+            <div class="quote-modal-body">
+                <div class="modal-grid">
+                    <label>CLIENTE</label>
+                    <input class="quote-input span-3" id="nuevoCliente" placeholder="Roberto Reyna">
+
+                    <label>EMAIL</label>
+                    <input class="quote-input" id="nuevoEmail" placeholder="ejemplo@gmail.com">
+                    <label>TELEFONO</label>
+                    <input class="quote-input" id="nuevoTelefono" placeholder="999999999">
+
+                    <label>DOCUMENTO</label>
+                    <select class="quote-input select" id="nuevoTipoDocumento">
+                        <option>DNI</option>
+                        <option>RUC</option>
+                    </select>
+                    <input class="quote-input doc-number" id="nuevoDocumentoNumero" placeholder="Numero de documento">
+                    <label class="client-type-label">TIPO DE CLIENTE</label>
+                    <select class="quote-input select" id="nuevoTipoCliente">
+                        <option value="normal">TIENDA</option>
+                        <option value="distribuidor">DISTRIBUIDOR</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button class="quote-secondary-btn" id="cancelarNuevaCotizacion">Cancelar</button>
+                    <button class="quote-primary-btn" id="crearNuevaCotizacion">Crear Cotizacion</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/auth.js"></script>
+    <script>
+        Auth.protegerPagina(['admin', 'gerente', 'vendedor']);
+        Auth.pintarUsuario();
+        Auth.prepararLogout();
+        lucide.createIcons();
+    </script>
+    <script src="../js/cotizaciones.js"></script>
 </body>
+
 </html>
+
