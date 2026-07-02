@@ -263,6 +263,46 @@ body {
     background-color: #FFFFFF;
 }
 
+/* Buscadores y selects unificados con cotizaciones */
+.filter-card {
+    border-radius: 8px;
+    padding: 20px 26px;
+    align-items: end;
+    gap: 68px;
+}
+
+.filter-group label {
+    color: #8B1D1D;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.search-field-icon {
+    left: 16px;
+    width: 20px;
+    height: 20px;
+    color: #8B1D1D;
+}
+
+.search-input-wrapper input,
+.select-wrapper select {
+    height: 40px;
+    border: 1px solid #8B1D1D;
+    border-radius: 8px;
+    color: #52525B;
+    font-size: 15px;
+}
+
+.search-input-wrapper input {
+    padding-left: 48px;
+}
+
+.select-wrapper select {
+    color: #111827;
+}
+
 /* --- 3. REJILLA MATRIZ DE PRECIOS (3 Columnas según captura) --- */
 .prices-grid-layout {
     display: grid;
@@ -435,15 +475,14 @@ body {
 /* --- 4. MODAL DEL HISTORIAL (DISEÑO EXACTO) --- */
 .modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
+    inset: 0;
     background-color: rgba(0, 0, 0, 0.3);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
+    padding: 40px 18px;
     z-index: 2000;
+    overflow-y: auto;
 }
 
 .modal-hidden {
@@ -452,30 +491,32 @@ body {
 
 .modal-container {
     background-color: #FFFFFF;
-    border-radius: 16px;
-    width: 440px;
-    max-width: 90%;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    width: min(860px, 100%);
+    max-height: calc(100vh - 80px);
+    box-shadow: 0 24px 60px rgba(17, 24, 39, 0.18);
     overflow: hidden;
     display: flex;
     flex-direction: column;
 }
 
 .modal-header {
-    padding: 24px 24px 12px 24px;
+    padding: 20px 26px 16px;
+    border-bottom: 1px solid #E5E7EB;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+    flex: 0 0 auto;
 }
 
 .modal-title {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
-    color: #000000;
+    color: #111827;
 }
 
 .modal-subtitle {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
     color: #8B1D1D;
     display: block;
@@ -485,41 +526,59 @@ body {
 .modal-close-x {
     background: none;
     border: none;
+    width: 32px;
+    height: 32px;
     font-size: 24px;
     cursor: pointer;
-    color: #000000;
+    color: #414141;
     line-height: 1;
 }
 
 .modal-body {
-    padding: 12px 24px 24px 24px;
+    padding: 0 26px 22px;
+    overflow: auto;
 }
 
 .modal-history-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
 }
 
 .modal-history-table th {
-    font-size: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #FFFFFF;
+    font-size: 11px;
     font-weight: 700;
     color: #8B1D1D;
     text-align: left;
-    padding-bottom: 12px;
+    padding: 14px 10px 12px 0;
     border-bottom: 1px solid #F3F4F6;
+    letter-spacing: 0.6px;
 }
 
 .modal-history-table td {
-    padding: 14px 0;
+    padding: 13px 10px 13px 0;
     font-size: 14px;
     font-weight: 500;
-    color: #374151;
+    color: #52525B;
     border-bottom: 1px solid #F3F4F6;
+    vertical-align: middle;
 }
 
 /* Alineaciones según la imagen */
-.modal-history-table th:nth-child(2), .modal-history-table td:nth-child(2) { text-align: center; }
-.modal-history-table th:nth-child(3), .modal-history-table td:nth-child(3) { text-align: right; }
+.modal-history-table th:nth-child(1),
+.modal-history-table td:nth-child(1) { width: 104px; }
+.modal-history-table th:nth-child(2),
+.modal-history-table td:nth-child(2) { width: 240px; text-align: left; font-weight: 700; }
+.modal-history-table th:nth-child(3),
+.modal-history-table td:nth-child(3),
+.modal-history-table th:nth-child(4),
+.modal-history-table td:nth-child(4),
+.modal-history-table th:nth-child(5),
+.modal-history-table td:nth-child(5) { text-align: right; }
 
 .text-danger {
     color: #8B1D1D !important;
@@ -557,13 +616,8 @@ body {
     color: #8B1D1D;
 }
 
-.modal-container {
-    width: min(760px, 94vw);
-}
-
 .modal-history-table th,
 .modal-history-table td {
-    font-size: 12px;
     padding-right: 10px;
 }
 
@@ -579,4 +633,83 @@ body {
         grid-template-columns: 1fr;
         flex-direction: column;
     }
+}
+
+/* Pulido visual de consulta de precios */
+.filter-card,
+.price-card {
+    border-radius: 10px;
+}
+
+.filter-card {
+    padding: 18px 22px;
+    gap: 20px;
+}
+
+.filter-group label {
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.search-input-wrapper input,
+.select-wrapper select {
+    height: 42px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.prices-grid-layout {
+    gap: 20px;
+}
+
+.price-card {
+    padding: 18px;
+    gap: 14px;
+}
+
+.card-item-img-placeholder {
+    width: 58px;
+    height: 58px;
+}
+
+.card-item-details h3 {
+    font-size: 15px;
+}
+
+.card-item-details p {
+    font-size: 12px;
+}
+
+.card-history-trigger {
+    width: 32px;
+    height: 32px;
+}
+
+.price-tier-block {
+    padding: 11px 12px;
+}
+
+.tier-value-col strong {
+    font-size: 13.5px;
+}
+
+.modal-title {
+    font-size: 18px;
+}
+
+.modal-subtitle {
+    font-size: 14px;
+}
+
+.btn-modal-close {
+    height: 40px;
+    padding: 0 16px;
+    font-size: 13px;
+}
+
+.filter-card .search-input-wrapper input,
+.filter-card .select-wrapper select {
+    height: 40px;
+    border: 1px solid #8B1D1D;
+    border-radius: 8px;
 }

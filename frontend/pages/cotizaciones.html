@@ -18,7 +18,7 @@
         <aside class="main-sidebar">
             <div class="sidebar-top">
                 <div class="sidebar-logo-wrapper">
-                    <img src="../assets/icon.png" alt="Artes & Flores" class="sidebar-logo" onerror="this.style.display='none'">
+                    <img src="../assets/icon2.jpg" alt="Artes & Flores" class="sidebar-logo" onerror="this.style.display='none'">
                 </div>
                 <nav class="sidebar-menu">
                     <a href="dashboard.html" class="menu-item"><div class="menu-item-content"><i data-lucide="layout-grid" class="icon-left"></i><span>Dashboard</span></div></a>
@@ -93,42 +93,6 @@
         </div>
     </div>
 
-    <div class="quote-modal-overlay hidden" id="modalNuevaCotizacion">
-        <div class="quote-modal">
-            <div class="quote-modal-header">
-                <h2>Nueva Cotizacion</h2>
-                <button class="quote-close" id="cerrarNuevaCotizacion"><i data-lucide="x"></i></button>
-            </div>
-            <div class="quote-modal-body">
-                <div class="modal-grid">
-                    <label>CLIENTE</label>
-                    <input class="quote-input span-3" id="nuevoCliente" placeholder="Roberto Reyna">
-
-                    <label>EMAIL</label>
-                    <input class="quote-input" id="nuevoEmail" placeholder="ejemplo@gmail.com">
-                    <label>TELEFONO</label>
-                    <input class="quote-input" id="nuevoTelefono" placeholder="999999999">
-
-                    <label>DOCUMENTO</label>
-                    <select class="quote-input select" id="nuevoTipoDocumento">
-                        <option>DNI</option>
-                        <option>RUC</option>
-                    </select>
-                    <input class="quote-input doc-number" id="nuevoDocumentoNumero" placeholder="Numero de documento">
-                    <label class="client-type-label">TIPO DE CLIENTE</label>
-                    <select class="quote-input select" id="nuevoTipoCliente">
-                        <option value="normal">TIENDA</option>
-                        <option value="distribuidor">DISTRIBUIDOR</option>
-                    </select>
-                </div>
-                <div class="modal-actions">
-                    <button class="quote-secondary-btn" id="cancelarNuevaCotizacion">Cancelar</button>
-                    <button class="quote-primary-btn" id="crearNuevaCotizacion">Crear Cotizacion</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="../js/auth.js"></script>
     <script>
         Auth.protegerPagina(['admin', 'gerente', 'vendedor']);
@@ -140,4 +104,3 @@
 </body>
 
 </html>
-

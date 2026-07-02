@@ -7,6 +7,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let archivoSeleccionado = null;
 
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
+
     function pintarArchivo(file) {
         archivoSeleccionado = file;
         dropZoneTitle.textContent = file ? file.name : 'Arrastra o selecciona el archivo';
@@ -25,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             ${errores.length ? `
                 <ul class="result-errors">
-                    ${errores.slice(0, 5).map((error) => `<li>${error}</li>`).join('')}
+                    ${errores.slice(0, 5).map((error) => `<li>${escapeHtml(error)}</li>`).join('')}
                 </ul>
             ` : '<p>Importacion completada correctamente.</p>'}
         `;
@@ -33,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function pintarError(message) {
         resultado.className = 'result-box has-error';
-        resultado.innerHTML = `<p>${message}</p>`;
+        resultado.innerHTML = `<p>${escapeHtml(message)}</p>`;
     }
 
     fileInput.addEventListener('change', (event) => {

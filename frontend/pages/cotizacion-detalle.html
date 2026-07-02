@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear Cotizacion - Artes & Flores</title>
+    <title>Detalle de Cotizacion - Artes & Flores</title>
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/cotizaciones.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,14 +17,14 @@
     <div class="app-layout">
         <aside class="main-sidebar">
             <div class="sidebar-top">
-                <div class="sidebar-logo-wrapper"><img src="../assets/icon.png" alt="Artes & Flores" class="sidebar-logo" onerror="this.style.display='none'"></div>
+                <div class="sidebar-logo-wrapper"><img src="../assets/icon2.jpg" alt="Artes & Flores" class="sidebar-logo" onerror="this.style.display='none'"></div>
                 <nav class="sidebar-menu">
                     <a href="dashboard.html" class="menu-item"><div class="menu-item-content"><i data-lucide="layout-grid" class="icon-left"></i><span>Dashboard</span></div></a>
                     <a href="productos.html" class="menu-item"><div class="menu-item-content"><i data-lucide="package" class="icon-left"></i><span>Productos</span></div><i data-lucide="chevron-right" class="icon-arrow"></i></a>
                     <a href="consulta_precios.html" class="menu-item"><div class="menu-item-content"><i data-lucide="search" class="icon-left"></i><span>Consulta de precios</span></div><i data-lucide="chevron-right" class="icon-arrow"></i></a>
                     <a href="cotizaciones.html" class="menu-item active"><div class="menu-item-content"><i data-lucide="file-text" class="icon-left"></i><span>Cotizaciones</span></div><i data-lucide="chevron-down" class="icon-arrow"></i></a>
-                    <a href="crear-cotizacion.html" class="menu-item submenu-item active-sub"><div class="menu-item-content"><span>Crear cotizacion</span></div></a>
-                    <a href="cotizaciones.html" class="menu-item submenu-item"><div class="menu-item-content"><span>Mis cotizaciones</span></div></a>
+                    <a href="crear-cotizacion.html" class="menu-item submenu-item"><div class="menu-item-content"><span>Crear cotizacion</span></div></a>
+                    <a href="cotizaciones.html" class="menu-item submenu-item active-sub"><div class="menu-item-content"><span>Mis cotizaciones</span></div></a>
                     <a href="usuarios.html" class="menu-item"><div class="menu-item-content"><i data-lucide="users" class="icon-left"></i><span>Usuarios</span></div><i data-lucide="chevron-right" class="icon-arrow"></i></a>
                 </nav>
             </div>
@@ -33,7 +33,7 @@
 
         <div class="main-viewport">
             <header class="main-navbar">
-                <div class="nav-page-title"><h1>Cotizaciones &gt; Crear Cotizacion</h1></div>
+                <div class="nav-page-title"><h1>Cotizaciones &gt; Detalle</h1></div>
                 <div class="nav-user-area"><span class="nav-role">Administrador</span><div class="nav-icons-group"><button class="nav-icon-btn"><i data-lucide="user"></i></button><button class="nav-icon-btn"><i data-lucide="settings"></i></button></div></div>
             </header>
 
@@ -70,13 +70,13 @@
                     </div>
 
                     <aside class="side-panel">
-                        <div class="recommendation-card">
-                            <div class="side-title"><i data-lucide="bot"></i>RECOMENDACIONES</div>
-                            <div id="panelRecomendaciones">Haz clic en un producto para ver sugerencias</div>
+                        <div class="recommendation-card" id="recommendationCard">
+                            <div class="side-title"><span><i data-lucide="bot"></i>RECOMENDACIONES</span><button class="panel-toggle" data-collapse-target="recommendationCard" title="Minimizar"><i data-lucide="minus"></i></button></div>
+                            <div class="panel-body" id="panelRecomendaciones">Haz clic en un producto para ver sugerencias</div>
                         </div>
-                        <div class="summary-card">
-                            <div class="side-title"><i data-lucide="receipt-text"></i>RESUMEN DE LA ORDEN</div>
-                            <div id="resumenOrden"></div>
+                        <div class="summary-card" id="summaryCard">
+                            <div class="side-title"><span><i data-lucide="receipt-text"></i>RESUMEN DE LA ORDEN</span><button class="panel-toggle" data-collapse-target="summaryCard" title="Minimizar"><i data-lucide="minus"></i></button></div>
+                            <div class="panel-body" id="resumenOrden"></div>
                         </div>
                     </aside>
                 </section>

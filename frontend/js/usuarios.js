@@ -24,6 +24,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return String(nombre || 'US').split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
     }
 
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
+
     function rolTexto(rol) {
         const labels = {
             admin: 'Administrador',
@@ -62,9 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
         usuariosGrid.innerHTML = filtrados.map((usuario) => `
             <article class="user-card">
                 <span class="user-status ${usuario.activo ? '' : 'off'}"></span>
-                <div class="user-avatar-card">${iniciales(usuario.nombre)}</div>
-                <strong>${usuario.nombre}</strong>
-                <small>${usuario.email}</small><br>
+                <div class="user-avatar-card">${escapeHtml(iniciales(usuario.nombre))}</div>
+                <strong>${escapeHtml(usuario.nombre)}</strong>
+                <small>${escapeHtml(usuario.email)}</small><br>
                 <span class="role-pill">${rolTexto(usuario.rol)}</span>
                 <div class="user-actions">
                     <button data-edit="${usuario.id_usuario}"><i data-lucide="pencil"></i> Editar</button>
@@ -78,8 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function pintarRoles(rolActivo = 'admin') {
         rolesList.innerHTML = Object.entries(roles).map(([key, rol]) => `
             <button class="role-option ${key === rolActivo ? 'active' : ''}" data-role="${key}">
-                <strong>${rol.nombre}</strong>
-                <span>${rol.descripcion}</span>
+                <strong>${escapeHtml(rol.nombre)}</strong>
+                <span>${escapeHtml(rol.descripcion)}</span>
             </button>
         `).join('');
         pintarPermisos(rolActivo);
@@ -94,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const permiso = rol.permisos[key] || 'sin_acceso';
             return `
                 <tr>
-                    <td>${label}</td>
+                    <td>${escapeHtml(label)}</td>
                     <td><input class="permission-check" name="${key}" value="sin_acceso" type="radio" ${permiso === 'sin_acceso' ? 'checked' : ''}></td>
                     <td><input class="permission-check" name="${key}" value="lectura" type="radio" ${permiso === 'lectura' ? 'checked' : ''}></td>
                     <td><input class="permission-check" name="${key}" value="edicion" type="radio" ${permiso === 'edicion' ? 'checked' : ''}></td>

@@ -7,14 +7,35 @@ document.addEventListener('DOMContentLoaded', () => {
     let productoModal = null;
     let detalleEditando = null;
     let timer = null;
+    let observacionesTimer = null;
     let pdfObjectUrl = null;
+    let incluyeCarreta = true;
+    let detalleRecomendacion = null;
 
     function moneda(value) {
         return `S/${Number(value || 0).toFixed(2)}`;
     }
 
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
+
+    function encodeData(value) {
+        return encodeURIComponent(JSON.stringify(value));
+    }
+
+    function decodeData(value) {
+        return JSON.parse(decodeURIComponent(value));
+    }
+
     function img(producto) {
-        return producto.foto_url || `../assets/${producto.codigo}.jpg`;
+        return producto.foto_url || `../assets/${encodeURIComponent(producto.codigo)}.jpg`;
     }
 
     function tipoCliente() {
@@ -53,11 +74,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function pintarCotizacion() {
         document.getElementById('numeroCotizacion').textContent = cotizacion.numero;
-        document.getElementById('selectEstadoDetalle').value = cotizacion.estado;
+        pintarOpcionesEstado();
         alternarModoDetalle();
         pintarDetalle();
         pintarResumen();
         lucide.createIcons();
+    }
+
+    function pintarOpcionesEstado() {
+        const select = document.getElementById('selectEstadoDetalle');
+        const opciones = {
+            borrador: [
+                ['borrador', 'BORRADOR'],
+                ['enviada', 'ENVIADO']
+            ],
+            enviada: [
+                ['enviada', 'ENVIADO'],
+                ['aprobada', 'ACEPTADO'],
+                ['rechazada', 'RECHAZADO']
+            ],
+            aprobada: [
+                ['aprobada', 'ACEPTADO']
+            ],
+            rechazada: [
+                ['rechazada', 'RECHAZADO']
+            ]
+        };
+        select.innerHTML = (opciones[cotizacion.estado] || opciones.borrador)
+            .map(([value, label]) => `<option value="${value}">${label}</option>`)
+            .join('');
+        select.value = cotizacion.estado;
+        select.className = `quote-status-select state-${cotizacion.estado}`;
     }
 
     async function obtenerPdfBlobUrl() {
@@ -104,8 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         tablaDetalle.innerHTML = cotizacion.detalle.map((item) => `
             <tr data-detalle="${item.id_detalle}" data-producto="${item.id_producto}">
-                <td><img class="cart-img" src="${img(item)}" onerror="this.style.visibility='hidden'"></td>
-                <td>${item.codigo}</td>
+                <td><img class="cart-img" src="${escapeHtml(img(item))}" onerror="this.style.visibility='hidden'"></td>
+                <td>${escapeHtml(item.codigo)}</td>
                 <td>${item.cantidad}</td>
                 <td>${moneda(item.subtotal)}</td>
                 <td>
@@ -120,14 +167,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function pintarResumen() {
+        incluyeCarreta = Boolean(Number(cotizacion.incluye_carreta));
         document.getElementById('resumenOrden').innerHTML = `
-            <p><strong>CLIENTE:</strong> ${cotizacion.cliente_nombre || 'Sin cliente'}</p>
-            <p><strong>EMAIL:</strong> ${cotizacion.email || '-'}</p>
-            <p><strong>TELEFONO:</strong> ${cotizacion.telefono || '-'}</p>
-            <p><strong>DNI:</strong> ${cotizacion.ruc_dni || '-'}</p>
-            <br>
+            <p><strong>CLIENTE:</strong> ${escapeHtml(cotizacion.cliente_nombre || 'Sin cliente')}</p>
+            <p><strong>EMAIL:</strong> ${escapeHtml(cotizacion.email || '-')}</p>
+            <p><strong>TELEFONO:</strong> ${escapeHtml(cotizacion.telefono || '-')}</p>
+            <p><strong>DNI:</strong> ${escapeHtml(cotizacion.ruc_dni || '-')}</p>
+            <label class="summary-observations">
+                <span>Observaciones <small>OPCIONAL</small></span>
+                <textarea id="textareaObservaciones" placeholder="Escribir brevemente">${escapeHtml(cotizacion.observaciones || '')}</textarea>
+            </label>
             <p><strong>PRODUCTOS (${cotizacion.detalle.length})</strong></p>
-            <p style="display:flex; justify-content:space-between; margin-top:14px;"><strong>TOTAL:</strong><span class="quote-primary-btn">${moneda(cotizacion.total)}</span></p>
+            <label class="cart-switch-row">
+                <input type="checkbox" id="switchCarreta" ${incluyeCarreta ? 'checked' : ''}>
+                <span class="switch-slider"></span>
+                <strong>Carreta</strong>
+            </label>
+            <small class="cart-note">*Carreta precio aproximado ${moneda(cotizacion.costo_carreta || 15)}</small>
+            <p class="summary-total-row"><strong>TOTAL:</strong><span class="summary-total">${moneda(cotizacion.total)}</span></p>
         `;
     }
 
@@ -141,9 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const json = await respuesta.json();
         if (!respuesta.ok || !json.success) return;
         resultados.innerHTML = json.data.map((producto) => `
-            <div class="search-result" data-producto='${JSON.stringify(producto).replace(/'/g, '&apos;')}'>
-                <strong>${producto.codigo}</strong>
-                <p>${producto.descripcion}</p>
+            <div class="search-result" data-producto="${encodeData(producto)}">
+                <strong>${escapeHtml(producto.codigo)}</strong>
+                <p>${escapeHtml(producto.descripcion)}</p>
                 <small>Stock: ${producto.stock_total} | Unidad: ${moneda(producto.precio_unidad)}</small>
             </div>
         `).join('');
@@ -155,12 +212,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modalProductoTitulo').textContent = detalle ? 'Editar Producto' : 'Agregar Producto';
         document.getElementById('guardarModalProducto').textContent = detalle ? 'Guardar Cambios' : 'Agregar';
         document.getElementById('modalProductoHead').innerHTML = `
-            <img class="product-modal-thumb" src="${img(producto)}" onerror="this.style.visibility='hidden'">
-            <div><strong>${producto.codigo}</strong><p style="font-size:11px;color:#A1A1AA;">${producto.descripcion || ''}</p></div>
+            <img class="product-modal-thumb" src="${escapeHtml(img(producto))}" onerror="this.style.visibility='hidden'">
+            <div><strong>${escapeHtml(producto.codigo)}</strong><p style="font-size:11px;color:#A1A1AA;">${escapeHtml(producto.descripcion || '')}</p></div>
         `;
+        const reemplazaProducto = detalle && Number(detalle.id_producto) !== Number(producto.id_producto);
         document.getElementById('modalTipoVenta').value = detalle?.tipo_venta || 'unidad';
-        document.getElementById('modalCantidad').value = detalle?.cantidad || 10;
-        document.getElementById('modalPrecio').value = detalle?.precio_unitario || precio(producto, document.getElementById('modalTipoVenta').value);
+        document.getElementById('modalCantidad').value = detalle?.cantidad || cantidadPorTipo(document.getElementById('modalTipoVenta').value);
+        document.getElementById('modalPrecio').value = !reemplazaProducto && detalle?.precio_unitario
+            ? detalle.precio_unitario
+            : precio(producto, document.getElementById('modalTipoVenta').value);
         document.getElementById('modalPreciosReferencia').classList.toggle('dist', tipoCliente() === 'distribuidor');
         document.getElementById('modalPreciosReferencia').textContent = refPrecios(producto);
         actualizarSubtotal();
@@ -174,6 +234,18 @@ document.addEventListener('DOMContentLoaded', () => {
         detalleEditando = null;
     }
 
+    function cantidadPorTipo(tipoVenta) {
+        if (tipoVenta === 'docena') return 12;
+        if (tipoVenta === 'mayor') return 13;
+        return 1;
+    }
+
+    function tipoPorCantidad(cantidad) {
+        if (cantidad > 12) return 'mayor';
+        if (cantidad === 12) return 'docena';
+        return 'unidad';
+    }
+
     function actualizarSubtotal() {
         const subtotal = Number(document.getElementById('modalPrecio').value || 0) * Number(document.getElementById('modalCantidad').value || 1);
         document.getElementById('modalSubtotal').textContent = moneda(subtotal);
@@ -181,7 +253,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function actualizarPrecioPorTipo() {
         const tipoVenta = document.getElementById('modalTipoVenta').value;
+        document.getElementById('modalCantidad').value = cantidadPorTipo(tipoVenta);
         document.getElementById('modalPrecio').value = precio(productoModal, tipoVenta);
+        actualizarSubtotal();
+    }
+
+    function actualizarTipoPorCantidad() {
+        const cantidad = Number(document.getElementById('modalCantidad').value || 1);
+        const tipoVenta = tipoPorCantidad(cantidad);
+        const selectTipo = document.getElementById('modalTipoVenta');
+        if (selectTipo.value !== tipoVenta) {
+            selectTipo.value = tipoVenta;
+            document.getElementById('modalPrecio').value = precio(productoModal, tipoVenta);
+        }
         actualizarSubtotal();
     }
 
@@ -190,7 +274,6 @@ document.addEventListener('DOMContentLoaded', () => {
             id_producto: productoModal.id_producto,
             tipo_venta: document.getElementById('modalTipoVenta').value,
             cantidad: Number(document.getElementById('modalCantidad').value || 1),
-            precio_unitario: Number(document.getElementById('modalPrecio').value || 0),
             es_sugerido_ia: productoModal.es_sugerido_ia || false
         };
         const url = detalleEditando
@@ -217,9 +300,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function cargarRecomendaciones(idProducto) {
+    async function cargarRecomendaciones(detalle) {
+        detalleRecomendacion = detalle || null;
         document.getElementById('panelRecomendaciones').textContent = 'Calculando recomendaciones...';
-        const respuesta = await Auth.fetchSeguro(`/api/cotizaciones/${idCotizacion}/recomendaciones/${idProducto}`);
+        const respuesta = await Auth.fetchSeguro(`/api/cotizaciones/${idCotizacion}/recomendaciones/${detalle.id_producto}`);
         const json = await respuesta.json();
         if (!respuesta.ok || !json.success || !json.data.length) {
             document.getElementById('panelRecomendaciones').textContent = 'No hay recomendaciones disponibles.';
@@ -227,14 +311,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         document.getElementById('panelRecomendaciones').innerHTML = json.data.map((rec) => `
             <div class="recommendation-item">
-                <img src="${img(rec.producto)}" onerror="this.style.visibility='hidden'">
+                <img src="${escapeHtml(img(rec.producto))}" onerror="this.style.visibility='hidden'">
                 <div>
-                    <small>${rec.tipo}</small>
-                    <h4>${rec.producto.codigo}</h4>
-                    <p>${rec.producto.descripcion || ''}</p>
+                    <small>${escapeHtml(rec.tipo)}</small>
+                    <h4>${escapeHtml(rec.producto.codigo)}</h4>
+                    <p>${escapeHtml(rec.producto.descripcion || '')}</p>
                     <div class="recommendation-actions">
-                        <button class="rec-add" data-rec='${JSON.stringify({ ...rec.producto, es_sugerido_ia: true }).replace(/'/g, '&apos;')}'>Agregar</button>
-                        <button class="rec-replace" data-rec-replace='${JSON.stringify({ ...rec.producto, es_sugerido_ia: true }).replace(/'/g, '&apos;')}'>Reemplazar</button>
+                        <button class="rec-add" data-rec="${encodeData({ ...rec.producto, es_sugerido_ia: true })}">Agregar</button>
+                        <button class="rec-replace" data-rec-replace="${encodeData({ ...rec.producto, es_sugerido_ia: true })}">Reemplazar</button>
                     </div>
                 </div>
             </div>
@@ -247,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     resultados.addEventListener('click', (event) => {
         const row = event.target.closest('[data-producto]');
-        if (row) abrirModalProducto(JSON.parse(row.dataset.producto));
+        if (row) abrirModalProducto(decodeData(row.dataset.producto));
     });
     tablaDetalle.addEventListener('click', (event) => {
         const tr = event.target.closest('tr[data-detalle]');
@@ -255,16 +339,63 @@ document.addEventListener('DOMContentLoaded', () => {
         const detalle = cotizacion.detalle.find((item) => item.id_detalle === Number(tr.dataset.detalle));
         if (event.target.closest('.btn-delete')) eliminarDetalle(detalle.id_detalle);
         if (event.target.closest('.btn-edit')) abrirModalProducto(detalle, detalle);
-        if (event.target.closest('.btn-rec')) cargarRecomendaciones(detalle.id_producto);
+        if (event.target.closest('.btn-rec')) cargarRecomendaciones(detalle);
     });
     document.getElementById('panelRecomendaciones').addEventListener('click', (event) => {
         const add = event.target.closest('[data-rec]');
         const replace = event.target.closest('[data-rec-replace]');
-        if (add) abrirModalProducto(JSON.parse(add.dataset.rec));
-        if (replace) abrirModalProducto(JSON.parse(replace.dataset.rec));
+        if (add) abrirModalProducto(decodeData(add.dataset.rec));
+        if (replace && detalleRecomendacion) abrirModalProducto(decodeData(replace.dataset.recReplace), detalleRecomendacion);
+    });
+    document.querySelectorAll('[data-collapse-target]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const card = document.getElementById(button.dataset.collapseTarget);
+            card.classList.toggle('is-collapsed');
+            button.innerHTML = card.classList.contains('is-collapsed')
+                ? '<i data-lucide="plus"></i>'
+                : '<i data-lucide="minus"></i>';
+            lucide.createIcons();
+        });
+    });
+    document.getElementById('resumenOrden').addEventListener('change', (event) => {
+        if (event.target.id === 'switchCarreta') {
+            incluyeCarreta = event.target.checked;
+            Auth.fetchSeguro(`/api/cotizaciones/${idCotizacion}/carreta`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    incluye_carreta: incluyeCarreta,
+                    costo_carreta: Number(cotizacion.costo_carreta || 15)
+                })
+            })
+                .then((respuesta) => respuesta.json().then((json) => ({ respuesta, json })))
+                .then(({ respuesta, json }) => {
+                    if (!respuesta.ok || !json.success) throw new Error(json.message || 'No se pudo actualizar la carreta.');
+                    cotizacion = json.data;
+                    pintarResumen();
+                })
+                .catch((error) => {
+                    alert(error.message);
+                    incluyeCarreta = !incluyeCarreta;
+                    pintarResumen();
+                });
+        }
+    });
+    document.getElementById('resumenOrden').addEventListener('input', (event) => {
+        if (event.target.id !== 'textareaObservaciones') return;
+        clearTimeout(observacionesTimer);
+        observacionesTimer = setTimeout(async () => {
+            const respuesta = await Auth.fetchSeguro(`/api/cotizaciones/${idCotizacion}/observaciones`, {
+                method: 'PUT',
+                body: JSON.stringify({ observaciones: event.target.value })
+            });
+            const json = await respuesta.json();
+            if (respuesta.ok && json.success) {
+                cotizacion.observaciones = json.data.observaciones || '';
+            }
+        }, 450);
     });
     document.getElementById('modalTipoVenta').addEventListener('change', actualizarPrecioPorTipo);
-    document.getElementById('modalCantidad').addEventListener('input', actualizarSubtotal);
+    document.getElementById('modalCantidad').addEventListener('input', actualizarTipoPorCantidad);
     document.getElementById('modalPrecio').addEventListener('input', actualizarSubtotal);
     document.getElementById('cerrarModalProducto').addEventListener('click', cerrarModal);
     document.getElementById('cancelarModalProducto').addEventListener('click', cerrarModal);

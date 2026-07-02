@@ -371,3 +371,64 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Pulido visual de usuarios y permisos */
+.profile-card {
+    border-radius: 10px;
+    padding: 20px 24px;
+    grid-template-columns: 64px 1fr 1fr 34px;
+    gap: 18px;
+}
+
+.profile-avatar,
+.user-avatar-card {
+    width: 50px;
+    height: 50px;
+    font-size: 19px;
+}
+
+.users-panel,
+.permissions-card {
+    border-radius: 8px;
+    padding: 24px;
+}
+
+.users-toolbar {
+    margin-bottom: 22px;
+}
+
+.orange-btn,
+.gray-btn {
+    min-height: 40px;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 13px;
+}
+
+.user-card {
+    min-height: 168px;
+    padding: 22px;
+}
+
+.user-actions button {
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+}
+
+.user-actions button:hover {
+    background: #F5ECEC;
+    color: #7B1C1C;
+}
+
+.role-option {
+    padding: 14px 16px;
+}
+
+.user-modal-header {
+    height: 52px;
+}
+
+.user-modal-body {
+    padding: 22px 24px;
+}

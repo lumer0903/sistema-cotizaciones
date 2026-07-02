@@ -17,9 +17,7 @@
     <div class="app-layout">
         <aside class="main-sidebar">
             <div class="sidebar-top">
-                <div class="sidebar-logo-wrapper">
-                    <img src="../assets/icon.png" alt="Artes & Flores" class="sidebar-logo" onerror="this.style.display='none'">
-                </div>
+                <div class="sidebar-logo-wrapper"><img src="../assets/icon2.jpg" alt="Artes & Flores" class="sidebar-logo" onerror="this.style.display='none'"></div>
                 <nav class="sidebar-menu">
                     <a href="dashboard.html" class="menu-item"><div class="menu-item-content"><i data-lucide="layout-grid" class="icon-left"></i><span>Dashboard</span></div></a>
                     <a href="productos.html" class="menu-item"><div class="menu-item-content"><i data-lucide="package" class="icon-left"></i><span>Productos</span></div><i data-lucide="chevron-right" class="icon-arrow"></i></a>
@@ -30,54 +28,64 @@
                     <a href="usuarios.html" class="menu-item"><div class="menu-item-content"><i data-lucide="users" class="icon-left"></i><span>Usuarios</span></div><i data-lucide="chevron-right" class="icon-arrow"></i></a>
                 </nav>
             </div>
-            <div class="sidebar-footer">
-                <a href="login.html" class="menu-item logout-link"><div class="menu-item-content"><i data-lucide="log-out" class="icon-left"></i><span>Cerrar Sesion</span></div></a>
-            </div>
+            <div class="sidebar-footer"><a href="login.html" class="menu-item logout-link"><div class="menu-item-content"><i data-lucide="log-out" class="icon-left"></i><span>Cerrar Sesion</span></div></a></div>
         </aside>
 
         <div class="main-viewport">
             <header class="main-navbar">
-                <div class="nav-page-title"><h1>Cotizaciones &gt; Crear cotizacion</h1></div>
-                <div class="nav-user-area">
-                    <span class="nav-role">Administrador</span>
-                    <div class="nav-icons-group">
-                        <button class="nav-icon-btn"><i data-lucide="user"></i></button>
-                        <button class="nav-icon-btn"><i data-lucide="settings"></i></button>
-                    </div>
-                </div>
+                <div class="nav-page-title"><h1>Cotizaciones &gt; Crear Cotizacion</h1></div>
+                <div class="nav-user-area"><span class="nav-role">Administrador</span><div class="nav-icons-group"><button class="nav-icon-btn"><i data-lucide="user"></i></button><button class="nav-icon-btn"><i data-lucide="settings"></i></button></div></div>
             </header>
 
             <main class="page-content">
                 <section class="quote-create-card">
-                    <div class="quote-modal-header">
-                        <h2>Nueva Cotizacion</h2>
+                    <div class="quote-create-header">
+                        <div>
+                            <h2>Nueva cotizacion</h2>
+                            <p>Registra los datos del cliente para empezar a agregar productos.</p>
+                        </div>
+                        <i data-lucide="file-plus-2"></i>
                     </div>
-                    <div class="quote-modal-body">
-                        <div class="modal-grid">
-                            <label>CLIENTE</label>
-                            <input class="quote-input span-3" id="nuevoCliente" placeholder="Roberto Reyna">
 
+                    <div class="quote-create-form">
+                        <div class="quote-field span-2">
+                            <label>CLIENTE</label>
+                            <input class="quote-input" id="nuevoCliente" placeholder="Nombre del cliente">
+                        </div>
+
+                        <div class="quote-field">
                             <label>EMAIL</label>
-                            <input class="quote-input" id="nuevoEmail" placeholder="ejemplo@gmail.com">
+                            <input class="quote-input" id="nuevoEmail" placeholder="cliente@correo.com">
+                        </div>
+
+                        <div class="quote-field">
                             <label>TELEFONO</label>
                             <input class="quote-input" id="nuevoTelefono" placeholder="999999999">
+                        </div>
 
-                            <label>DOCUMENTO</label>
-                            <select class="quote-input select" id="nuevoTipoDocumento">
-                                <option>DNI</option>
-                                <option>RUC</option>
-                            </select>
-                            <input class="quote-input doc-number" id="nuevoDocumentoNumero" placeholder="Numero de documento">
-                            <label class="client-type-label">TIPO DE CLIENTE</label>
+                        <div class="quote-field">
+                            <label>DNI / RUC</label>
+                            <div class="document-control">
+                                <select class="quote-input select" id="nuevoTipoDocumento">
+                                    <option>DNI</option>
+                                    <option>RUC</option>
+                                </select>
+                                <input class="quote-input" id="nuevoDocumentoNumero" placeholder="Numero">
+                            </div>
+                        </div>
+
+                        <div class="quote-field">
+                            <label>TIPO DE CLIENTE</label>
                             <select class="quote-input select" id="nuevoTipoCliente">
                                 <option value="normal">TIENDA</option>
                                 <option value="distribuidor">DISTRIBUIDOR</option>
                             </select>
                         </div>
-                        <div class="modal-actions">
-                            <a class="quote-secondary-btn" href="cotizaciones.html">Cancelar</a>
-                            <button class="quote-primary-btn" id="crearNuevaCotizacion">Crear Cotizacion</button>
-                        </div>
+                    </div>
+
+                    <div class="quote-create-actions">
+                        <a class="quote-secondary-btn" href="cotizaciones.html">Cancelar</a>
+                        <button class="quote-primary-btn" id="crearNuevaCotizacion"><i data-lucide="arrow-right"></i>Continuar</button>
                     </div>
                 </section>
             </main>

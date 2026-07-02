@@ -16,12 +16,36 @@ document.addEventListener('DOMContentLoaded', () => {
         })}`;
     }
 
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
+
     function fecha(valor) {
         return new Date(valor).toLocaleDateString('es-PE');
     }
 
+    function campoPrecio(campo) {
+        const labels = {
+            costo_normal: 'Costo normal',
+            costo_distribuidor: 'Costo distribuidor',
+            precio_unidad_normal: 'Precio unidad normal',
+            precio_docena_normal: 'Precio docena normal',
+            precio_mayor_normal: 'Precio mayor normal',
+            precio_unidad_dist: 'Precio unidad distribuidor',
+            precio_docena_dist: 'Precio docena distribuidor',
+            precio_mayor_dist: 'Precio mayor distribuidor'
+        };
+        return labels[campo] || campo;
+    }
+
     function imagen(producto) {
-        return producto.foto_url || `../assets/${producto.codigo}.jpg`;
+        return producto.foto_url || `../assets/${encodeURIComponent(producto.codigo)}.jpg`;
     }
 
     function bloqueTienda(producto) {
@@ -62,12 +86,12 @@ document.addEventListener('DOMContentLoaded', () => {
             <article class="price-card" data-id="${producto.id_producto}">
                 <div class="card-item-header">
                     <div class="card-item-img-placeholder">
-                        <img src="${imagen(producto)}" alt="${producto.codigo}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <img src="${escapeHtml(imagen(producto))}" alt="${escapeHtml(producto.codigo)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                         <span class="catalog-img-fallback"><i data-lucide="image"></i></span>
                     </div>
                     <div class="card-item-details">
-                        <h3>${producto.codigo}</h3>
-                        <p>${producto.descripcion || ''}</p>
+                        <h3>${escapeHtml(producto.codigo)}</h3>
+                        <p>${escapeHtml(producto.descripcion || '')}</p>
                         <span class="card-stock-indicator"><span class="stock-dot"></span> STOCK: ${producto.stock_total || 0}</span>
                     </div>
                     ${['admin', 'gerente'].includes(usuario?.rol) ? `<button class="card-history-trigger" title="Ver historial"><i data-lucide="history"></i></button>` : ''}
@@ -126,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return `
                 <tr>
                     <td>${fecha(item.fecha_cambio)}</td>
-                    <td>${item.campo_modificado}</td>
+                    <td>${escapeHtml(campoPrecio(item.campo_modificado))}</td>
                     <td>${moneda(item.valor_anterior)}</td>
                     <td>${moneda(item.valor_nuevo)}</td>
                     <td class="${diferencia < 0 ? 'text-danger' : ''}">${diferencia >= 0 ? '+' : ''}${moneda(diferencia)}</td>

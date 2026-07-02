@@ -18,9 +18,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
+
     function imagenProducto(producto) {
         if (producto.foto_url) return producto.foto_url;
-        return `../assets/${producto.codigo}.jpg`;
+        return `../assets/${encodeURIComponent(producto.codigo)}.jpg`;
     }
 
     window.cambiarImagenProducto = (imagen) => {
@@ -30,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (codigo && paso < extensiones.length) {
             imagen.dataset.imgStep = String(paso + 1);
-            imagen.src = `../assets/${codigo}.${extensiones[paso]}`;
+            imagen.src = `../assets/${encodeURIComponent(codigo)}.${extensiones[paso]}`;
             return;
         }
 
@@ -40,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderImagen(producto) {
         return `
-            <img class="product-thumb" src="${imagenProducto(producto)}" alt="${producto.codigo}" data-code="${producto.codigo}" data-img-step="0"
+            <img class="product-thumb" src="${escapeHtml(imagenProducto(producto))}" alt="${escapeHtml(producto.codigo)}" data-code="${escapeHtml(producto.codigo)}" data-img-step="0"
                  onerror="window.cambiarImagenProducto(this)">
             <span class="img-fallback"><i data-lucide="image"></i></span>
         `;
@@ -48,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function pintarCategorias() {
         const opciones = categorias.map((categoria) => (
-            `<option value="${categoria.id_categoria}">${categoria.nombre_categoria}</option>`
+            `<option value="${categoria.id_categoria}">${escapeHtml(categoria.nombre_categoria)}</option>`
         )).join('');
 
         selectCategoriaFiltro.innerHTML = `<option value="">Todas</option>${opciones}`;
@@ -69,9 +79,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </td>
                 <td>
-                    <strong>${producto.codigo}</strong>
+                    <strong>${escapeHtml(producto.codigo)}</strong>
                 </td>
-                <td>${producto.nombre_categoria || 'Sin categoria'}</td>
+                <td>${escapeHtml(producto.nombre_categoria || 'Sin categoria')}</td>
                 <td><span class="stock-indicator ${(Number(producto.stock_total || 0) <= Number(producto.stock_minimo || 10)) ? 'stock-low' : ''}">${producto.stock_total || 0}</span></td>
                 <td>
                     <div class="actions-wrapper">
@@ -135,8 +145,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const preview = document.getElementById('editImagenPreview');
         preview.innerHTML = `
-            <img class="edit-preview-img" src="${imagenProducto(productoSeleccionado)}" alt="${productoSeleccionado.codigo}"
-                 data-code="${productoSeleccionado.codigo}" data-img-step="0" onerror="window.cambiarImagenProducto(this)">
+            <img class="edit-preview-img" src="${escapeHtml(imagenProducto(productoSeleccionado))}" alt="${escapeHtml(productoSeleccionado.codigo)}"
+                 data-code="${escapeHtml(productoSeleccionado.codigo)}" data-img-step="0" onerror="window.cambiarImagenProducto(this)">
             <span class="img-fallback"><i data-lucide="image"></i></span>
         `;
 
@@ -234,6 +244,6 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarCategorias()
         .then(cargarProductos)
         .catch((error) => {
-            tablaBody.innerHTML = `<tr><td colspan="5" class="table-state error">${error.message}</td></tr>`;
+            tablaBody.innerHTML = `<tr><td colspan="5" class="table-state error">${escapeHtml(error.message)}</td></tr>`;
         });
 });
