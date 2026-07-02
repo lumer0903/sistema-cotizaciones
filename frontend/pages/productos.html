@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Productos - Artes & Flores</title>
+    <title>Productos - Import & Export Gold Continent Eirl</title>
 
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/productos.css">
@@ -21,7 +21,7 @@
         <aside class="main-sidebar">
             <div class="sidebar-top">
                 <div class="sidebar-logo-wrapper">
-                    <img src="../assets/icon2.jpg" alt="Artes & Flores" class="sidebar-logo" onerror="this.style.display='none'">
+                    <img src="../assets/icon2.jpg" alt="Import & Export Gold Continent Eirl" class="sidebar-logo" onerror="this.style.display='none'">
                 </div>
 
                 <nav class="sidebar-menu">
@@ -93,19 +93,12 @@
 
             <main class="page-content">
                 <div class="products-wrapper">
-                    <div class="toolbar-row">
-                        <a class="btn-primary-link" href="importar-productos.html">
-                            <i data-lucide="upload"></i>
-                            <span>Importar CSV</span>
-                        </a>
-                    </div>
-
                     <div class="filter-card">
                         <div class="filter-group search-box">
                             <label>BUSCAR</label>
                             <div class="search-input-wrapper">
                                 <i data-lucide="search" class="search-icon"></i>
-                                <input type="text" id="inputBusquedaProducto" placeholder="Buscar por codigo o descripcion...">
+                                <input type="text" id="inputBusquedaProducto" placeholder="Buscar por codigo">
                             </div>
                         </div>
                         <div class="filter-group select-box">
@@ -114,6 +107,7 @@
                                 <select id="selectCategoriaFiltro">
                                     <option value="">Todas</option>
                                 </select>
+                                <i data-lucide="chevron-down"></i>
                             </div>
                         </div>
                     </div>
@@ -135,6 +129,13 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="table-footer-actions">
+                        <a class="btn-primary-link" href="importar-productos.html">
+                            <i data-lucide="upload"></i>
+                            <span>Importar CSV</span>
+                        </a>
                     </div>
                 </div>
 
@@ -162,7 +163,7 @@
                                         <label>CATEGORIA</label>
                                         <div class="select-modal-wrapper">
                                             <select id="editCategoria"></select>
-                                           
+                                            <i data-lucide="chevron-down"></i>
                                         </div>
                                     </div>
                                 </div>
@@ -195,7 +196,7 @@
                                     <div class="prices-grid-container">
                                         <div class="price-row-labels">
                                             <span>Normal</span>
-                                            <span>Distribuidor</span>
+                                            <span>Mayorista</span>
                                         </div>
                                         <div class="price-input-pair">
                                             <label class="money-input"><span>S/</span><input data-price-field="precio_unidad_normal" type="number" step="0.01" min="0"></label>

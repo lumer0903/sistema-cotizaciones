@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cotizaciones - Artes & Flores</title>
+    <title>Cotizaciones - Import & Export Gold Continent Eirl</title>
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/cotizaciones.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,7 @@
         <aside class="main-sidebar">
             <div class="sidebar-top">
                 <div class="sidebar-logo-wrapper">
-                    <img src="../assets/icon2.jpg" alt="Artes & Flores" class="sidebar-logo" onerror="this.style.display='none'">
+                    <img src="../assets/icon2.jpg" alt="Import & Export Gold Continent Eirl" class="sidebar-logo" onerror="this.style.display='none'">
                 </div>
                 <nav class="sidebar-menu">
                     <a href="dashboard.html" class="menu-item"><div class="menu-item-content"><i data-lucide="layout-grid" class="icon-left"></i><span>Dashboard</span></div></a>
@@ -50,9 +50,12 @@
             <main class="page-content">
                 <section class="quotes-wrapper">
                     <div class="quotes-toolbar">
-                        <label class="quote-search">
-                            <i data-lucide="search"></i>
-                            <input id="inputBuscarCotizacion" type="text" placeholder="Buscar cotizacion">
+                        <label class="quote-filter-field quote-filter-search">
+                            <span class="ds-label">BUSCAR</span>
+                            <span class="quote-search">
+                                <i data-lucide="search"></i>
+                                <input id="inputBuscarCotizacion" type="text" placeholder="Buscar cotizacion">
+                            </span>
                         </label>
                         <label class="quote-date-filter">
                             <span>FECHA</span>
@@ -61,12 +64,13 @@
                         <label class="quote-state-filter">
                             <span>ESTADO</span>
                             <select id="selectEstadoFiltro">
-                            <option value="todos">ESTADO</option>
-                            <option value="borrador">BORRADOR</option>
-                            <option value="enviada">ENVIADO</option>
-                            <option value="aprobada">ACEPTADO</option>
-                            <option value="rechazada">RECHAZADO</option>
+                                <option value="todos">Selecciona</option>
+                                <option value="borrador">BORRADOR</option>
+                                <option value="enviada">ENVIADO</option>
+                                <option value="aprobada">ACEPTADO</option>
+                                <option value="rechazada">RECHAZADO</option>
                             </select>
+                             <i data-lucide="chevron-down"></i>
                         </label>
                         <button class="quote-new-btn" id="btnNuevaCotizacion"><i data-lucide="plus"></i>NUEVA COTIZACION</button>
                     </div>

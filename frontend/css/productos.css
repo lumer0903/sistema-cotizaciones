@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VISTA DE PRODUCTOS - ARTES & FLORES (ESTILOS GENERALES Y CONTENEDORES)
+   VISTA DE PRODUCTOS (ESTILOS GENERALES Y CONTENEDORES)
    ========================================================================== */
 /* ==========================================================================
    1. BLOQUE DE FILTROS SUPERIORES (CORREGIDO Y ALINEADO)
@@ -1002,4 +1002,152 @@
     height: 40px;
     border: 1px solid #8B1D1D;
     border-radius: 8px;
+}
+
+/* Design System final pass */
+.products-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.filter-card {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(220px, 280px);
+    gap: 18px;
+    align-items: end;
+    padding: 18px;
+    border-color: var(--ds-border);
+    border-radius: var(--ds-radius);
+    background: var(--ds-surface);
+}
+
+.filter-card:hover {
+    background: var(--ds-surface) !important;
+}
+
+.filter-group label,
+.form-group-modal label,
+.price-row-labels {
+    color: var(--ds-muted);
+}
+
+.search-icon {
+    stroke: var(--ds-muted);
+}
+
+.filter-card .search-input-wrapper input,
+.filter-card .select-box select,
+.form-group-modal input[type="text"],
+.form-group-modal input[type="number"],
+.form-group-modal textarea,
+.select-modal-wrapper select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    border-color: var(--ds-border);
+    color: var(--ds-text);
+    background: var(--ds-surface);
+}
+
+.select-modal-wrapper::after {
+    content: none;
+}
+
+.table-card {
+    background: var(--ds-surface);
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius);
+    overflow: auto;
+}
+
+.main-products-table {
+    min-width: 760px;
+    border-collapse: collapse;
+    border-spacing: 0;
+    table-layout: auto;
+}
+
+.main-products-table th,
+.main-products-table th:first-child,
+.main-products-table th:last-child {
+    background: #F1F5F9;
+    border: 0;
+    border-bottom: 1px solid var(--ds-border);
+    border-radius: 0;
+    color: var(--ds-muted);
+    padding: 14px 16px;
+    text-align: left;
+}
+
+.main-products-table td,
+.product-row td,
+.product-row td:first-child,
+.product-row td:last-child {
+    border: 0;
+    border-bottom: 1px solid var(--ds-border);
+    border-radius: 0;
+    color: var(--ds-text);
+    padding: 14px 16px;
+    text-align: left;
+}
+
+.main-products-table th:nth-child(3),
+.main-products-table th:nth-child(4),
+.main-products-table td:nth-child(3),
+.main-products-table td:nth-child(4) {
+    text-align: center;
+}
+
+.main-products-table th:last-child,
+.main-products-table td:last-child {
+    text-align: right;
+}
+
+.product-row:hover td {
+    background: #FBFCFE;
+}
+
+.img-cell-wrapper {
+    width: 48px;
+    height: 48px;
+    border-color: var(--ds-border);
+}
+
+.action-icon-btn {
+    color: var(--ds-primary);
+}
+
+.table-footer-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-primary-link,
+.btn-import,
+.btn-modal-save {
+    background: var(--ds-primary);
+    border-color: var(--ds-primary);
+}
+
+.btn-secondary-link,
+.btn-modal-cancel {
+    background: var(--ds-surface);
+    border: 1px solid var(--ds-text);
+    color: var(--ds-text);
+}
+
+.input-price-blue,
+.input-price-orange,
+.money-input,
+.money-input-orange {
+    background: #F8FAFC !important;
+    color: var(--ds-text) !important;
+    border: 1px solid var(--ds-border);
+}
+
+@media (max-width: 900px) {
+    .filter-card {
+        grid-template-columns: 1fr;
+    }
 }

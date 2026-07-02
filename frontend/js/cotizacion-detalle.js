@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function refPrecios(producto) {
         const dist = tipoCliente() === 'distribuidor';
         return `
-            Precio ${dist ? 'Distribuidor' : 'Tienda'}:
+            Precio ${dist ? 'Mayorista' : 'Tienda'}:
             Unidad: ${moneda(precio(producto, 'unidad'))}
             | Docena: ${moneda(precio(producto, 'docena'))}
             | Mayor: ${moneda(precio(producto, 'mayor'))}
@@ -169,22 +169,26 @@ document.addEventListener('DOMContentLoaded', () => {
     function pintarResumen() {
         incluyeCarreta = Boolean(Number(cotizacion.incluye_carreta));
         document.getElementById('resumenOrden').innerHTML = `
-            <p><strong>CLIENTE:</strong> ${escapeHtml(cotizacion.cliente_nombre || 'Sin cliente')}</p>
-            <p><strong>EMAIL:</strong> ${escapeHtml(cotizacion.email || '-')}</p>
-            <p><strong>TELEFONO:</strong> ${escapeHtml(cotizacion.telefono || '-')}</p>
-            <p><strong>DNI:</strong> ${escapeHtml(cotizacion.ruc_dni || '-')}</p>
+            <div class="summary-info">
+                <div class="summary-row"><span>CLIENTE</span><strong>${escapeHtml(cotizacion.cliente_nombre || 'Sin cliente')}</strong></div>
+                <div class="summary-row"><span>EMAIL</span><strong>${escapeHtml(cotizacion.email || '-')}</strong></div>
+                <div class="summary-row"><span>TELEFONO</span><strong>${escapeHtml(cotizacion.telefono || '-')}</strong></div>
+                <div class="summary-row"><span>DNI</span><strong>${escapeHtml(cotizacion.ruc_dni || '-')}</strong></div>
+            </div>
             <label class="summary-observations">
                 <span>Observaciones <small>OPCIONAL</small></span>
                 <textarea id="textareaObservaciones" placeholder="Escribir brevemente">${escapeHtml(cotizacion.observaciones || '')}</textarea>
             </label>
-            <p><strong>PRODUCTOS (${cotizacion.detalle.length})</strong></p>
-            <label class="cart-switch-row">
-                <input type="checkbox" id="switchCarreta" ${incluyeCarreta ? 'checked' : ''}>
-                <span class="switch-slider"></span>
-                <strong>Carreta</strong>
-            </label>
-            <small class="cart-note">*Carreta precio aproximado ${moneda(cotizacion.costo_carreta || 15)}</small>
-            <p class="summary-total-row"><strong>TOTAL:</strong><span class="summary-total">${moneda(cotizacion.total)}</span></p>
+            <div class="summary-products-row"><strong>PRODUCTOS</strong><span>${cotizacion.detalle.length}</span></div>
+            <div class="summary-carreta-row">
+                <label class="cart-switch-row">
+                    <input type="checkbox" id="switchCarreta" ${incluyeCarreta ? 'checked' : ''}>
+                    <span class="switch-slider"></span>
+                    <strong>Carreta</strong>
+                </label>
+                <small class="cart-note">Precio aprox. ${moneda(cotizacion.costo_carreta || 15)}</small>
+            </div>
+            <div class="summary-total-row"><strong>TOTAL</strong><span class="summary-total">${moneda(cotizacion.total)}</span></div>
         `;
     }
 
@@ -213,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('guardarModalProducto').textContent = detalle ? 'Guardar Cambios' : 'Agregar';
         document.getElementById('modalProductoHead').innerHTML = `
             <img class="product-modal-thumb" src="${escapeHtml(img(producto))}" onerror="this.style.visibility='hidden'">
-            <div><strong>${escapeHtml(producto.codigo)}</strong><p style="font-size:11px;color:#A1A1AA;">${escapeHtml(producto.descripcion || '')}</p></div>
+            <div class="product-modal-copy"><strong>${escapeHtml(producto.codigo)}</strong><p>${escapeHtml(producto.descripcion || '')}</p></div>
         `;
         const reemplazaProducto = detalle && Number(detalle.id_producto) !== Number(producto.id_producto);
         document.getElementById('modalTipoVenta').value = detalle?.tipo_venta || 'unidad';

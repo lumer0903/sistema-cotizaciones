@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function tipoLabel(tipo) {
-        return tipo === 'distribuidor' ? 'DISTRIBUIDOR' : 'TIENDA';
+        return tipo === 'distribuidor' ? 'MAYORISTA' : 'TIENDA';
     }
 
     function estadoLabel(estado) {
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${escapeHtml(cotizacion.numero)}</td>
                 <td>${escapeHtml(cotizacion.cliente_nombre || 'Sin cliente')}</td>
                 <td>${fecha(cotizacion.created_at)}</td>
-                <td><span class="quote-badge ${cotizacion.tipo_precio === 'distribuidor' ? 'distribuidor' : 'tienda'}">${tipoLabel(cotizacion.tipo_precio)}</span></td>
+                <td><span class="quote-badge ${cotizacion.tipo_precio === 'distribuidor' ? 'mayorista' : 'tienda'}">${tipoLabel(cotizacion.tipo_precio)}</span></td>
                 <td>${moneda(cotizacion.total)}</td>
                 <td><span class="status-badge status-${cotizacion.estado}">${estadoLabel(cotizacion.estado)}</span></td>
                 <td>

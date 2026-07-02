@@ -545,3 +545,272 @@ input,
 textarea {
     letter-spacing: 0;
 }
+
+/* ==========================================================================
+   DESIGN SYSTEM - Gold Continent
+   ========================================================================== */
+:root {
+    --ds-primary: #7B1C1C;
+    --ds-text: #414141;
+    --ds-muted: #7A7A7A;
+    --ds-border: #D9D9D9;
+    --ds-bg: #F8FAFC;
+    --ds-surface: #FFFFFF;
+    --ds-focus: rgba(123, 28, 28, 0.16);
+    --ds-radius: 8px;
+    --ds-shadow: 0 12px 28px rgba(65, 65, 65, 0.08);
+    --color-principal: var(--ds-primary);
+    --color-borde: var(--ds-border);
+    --color-blanco: var(--ds-surface);
+    --fuente-sistema: 'DM Sans', sans-serif;
+}
+
+body {
+    font-family: var(--fuente-sistema);
+    background: var(--ds-bg);
+    color: var(--ds-text);
+}
+
+.page-content {
+    background: var(--ds-bg);
+}
+
+.ds-toolbar,
+.filter-card,
+.quotes-toolbar {
+    background: var(--ds-surface);
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius);
+    box-shadow: none;
+}
+
+.ds-field,
+.filter-group,
+.quote-field,
+.quote-date-filter,
+.quote-state-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+}
+
+.ds-field > label,
+.filter-group > label,
+.quote-field > label,
+.quote-date-filter > span,
+.quote-state-filter > span,
+.ds-label {
+    color: var(--ds-muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.ds-control,
+.search-input-wrapper,
+.quote-search,
+.select-modal-wrapper,
+.ds-select-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.ds-control svg,
+.search-input-wrapper svg,
+.quote-search svg,
+.ds-select-wrapper svg,
+.select-modal-wrapper svg {
+    color: var(--ds-muted);
+    stroke-width: 2;
+    flex: 0 0 auto;
+}
+
+.ds-input,
+.ds-select,
+.search-input-wrapper input,
+.select-box select,
+.quote-search input,
+.quote-date-filter input,
+.quote-state-filter select,
+.quote-input,
+.form-group-modal input[type="text"],
+.form-group-modal input[type="number"],
+.form-group-modal textarea,
+.select-modal-wrapper select {
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius);
+    background: var(--ds-surface);
+    color: var(--ds-text);
+    font: 500 14px/1 var(--fuente-sistema);
+    outline: 0;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.search-input-wrapper input,
+.quote-search input {
+    padding: 0 14px 0 42px;
+}
+
+.search-input-wrapper > svg,
+.quote-search > svg {
+    position: absolute;
+    left: 14px;
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+}
+
+.select-modal-wrapper select,
+.ds-select-wrapper select,
+.quote-state-filter select,
+.quote-input.select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding: 0 40px 0 14px;
+}
+
+.select-modal-wrapper > svg,
+.ds-select-wrapper > svg,
+.quote-state-filter > svg {
+    position: absolute;
+    right: 14px;
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+}
+
+.ds-input:focus,
+.ds-select:focus,
+.search-input-wrapper input:focus,
+.select-box select:focus,
+.quote-search:focus-within,
+.quote-date-filter input:focus,
+.quote-state-filter select:focus,
+.quote-input:focus,
+.form-group-modal input:focus,
+.form-group-modal textarea:focus,
+.select-modal-wrapper select:focus {
+    border-color: var(--ds-primary);
+    box-shadow: 0 0 0 3px var(--ds-focus);
+}
+
+.ds-btn,
+.quote-primary-btn,
+.quote-new-btn,
+.btn-primary-link,
+.btn-import,
+.btn-modal-save {
+    min-height: 40px;
+    border: 1px solid var(--ds-primary);
+    border-radius: var(--ds-radius);
+    background: var(--ds-primary);
+    color: var(--ds-surface);
+    font: 800 13px/1 var(--fuente-sistema);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.ds-btn svg,
+.quote-primary-btn svg,
+.quote-new-btn svg,
+.btn-primary-link svg,
+.btn-import svg {
+    width: 17px;
+    height: 17px;
+}
+
+.ds-btn-outline,
+.quote-secondary-btn,
+.btn-secondary-link,
+.btn-modal-cancel {
+    min-height: 40px;
+    border: 1px solid var(--ds-text);
+    border-radius: var(--ds-radius);
+    background: var(--ds-surface);
+    color: var(--ds-text);
+    font: 800 13px/1 var(--fuente-sistema);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.ds-table,
+.quotes-table,
+.main-products-table,
+.cart-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    background: var(--ds-surface);
+}
+
+.ds-table th,
+.quotes-table th,
+.main-products-table th,
+.cart-table th {
+    background: #F1F5F9;
+    color: var(--ds-muted);
+    border-bottom: 1px solid var(--ds-border);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    line-height: 1;
+    padding: 14px 16px;
+    text-align: left;
+    text-transform: uppercase;
+}
+
+.ds-table td,
+.quotes-table td,
+.main-products-table td,
+.cart-table td,
+.product-row td {
+    background: var(--ds-surface);
+    border-bottom: 1px solid var(--ds-border);
+    color: var(--ds-text);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 14px 16px;
+    vertical-align: middle;
+}
+
+.status-badge,
+.quote-badge,
+.quote-status-select {
+    min-height: 32px;
+    border-radius: 7px;
+    border-width: 1.5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font: 800 13px/1 var(--fuente-sistema);
+    letter-spacing: 0;
+    padding: 0 12px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}

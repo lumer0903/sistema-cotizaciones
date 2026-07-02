@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function actualizarColorTipoCliente() {
         tipoCliente.classList.toggle('is-store', tipoCliente.value === 'normal');
-        tipoCliente.classList.toggle('is-distributor', tipoCliente.value === 'distribuidor');
+        tipoCliente.classList.toggle('is-wholesaler', tipoCliente.value === 'distribuidor');
     }
 
     function validarRequeridos() {

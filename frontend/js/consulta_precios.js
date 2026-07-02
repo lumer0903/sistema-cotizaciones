@@ -33,13 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function campoPrecio(campo) {
         const labels = {
             costo_normal: 'Costo normal',
-            costo_distribuidor: 'Costo distribuidor',
+            costo_distribuidor: 'Costo mayorista',
             precio_unidad_normal: 'Precio unidad normal',
             precio_docena_normal: 'Precio docena normal',
             precio_mayor_normal: 'Precio mayor normal',
-            precio_unidad_dist: 'Precio unidad distribuidor',
-            precio_docena_dist: 'Precio docena distribuidor',
-            precio_mayor_dist: 'Precio mayor distribuidor'
+            precio_unidad_dist: 'Precio unidad mayorista',
+            precio_docena_dist: 'Precio docena mayorista',
+            precio_mayor_dist: 'Precio mayor mayorista'
         };
         return labels[campo] || campo;
     }
@@ -61,10 +61,10 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    function bloqueDistribuidor(producto) {
+    function bloqueMayorista(producto) {
         return `
-            <div class="price-tier-block tier-distribuidor">
-                <span class="tier-title">PRECIO DISTRIBUIDOR</span>
+            <div class="price-tier-block tier-mayorista">
+                <span class="tier-title">PRECIO MAYORISTA</span>
                 <div class="tier-values-grid">
                     <div class="tier-value-col"><span>UNIDAD</span><strong>${moneda(producto.precio_unidad_dist)}</strong></div>
                     <div class="tier-value-col"><span>DOCENA</span><strong>${moneda(producto.precio_docena_dist)}</strong></div>
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="card-prices-stack">
                     ${(tipo === 'todos' || tipo === 'tienda') ? bloqueTienda(producto) : ''}
-                    ${(tipo === 'todos' || tipo === 'distribuidor') ? bloqueDistribuidor(producto) : ''}
+                    ${(tipo === 'todos' || tipo === 'distribuidor') ? bloqueMayorista(producto) : ''}
                 </div>
             </article>
         `).join('');
