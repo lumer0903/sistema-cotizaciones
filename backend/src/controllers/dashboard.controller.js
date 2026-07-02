@@ -8,12 +8,10 @@ async function resumen(_req, res, next) {
         const [[cotizacionesAceptadas]] = await db.query(
             'SELECT COUNT(*) AS total FROM cotizaciones WHERE estado = "aprobada"'
         );
-        const [[ventasMes]] = await db.query(
+        const [[ventasAprobadas]] = await db.query(
             `SELECT COALESCE(SUM(total), 0) AS total
              FROM cotizaciones
-             WHERE estado = "aprobada"
-               AND YEAR(created_at) = YEAR(CURDATE())
-               AND MONTH(created_at) = MONTH(CURDATE())`
+             WHERE estado = "aprobada"`
         );
         const [[cotizaciones]] = await db.query(
             'SELECT COUNT(*) AS total FROM cotizaciones'
@@ -38,6 +36,20 @@ async function resumen(_req, res, next) {
              ORDER BY co.created_at DESC
              LIMIT 8`
         );
+        const [ventasPorMes] = await db.query(
+            `SELECT
+                DATE_FORMAT(created_at, '%b') AS mes,
+                COALESCE(SUM(CASE WHEN estado = "aprobada" THEN total ELSE 0 END), 0) AS total
+             FROM cotizaciones
+             WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
+             GROUP BY YEAR(created_at), MONTH(created_at), DATE_FORMAT(created_at, '%b')
+             ORDER BY YEAR(created_at), MONTH(created_at)`
+        );
+        const [cotizacionesPorEstado] = await db.query(
+            `SELECT estado, COUNT(*) AS total
+             FROM cotizaciones
+             GROUP BY estado`
+        );
 
         res.json({
             success: true,
@@ -45,11 +57,14 @@ async function resumen(_req, res, next) {
                 metricas: {
                     totalProductos: productos.total,
                     cotizacionesAceptadas: cotizacionesAceptadas.total,
-                    totalVentasMes: Number(ventasMes.total || 0),
+                    totalVentas: Number(ventasAprobadas.total || 0),
+                    totalVentasMes: Number(ventasAprobadas.total || 0),
                     totalCotizaciones: cotizaciones.total
                 },
                 bajoStock,
-                ultimasCotizaciones
+                ultimasCotizaciones,
+                ventasPorMes,
+                cotizacionesPorEstado
             }
         });
     } catch (error) {

@@ -38,6 +38,24 @@ async function cambiarEstado(req, res, next) {
     }
 }
 
+async function actualizarObservaciones(req, res, next) {
+    try {
+        const data = await cotizacionService.actualizarObservaciones(req.params.id, req.body.observaciones);
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+}
+
+async function actualizarCarreta(req, res, next) {
+    try {
+        const data = await cotizacionService.actualizarCarreta(req.params.id, req.body);
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+}
+
 async function buscarProductos(req, res, next) {
     try {
         const data = await cotizacionService.buscarProductos(req.params.id, req.query.q);
@@ -108,6 +126,8 @@ module.exports = {
     crear,
     obtener,
     cambiarEstado,
+    actualizarObservaciones,
+    actualizarCarreta,
     buscarProductos,
     agregarDetalle,
     actualizarDetalle,

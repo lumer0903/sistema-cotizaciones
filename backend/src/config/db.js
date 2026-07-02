@@ -24,15 +24,4 @@ pool.getConnection((err, connection) => {
     connection.release();
 });
 
-function ejecutarAjuste(sql, descripcion) {
-    pool.query(sql, (err) => {
-        if (err && err.code !== 'ER_DUP_FIELDNAME') {
-            console.error(`No se pudo aplicar ajuste ${descripcion}:`, err.message);
-        }
-    });
-}
-
-ejecutarAjuste('ALTER TABLE productos ADD COLUMN stock_minimo INT DEFAULT 10', 'stock_minimo en productos');
-ejecutarAjuste("ALTER TABLE usuarios MODIFY rol enum('admin','gerente','vendedor') DEFAULT 'vendedor'", 'roles de usuarios');
-
 module.exports = pool.promise();

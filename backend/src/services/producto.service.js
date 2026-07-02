@@ -1,5 +1,4 @@
 const fs = require('fs');
-const XLSX = require('xlsx');
 const db = require('../config/db');
 
 const PRECIO_CAMPOS = [
@@ -40,6 +39,56 @@ function numero(valor, fallback = 0) {
     const limpio = String(valor).replace('S/', '').replace(',', '.').trim();
     const convertido = Number(limpio);
     return Number.isFinite(convertido) ? convertido : fallback;
+}
+
+function parseCsvLine(line, delimiter) {
+    const values = [];
+    let current = '';
+    let quoted = false;
+
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const next = line[i + 1];
+
+        if (char === '"' && quoted && next === '"') {
+            current += '"';
+            i++;
+            continue;
+        }
+
+        if (char === '"') {
+            quoted = !quoted;
+            continue;
+        }
+
+        if (char === delimiter && !quoted) {
+            values.push(current);
+            current = '';
+            continue;
+        }
+
+        current += char;
+    }
+
+    values.push(current);
+    return values;
+}
+
+function parseCsv(content) {
+    const lines = content
+        .replace(/^\uFEFF/, '')
+        .split(/\r?\n/)
+        .filter((line) => line.trim() !== '');
+
+    if (!lines.length) return [];
+
+    const delimiter = (lines[0].match(/;/g) || []).length > (lines[0].match(/,/g) || []).length ? ';' : ',';
+    const headers = parseCsvLine(lines[0], delimiter);
+
+    return lines.slice(1).map((line) => {
+        const values = parseCsvLine(line, delimiter);
+        return Object.fromEntries(headers.map((header, index) => [header, values[index] ?? '']));
+    });
 }
 
 function mapearFilaCsv(fila) {
@@ -349,9 +398,7 @@ async function importarProductosCsv(filePath, idUsuario) {
     };
 
     try {
-        const workbook = XLSX.readFile(filePath, { raw: false });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const filas = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+        const filas = parseCsv(fs.readFileSync(filePath, 'utf8'));
 
         const connection = await db.getConnection();
 

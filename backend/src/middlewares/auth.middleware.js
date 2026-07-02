@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
-const { JWT_SECRET } = require('../services/auth.service');
+const authService = require('../services/auth.service');
 
-function autenticarToken(req, res, next) {
+async function autenticarToken(req, res, next) {
     const authHeader = req.headers.authorization || '';
     const [tipo, token] = authHeader.split(' ');
 
@@ -13,7 +13,14 @@ function autenticarToken(req, res, next) {
     }
 
     try {
-        req.usuario = jwt.verify(token, JWT_SECRET);
+        const payload = jwt.verify(token, authService.JWT_SECRET);
+        const usuario = await authService.obtenerSesion(payload.id_usuario);
+        req.usuario = {
+            id_usuario: usuario.id_usuario,
+            email: usuario.email,
+            rol: usuario.rol,
+            nombre: usuario.nombre
+        };
         next();
     } catch (_error) {
         return res.status(401).json({

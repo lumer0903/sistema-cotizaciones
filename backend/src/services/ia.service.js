@@ -1,5 +1,3 @@
-const axios = require('axios');
-
 function tokens(texto) {
     return new Set(
         String(texto || '')
@@ -34,18 +32,25 @@ function similitudLocal(idProducto, productos) {
 }
 
 async function obtenerSimilitudes(idProducto, productos) {
-    try {
-        const respuesta = await axios.post(
-            process.env.IA_URL || 'http://localhost:5000/recomendar',
-            { id_producto: Number(idProducto) },
-            { timeout: 1500 }
-        );
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1500);
 
-        if (Array.isArray(respuesta.data)) {
-            return respuesta.data;
+    try {
+        const respuesta = await fetch(process.env.IA_URL || 'http://localhost:5000/recomendar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_producto: Number(idProducto) }),
+            signal: controller.signal
+        });
+
+        const data = await respuesta.json();
+        if (Array.isArray(data)) {
+            return data;
         }
     } catch (_error) {
         return similitudLocal(idProducto, productos);
+    } finally {
+        clearTimeout(timeout);
     }
 
     return similitudLocal(idProducto, productos);

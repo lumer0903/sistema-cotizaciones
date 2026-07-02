@@ -11,6 +11,8 @@ router.post('/', cotizacionController.crear);
 router.get('/:id', cotizacionController.obtener);
 router.get('/:id/pdf', cotizacionController.generarPdf);
 router.put('/:id/estado', cotizacionController.cambiarEstado);
+router.put('/:id/observaciones', cotizacionController.actualizarObservaciones);
+router.put('/:id/carreta', cotizacionController.actualizarCarreta);
 router.get('/:id/buscar-productos', cotizacionController.buscarProductos);
 router.get('/:id/recomendaciones/:idProducto', cotizacionController.recomendar);
 router.post('/:id/detalle', cotizacionController.agregarDetalle);

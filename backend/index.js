@@ -16,7 +16,7 @@ const PORT = Number(process.env.PORT) || 3000;
 const frontendPath = path.join(__dirname, '..', 'frontend');
 
 app.use(cors({
-    origin: process.env.CLIENT_URL || true,
+    origin: process.env.CLIENT_URL || 'http://localhost:3000',
     credentials: true
 }));
 app.use(express.json());
@@ -54,9 +54,12 @@ app.use((err, _req, res, _next) => {
         });
     }
 
-    res.status(err.status || 500).json({
+    const status = err.status || 500;
+    const message = status >= 500 ? 'Error interno del servidor' : err.message;
+
+    res.status(status).json({
         success: false,
-        message: err.message || 'Error interno del servidor'
+        message
     });
 });
 

@@ -20,13 +20,71 @@ function precioProducto(producto, tipoPrecio, tipoVenta) {
     return money(producto[campoPrecio(tipoPrecio, tipoVenta)]);
 }
 
+function validarTipoVenta(tipoVenta) {
+    const permitidos = ['unidad', 'docena', 'mayor'];
+    if (permitidos.includes(tipoVenta)) return tipoVenta;
+    const error = new Error('Tipo de venta no valido');
+    error.status = 400;
+    throw error;
+}
+
+function validarCantidad(cantidad) {
+    const value = Number(cantidad || 1);
+    if (!Number.isFinite(value) || value < 1) {
+        const error = new Error('Cantidad no valida');
+        error.status = 400;
+        throw error;
+    }
+    return Math.floor(value);
+}
+
+function asegurarEditable(cotizacion) {
+    if (!cotizacion) {
+        const error = new Error('Cotizacion no encontrada');
+        error.status = 404;
+        throw error;
+    }
+
+    if (cotizacion.estado !== 'borrador') {
+        const error = new Error('Solo se pueden editar cotizaciones en borrador');
+        error.status = 400;
+        throw error;
+    }
+}
+
 async function generarNumero(connection) {
     const year = new Date().getFullYear();
+    await connection.query('SELECT GET_LOCK(?, 5)', [`cotizaciones_numero_${year}`]);
     const [rows] = await connection.query(
-        'SELECT COUNT(*) AS total FROM cotizaciones WHERE YEAR(created_at) = ?',
-        [year]
+        `SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(numero, '-', -1) AS UNSIGNED)), 0) AS ultimo
+         FROM cotizaciones
+         WHERE numero LIKE ?`,
+        [`COT-${year}-%`]
     );
-    return `COT-${year}-${String(rows[0].total + 1).padStart(3, '0')}`;
+    return `COT-${year}-${String(Number(rows[0].ultimo || 0) + 1).padStart(3, '0')}`;
+}
+
+async function liberarNumero(connection) {
+    const year = new Date().getFullYear();
+    try {
+        await connection.query('SELECT RELEASE_LOCK(?)', [`cotizaciones_numero_${year}`]);
+    } catch (_error) {
+        // El lock se libera tambien al cerrar la conexion; no debe ocultar el resultado real.
+    }
+}
+
+async function obtenerExtrasCotizacion(connection, idCotizacion) {
+    const [[extras]] = await connection.query(
+        `SELECT incluye_carreta, costo_carreta
+         FROM cotizaciones
+         WHERE id_cotizacion = ?
+         LIMIT 1`,
+        [idCotizacion]
+    );
+    return {
+        incluyeCarreta: Boolean(Number(extras?.incluye_carreta || 0)),
+        costoCarreta: money(extras?.costo_carreta)
+    };
 }
 
 async function recalcularTotales(connection, idCotizacion) {
@@ -38,7 +96,9 @@ async function recalcularTotales(connection, idCotizacion) {
     );
     const subtotal = money(totales.subtotal);
     const igv = Number((subtotal * 0.18).toFixed(2));
-    const total = Number((subtotal + igv).toFixed(2));
+    const extras = await obtenerExtrasCotizacion(connection, idCotizacion);
+    const cargoCarreta = extras.incluyeCarreta ? extras.costoCarreta : 0;
+    const total = Number((subtotal + igv + cargoCarreta).toFixed(2));
 
     await connection.query(
         `UPDATE cotizaciones
@@ -76,6 +136,8 @@ async function listarCotizaciones({ q, estado, fecha } = {}) {
             co.subtotal,
             co.igv,
             co.total,
+            co.incluye_carreta,
+            co.costo_carreta,
             co.estado,
             co.created_at,
             cl.nombre AS cliente_nombre,
@@ -94,6 +156,22 @@ async function listarCotizaciones({ q, estado, fecha } = {}) {
 }
 
 async function crearCotizacion(payload, idUsuario) {
+    const requeridos = [
+        ['cliente_nombre', 'cliente'],
+        ['email', 'email'],
+        ['telefono', 'telefono'],
+        ['ruc_dni', 'DNI/RUC']
+    ];
+    const faltantes = requeridos
+        .filter(([campo]) => !String(payload[campo] || '').trim())
+        .map(([, label]) => label);
+
+    if (faltantes.length) {
+        const error = new Error(`Campos requeridos incompletos: ${faltantes.join(', ')}`);
+        error.status = 400;
+        throw error;
+    }
+
     const connection = await db.getConnection();
     const tipoPrecio = normalizarTipo(payload.tipo_precio);
 
@@ -130,6 +208,7 @@ async function crearCotizacion(payload, idUsuario) {
         await connection.rollback();
         throw error;
     } finally {
+        await liberarNumero(connection);
         connection.release();
     }
 }
@@ -203,11 +282,78 @@ async function cambiarEstado(idCotizacion, estado) {
         throw error;
     }
 
+    if (actual.estado === 'borrador' && !['borrador', 'enviada'].includes(estado)) {
+        const error = new Error('Una cotizacion en borrador solo puede mantenerse como borrador o pasar a enviada');
+        error.status = 400;
+        throw error;
+    }
+
+    if (actual.estado === 'enviada' && !['aprobada', 'rechazada'].includes(estado)) {
+        const error = new Error('Una cotizacion enviada solo puede pasar a aprobada o rechazada');
+        error.status = 400;
+        throw error;
+    }
+
     await db.query(
         'UPDATE cotizaciones SET estado = ?, tiempo_fin = IF(? IN ("aprobada","rechazada"), NOW(), tiempo_fin) WHERE id_cotizacion = ?',
         [estado, estado, idCotizacion]
     );
     return obtenerCotizacion(idCotizacion);
+}
+
+async function actualizarObservaciones(idCotizacion, observaciones = '') {
+    const cotizacion = await obtenerCotizacion(idCotizacion);
+    asegurarEditable(cotizacion);
+
+    const [resultado] = await db.query(
+        'UPDATE cotizaciones SET observaciones = ? WHERE id_cotizacion = ?',
+        [String(observaciones || '').trim(), idCotizacion]
+    );
+
+    if (resultado.affectedRows === 0) {
+        const error = new Error('Cotizacion no encontrada');
+        error.status = 404;
+        throw error;
+    }
+
+    return obtenerCotizacion(idCotizacion);
+}
+
+async function actualizarCarreta(idCotizacion, payload = {}) {
+    const cotizacion = await obtenerCotizacion(idCotizacion);
+    asegurarEditable(cotizacion);
+
+    const incluyeCarreta = payload.incluye_carreta === undefined
+        ? Boolean(Number(cotizacion.incluye_carreta))
+        : Boolean(payload.incluye_carreta);
+    const costoCarreta = payload.costo_carreta === undefined
+        ? money(cotizacion.costo_carreta || 15)
+        : money(payload.costo_carreta);
+
+    if (!Number.isFinite(costoCarreta) || costoCarreta < 0) {
+        const error = new Error('Costo de carreta no valido');
+        error.status = 400;
+        throw error;
+    }
+
+    const connection = await db.getConnection();
+    try {
+        await connection.beginTransaction();
+        await connection.query(
+            `UPDATE cotizaciones
+             SET incluye_carreta = ?, costo_carreta = ?
+             WHERE id_cotizacion = ?`,
+            [incluyeCarreta ? 1 : 0, costoCarreta, idCotizacion]
+        );
+        await recalcularTotales(connection, idCotizacion);
+        await connection.commit();
+        return obtenerCotizacion(idCotizacion);
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
 }
 
 async function buscarProductos(idCotizacion, q = '') {
@@ -239,14 +385,10 @@ async function buscarProductos(idCotizacion, q = '') {
 
 async function agregarDetalle(idCotizacion, payload) {
     const cotizacion = await obtenerCotizacion(idCotizacion);
-    if (!cotizacion) {
-        const error = new Error('Cotizacion no encontrada');
-        error.status = 404;
-        throw error;
-    }
+    asegurarEditable(cotizacion);
 
-    const tipoVenta = payload.tipo_venta || 'unidad';
-    const cantidad = Math.max(1, Number(payload.cantidad || 1));
+    const tipoVenta = validarTipoVenta(payload.tipo_venta || 'unidad');
+    const cantidad = validarCantidad(payload.cantidad);
     const [productos] = await db.query(
         `SELECT p.*, pa.*
          FROM productos p
@@ -262,9 +404,7 @@ async function agregarDetalle(idCotizacion, payload) {
         throw error;
     }
 
-    const precio = payload.precio_unitario !== undefined
-        ? money(payload.precio_unitario)
-        : precioProducto(producto, cotizacion.tipo_precio, tipoVenta);
+    const precio = precioProducto(producto, cotizacion.tipo_precio, tipoVenta);
     const subtotal = Number((precio * cantidad).toFixed(2));
     const connection = await db.getConnection();
 
@@ -288,19 +428,46 @@ async function agregarDetalle(idCotizacion, payload) {
 }
 
 async function actualizarDetalle(idCotizacion, idDetalle, payload) {
-    const tipoVenta = payload.tipo_venta || 'unidad';
-    const cantidad = Math.max(1, Number(payload.cantidad || 1));
-    const precio = money(payload.precio_unitario);
-    const subtotal = Number((precio * cantidad).toFixed(2));
+    const cotizacion = await obtenerCotizacion(idCotizacion);
+    asegurarEditable(cotizacion);
+
+    const tipoVenta = validarTipoVenta(payload.tipo_venta || 'unidad');
+    const cantidad = validarCantidad(payload.cantidad);
+    const idProducto = Number(payload.id_producto || 0);
+    let precio = 0;
     const connection = await db.getConnection();
 
     try {
         await connection.beginTransaction();
+        const [productos] = await connection.query(
+            `SELECT p.*, pa.*
+             FROM productos p
+             LEFT JOIN precios_actuales pa ON pa.id_producto = p.id_producto
+             WHERE p.id_producto = IF(? > 0, ?, (
+                SELECT id_producto FROM cotizacion_detalle WHERE id_detalle = ? AND id_cotizacion = ? LIMIT 1
+             ))
+               AND p.activo = 1
+             LIMIT 1`,
+            [idProducto, idProducto, idDetalle, idCotizacion]
+        );
+        const producto = productos[0];
+        if (!producto) {
+            const error = new Error('Producto no encontrado');
+            error.status = 404;
+            throw error;
+        }
+
+        precio = precioProducto(producto, cotizacion.tipo_precio, tipoVenta);
+        const subtotal = Number((precio * cantidad).toFixed(2));
         await connection.query(
             `UPDATE cotizacion_detalle
-             SET tipo_venta = ?, cantidad = ?, precio_unitario = ?, subtotal = ?
+             SET id_producto = IF(? > 0, ?, id_producto),
+                 tipo_venta = ?,
+                 cantidad = ?,
+                 precio_unitario = ?,
+                 subtotal = ?
              WHERE id_detalle = ? AND id_cotizacion = ?`,
-            [tipoVenta, cantidad, precio, subtotal, idDetalle, idCotizacion]
+            [idProducto, idProducto, tipoVenta, cantidad, precio, subtotal, idDetalle, idCotizacion]
         );
         await recalcularTotales(connection, idCotizacion);
         await connection.commit();
@@ -314,6 +481,9 @@ async function actualizarDetalle(idCotizacion, idDetalle, payload) {
 }
 
 async function eliminarDetalle(idCotizacion, idDetalle) {
+    const cotizacion = await obtenerCotizacion(idCotizacion);
+    asegurarEditable(cotizacion);
+
     const connection = await db.getConnection();
 
     try {
@@ -379,6 +549,8 @@ module.exports = {
     crearCotizacion,
     obtenerCotizacion,
     cambiarEstado,
+    actualizarObservaciones,
+    actualizarCarreta,
     buscarProductos,
     agregarDetalle,
     actualizarDetalle,
