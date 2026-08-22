@@ -1,59 +1,29 @@
-function tokens(texto) {
-    return new Set(
-        String(texto || '')
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^a-z0-9\s]/g, ' ')
-            .split(/\s+/)
-            .filter((token) => token.length > 2)
-    );
-}
-
-function similitudLocal(idProducto, productos) {
-    const base = productos.find((producto) => producto.id_producto === Number(idProducto));
-    if (!base) return [];
-
-    const baseTokens = tokens(base.descripcion);
-
-    return productos
-        .filter((producto) => producto.id_producto !== Number(idProducto))
-        .map((producto) => {
-            const productoTokens = tokens(producto.descripcion);
-            const interseccion = [...baseTokens].filter((token) => productoTokens.has(token)).length;
-            const union = new Set([...baseTokens, ...productoTokens]).size || 1;
-            return {
-                id_producto: producto.id_producto,
-                similitud: Number((interseccion / union).toFixed(4))
-            };
-        })
-        .sort((a, b) => b.similitud - a.similitud)
-        .slice(0, 12);
-}
-
-async function obtenerSimilitudes(idProducto, productos) {
+async function obtenerSimilitudes(idProducto) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 1500);
 
     try {
-        const respuesta = await fetch(process.env.IA_URL || 'http://localhost:5000/recomendar', {
+        const baseIA = (process.env.IA_URL || 'http://localhost:5000').replace(/\/$/, '');
+        const urlIA = baseIA.endsWith('/recomendar') ? baseIA : `${baseIA}/recomendar`;
+        const respuesta = await fetch(urlIA, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id_producto: Number(idProducto) }),
             signal: controller.signal
         });
 
+        if (!respuesta.ok) {
+            throw new Error(`El servicio de IA respondió con estado: ${respuesta.status}`);
+        }
+
         const data = await respuesta.json();
         if (Array.isArray(data)) {
             return data;
         }
-    } catch (_error) {
-        return similitudLocal(idProducto, productos);
+        throw new Error('La respuesta del microservicio de IA no es un array');
     } finally {
         clearTimeout(timeout);
     }
-
-    return similitudLocal(idProducto, productos);
 }
 
 module.exports = {

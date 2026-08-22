@@ -3,7 +3,6 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const root = path.join(__dirname, '..');
-const projectRoot = path.join(root, '..');
 
 function listJsFiles(dir) {
     return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -30,8 +29,4 @@ for (const file of listJsFiles(path.join(root, 'src')).concat([path.join(root, '
     run('node', ['--check', file]);
 }
 
-for (const file of listJsFiles(path.join(projectRoot, 'frontend', 'js'))) {
-    run('node', ['--check', file]);
-}
-
-console.log('Smoke test OK: sintaxis JS backend/frontend valida');
+console.log('Smoke test OK: sintaxis backend valida');

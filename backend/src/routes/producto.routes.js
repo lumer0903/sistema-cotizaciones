@@ -1,12 +1,13 @@
 const express = require('express');
 const multer = require('multer');
+const path = require('path');
 const productoController = require('../controllers/producto.controller');
 const autenticarToken = require('../middlewares/auth.middleware');
 const autorizarRoles = require('../middlewares/rol.middleware');
 
 const router = express.Router();
 const upload = multer({
-    dest: 'uploads/',
+    dest: path.join(__dirname, '..', '..', 'uploads'),
     limits: {
         fileSize: 2 * 1024 * 1024
     },
@@ -14,7 +15,7 @@ const upload = multer({
         const esCsv = file.originalname.toLowerCase().endsWith('.csv') || file.mimetype === 'text/csv';
 
         if (!esCsv) {
-            return callback(new Error('Solo se permite importar archivos CSV'));
+            return callback(Object.assign(new Error('Solo se permite importar archivos CSV'), { status: 400 }));
         }
 
         callback(null, true);

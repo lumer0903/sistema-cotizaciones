@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const usuarioModel = require('../models/usuario.model');
+const usuarioService = require('./usuario.service');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'goldcontinent_dev_secret_change_me';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
@@ -25,7 +25,7 @@ function crearToken(usuario) {
 }
 
 async function login(email, password) {
-    const usuario = await usuarioModel.buscarPorEmail(email);
+    const usuario = await usuarioService.buscarPorEmail(email);
 
     if (!usuario || !usuario.activo) {
         const error = new Error('Credenciales incorrectas');
@@ -50,7 +50,7 @@ async function login(email, password) {
 }
 
 async function obtenerSesion(idUsuario) {
-    const usuario = await usuarioModel.buscarPorId(idUsuario);
+    const usuario = await usuarioService.buscarPorId(idUsuario);
 
     if (!usuario || !usuario.activo) {
         const error = new Error('Sesion no valida');

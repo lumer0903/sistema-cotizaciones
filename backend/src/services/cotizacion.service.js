@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const prisma = require('../config/prisma');
 const iaService = require('./ia.service');
 
 function money(value) {
@@ -17,7 +17,8 @@ function campoPrecio(tipoPrecio, tipoVenta) {
 }
 
 function precioProducto(producto, tipoPrecio, tipoVenta) {
-    return money(producto[campoPrecio(tipoPrecio, tipoVenta)]);
+    const precios = producto.precios_actuales || producto;
+    return money(precios[campoPrecio(tipoPrecio, tipoVenta)]);
 }
 
 function validarTipoVenta(tipoVenta) {
@@ -38,6 +39,12 @@ function validarCantidad(cantidad) {
     return Math.floor(value);
 }
 
+function determinarTipoVenta(cantidad, unidadesPorCaja) {
+    if (cantidad <= 11) return 'unidad';
+    if (cantidad < unidadesPorCaja) return 'docena';
+    return 'mayor';
+}
+
 function asegurarEditable(cotizacion) {
     if (!cotizacion) {
         const error = new Error('Cotizacion no encontrada');
@@ -52,107 +59,102 @@ function asegurarEditable(cotizacion) {
     }
 }
 
-async function generarNumero(connection) {
+async function generarNumero() {
     const year = new Date().getFullYear();
-    await connection.query('SELECT GET_LOCK(?, 5)', [`cotizaciones_numero_${year}`]);
-    const [rows] = await connection.query(
-        `SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(numero, '-', -1) AS UNSIGNED)), 0) AS ultimo
-         FROM cotizaciones
-         WHERE numero LIKE ?`,
-        [`COT-${year}-%`]
-    );
-    return `COT-${year}-${String(Number(rows[0].ultimo || 0) + 1).padStart(3, '0')}`;
-}
+    const prefix = `COT-${year}-`;
 
-async function liberarNumero(connection) {
-    const year = new Date().getFullYear();
-    try {
-        await connection.query('SELECT RELEASE_LOCK(?)', [`cotizaciones_numero_${year}`]);
-    } catch (_error) {
-        // El lock se libera tambien al cerrar la conexion; no debe ocultar el resultado real.
+    const ultima = await prisma.cotizacion.findFirst({
+        where: { numero: { startsWith: prefix } },
+        orderBy: { numero: 'desc' },
+        select: { numero: true }
+    });
+
+    let siguiente = 1;
+    if (ultima) {
+        const partes = ultima.numero.split('-');
+        siguiente = parseInt(partes[2], 10) + 1;
     }
+
+    return `${prefix}${String(siguiente).padStart(3, '0')}`;
 }
 
-async function obtenerExtrasCotizacion(connection, idCotizacion) {
-    const [[extras]] = await connection.query(
-        `SELECT incluye_carreta, costo_carreta
-         FROM cotizaciones
-         WHERE id_cotizacion = ?
-         LIMIT 1`,
-        [idCotizacion]
-    );
+async function obtenerExtrasCotizacion(idCotizacion) {
+    const cotizacion = await prisma.cotizacion.findUnique({
+        where: { id_cotizacion: Number(idCotizacion) },
+        select: { incluye_carreta: true, costo_carreta: true }
+    });
+
     return {
-        incluyeCarreta: Boolean(Number(extras?.incluye_carreta || 0)),
-        costoCarreta: money(extras?.costo_carreta)
+        incluyeCarreta: Boolean(Number(cotizacion?.incluye_carreta ?? 1)),
+        costoCarreta: money(cotizacion?.costo_carreta ?? 15)
     };
 }
 
-async function recalcularTotales(connection, idCotizacion) {
-    const [[totales]] = await connection.query(
-        `SELECT COALESCE(SUM(subtotal), 0) AS subtotal
-         FROM cotizacion_detalle
-         WHERE id_cotizacion = ?`,
-        [idCotizacion]
-    );
-    const subtotal = money(totales.subtotal);
+async function recalcularTotales(idCotizacion) {
+    const agg = await prisma.cotizacionDetalle.aggregate({
+        where: { id_cotizacion: Number(idCotizacion) },
+        _sum: { subtotal: true }
+    });
+
+    const subtotal = money(agg._sum.subtotal);
     const igv = Number((subtotal * 0.18).toFixed(2));
-    const extras = await obtenerExtrasCotizacion(connection, idCotizacion);
+    const extras = await obtenerExtrasCotizacion(idCotizacion);
     const cargoCarreta = extras.incluyeCarreta ? extras.costoCarreta : 0;
     const total = Number((subtotal + igv + cargoCarreta).toFixed(2));
 
-    await connection.query(
-        `UPDATE cotizaciones
-         SET subtotal = ?, igv = ?, total = ?
-         WHERE id_cotizacion = ?`,
-        [subtotal, igv, total, idCotizacion]
-    );
+    await prisma.cotizacion.update({
+        where: { id_cotizacion: Number(idCotizacion) },
+        data: { subtotal, igv, total }
+    });
 }
 
 async function listarCotizaciones({ q, estado, fecha } = {}) {
-    const filtros = [];
-    const params = [];
+    const where = {};
 
     if (q) {
-        filtros.push('(co.numero LIKE ? OR cl.nombre LIKE ?)');
-        params.push(`%${q}%`, `%${q}%`);
+        where.OR = [
+            { numero: { contains: q, mode: 'insensitive' } },
+            { cliente: { nombre: { contains: q, mode: 'insensitive' } } }
+        ];
     }
 
     if (estado && estado !== 'todos') {
-        filtros.push('co.estado = ?');
-        params.push(estado);
+        where.estado = estado;
     }
 
     if (fecha) {
-        filtros.push('DATE(co.created_at) = ?');
-        params.push(fecha);
+        const inicio = new Date(fecha);
+        inicio.setHours(0, 0, 0, 0);
+        const fin = new Date(fecha);
+        fin.setHours(23, 59, 59, 999);
+        where.created_at = { gte: inicio, lte: fin };
     }
 
-    const where = filtros.length ? `WHERE ${filtros.join(' AND ')}` : '';
-    const [rows] = await db.query(
-        `SELECT
-            co.id_cotizacion,
-            co.numero,
-            co.tipo_precio,
-            co.subtotal,
-            co.igv,
-            co.total,
-            co.incluye_carreta,
-            co.costo_carreta,
-            co.estado,
-            co.created_at,
-            cl.nombre AS cliente_nombre,
-            cl.email,
-            cl.telefono,
-            cl.ruc_dni
-         FROM cotizaciones co
-         LEFT JOIN clientes cl ON cl.id_cliente = co.id_cliente
-         ${where}
-         ORDER BY co.created_at DESC
-         LIMIT 200`,
-        params
-    );
+    const cotizaciones = await prisma.cotizacion.findMany({
+        where,
+        include: {
+            cliente: { select: { nombre: true, email: true, telefono: true, ruc_dni: true } }
+        },
+        orderBy: { created_at: 'desc' },
+        take: 200
+    });
 
-    return rows;
+    return cotizaciones.map(c => ({
+        id_cotizacion: c.id_cotizacion,
+        numero: c.numero,
+        tipo_precio: c.tipo_precio,
+        subtotal: Number(c.subtotal || 0),
+        igv: Number(c.igv || 0),
+        total: Number(c.total || 0),
+        incluye_carreta: c.incluye_carreta,
+        costo_carreta: Number(c.costo_carreta || 0),
+        estado: c.estado,
+        created_at: c.created_at,
+        cliente_nombre: c.cliente?.nombre ?? null,
+        email: c.cliente?.email ?? null,
+        telefono: c.cliente?.telefono ?? null,
+        ruc_dni: c.cliente?.ruc_dni ?? null
+    }));
 }
 
 async function crearCotizacion(payload, idUsuario) {
@@ -172,93 +174,98 @@ async function crearCotizacion(payload, idUsuario) {
         throw error;
     }
 
-    const connection = await db.getConnection();
     const tipoPrecio = normalizarTipo(payload.tipo_precio);
 
-    try {
-        await connection.beginTransaction();
-
+    return prisma.$transaction(async (tx) => {
         let idCliente = null;
         if (payload.cliente_nombre) {
-            const [cliente] = await connection.query(
-                `INSERT INTO clientes (nombre, telefono, email, ruc_dni, tipo)
-                 VALUES (?, ?, ?, ?, ?)`,
-                [
-                    payload.cliente_nombre,
-                    payload.telefono || null,
-                    payload.email || null,
-                    payload.ruc_dni || null,
-                    tipoPrecio
-                ]
-            );
-            idCliente = cliente.insertId;
+            const cliente = await tx.cliente.create({
+                data: {
+                    nombre: payload.cliente_nombre,
+                    telefono: payload.telefono || null,
+                    email: payload.email || null,
+                    ruc_dni: payload.ruc_dni || null,
+                    tipo: tipoPrecio
+                }
+            });
+            idCliente = cliente.id_cliente;
         }
 
-        const numero = await generarNumero(connection);
-        const [cotizacion] = await connection.query(
-            `INSERT INTO cotizaciones
-                (numero, id_cliente, id_usuario, tipo_precio, estado, observaciones, tiempo_inicio)
-             VALUES (?, ?, ?, ?, 'borrador', ?, NOW())`,
-            [numero, idCliente, idUsuario, tipoPrecio, payload.observaciones || '']
-        );
+        const numero = await generarNumero();
 
-        await connection.commit();
-        return obtenerCotizacion(cotizacion.insertId);
-    } catch (error) {
-        await connection.rollback();
-        throw error;
-    } finally {
-        await liberarNumero(connection);
-        connection.release();
-    }
+        const cotizacion = await tx.cotizacion.create({
+            data: {
+                numero,
+                id_cliente: idCliente,
+                id_usuario: idUsuario,
+                tipo_precio: tipoPrecio,
+                estado: 'borrador',
+                observaciones: payload.observaciones || '',
+                tiempo_inicio: new Date()
+            }
+        });
+
+        return obtenerCotizacion(cotizacion.id_cotizacion);
+    });
 }
 
 async function obtenerCotizacion(idCotizacion) {
-    const [rows] = await db.query(
-        `SELECT
-            co.*,
-            cl.nombre AS cliente_nombre,
-            cl.telefono,
-            cl.email,
-            cl.ruc_dni
-         FROM cotizaciones co
-         LEFT JOIN clientes cl ON cl.id_cliente = co.id_cliente
-         WHERE co.id_cotizacion = ?
-         LIMIT 1`,
-        [idCotizacion]
-    );
+    const cotizacion = await prisma.cotizacion.findUnique({
+        where: { id_cotizacion: Number(idCotizacion) },
+        include: {
+            cliente: true,
+            detalle: {
+                include: {
+                    producto: { include: { precios_actuales: true } }
+                },
+                orderBy: { id_detalle: 'desc' }
+            }
+        }
+    });
 
-    const cotizacion = rows[0];
     if (!cotizacion) return null;
 
-    const [detalle] = await db.query(
-        `SELECT
-            d.id_detalle,
-            d.id_producto,
-            d.tipo_venta,
-            d.cantidad,
-            d.precio_unitario,
-            d.subtotal,
-            d.es_sugerido_ia,
-            p.codigo,
-            p.descripcion,
-            p.stock_total,
-            p.foto_url,
-            pa.precio_unidad_normal,
-            pa.precio_docena_normal,
-            pa.precio_mayor_normal,
-            pa.precio_unidad_dist,
-            pa.precio_docena_dist,
-            pa.precio_mayor_dist
-         FROM cotizacion_detalle d
-         JOIN productos p ON p.id_producto = d.id_producto
-         LEFT JOIN precios_actuales pa ON pa.id_producto = p.id_producto
-         WHERE d.id_cotizacion = ?
-         ORDER BY d.id_detalle DESC`,
-        [idCotizacion]
-    );
-
-    return { ...cotizacion, detalle };
+    return {
+        id_cotizacion: cotizacion.id_cotizacion,
+        numero: cotizacion.numero,
+        id_cliente: cotizacion.id_cliente,
+        id_usuario: cotizacion.id_usuario,
+        tipo_precio: cotizacion.tipo_precio,
+        subtotal: Number(cotizacion.subtotal || 0),
+        igv: Number(cotizacion.igv || 0),
+        total: Number(cotizacion.total || 0),
+        observaciones: cotizacion.observaciones,
+        incluye_carreta: cotizacion.incluye_carreta,
+        costo_carreta: Number(cotizacion.costo_carreta || 0),
+        estado: cotizacion.estado,
+        tiempo_inicio: cotizacion.tiempo_inicio,
+        tiempo_fin: cotizacion.tiempo_fin,
+        created_at: cotizacion.created_at,
+        cliente_nombre: cotizacion.cliente?.nombre ?? null,
+        telefono: cotizacion.cliente?.telefono ?? null,
+        email: cotizacion.cliente?.email ?? null,
+        ruc_dni: cotizacion.cliente?.ruc_dni ?? null,
+        detalle: cotizacion.detalle.map(d => ({
+            id_detalle: d.id_detalle,
+            id_producto: d.id_producto,
+            tipo_venta: d.tipo_venta,
+            cantidad: d.cantidad,
+            color_notas: d.color_notas,
+            precio_unitario: Number(d.precio_unitario || 0),
+            subtotal: Number(d.subtotal || 0),
+            es_sugerido_ia: d.es_sugerido_ia,
+            codigo: d.producto?.codigo,
+            descripcion: d.producto?.descripcion,
+            stock_total: d.producto?.stock_total,
+            foto_url: d.producto?.foto_url,
+            precio_unidad_normal: d.producto?.precios_actuales ? Number(d.producto.precios_actuales.precio_unidad_normal) : 0,
+            precio_docena_normal: d.producto?.precios_actuales ? Number(d.producto.precios_actuales.precio_docena_normal) : 0,
+            precio_mayor_normal: d.producto?.precios_actuales ? Number(d.producto.precios_actuales.precio_mayor_normal) : 0,
+            precio_unidad_dist: d.producto?.precios_actuales ? Number(d.producto.precios_actuales.precio_unidad_dist) : 0,
+            precio_docena_dist: d.producto?.precios_actuales ? Number(d.producto.precios_actuales.precio_docena_dist) : 0,
+            precio_mayor_dist: d.producto?.precios_actuales ? Number(d.producto.precios_actuales.precio_mayor_dist) : 0
+        }))
+    };
 }
 
 async function cambiarEstado(idCotizacion, estado) {
@@ -294,10 +301,16 @@ async function cambiarEstado(idCotizacion, estado) {
         throw error;
     }
 
-    await db.query(
-        'UPDATE cotizaciones SET estado = ?, tiempo_fin = IF(? IN ("aprobada","rechazada"), NOW(), tiempo_fin) WHERE id_cotizacion = ?',
-        [estado, estado, idCotizacion]
-    );
+    const data = { estado };
+    if (['aprobada', 'rechazada'].includes(estado)) {
+        data.tiempo_fin = new Date();
+    }
+
+    await prisma.cotizacion.update({
+        where: { id_cotizacion: Number(idCotizacion) },
+        data
+    });
+
     return obtenerCotizacion(idCotizacion);
 }
 
@@ -305,16 +318,10 @@ async function actualizarObservaciones(idCotizacion, observaciones = '') {
     const cotizacion = await obtenerCotizacion(idCotizacion);
     asegurarEditable(cotizacion);
 
-    const [resultado] = await db.query(
-        'UPDATE cotizaciones SET observaciones = ? WHERE id_cotizacion = ?',
-        [String(observaciones || '').trim(), idCotizacion]
-    );
-
-    if (resultado.affectedRows === 0) {
-        const error = new Error('Cotizacion no encontrada');
-        error.status = 404;
-        throw error;
-    }
+    await prisma.cotizacion.update({
+        where: { id_cotizacion: Number(idCotizacion) },
+        data: { observaciones: String(observaciones || '').trim() }
+    });
 
     return obtenerCotizacion(idCotizacion);
 }
@@ -336,24 +343,18 @@ async function actualizarCarreta(idCotizacion, payload = {}) {
         throw error;
     }
 
-    const connection = await db.getConnection();
-    try {
-        await connection.beginTransaction();
-        await connection.query(
-            `UPDATE cotizaciones
-             SET incluye_carreta = ?, costo_carreta = ?
-             WHERE id_cotizacion = ?`,
-            [incluyeCarreta ? 1 : 0, costoCarreta, idCotizacion]
-        );
-        await recalcularTotales(connection, idCotizacion);
-        await connection.commit();
-        return obtenerCotizacion(idCotizacion);
-    } catch (error) {
-        await connection.rollback();
-        throw error;
-    } finally {
-        connection.release();
-    }
+    await prisma.$transaction(async (tx) => {
+        await tx.cotizacion.update({
+            where: { id_cotizacion: Number(idCotizacion) },
+            data: {
+                incluye_carreta: incluyeCarreta ? 1 : 0,
+                costo_carreta: costoCarreta
+            }
+        });
+        await recalcularTotales(idCotizacion);
+    });
+
+    return obtenerCotizacion(idCotizacion);
 }
 
 async function buscarProductos(idCotizacion, q = '') {
@@ -364,22 +365,43 @@ async function buscarProductos(idCotizacion, q = '') {
         throw error;
     }
 
-    const [rows] = await db.query(
-        `SELECT p.*, pa.*
-         FROM productos p
-         LEFT JOIN precios_actuales pa ON pa.id_producto = p.id_producto
-         WHERE p.activo = 1
-           AND (? = '' OR p.codigo LIKE ? OR p.descripcion LIKE ?)
-         ORDER BY p.codigo
-         LIMIT 20`,
-        [q, `%${q}%`, `%${q}%`]
-    );
+    const where = { activo: true };
+    if (q) {
+        where.OR = [
+            { codigo: { contains: q, mode: 'insensitive' } },
+            { descripcion: { contains: q, mode: 'insensitive' } }
+        ];
+    }
 
-    return rows.map((producto) => ({
-        ...producto,
-        precio_unidad: precioProducto(producto, cotizacion.tipo_precio, 'unidad'),
-        precio_docena: precioProducto(producto, cotizacion.tipo_precio, 'docena'),
-        precio_mayor: precioProducto(producto, cotizacion.tipo_precio, 'mayor')
+    const productos = await prisma.producto.findMany({
+        where,
+        include: { precios_actuales: true },
+        orderBy: { codigo: 'asc' },
+        take: 20
+    });
+
+    return productos.map(p => ({
+        id_producto: p.id_producto,
+        codigo: p.codigo,
+        descripcion: p.descripcion,
+        stock_total: p.stock_total,
+        stock_minimo: p.stock_minimo,
+        foto_url: p.foto_url,
+        id_categoria: p.id_categoria,
+        unidades_por_caja: p.unidades_por_caja,
+        precio_unidad: precioProducto(p, cotizacion.tipo_precio, 'unidad'),
+        precio_docena: precioProducto(p, cotizacion.tipo_precio, 'docena'),
+        precio_mayor: precioProducto(p, cotizacion.tipo_precio, 'mayor'),
+        precios_actuales: p.precios_actuales ? {
+            costo_normal: Number(p.precios_actuales.costo_normal),
+            precio_unidad_normal: Number(p.precios_actuales.precio_unidad_normal),
+            precio_docena_normal: Number(p.precios_actuales.precio_docena_normal),
+            precio_mayor_normal: Number(p.precios_actuales.precio_mayor_normal),
+            costo_distribuidor: Number(p.precios_actuales.costo_distribuidor),
+            precio_unidad_dist: Number(p.precios_actuales.precio_unidad_dist),
+            precio_docena_dist: Number(p.precios_actuales.precio_docena_dist),
+            precio_mayor_dist: Number(p.precios_actuales.precio_mayor_dist)
+        } : {}
     }));
 }
 
@@ -387,120 +409,117 @@ async function agregarDetalle(idCotizacion, payload) {
     const cotizacion = await obtenerCotizacion(idCotizacion);
     asegurarEditable(cotizacion);
 
-    const tipoVenta = validarTipoVenta(payload.tipo_venta || 'unidad');
     const cantidad = validarCantidad(payload.cantidad);
-    const [productos] = await db.query(
-        `SELECT p.*, pa.*
-         FROM productos p
-         LEFT JOIN precios_actuales pa ON pa.id_producto = p.id_producto
-         WHERE p.id_producto = ? AND p.activo = 1
-         LIMIT 1`,
-        [payload.id_producto]
-    );
-    const producto = productos[0];
-    if (!producto) {
+    const idProducto = Number(payload.id_producto);
+
+    const producto = await prisma.producto.findUnique({
+        where: { id_producto: idProducto },
+        include: { precios_actuales: true }
+    });
+
+    if (!producto || !producto.activo) {
         const error = new Error('Producto no encontrado');
         error.status = 404;
         throw error;
     }
 
+    const tipoVenta = determinarTipoVenta(cantidad, producto.unidades_por_caja || 1);
     const precio = precioProducto(producto, cotizacion.tipo_precio, tipoVenta);
     const subtotal = Number((precio * cantidad).toFixed(2));
-    const connection = await db.getConnection();
 
-    try {
-        await connection.beginTransaction();
-        await connection.query(
-            `INSERT INTO cotizacion_detalle
-                (id_cotizacion, id_producto, tipo_venta, cantidad, precio_unitario, subtotal, es_sugerido_ia)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [idCotizacion, producto.id_producto, tipoVenta, cantidad, precio, subtotal, payload.es_sugerido_ia ? 1 : 0]
-        );
-        await recalcularTotales(connection, idCotizacion);
-        await connection.commit();
-        return obtenerCotizacion(idCotizacion);
-    } catch (error) {
-        await connection.rollback();
-        throw error;
-    } finally {
-        connection.release();
-    }
+    await prisma.$transaction(async (tx) => {
+        await tx.cotizacionDetalle.create({
+            data: {
+                id_cotizacion: Number(idCotizacion),
+                id_producto: idProducto,
+                tipo_venta: tipoVenta,
+                cantidad,
+                color_notas: payload.color_notas || null,
+                precio_unitario: precio,
+                subtotal,
+                es_sugerido_ia: payload.es_sugerido_ia ? true : false
+            }
+        });
+        await recalcularTotales(idCotizacion);
+    });
+
+    return obtenerCotizacion(idCotizacion);
 }
 
 async function actualizarDetalle(idCotizacion, idDetalle, payload) {
     const cotizacion = await obtenerCotizacion(idCotizacion);
     asegurarEditable(cotizacion);
 
-    const tipoVenta = validarTipoVenta(payload.tipo_venta || 'unidad');
     const cantidad = validarCantidad(payload.cantidad);
     const idProducto = Number(payload.id_producto || 0);
-    let precio = 0;
-    const connection = await db.getConnection();
 
-    try {
-        await connection.beginTransaction();
-        const [productos] = await connection.query(
-            `SELECT p.*, pa.*
-             FROM productos p
-             LEFT JOIN precios_actuales pa ON pa.id_producto = p.id_producto
-             WHERE p.id_producto = IF(? > 0, ?, (
-                SELECT id_producto FROM cotizacion_detalle WHERE id_detalle = ? AND id_cotizacion = ? LIMIT 1
-             ))
-               AND p.activo = 1
-             LIMIT 1`,
-            [idProducto, idProducto, idDetalle, idCotizacion]
-        );
-        const producto = productos[0];
-        if (!producto) {
-            const error = new Error('Producto no encontrado');
-            error.status = 404;
-            throw error;
-        }
+    const detalleActual = await prisma.cotizacionDetalle.findUnique({
+        where: { id_detalle: Number(idDetalle) }
+    });
 
-        precio = precioProducto(producto, cotizacion.tipo_precio, tipoVenta);
-        const subtotal = Number((precio * cantidad).toFixed(2));
-        await connection.query(
-            `UPDATE cotizacion_detalle
-             SET id_producto = IF(? > 0, ?, id_producto),
-                 tipo_venta = ?,
-                 cantidad = ?,
-                 precio_unitario = ?,
-                 subtotal = ?
-             WHERE id_detalle = ? AND id_cotizacion = ?`,
-            [idProducto, idProducto, tipoVenta, cantidad, precio, subtotal, idDetalle, idCotizacion]
-        );
-        await recalcularTotales(connection, idCotizacion);
-        await connection.commit();
-        return obtenerCotizacion(idCotizacion);
-    } catch (error) {
-        await connection.rollback();
+    if (!detalleActual || detalleActual.id_cotizacion !== Number(idCotizacion)) {
+        const error = new Error('Detalle no encontrado');
+        error.status = 404;
         throw error;
-    } finally {
-        connection.release();
     }
+
+    const productoId = idProducto > 0 ? idProducto : detalleActual.id_producto;
+
+    const producto = await prisma.producto.findUnique({
+        where: { id_producto: productoId },
+        include: { precios_actuales: true }
+    });
+
+    if (!producto || !producto.activo) {
+        const error = new Error('Producto no encontrado');
+        error.status = 404;
+        throw error;
+    }
+
+    const tipoVenta = determinarTipoVenta(cantidad, producto.unidades_por_caja || 1);
+    const precio = precioProducto(producto, cotizacion.tipo_precio, tipoVenta);
+    const subtotal = Number((precio * cantidad).toFixed(2));
+
+    await prisma.$transaction(async (tx) => {
+        await tx.cotizacionDetalle.update({
+            where: { id_detalle: Number(idDetalle) },
+            data: {
+                id_producto: productoId,
+                tipo_venta: tipoVenta,
+                cantidad,
+                color_notas: payload.color_notas ?? null,
+                precio_unitario: precio,
+                subtotal
+            }
+        });
+        await recalcularTotales(idCotizacion);
+    });
+
+    return obtenerCotizacion(idCotizacion);
 }
 
 async function eliminarDetalle(idCotizacion, idDetalle) {
     const cotizacion = await obtenerCotizacion(idCotizacion);
     asegurarEditable(cotizacion);
 
-    const connection = await db.getConnection();
+    const detalle = await prisma.cotizacionDetalle.findUnique({
+        where: { id_detalle: Number(idDetalle) }
+    });
 
-    try {
-        await connection.beginTransaction();
-        await connection.query(
-            'DELETE FROM cotizacion_detalle WHERE id_detalle = ? AND id_cotizacion = ?',
-            [idDetalle, idCotizacion]
-        );
-        await recalcularTotales(connection, idCotizacion);
-        await connection.commit();
-        return obtenerCotizacion(idCotizacion);
-    } catch (error) {
-        await connection.rollback();
+    if (!detalle || detalle.id_cotizacion !== Number(idCotizacion)) {
+        const error = new Error('Detalle no encontrado');
+        error.status = 404;
         throw error;
-    } finally {
-        connection.release();
     }
+
+    await prisma.$transaction(async (tx) => {
+        await tx.cotizacionDetalle.delete({
+            where: { id_detalle: Number(idDetalle) }
+        });
+        await recalcularTotales(idCotizacion);
+    });
+
+    return obtenerCotizacion(idCotizacion);
 }
 
 async function recomendar(idCotizacion, idProducto) {
@@ -511,12 +530,11 @@ async function recomendar(idCotizacion, idProducto) {
         throw error;
     }
 
-    const [productos] = await db.query(
-        `SELECT p.*, pa.*
-         FROM productos p
-         LEFT JOIN precios_actuales pa ON pa.id_producto = p.id_producto
-         WHERE p.activo = 1`
-    );
+    const productos = await prisma.producto.findMany({
+        where: { activo: true },
+        include: { precios_actuales: true }
+    });
+
     const similares = await iaService.obtenerSimilitudes(Number(idProducto), productos);
     const candidatos = similares
         .map((item) => {
