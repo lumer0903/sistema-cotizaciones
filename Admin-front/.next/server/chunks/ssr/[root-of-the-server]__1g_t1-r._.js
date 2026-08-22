@@ -1,0 +1,3 @@
+module.exports=[74446,a=>{a.v({className:"poppins_9d246813-module__lJ03MG__className",variable:"poppins_9d246813-module__lJ03MG__variable"})},98421,a=>{"use strict";var b=a.i(78516),c=a.i(74446);let d={className:c.default.className,style:{fontFamily:"'Poppins', 'Poppins Fallback'",fontStyle:"normal"}};null!=c.default.variable&&(d.variable=c.default.variable),a.s(["default",0,function({children:a}){return(0,b.jsx)("html",{lang:"es",className:d.variable,children:(0,b.jsx)("body",{children:a})})},"metadata",0,{title:"Gold Continent"},"viewport",0,{themeColor:"#0f766e"}],98421)},46122,a=>{a.n(a.i(98421))}];
+
+//# sourceMappingURL=%5Broot-of-the-server%5D__1g_t1-r._.js.map

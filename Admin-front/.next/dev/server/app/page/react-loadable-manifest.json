@@ -1,0 +1,10 @@
+{
+  "[project]/app/ClientApp.jsx [app-client] (ecmascript, next/dynamic entry)": {
+    "id": "[project]/app/ClientApp.jsx [app-client] (ecmascript, next/dynamic entry)",
+    "files": [
+      "static/chunks/_1i9n_po._.js",
+      "static/chunks/node_modules__pnpm_1ha7gho._.js",
+      "static/chunks/app_ClientApp_jsx_0k98_wx._.js"
+    ]
+  }
+}
