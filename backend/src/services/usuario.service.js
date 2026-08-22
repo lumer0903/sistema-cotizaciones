@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const usuarioModel = require('../models/usuario.model');
+const prisma = require('../config/prisma');
 
 const ROLES = {
     admin: {
@@ -55,11 +55,28 @@ function permisosPorRol(rol) {
 }
 
 async function listarUsuarios() {
-    const usuarios = await usuarioModel.listar();
+    const usuarios = await prisma.usuario.findMany({
+        orderBy: [
+            { activo: 'desc' },
+            { nombre: 'asc' }
+        ]
+    });
     return usuarios.map((usuario) => ({
         ...usuario,
         permisos: permisosPorRol(usuario.rol)
     }));
+}
+
+async function buscarPorEmail(email) {
+    return prisma.usuario.findUnique({
+        where: { email: email.trim().toLowerCase() }
+    });
+}
+
+async function buscarPorId(idUsuario) {
+    return prisma.usuario.findUnique({
+        where: { id_usuario: Number(idUsuario) }
+    });
 }
 
 async function crearUsuario(payload) {
@@ -70,52 +87,63 @@ async function crearUsuario(payload) {
     }
 
     const password_hash = await bcrypt.hash(payload.password, 10);
-    return usuarioModel.crear({
-        nombre: payload.nombre.trim(),
-        email: payload.email.trim().toLowerCase(),
-        password_hash,
-        rol: rolSeguro(payload.rol)
+    return prisma.usuario.create({
+        data: {
+            nombre: payload.nombre.trim(),
+            email: payload.email.trim().toLowerCase(),
+            password_hash,
+            rol: rolSeguro(payload.rol)
+        }
     });
 }
 
 async function actualizarUsuario(idUsuario, payload) {
-    const actual = await usuarioModel.buscarPorId(idUsuario);
+    const actual = await buscarPorId(idUsuario);
     if (!actual) {
         const error = new Error('Usuario no encontrado');
         error.status = 404;
         throw error;
     }
 
-    const password_hash = payload.password
-        ? await bcrypt.hash(payload.password, 10)
-        : null;
-
-    return usuarioModel.actualizar(idUsuario, {
+    const data = {
         nombre: payload.nombre?.trim() || actual.nombre,
         email: payload.email?.trim().toLowerCase() || actual.email,
         rol: rolSeguro(payload.rol || actual.rol),
-        activo: payload.activo === undefined ? actual.activo : Number(Boolean(payload.activo)),
-        password_hash
+        activo: payload.activo === undefined ? actual.activo : Boolean(payload.activo)
+    };
+
+    if (payload.password) {
+        data.password_hash = await bcrypt.hash(payload.password, 10);
+    }
+
+    return prisma.usuario.update({
+        where: { id_usuario: Number(idUsuario) },
+        data
     });
 }
 
 async function actualizarPerfil(idUsuario, payload) {
-    const actual = await usuarioModel.buscarPorId(idUsuario);
+    const actual = await buscarPorId(idUsuario);
     if (!actual) {
         const error = new Error('Usuario no encontrado');
         error.status = 404;
         throw error;
     }
 
-    return usuarioModel.actualizarPerfil(idUsuario, {
-        nombre: payload.nombre?.trim() || actual.nombre,
-        email: payload.email?.trim().toLowerCase() || actual.email
+    return prisma.usuario.update({
+        where: { id_usuario: Number(idUsuario) },
+        data: {
+            nombre: payload.nombre?.trim() || actual.nombre,
+            email: payload.email?.trim().toLowerCase() || actual.email
+        }
     });
 }
 
 module.exports = {
     ROLES,
     listarUsuarios,
+    buscarPorEmail,
+    buscarPorId,
     crearUsuario,
     actualizarUsuario,
     actualizarPerfil,
