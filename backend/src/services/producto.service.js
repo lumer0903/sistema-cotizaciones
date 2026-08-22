@@ -1,5 +1,5 @@
 const fs = require('fs');
-const db = require('../config/db');
+const prisma = require('../config/prisma');
 
 const PRECIO_CAMPOS = [
     'costo_normal',
@@ -127,209 +127,179 @@ function validarProducto(producto) {
 }
 
 async function listarCategorias() {
-    const [rows] = await db.query(
-        `SELECT id_categoria, nombre_categoria
-         FROM categorias
-         ORDER BY nombre_categoria`
-    );
-
-    return rows;
+    return prisma.categoria.findMany({
+        orderBy: { nombre_categoria: 'asc' }
+    });
 }
 
-async function resolverCategoria(connection, producto) {
+async function resolverCategoria(producto) {
     if (producto.id_categoria) return producto.id_categoria;
     if (!producto.categoria) return null;
 
-    const [existentes] = await connection.query(
-        'SELECT id_categoria FROM categorias WHERE nombre_categoria = ? LIMIT 1',
-        [producto.categoria]
-    );
+    const existente = await prisma.categoria.findFirst({
+        where: { nombre_categoria: producto.categoria }
+    });
 
-    if (existentes[0]) return existentes[0].id_categoria;
+    if (existente) return existente.id_categoria;
 
-    const [resultado] = await connection.query(
-        'INSERT INTO categorias (nombre_categoria) VALUES (?)',
-        [producto.categoria]
-    );
+    const nuevo = await prisma.categoria.create({
+        data: { nombre_categoria: producto.categoria }
+    });
 
-    return resultado.insertId;
+    return nuevo.id_categoria;
+}
+
+function formatearProducto(producto) {
+    if (!producto) return null;
+    return {
+        id_producto: producto.id_producto,
+        codigo: producto.codigo,
+        descripcion: producto.descripcion,
+        stock_total: producto.stock_total,
+        stock_minimo: producto.stock_minimo,
+        foto_url: producto.foto_url,
+        id_categoria: producto.id_categoria,
+        nombre_categoria: producto.categoria?.nombre_categoria ?? null,
+        unidades_por_caja: producto.unidades_por_caja,
+        ...(producto.precios_actuales ? {
+            costo_normal: Number(producto.precios_actuales.costo_normal),
+            precio_unidad_normal: Number(producto.precios_actuales.precio_unidad_normal),
+            precio_docena_normal: Number(producto.precios_actuales.precio_docena_normal),
+            precio_mayor_normal: Number(producto.precios_actuales.precio_mayor_normal),
+            costo_distribuidor: Number(producto.precios_actuales.costo_distribuidor),
+            precio_unidad_dist: Number(producto.precios_actuales.precio_unidad_dist),
+            precio_docena_dist: Number(producto.precios_actuales.precio_docena_dist),
+            precio_mayor_dist: Number(producto.precios_actuales.precio_mayor_dist)
+        } : {})
+    };
 }
 
 async function listarProductos({ q, categoria } = {}) {
-    const filtros = ['p.activo = 1'];
-    const params = [];
+    const where = { activo: true };
 
     if (q) {
-        filtros.push('(p.codigo LIKE ? OR p.descripcion LIKE ?)');
-        params.push(`%${q}%`, `%${q}%`);
+        where.OR = [
+            { codigo: { contains: q, mode: 'insensitive' } },
+            { descripcion: { contains: q, mode: 'insensitive' } }
+        ];
     }
 
     if (categoria) {
-        filtros.push('p.id_categoria = ?');
-        params.push(categoria);
+        where.id_categoria = Number(categoria);
     }
 
-    const [rows] = await db.query(
-        `SELECT
-            p.id_producto,
-            p.codigo,
-            p.descripcion,
-            p.stock_total,
-            p.stock_minimo,
-            p.foto_url,
-            p.id_categoria,
-            c.nombre_categoria,
-            pa.costo_normal,
-            pa.precio_unidad_normal,
-            pa.precio_docena_normal,
-            pa.precio_mayor_normal,
-            pa.costo_distribuidor,
-            pa.precio_unidad_dist,
-            pa.precio_docena_dist,
-            pa.precio_mayor_dist
-         FROM productos p
-         LEFT JOIN categorias c ON c.id_categoria = p.id_categoria
-         LEFT JOIN precios_actuales pa ON pa.id_producto = p.id_producto
-         WHERE ${filtros.join(' AND ')}
-         ORDER BY p.codigo
-         LIMIT 300`,
-        params
-    );
+    const productos = await prisma.producto.findMany({
+        where,
+        include: {
+            categoria: true,
+            precios_actuales: true
+        },
+        orderBy: { codigo: 'asc' },
+        take: 300
+    });
 
-    return rows;
+    return productos.map(formatearProducto);
 }
 
 async function obtenerProducto(idProducto) {
-    const [rows] = await db.query(
-        `SELECT
-            p.id_producto,
-            p.codigo,
-            p.descripcion,
-            p.stock_total,
-            p.stock_minimo,
-            p.foto_url,
-            p.id_categoria,
-            c.nombre_categoria,
-            pa.costo_normal,
-            pa.precio_unidad_normal,
-            pa.precio_docena_normal,
-            pa.precio_mayor_normal,
-            pa.costo_distribuidor,
-            pa.precio_unidad_dist,
-            pa.precio_docena_dist,
-            pa.precio_mayor_dist
-         FROM productos p
-         LEFT JOIN categorias c ON c.id_categoria = p.id_categoria
-         LEFT JOIN precios_actuales pa ON pa.id_producto = p.id_producto
-         WHERE p.id_producto = ? AND p.activo = 1
-         LIMIT 1`,
-        [idProducto]
-    );
+    const producto = await prisma.producto.findUnique({
+        where: { id_producto: Number(idProducto) },
+        include: {
+            categoria: true,
+            precios_actuales: true
+        }
+    });
 
-    return rows[0] || null;
+    if (!producto || !producto.activo) return null;
+    return formatearProducto(producto);
 }
 
-async function guardarHistorialPrecios(connection, idProducto, idUsuario, anteriores, nuevos) {
+async function guardarHistorialPrecios(idProducto, idUsuario, anteriores, nuevos) {
     const cambios = PRECIO_CAMPOS
         .filter((campo) => Number(anteriores?.[campo] ?? 0) !== Number(nuevos?.[campo] ?? 0))
-        .map((campo) => [
-            idProducto,
-            idUsuario || null,
-            campo,
-            numero(anteriores?.[campo], 0),
-            numero(nuevos?.[campo], 0)
-        ]);
+        .map((campo) => ({
+            id_producto: Number(idProducto),
+            id_usuario: idUsuario || null,
+            campo_modificado: campo,
+            valor_anterior: numero(anteriores?.[campo], 0),
+            valor_nuevo: numero(nuevos?.[campo], 0)
+        }));
 
     if (cambios.length === 0) return;
 
-    await connection.query(
-        `INSERT INTO historial_precios
-            (id_producto, id_usuario, campo_modificado, valor_anterior, valor_nuevo)
-         VALUES ?`,
-        [cambios]
-    );
+    await prisma.historialPrecios.createMany({
+        data: cambios
+    });
 }
 
-async function guardarProducto(connection, producto, idUsuario) {
-    const categoriaId = await resolverCategoria(connection, producto);
-    const [existentes] = await connection.query(
-        'SELECT id_producto FROM productos WHERE codigo = ? LIMIT 1',
-        [producto.codigo]
-    );
+async function guardarProducto(producto, idUsuario) {
+    const categoriaId = await resolverCategoria(producto);
+
+    const existente = await prisma.producto.findUnique({
+        where: { codigo: producto.codigo },
+        include: { precios_actuales: true }
+    });
 
     let idProducto;
     let accion;
+    let preciosAnteriores = {};
 
-    if (existentes[0]) {
-        idProducto = existentes[0].id_producto;
+    if (existente) {
+        idProducto = existente.id_producto;
         accion = 'actualizado';
+        preciosAnteriores = existente.precios_actuales || {};
 
-        await connection.query(
-            `UPDATE productos
-             SET descripcion = ?, stock_total = ?, stock_minimo = ?, foto_url = ?, id_categoria = ?, activo = 1
-             WHERE id_producto = ?`,
-            [
-                producto.descripcion,
-                producto.stock_total,
-                producto.stock_minimo,
-                producto.foto_url || null,
-                categoriaId,
-                idProducto
-            ]
-        );
+        await prisma.producto.update({
+            where: { id_producto: idProducto },
+            data: {
+                descripcion: producto.descripcion,
+                stock_total: producto.stock_total,
+                stock_minimo: producto.stock_minimo,
+                foto_url: producto.foto_url || null,
+                id_categoria: categoriaId,
+                activo: true
+            }
+        });
     } else {
         accion = 'agregado';
 
-        const [resultado] = await connection.query(
-            `INSERT INTO productos
-                (codigo, descripcion, stock_total, stock_minimo, foto_url, id_categoria, activo)
-             VALUES (?, ?, ?, ?, ?, ?, 1)`,
-            [
-                producto.codigo,
-                producto.descripcion,
-                producto.stock_total,
-                producto.stock_minimo,
-                producto.foto_url || null,
-                categoriaId
-            ]
-        );
+        const nuevo = await prisma.producto.create({
+            data: {
+                codigo: producto.codigo,
+                descripcion: producto.descripcion,
+                stock_total: producto.stock_total,
+                stock_minimo: producto.stock_minimo,
+                foto_url: producto.foto_url || null,
+                id_categoria: categoriaId,
+                activo: true,
+                unidades_por_caja: 1
+            }
+        });
 
-        idProducto = resultado.insertId;
+        idProducto = nuevo.id_producto;
     }
 
-    const [preciosAnteriores] = await connection.query(
-        'SELECT * FROM precios_actuales WHERE id_producto = ? LIMIT 1',
-        [idProducto]
-    );
+    const preciosData = {
+        costo_normal: numero(producto.costo_normal),
+        precio_unidad_normal: numero(producto.precio_unidad_normal),
+        precio_docena_normal: numero(producto.precio_docena_normal),
+        precio_mayor_normal: numero(producto.precio_mayor_normal),
+        costo_distribuidor: numero(producto.costo_distribuidor),
+        precio_unidad_dist: numero(producto.precio_unidad_dist),
+        precio_docena_dist: numero(producto.precio_docena_dist),
+        precio_mayor_dist: numero(producto.precio_mayor_dist)
+    };
 
-    await connection.query(
-        `INSERT INTO precios_actuales
-            (id_producto, costo_normal, precio_unidad_normal, precio_docena_normal, precio_mayor_normal,
-             costo_distribuidor, precio_unidad_dist, precio_docena_dist, precio_mayor_dist)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE
-            costo_normal = VALUES(costo_normal),
-            precio_unidad_normal = VALUES(precio_unidad_normal),
-            precio_docena_normal = VALUES(precio_docena_normal),
-            precio_mayor_normal = VALUES(precio_mayor_normal),
-            costo_distribuidor = VALUES(costo_distribuidor),
-            precio_unidad_dist = VALUES(precio_unidad_dist),
-            precio_docena_dist = VALUES(precio_docena_dist),
-            precio_mayor_dist = VALUES(precio_mayor_dist)`,
-        [
-            idProducto,
-            producto.costo_normal,
-            producto.precio_unidad_normal,
-            producto.precio_docena_normal,
-            producto.precio_mayor_normal,
-            producto.costo_distribuidor,
-            producto.precio_unidad_dist,
-            producto.precio_docena_dist,
-            producto.precio_mayor_dist
-        ]
-    );
+    await prisma.preciosActuales.upsert({
+        where: { id_producto: idProducto },
+        create: {
+            id_producto: idProducto,
+            ...preciosData
+        },
+        update: preciosData
+    });
 
-    await guardarHistorialPrecios(connection, idProducto, idUsuario, preciosAnteriores[0], producto);
+    await guardarHistorialPrecios(idProducto, idUsuario, preciosAnteriores, preciosData);
 
     return { idProducto, accion };
 }
@@ -360,29 +330,52 @@ async function actualizarProducto(idProducto, datos, idUsuario) {
         precio_mayor_dist: numero(datos.precio_mayor_dist, actual.precio_mayor_dist)
     };
 
-    const connection = await db.getConnection();
+    return prisma.$transaction(async (tx) => {
+        await tx.producto.update({
+            where: { id_producto: Number(idProducto) },
+            data: {
+                descripcion: producto.descripcion,
+                stock_total: producto.stock_total,
+                stock_minimo: producto.stock_minimo,
+                foto_url: producto.foto_url || null,
+                id_categoria: producto.id_categoria
+            }
+        });
 
-    try {
-        await connection.beginTransaction();
-        await guardarProducto(connection, producto, idUsuario);
-        await connection.commit();
-    } catch (error) {
-        await connection.rollback();
-        throw error;
-    } finally {
-        connection.release();
-    }
+        const preciosAnteriores = await tx.preciosActuales.findUnique({
+            where: { id_producto: Number(idProducto) }
+        }) || {};
 
-    return obtenerProducto(idProducto);
+        const preciosData = {
+            costo_normal: numero(producto.costo_normal),
+            precio_unidad_normal: numero(producto.precio_unidad_normal),
+            precio_docena_normal: numero(producto.precio_docena_normal),
+            precio_mayor_normal: numero(producto.precio_mayor_normal),
+            costo_distribuidor: numero(producto.costo_distribuidor),
+            precio_unidad_dist: numero(producto.precio_unidad_dist),
+            precio_docena_dist: numero(producto.precio_docena_dist),
+            precio_mayor_dist: numero(producto.precio_mayor_dist)
+        };
+
+        await tx.preciosActuales.upsert({
+            where: { id_producto: Number(idProducto) },
+            create: { id_producto: Number(idProducto), ...preciosData },
+            update: preciosData
+        });
+
+        await guardarHistorialPrecios(Number(idProducto), idUsuario, preciosAnteriores, preciosData);
+
+        return obtenerProducto(idProducto);
+    });
 }
 
 async function eliminarProducto(idProducto) {
-    const [resultado] = await db.query(
-        'UPDATE productos SET activo = 0 WHERE id_producto = ?',
-        [idProducto]
-    );
+    const resultado = await prisma.producto.update({
+        where: { id_producto: Number(idProducto) },
+        data: { activo: false }
+    });
 
-    if (resultado.affectedRows === 0) {
+    if (!resultado) {
         const error = new Error('Producto no encontrado');
         error.status = 404;
         throw error;
@@ -400,34 +393,27 @@ async function importarProductosCsv(filePath, idUsuario) {
     try {
         const filas = parseCsv(fs.readFileSync(filePath, 'utf8'));
 
-        const connection = await db.getConnection();
+        for (let index = 0; index < filas.length; index++) {
+            const producto = mapearFilaCsv(filas[index]);
+            const errores = validarProducto(producto);
 
-        try {
-            for (let index = 0; index < filas.length; index++) {
-                const producto = mapearFilaCsv(filas[index]);
-                const errores = validarProducto(producto);
-
-                if (errores.length > 0) {
-                    resultado.omitidos++;
-                    resultado.errores.push(`Fila ${index + 2}: ${errores.join(', ')}`);
-                    continue;
-                }
-
-                try {
-                    await connection.beginTransaction();
-                    const guardado = await guardarProducto(connection, producto, idUsuario);
-                    await connection.commit();
-
-                    if (guardado.accion === 'agregado') resultado.agregados++;
-                    if (guardado.accion === 'actualizado') resultado.actualizados++;
-                } catch (error) {
-                    await connection.rollback();
-                    resultado.omitidos++;
-                    resultado.errores.push(`Fila ${index + 2}: ${error.message}`);
-                }
+            if (errores.length > 0) {
+                resultado.omitidos++;
+                resultado.errores.push(`Fila ${index + 2}: ${errores.join(', ')}`);
+                continue;
             }
-        } finally {
-            connection.release();
+
+            try {
+                const guardado = await prisma.$transaction(async (tx) => {
+                    return await guardarProducto(producto, idUsuario);
+                });
+
+                if (guardado.accion === 'agregado') resultado.agregados++;
+                if (guardado.accion === 'actualizado') resultado.actualizados++;
+            } catch (error) {
+                resultado.omitidos++;
+                resultado.errores.push(`Fila ${index + 2}: ${error.message}`);
+            }
         }
 
         return resultado;
@@ -437,41 +423,32 @@ async function importarProductosCsv(filePath, idUsuario) {
 }
 
 async function obtenerHistorialPrecios(idProducto) {
-    const [productoRows] = await db.query(
-        `SELECT id_producto, codigo, descripcion
-         FROM productos
-         WHERE id_producto = ?
-         LIMIT 1`,
-        [idProducto]
-    );
+    const producto = await prisma.producto.findUnique({
+        where: { id_producto: Number(idProducto) },
+        select: { id_producto: true, codigo: true, descripcion: true }
+    });
 
-    if (!productoRows[0]) {
+    if (!producto) {
         const error = new Error('Producto no encontrado');
         error.status = 404;
         throw error;
     }
 
-    const [historial] = await db.query(
-        `SELECT
-            h.id_historial,
-            h.campo_modificado,
-            h.valor_anterior,
-            h.valor_nuevo,
-            h.fecha_cambio,
-            u.nombre AS usuario_nombre
-         FROM historial_precios h
-         LEFT JOIN usuarios u ON u.id_usuario = h.id_usuario
-         WHERE h.id_producto = ?
-         ORDER BY h.fecha_cambio DESC, h.id_historial DESC
-         LIMIT 80`,
-        [idProducto]
-    );
+    const historial = await prisma.historialPrecios.findMany({
+        where: { id_producto: Number(idProducto) },
+        include: { usuario: { select: { nombre: true } } },
+        orderBy: [{ fecha_cambio: 'desc' }, { id_historial: 'desc' }],
+        take: 80
+    });
 
     return {
-        producto: productoRows[0],
+        producto,
         historial: historial.map((item) => ({
             ...item,
-            diferencia: Number(item.valor_nuevo || 0) - Number(item.valor_anterior || 0)
+            valor_anterior: Number(item.valor_anterior || 0),
+            valor_nuevo: Number(item.valor_nuevo || 0),
+            diferencia: Number(item.valor_nuevo || 0) - Number(item.valor_anterior || 0),
+            usuario_nombre: item.usuario?.nombre ?? null
         }))
     };
 }

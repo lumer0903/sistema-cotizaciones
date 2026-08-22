@@ -2,13 +2,13 @@ const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
 
-const BRAND = '#8B1D1D';
-const GOLD = '#F3B600';
-const TEXT = '#27272A';
+const BRAND = '#7B1C1C';
+const TEXT = '#414141';
 const MUTED = '#71717A';
-const BORDER = '#E5E7EB';
-// Ajusta esta ruta si tu estructura de carpetas es distinta a la del proyecto original.
-const LOGO_PATH = path.resolve(__dirname, '../assets/icon.png');
+const BORDER = '#D9D9D9';
+const COMPANY_NAME = 'Importaciones y Exportaciones Gold Continent Eirl';
+const COMPANY_SHORT_NAME = 'Import & Export Gold Continent Eirl';
+const LOGO_PATH = path.resolve(__dirname, '../../../frontend/assets/icon2.jpg');
 
 // Rutas de la fuente DM Sans (descargada de Google Fonts, instancias estáticas
 // generadas a partir de la variable font: pesos 400/500/700).
@@ -70,20 +70,15 @@ function etiquetaTipo(tipo) {
 }
 
 function drawLogo(doc, x, y) {
-    const width = 128;
-    const height = 58;
+    const width = 132;
+    const height = 54;
 
     if (fs.existsSync(LOGO_PATH)) {
-        doc.save();
-        doc.roundedRect(x, y, width, height, 8).clip();
         doc.image(LOGO_PATH, x, y, { fit: [width, height], align: 'center', valign: 'center' });
-        doc.restore();
-        doc.roundedRect(x, y, width, height, 8).lineWidth(1.5).strokeColor('#FFFFFF').stroke();
         return;
     }
 
-    doc.fillColor('#FFFFFF').font(FONT_NAME_BOLD).fontSize(18).text('Artes & Flores', x, y + 8);
-    doc.font(FONT_NAME).fontSize(9).text('Decoraciones', x, y + 32);
+    doc.fillColor('#FFFFFF').font(FONT_NAME_BOLD).fontSize(13).text(COMPANY_SHORT_NAME, x, y + 12, { width });
 }
 
 function drawLabelValue(doc, label, value, x, y, width) {
@@ -121,10 +116,10 @@ function generarCotizacionPdf(cotizacion) {
     registerFonts(doc);
 
     doc.rect(0, 0, 595, 104).fill(BRAND);
-    drawLogo(doc, 40, 24);
-    doc.fillColor('#FFFFFF').font(FONT_NAME_BOLD).fontSize(20).text('COTIZACION', 360, 26, { width: 195, align: 'right' });
-    doc.font(FONT_NAME).fontSize(10).text(cotizacion.numero, 360, 52, { width: 195, align: 'right' });
-    doc.fillColor(GOLD).font(FONT_NAME_BOLD).fontSize(8).text('ARTES & FLORES DECORACIONES', 360, 70, { width: 195, align: 'right' });
+    drawLogo(doc, 40, 25);
+    doc.fillColor('#FFFFFF').font(FONT_NAME_BOLD).fontSize(20).text('COTIZACION', 332, 24, { width: 223, align: 'right' });
+    doc.font(FONT_NAME).fontSize(10).text(cotizacion.numero, 332, 50, { width: 223, align: 'right' });
+    doc.fillColor('#FFFFFF').font(FONT_NAME_BOLD).fontSize(8).text(COMPANY_NAME.toUpperCase(), 292, 68, { width: 263, align: 'right' });
 
     drawSectionCard(doc, 40, 128, 245, 92, 'Datos de la cotizacion');
     drawLabelValue(doc, 'Numero', cotizacion.numero, 56, 154, 95);
@@ -198,7 +193,7 @@ function generarCotizacionPdf(cotizacion) {
     }
 
     doc.font(FONT_NAME).fontSize(8).fillColor(MUTED)
-        .text('Gracias por confiar en Artes & Flores Decoraciones.', 40, 780, { width: 515, align: 'center', lineBreak: false });
+        .text(`Gracias por confiar en ${COMPANY_NAME}.`, 40, 780, { width: 515, align: 'center', lineBreak: false });
 
     doc.end();
 

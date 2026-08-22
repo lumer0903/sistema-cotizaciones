@@ -1,68 +1,91 @@
-const db = require('../config/db');
+const prisma = require('../config/prisma');
 
 async function resumen(_req, res, next) {
     try {
-        const [[productos]] = await db.query(
-            'SELECT COUNT(*) AS total FROM productos WHERE activo = 1'
-        );
-        const [[cotizacionesAceptadas]] = await db.query(
-            'SELECT COUNT(*) AS total FROM cotizaciones WHERE estado = "aprobada"'
-        );
-        const [[ventasAprobadas]] = await db.query(
-            `SELECT COALESCE(SUM(total), 0) AS total
-             FROM cotizaciones
-             WHERE estado = "aprobada"`
-        );
-        const [[cotizaciones]] = await db.query(
-            'SELECT COUNT(*) AS total FROM cotizaciones'
-        );
-        const [bajoStock] = await db.query(
-            `SELECT id_producto, codigo, descripcion, stock_total, stock_minimo
-             FROM productos
-             WHERE activo = 1 AND stock_total <= COALESCE(stock_minimo, 10)
-             ORDER BY stock_total ASC, codigo ASC
-             LIMIT 8`
-        );
-        const [ultimasCotizaciones] = await db.query(
-            `SELECT
-                co.id_cotizacion,
-                co.numero,
-                co.total,
-                co.estado,
-                co.created_at,
-                cl.nombre AS cliente_nombre
-             FROM cotizaciones co
-             LEFT JOIN clientes cl ON cl.id_cliente = co.id_cliente
-             ORDER BY co.created_at DESC
-             LIMIT 8`
-        );
-        const [ventasPorMes] = await db.query(
-            `SELECT
-                DATE_FORMAT(created_at, '%b') AS mes,
-                COALESCE(SUM(CASE WHEN estado = "aprobada" THEN total ELSE 0 END), 0) AS total
-             FROM cotizaciones
-             WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
-             GROUP BY YEAR(created_at), MONTH(created_at), DATE_FORMAT(created_at, '%b')
-             ORDER BY YEAR(created_at), MONTH(created_at)`
-        );
-        const [cotizacionesPorEstado] = await db.query(
-            `SELECT estado, COUNT(*) AS total
-             FROM cotizaciones
-             GROUP BY estado`
-        );
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        const fiveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 4, 1);
+
+        const [
+            totalProductos,
+            cotizacionesAceptadas,
+            ventasDelMes,
+            cotizacionesDelMes,
+            bajoStock,
+            ultimasCotizaciones,
+            ventasPorMesRaw,
+            cotizacionesPorEstadoRaw
+        ] = await Promise.all([
+            prisma.producto.count({ where: { activo: true } }),
+            prisma.cotizacion.count({ where: { estado: 'aprobada' } }),
+            prisma.cotizacion.aggregate({
+                where: {
+                    estado: 'aprobada',
+                    created_at: { gte: startOfMonth, lte: endOfMonth }
+                },
+                _sum: { total: true }
+            }),
+            prisma.cotizacion.count({
+                where: { created_at: { gte: startOfMonth, lte: endOfMonth } }
+            }),
+            prisma.producto.findMany({
+                where: {
+                    activo: true,
+                    stock_total: { lte: prisma.producto.fields.stock_minimo }
+                },
+                select: { id_producto: true, codigo: true, descripcion: true, stock_total: true, stock_minimo: true },
+                orderBy: [{ stock_total: 'asc' }, { codigo: 'asc' }],
+                take: 8
+            }),
+            prisma.cotizacion.findMany({
+                include: { cliente: { select: { nombre: true } } },
+                orderBy: { created_at: 'desc' },
+                take: 8
+            }),
+            prisma.$queryRaw`
+                SELECT 
+                    to_char(created_at, 'Mon') AS mes,
+                    COALESCE(SUM(CASE WHEN estado = 'aprobada' THEN total ELSE 0 END), 0) AS total
+                FROM cotizaciones
+                WHERE created_at >= ${fiveMonthsAgo}
+                GROUP BY EXTRACT(YEAR FROM created_at), EXTRACT(MONTH FROM created_at), to_char(created_at, 'Mon')
+                ORDER BY EXTRACT(YEAR FROM created_at), EXTRACT(MONTH FROM created_at)
+            `,
+            prisma.cotizacion.groupBy({
+                by: ['estado'],
+                _count: { estado: true }
+            })
+        ]);
+
+        const ventasPorMes = ventasPorMesRaw.map(row => ({
+            mes: row.mes,
+            total: Number(row.total)
+        }));
+
+        const cotizacionesPorEstado = cotizacionesPorEstadoRaw.map(row => ({
+            estado: row.estado,
+            total: row._count.estado
+        }));
 
         res.json({
             success: true,
             data: {
                 metricas: {
-                    totalProductos: productos.total,
-                    cotizacionesAceptadas: cotizacionesAceptadas.total,
-                    totalVentas: Number(ventasAprobadas.total || 0),
-                    totalVentasMes: Number(ventasAprobadas.total || 0),
-                    totalCotizaciones: cotizaciones.total
+                    totalProductos,
+                    cotizacionesAceptadas,
+                    totalVentasMes: Number(ventasDelMes._sum.total || 0),
+                    totalCotizaciones: cotizacionesDelMes
                 },
                 bajoStock,
-                ultimasCotizaciones,
+                ultimasCotizaciones: ultimasCotizaciones.map(c => ({
+                    id_cotizacion: c.id_cotizacion,
+                    numero: c.numero,
+                    total: Number(c.total || 0),
+                    estado: c.estado,
+                    created_at: c.created_at,
+                    cliente_nombre: c.cliente?.nombre ?? null
+                })),
                 ventasPorMes,
                 cotizacionesPorEstado
             }
