@@ -1,9 +1,16 @@
-node_modules/
-frontend/dist/
-frontend/.next/
-backend/node_modules/
-backend/uploads/
-.env
-backend/.env
+# Modulos y dependencias en cualquier nivel
+**/node_modules/
+
+# Archivos de compilacion y cache de Next.js
+**/.next/
+**/out/
+**/build/
+**/dist/
+**/.turbo/
+
+# Archivos de entorno y temporales
+**/.env
+**/.env*.local
 *.log
 *.tmp
+.DS_Store
