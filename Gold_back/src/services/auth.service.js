@@ -8,7 +8,7 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
 function quitarDatosSensibles(usuario) {
     if (!usuario) return null;
 
-    const { password_hash, ...usuarioSeguro } = usuario;
+    const { password_hash: _password_hash, ...usuarioSeguro } = usuario;
     return usuarioSeguro;
 }
 

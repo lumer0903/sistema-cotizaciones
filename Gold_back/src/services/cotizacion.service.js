@@ -21,7 +21,7 @@ function precioProducto(producto, tipoPrecio, tipoVenta) {
     return money(precios[campoPrecio(tipoPrecio, tipoVenta)]);
 }
 
-function validarTipoVenta(tipoVenta) {
+function _validarTipoVenta(tipoVenta) {
     const permitidos = ['unidad', 'docena', 'mayor'];
     if (permitidos.includes(tipoVenta)) return tipoVenta;
     const error = new Error('Tipo de venta no valido');

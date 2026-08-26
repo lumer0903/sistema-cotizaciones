@@ -404,7 +404,7 @@ async function importarProductosCsv(filePath, idUsuario) {
             }
 
             try {
-                const guardado = await prisma.$transaction(async (tx) => {
+                const guardado = await prisma.$transaction(async (_tx) => {
                     return await guardarProducto(producto, idUsuario);
                 });
 

@@ -1,0 +1,10 @@
+packages:
+  - "Admin-front"
+  - "Empleado-front"
+  - "Gold_back"
+  - "backend"
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  prisma: true
+  unrs-resolver: true
