@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "start:dev": "node index.js",
-    "start:prod": "concurrently \"npm:start\" \"cd ia && python recomendador.py\"",
+    "start:prod": "concurrently \"npm:start\" \"cd ia && python3 recomendador.py\"",
     "build": "pnpm exec prisma generate",
     "lint": "eslint .",
     "prisma:generate": "prisma generate",
