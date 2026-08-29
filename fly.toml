@@ -20,8 +20,5 @@ primary_region = "mia"
   cpu_kind = "shared"
   cpus = 1
 
-[processes]
-  app = "npm run start:prod"
-
 [deploy]
   release_command = "npx prisma migrate deploy"
