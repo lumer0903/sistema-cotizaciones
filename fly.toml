@@ -1,4 +1,4 @@
-app = "goldcontinent"
+app = "sistema-cotizaciones"
 primary_region = "mia"
 
 [build]
