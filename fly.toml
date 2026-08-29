@@ -20,5 +20,3 @@ primary_region = "dfw"
   cpu_kind = "shared"
   cpus = 1
 
-[deploy]
-  release_command = "npx prisma migrate deploy"
