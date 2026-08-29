@@ -6,10 +6,11 @@
   "scripts": {
     "start": "node index.js",
     "start:dev": "node index.js",
+    "start:prod": "concurrently \"npm:start\" \"cd ../ia && python recomendador.py\"",
     "build": "pnpm exec prisma generate",
     "lint": "eslint .",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "db:push": "prisma db push",
     "test": "node scripts/smoke-test.js"
@@ -21,6 +22,7 @@
   "dependencies": {
     "@prisma/client": "^5.0.0",
     "bcryptjs": "^3.0.3",
+    "concurrently": "^8.2.2",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
