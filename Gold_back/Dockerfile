@@ -35,7 +35,7 @@ COPY --from=builder /app/package.json ./
 
 # Install IA dependencies
 COPY ia/requirements.txt ./ia/
-RUN pip install --no-cache-dir -r ia/requirements.txt
+RUN pip install --no-cache-dir --break-system-packages -r ia/requirements.txt
 COPY ia/ ./ia/
 
 # Install concurrently for running both services
