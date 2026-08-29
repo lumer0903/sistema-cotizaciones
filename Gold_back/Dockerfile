@@ -10,7 +10,7 @@ COPY Gold_back/package*.json ./
 COPY Gold_back/pnpm-lock.yaml ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile --prod=false
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY Gold_back/ .
