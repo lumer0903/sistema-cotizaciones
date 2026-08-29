@@ -23,8 +23,8 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Install Python and pip for IA service + build tools for scikit-learn
-RUN apk add --no-cache python3 py3-pip python3-dev build-base linux-headers
+# Install Python and pip for IA service + scikit-learn pre-compilado via apk
+RUN apk add --no-cache python3 py3-pip py3-scikit-learn
 
 # Copy node_modules and built files from builder
 COPY --from=builder /app/node_modules ./node_modules
