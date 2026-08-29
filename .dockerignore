@@ -2,6 +2,8 @@
 Admin-front/
 Empleado-front/
 node_modules/
+Gold_back/node_modules/
+Gold_back/.git/
 
 # Git
 .git/
