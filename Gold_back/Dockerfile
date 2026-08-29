@@ -24,7 +24,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Install Python and pip for IA service + build tools for scikit-learn
-RUN apk add --no-cache python3 py3-pip build-base linux-headers
+RUN apk add --no-cache python3 py3-pip python3-dev build-base linux-headers
 
 # Copy node_modules and built files from builder
 COPY --from=builder /app/node_modules ./node_modules
