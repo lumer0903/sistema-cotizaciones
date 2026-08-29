@@ -1,5 +1,5 @@
 app = "sistema-cotizaciones"
-primary_region = "mia"
+primary_region = "dfw"
 
 [build]
   dockerfile = "Gold_back/Dockerfile"
