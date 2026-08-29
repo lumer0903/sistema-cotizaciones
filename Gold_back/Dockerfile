@@ -24,7 +24,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Install Python and pip for IA service + scikit-learn pre-compilado via apk + openssl 1.1 para Prisma
-RUN apk add --no-cache python3 py3-pip py3-scikit-learn openssl1.1-compat
+RUN apk add --no-cache python3 py3-pip py3-scikit-learn openssl1.1
 
 # Copy node_modules and built files from builder
 COPY --from=builder /app/node_modules ./node_modules
