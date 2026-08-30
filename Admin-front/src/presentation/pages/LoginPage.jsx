@@ -19,8 +19,9 @@ export function LoginPage() {
 
   if (authSession.token()) return <Navigate to="/dashboard" replace />;
 
-  async function submit(event) {
+async function submit(event) {
     event.preventDefault();
+    console.log('🔐 Submit iniciado');
     setMessage('');
     if (!email.trim() || !password.trim()) return setMessage('Completa todos los campos.');
     if (attempts >= 3) return setMessage('Acceso bloqueado temporalmente.');
@@ -30,7 +31,9 @@ export function LoginPage() {
         method: 'POST',
         body: JSON.stringify({ email: email.trim().toLowerCase(), password: password.trim() })
       });
+      console.log('📡 Response status:', response.status);
       const result = await response.json();
+      console.log('📦 Result:', result);
       if (response.ok && result.success) {
         authSession.save(result.data);
         navigate('/dashboard', { replace: true });
@@ -38,10 +41,11 @@ export function LoginPage() {
       }
       const next = attempts + 1;
       setAttempts(next);
-      setMessage(next >= 3 
-        ? 'Has superado el límite de intentos.' 
+      setMessage(next >= 3
+        ? 'Has superado el límite de intentos.'
         : `${result.message || 'Credenciales incorrectas.'} Te quedan ${3 - next} intentos.`);
-    } catch {
+    } catch (err) {
+      console.error('💥 Error:', err);
       setMessage('No se pudo conectar con el servidor.');
     } finally {
       setLoading(false);
