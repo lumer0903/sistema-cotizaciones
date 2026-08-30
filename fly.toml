@@ -3,8 +3,8 @@
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'empleado-front'
-primary_region = 'iad'
+app = 'sistema-cotizaciones'
+primary_region = 'dfw'
 
 [build]
   dockerfile = 'Gold_back/Dockerfile'
