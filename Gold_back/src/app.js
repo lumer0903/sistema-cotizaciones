@@ -11,7 +11,13 @@ const dashboardRoutes = require('./routes/dashboard.routes');
 const usuarioRoutes = require('./routes/usuario.routes');
 
 const app = express();
-const allowedOrigins = ['http://localhost:3001', 'http://localhost:3002'];
+const allowedOrigins = [
+  'http://localhost:3001',
+  'http://localhost:3002',
+  'https://goldcontinent-admin.fly.dev',
+  'https://goldcontinent-empleado.fly.dev',
+  process.env.CLIENT_URL
+].filter(Boolean);
 
 app.disable('x-powered-by');
 app.use(cors({

@@ -12,6 +12,7 @@ primary_region = 'dfw'
 [env]
   NODE_ENV = 'production'
   PORT = '3000'
+  CLIENT_URL = 'https://goldcontinent-admin.fly.dev'
 
 [http_service]
   internal_port = 3000
