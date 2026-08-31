@@ -1,7 +1,7 @@
 const express = require('express');
 const ventaController = require('../controllers/venta.controller');
 const autenticarToken = require('../middlewares/auth.middleware');
-const { autorizarCredito } = require('../middlewares/autorizacion.middleware');
+const { autorizarCredito, autorizarCobranza } = require('../middlewares/autorizacion.middleware');
 
 const router = express.Router();
 
@@ -15,6 +15,9 @@ router.post('/desde-cotizacion/:id', ventaController.crearDesdeCotizacion);
 
 // Emitir venta
 router.post('/:id/emitir', ventaController.emitir);
+
+// Registrar pago en venta (admin/gerente)
+router.post('/:id/pagos', autorizarCobranza, ventaController.registrarPago);
 
 // Listar ventas con filtros
 router.get('/', ventaController.listar);

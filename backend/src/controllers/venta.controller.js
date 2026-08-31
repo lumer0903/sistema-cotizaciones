@@ -1,4 +1,5 @@
 const ventaService = require('../services/venta.service');
+const pagoService = require('../services/pago.service');
 
 async function crear(req, res, next) {
     try {
@@ -27,6 +28,21 @@ async function emitir(req, res, next) {
     }
 }
 
+async function registrarPago(req, res, next) {
+    try {
+        const resultado = await pagoService.registrarPago({
+            ventaId: req.params.id,
+            monto: req.body.monto,
+            metodoPago: req.body.metodoPago,
+            referencia: req.body.referencia,
+            idUsuario: req.usuario.id_usuario
+        });
+        res.json({ success: true, data: resultado });
+    } catch (error) {
+        next(error);
+    }
+}
+
 async function listar(req, res, next) {
     try {
         const data = await ventaService.listarVentas(req.query);
@@ -50,6 +66,7 @@ module.exports = {
     crear,
     crearDesdeCotizacion,
     emitir,
+    registrarPago,
     listar,
     obtener
 };
