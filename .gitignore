@@ -1,9 +1,10 @@
 node_modules/
-frontend/dist/
-frontend/.next/
 backend/node_modules/
 backend/uploads/
-.env
 backend/.env
+Admin-front/.next/
+Admin-front/node_modules/
+Empleado-front/.next/
+Empleado-front/node_modules/
 *.log
 *.tmp
