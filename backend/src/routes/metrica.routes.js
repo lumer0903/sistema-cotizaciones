@@ -1,7 +1,7 @@
 const express = require('express');
 const metricaController = require('../controllers/metrica.controller');
 const autenticarToken = require('../middlewares/auth.middleware');
-const { autorizarRoles } = require('../middlewares/rol.middleware');
+const autorizarRoles = require('../middlewares/rol.middleware');
 
 const router = express.Router();
 
