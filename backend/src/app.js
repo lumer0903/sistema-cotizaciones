@@ -12,6 +12,7 @@ const usuarioRoutes = require('./routes/usuario.routes');
 const ventaRoutes = require('./routes/venta.routes');
 const cuentaCobrarRoutes = require('./routes/cuentaCobrar.routes');
 const almacenRoutes = require('./routes/almacen.routes');
+const metricaRoutes = require('./routes/metrica.routes');
 const { iniciarJobCobranza } = require('./services/cobranza.job');
 
 const app = express();
@@ -40,6 +41,7 @@ app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/ventas', ventaRoutes);
 app.use('/api/cuentas-cobrar', cuentaCobrarRoutes);
 app.use('/api/almacenes', almacenRoutes);
+app.use('/api/metricas', metricaRoutes);
 
 // Iniciar job de cobranza (solo en producción/no test)
 if (process.env.NODE_ENV !== 'test') {
