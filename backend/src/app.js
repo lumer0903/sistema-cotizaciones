@@ -9,6 +9,10 @@ const productoRoutes = require('./routes/producto.routes');
 const cotizacionRoutes = require('./routes/cotizacion.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const usuarioRoutes = require('./routes/usuario.routes');
+const ventaRoutes = require('./routes/venta.routes');
+const cuentaCobrarRoutes = require('./routes/cuentaCobrar.routes');
+const almacenRoutes = require('./routes/almacen.routes');
+const { iniciarJobCobranza } = require('./services/cobranza.job');
 
 const app = express();
 const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:3000')
@@ -33,6 +37,14 @@ app.use('/api/productos', productoRoutes);
 app.use('/api/cotizaciones', cotizacionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/usuarios', usuarioRoutes);
+app.use('/api/ventas', ventaRoutes);
+app.use('/api/cuentas-cobrar', cuentaCobrarRoutes);
+app.use('/api/almacenes', almacenRoutes);
+
+// Iniciar job de cobranza (solo en producción/no test)
+if (process.env.NODE_ENV !== 'test') {
+    iniciarJobCobranza();
+}
 
 app.use((req, res) => res.status(404).json({ success: false, message: `Ruta no encontrada: ${req.method} ${req.originalUrl}` }));
 app.use((err, _req, res, _next) => {
