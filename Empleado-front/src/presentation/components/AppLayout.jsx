@@ -9,6 +9,7 @@ const items = [
   ['/productos', Package, 'Catálogo', 'productos'],
   ['/consulta-precios', Search, 'Precios', 'consulta_precios'],
   ['/cotizaciones', FileText, 'Mis Cotizaciones', 'cotizaciones'],
+  ['/ventas', FileText, 'Ventas', 'cotizaciones'],
 ];
 
 const roleNames = { admin: 'Administrador', gerente: 'Gerente', vendedor: 'Vendedor' };
@@ -20,6 +21,8 @@ export function AppLayout({ title, children }) {
   
   // Definimos si estamos dentro del flujo o módulo de Cotizaciones
   const quoteRoute = location.pathname.startsWith('/cotizacion') || location.pathname === '/crear-cotizacion';
+  // Definimos si estamos dentro del flujo o módulo de Ventas
+  const ventaRoute = location.pathname.startsWith('/venta') || location.pathname === '/crear-venta';
 
   const userInitials = user?.nombre
     ? user.nombre.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
@@ -113,6 +116,36 @@ export function AppLayout({ title, children }) {
                         `}
                       >
                         Mis cotizaciones
+                      </Link>
+                    </div>
+                  )}
+
+                  {/* Submenú de Ventas */}
+                  {href === '/ventas' && ventaRoute && (
+                    <div className="ml-5 pl-4 border-l border-[#d9d9d9] py-1 space-y-1">
+                      <Link 
+                        to="/crear-venta" 
+                        onClick={() => setOpen(false)}
+                        className={`
+                          block rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-colors
+                          ${location.pathname === '/crear-venta' 
+                            ? 'text-[#7b1c1c] font-semibold bg-[#fdf2f2]' 
+                            : 'text-[#414141]/60 hover:text-[#7b1c1c] hover:bg-[#f8fafc]'}
+                        `}
+                      >
+                        Crear venta
+                      </Link>
+                      <Link 
+                        to="/ventas" 
+                        onClick={() => setOpen(false)}
+                        className={`
+                          block rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-colors
+                          ${location.pathname === '/ventas' 
+                            ? 'text-[#7b1c1c] font-semibold bg-[#fdf2f2]' 
+                            : 'text-[#414141]/60 hover:text-[#7b1c1c] hover:bg-[#f8fafc]'}
+                        `}
+                      >
+                        Mis ventas
                       </Link>
                     </div>
                   )}
