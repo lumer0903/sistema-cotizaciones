@@ -1,0 +1,32 @@
+{
+  "name": "goldcontinent",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:api": "turbo run dev --filter=@goldcontinent/api",
+    "dev:web": "turbo run dev --filter=@goldcontinent/web",
+    "dev:ai": "turbo run dev --filter=@goldcontinent/ai-service",
+    "build": "turbo run build",
+    "build:api": "turbo run build --filter=@goldcontinent/api",
+    "build:web": "turbo run build --filter=@goldcontinent/web",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "db:generate": "pnpm --filter=@goldcontinent/database run db:generate",
+    "db:push": "pnpm --filter=@goldcontinent/database run db:push",
+    "db:migrate": "pnpm --filter=@goldcontinent/database run db:migrate",
+    "db:studio": "pnpm --filter=@goldcontinent/database run db:studio",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "typescript": "^5.6.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

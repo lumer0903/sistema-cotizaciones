@@ -1,0 +1,38 @@
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+export async function apiClient(path: string, options: RequestInit = {}) {
+  const isFormData = options.body instanceof FormData;
+  const headers: HeadersInit = {
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+    ...(options.headers || {}),
+  };
+
+  const response = await fetch(`${API_BASE}${path.startsWith('/api/') ? path : `/api/${path}`}`, {
+    ...options,
+    headers,
+    credentials: 'include',
+  });
+
+  if (response.status === 401) {
+    try {
+      await refreshToken();
+      return apiClient(path, options);
+    } catch {
+      window.location.href = '/login';
+      throw new Error('No autorizado');
+    }
+  }
+
+  return response.json();
+}
+
+async function refreshToken() {
+  const response = await fetch(`${API_BASE}/api/auth/refresh`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    throw new Error('No se pudo renovar el token');
+  }
+}

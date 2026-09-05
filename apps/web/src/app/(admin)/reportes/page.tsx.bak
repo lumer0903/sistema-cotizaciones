@@ -1,0 +1,114 @@
+'use client';
+
+import { BarChart3, TrendingUp, TrendingDown, DollarSign, Users, Package, FileText, Calendar, Download } from 'lucide-react';
+import { AppLayout } from '@/components/AppLayout';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { useAuth } from '@/lib/authProvider';
+import { apiClient } from '@/lib/apiClient';
+import { useEffect, useState } from 'react';
+
+interface KpiData {
+  tiempo_promedio_cierre: number;
+  eficacia_cotizaciones: number;
+  conversion_ventas: number;
+  cobranza_efectiva: number;
+}
+
+interface MonthlySales {
+  mes: string;
+  ventas: number;
+  cotizaciones: number;
+}
+
+function ReportesPage() {
+  const { usuario } = useAuth();
+  const [kpis, setKpis] = useState<KpiData | null>(null);
+  const [monthlySales, setMonthlySales] = useState<MonthlySales[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [periodo, setPeriodo] = useState('12');
+
+  useEffect(() => {
+    const fetchReportes = async () => {
+      try {
+        const [kpiData, salesData] = await Promise.all([
+          apiClient(`/metricas/kpi?periodo=${periodo}`),
+          apiClient(`/metricas/ventas-mensuales?meses=${periodo}`),
+        ]);
+
+        if (kpiData.success) setKpis(kpiData.data);
+        if (salesData.success) setMonthlySales(salesData.data);
+      } catch (error) {
+        console.error('Error fetching reportes:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReportes();
+  }, [periodo]);
+
+  const kpiCards = [
+    { label: 'Tiempo Prom. Cierre', value: kpis ? `${kpis.tiempo_promedio_cierre.toFixed(1)} días` : '—', icon: TrendingUp, color: 'bg-blue-500' },
+    { label: 'Eficacia Cotizaciones', value: kpis ? `${kpis.eficacia_cotizaciones.toFixed(1)}%` : '—', icon: TrendingDown, color: 'bg-green-500' },
+    { label: 'Conversión Ventas', value: kpis ? `${kpis.conversion_ventas.toFixed(1)}%` : '—', icon: DollarSign, color: 'bg-purple-500' },
+    { label: 'Cobranza Efectiva', value: kpis ? `${kpis.cobranza_efectiva.toFixed(1)}%` : '—', icon: Users, color: 'bg-orange-500' },
+  ];
+
+  return (
+    <AppLayout title="Reportes y Métricas">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Reportes y Métricas</h1>
+          <p className="text-gray-500">KPIs y análisis de rendimiento comercial</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <select
+            value={periodo}
+            onChange={(e) => setPeriodo(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+          >
+            <option value="6">Últimos 6 meses</option>
+            <option value="12">Últimos 12 meses</option>
+            <option value="24">Últimos 24 meses</option>
+          </select>
+          <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Exportar
+          </button>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        {kpiCards.map((kpi) => (
+          <div key={kpi.label} className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">{kpi.label}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{kpi.value}</p>
+              </div>
+              <div className={`p-3 rounded-xl ${kpi.color}`}>
+                <kpi.icon className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </div>
+        ))}
+
+      <div className="bg-white rounded-xl border border-gray-200">
+        <div className="p-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Ventas Mensuales</h2>
+        </div>
+        <div className="p-4">
+          {loading ? (
+            <div className="h-64 flex items-center justify-center text-gray-500">Cargando...</div>
+          ) : (
+            <div className="h-64">
+              <canvas id="salesChart" width="800" height="400"></canvas>
+            </div>
+          )}
+        </div>
+      </div>
+    </AppLayout>
+  );
+}
+
+export default ReportesPage;

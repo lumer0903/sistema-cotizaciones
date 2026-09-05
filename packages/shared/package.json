@@ -1,0 +1,26 @@
+{
+  "name": "@goldcontinent/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./auth": "./dist/auth/index.js",
+    "./schemas": "./dist/schemas/index.js",
+    "./types": "./dist/types/index.js",
+    "./constants": "./dist/constants/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "typescript": "^5.6.0"
+  }
+}

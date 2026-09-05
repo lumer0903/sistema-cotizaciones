@@ -1,0 +1,363 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  admin
+  gerente
+  vendedor
+}
+
+enum EstadoCotizacion {
+  borrador
+  enviada
+  aprobada
+  rechazada
+}
+
+enum TipoPrecio {
+  normal
+  distribuidor
+}
+
+enum TipoVenta {
+  unidad
+  docena
+  mayor
+}
+
+enum EstadoVenta {
+  borrador
+  emitida
+  pagada
+  parcial
+  anulada
+}
+
+enum TipoPago {
+  contado
+  credito
+}
+
+enum TipoDocumento {
+  boleta
+  factura
+}
+
+enum EstadoCuentaCobrar {
+  pendiente
+  parcial
+  pagada
+  vencida
+  anulada
+}
+
+enum TipoMovimientoInventario {
+  entrada
+  salida
+  ajuste
+  transferencia
+}
+
+enum OrigenMovimiento {
+  compra
+  venta
+  cotizacion_aprobada
+  ajuste_manual
+  transferencia_origen
+  transferencia_destino
+  inventario_inicial
+}
+
+model Usuario {
+  id_usuario          Int                @id @default(autoincrement())
+  nombre              String
+  email               String             @unique
+  password_hash       String
+  refresh_token_hash  String?
+  rol                 Rol                @default(vendedor)
+  activo              Boolean            @default(true)
+  created_at          DateTime           @default(now())
+  cotizaciones        Cotizacion[]
+  ventas              Venta[]            @relation("VentaUsuario")
+  ventasAutorizadas   Venta[]            @relation("PagoUsuario")
+  historialPrecios    HistorialPrecios[]
+  pagos               VentaPago[]        @relation("PagoUsuario")
+  movimientos         InventarioMovimiento[]
+  cuentasCobrar       CuentaCobrar[]     @relation("CuentaCobrarUsuario")
+
+  @@map("usuarios")
+}
+
+model Categoria {
+  id_categoria     Int        @id @default(autoincrement())
+  nombre_categoria String     @map("nombre_categoria")
+  productos        Producto[]
+
+  @@map("categorias")
+}
+
+model Producto {
+  id_producto         Int                  @id @default(autoincrement())
+  codigo              String               @unique
+  descripcion         String
+  foto_url            String?
+  activo              Boolean              @default(true)
+  stock_principal     Int                  @default(0)
+  stock_tacna         Int                  @default(0)
+  stock_total         Int                  @default(0)
+  stock_minimo        Int                  @default(10)
+  unidades_por_caja   Int                  @default(1)
+  id_categoria        Int?
+  categoria           Categoria?           @relation(fields: [id_categoria], references: [id_categoria])
+  precios_actuales    PreciosActuales?
+  historial_precios   HistorialPrecios[]
+  cotizacion_detalle  CotizacionDetalle[]
+  venta_detalle       VentaDetalle[]
+  stock_actual        StockActual[]
+  movimientos         InventarioMovimiento[]
+
+  @@map("productos")
+}
+
+model PreciosActuales {
+  id_producto           Int      @id
+  costo_normal          Decimal  @default(0.00) @db.Decimal(10, 2)
+  precio_unidad_normal  Decimal  @default(0.00) @db.Decimal(10, 2)
+  precio_docena_normal  Decimal  @default(0.00) @db.Decimal(10, 2)
+  precio_mayor_normal   Decimal  @default(0.00) @db.Decimal(10, 2)
+  costo_distribuidor    Decimal  @default(0.00) @db.Decimal(10, 2)
+  precio_unidad_dist    Decimal  @default(0.00) @db.Decimal(10, 2)
+  precio_docena_dist    Decimal  @default(0.00) @db.Decimal(10, 2)
+  precio_mayor_dist     Decimal  @default(0.00) @db.Decimal(10, 2)
+  updated_at            DateTime @updatedAt
+  producto              Producto @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade)
+
+  @@map("precios_actuales")
+}
+
+model HistorialPrecios {
+  id_historial     Int      @id @default(autoincrement())
+  id_producto      Int
+  id_usuario       Int?
+  campo_modificado String
+  valor_anterior   Decimal  @db.Decimal(10, 2)
+  valor_nuevo      Decimal  @db.Decimal(10, 2)
+  fecha_cambio     DateTime @default(now())
+  producto         Producto @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade)
+  usuario          Usuario? @relation(fields: [id_usuario], references: [id_usuario], onDelete: SetNull)
+
+  @@map("historial_precios")
+}
+
+model Cliente {
+  id_cliente       Int          @id @default(autoincrement())
+  nombre           String
+  telefono         String?
+  email            String?
+  ruc_dni          String?
+  tipo             TipoPrecio   @default(normal)
+  limite_credito   Decimal      @default(0.00) @db.Decimal(10, 2)
+  created_at       DateTime     @default(now())
+  cotizaciones     Cotizacion[]
+  ventas           Venta[]
+  cuentas_cobrar   CuentaCobrar[]
+
+  @@map("clientes")
+}
+
+model Cotizacion {
+  id_cotizacion   Int                  @id @default(autoincrement())
+  numero          String               @unique
+  id_cliente      Int?
+  id_usuario      Int?
+  tipo_precio     TipoPrecio           @default(normal)
+  subtotal        Decimal              @default(0.00) @db.Decimal(10, 2)
+  igv             Decimal              @default(0.00) @db.Decimal(10, 2)
+  total           Decimal              @default(0.00) @db.Decimal(10, 2)
+  observaciones   String?
+  incluye_carreta Boolean              @default(true)
+  costo_carreta   Decimal              @default(15.00) @db.Decimal(10, 2)
+  estado          EstadoCotizacion     @default(borrador)
+  tiempo_inicio   DateTime             @default(now())
+  tiempo_fin      DateTime?
+  created_at      DateTime             @default(now())
+  cliente         Cliente?             @relation(fields: [id_cliente], references: [id_cliente])
+  usuario         Usuario?             @relation(fields: [id_usuario], references: [id_usuario])
+  detalle         CotizacionDetalle[]
+  ventas          Venta[]
+
+  @@map("cotizaciones")
+}
+
+model CotizacionDetalle {
+  id_detalle      Int        @id @default(autoincrement())
+  id_cotizacion   Int
+  id_producto     Int
+  tipo_venta      TipoVenta
+  cantidad        Int
+  color_notas     String?
+  precio_unitario Decimal    @db.Decimal(10, 2)
+  subtotal        Decimal    @db.Decimal(10, 2)
+  es_sugerido_ia  Boolean    @default(false)
+  cotizacion      Cotizacion @relation(fields: [id_cotizacion], references: [id_cotizacion], onDelete: Cascade)
+  producto        Producto   @relation(fields: [id_producto], references: [id_producto])
+
+  @@map("cotizacion_detalle")
+}
+
+model Almacen {
+  id_almacen    Int                @id @default(autoincrement())
+  nombre        String
+  ubicacion     String?
+  es_principal  Boolean            @default(false)
+  activo        Boolean            @default(true)
+  stock_actual  StockActual[]
+  ventas        Venta[]            @relation("VentaAlmacen")
+  movimientos   InventarioMovimiento[]
+
+  @@map("almacenes")
+}
+
+model StockActual {
+  id_stock     Int      @id @default(autoincrement())
+  id_producto  Int
+  id_almacen   Int
+  cantidad     Int      @default(0)
+  updated_at   DateTime @updatedAt
+  producto     Producto @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade)
+  almacen      Almacen  @relation(fields: [id_almacen], references: [id_almacen], onDelete: Cascade)
+
+  @@unique([id_producto, id_almacen])
+  @@map("stock_actual")
+}
+
+model Venta {
+  id_venta           Int                @id @default(autoincrement())
+  serie              String
+  correlativo        Int
+  numero_completo    String             @unique
+  tipo_documento     TipoDocumento      @default(boleta)
+  estado             EstadoVenta        @default(borrador)
+  fecha_emision      DateTime           @default(now())
+  fecha_vencimiento  DateTime?
+  id_cotizacion      Int?
+  id_cliente         Int
+  id_usuario         Int
+  id_almacen         Int
+  subtotal           Decimal            @db.Decimal(10, 2)
+  igv                Decimal            @db.Decimal(10, 2)
+  total              Decimal            @db.Decimal(10, 2)
+  descuento_global   Decimal            @default(0.00) @db.Decimal(10, 2)
+  tipoPago           TipoPago           @default(contado)
+  diasPlazo          Int?
+  montoPagado        Decimal            @default(0.00) @db.Decimal(10, 2)
+  montoPendiente     Decimal            @default(0.00) @db.Decimal(10, 2)
+  autorizadoPor      Int?
+  autorizadoAt       DateTime?
+  observaciones      String?
+  created_at         DateTime           @default(now())
+  updated_at         DateTime           @updatedAt
+  cotizacion         Cotizacion?        @relation(fields: [id_cotizacion], references: [id_cotizacion], onDelete: SetNull)
+  cliente            Cliente            @relation(fields: [id_cliente], references: [id_cliente])
+  usuario            Usuario            @relation("VentaUsuario", fields: [id_usuario], references: [id_usuario])
+  almacen            Almacen            @relation("VentaAlmacen", fields: [id_almacen], references: [id_almacen])
+  autorizador        Usuario?           @relation("PagoUsuario", fields: [autorizadoPor], references: [id_usuario])
+  detalles           VentaDetalle[]
+  pagos              VentaPago[]
+  cuentasCobrar      CuentaCobrar[]
+  movimientos        InventarioMovimiento[]
+
+  @@unique([serie, correlativo])
+  @@map("ventas")
+}
+
+model VentaDetalle {
+  id_detalle     Int      @id @default(autoincrement())
+  id_venta       Int
+  id_producto    Int
+  tipo_venta     TipoVenta
+  cantidad       Int
+  precio_unitario Decimal   @db.Decimal(10, 2)
+  descuento_item Decimal   @default(0.00) @db.Decimal(10, 2)
+  subtotal       Decimal   @db.Decimal(10, 2)
+  igv_item       Decimal   @db.Decimal(10, 2)
+  total_item     Decimal   @db.Decimal(10, 2)
+  es_sugerido_ia Boolean   @default(false)
+  venta          Venta     @relation(fields: [id_venta], references: [id_venta], onDelete: Cascade)
+  producto       Producto  @relation(fields: [id_producto], references: [id_producto])
+
+  @@map("venta_detalle")
+}
+
+model VentaPago {
+  id_pago      Int      @id @default(autoincrement())
+  id_venta     Int
+  monto        Decimal  @db.Decimal(10, 2)
+  metodo_pago  String   @default("efectivo")
+  referencia   String?
+  id_usuario   Int?
+  fecha_pago   DateTime @default(now())
+  venta        Venta    @relation(fields: [id_venta], references: [id_venta], onDelete: Cascade)
+  usuario      Usuario? @relation("PagoUsuario", fields: [id_usuario], references: [id_usuario])
+
+  @@map("venta_pagos")
+}
+
+model CuentaCobrar {
+  id_cuenta        Int                  @id @default(autoincrement())
+  id_venta         Int
+  id_cliente       Int
+  id_usuario       Int?
+  montoOriginal    Decimal              @db.Decimal(10, 2)
+  montoPendiente   Decimal              @db.Decimal(10, 2)
+  estado           EstadoCuentaCobrar   @default(pendiente)
+  fechaVencimiento DateTime
+  fechaPago        DateTime?
+  created_at       DateTime             @default(now())
+  venta            Venta                @relation(fields: [id_venta], references: [id_venta], onDelete: Cascade)
+  cliente          Cliente              @relation(fields: [id_cliente], references: [id_cliente])
+  usuario          Usuario?             @relation("CuentaCobrarUsuario", fields: [id_usuario], references: [id_usuario])
+
+  @@map("cuentas_cobrar")
+}
+
+model InventarioMovimiento {
+  id_movimiento    Int                  @id @default(autoincrement())
+  id_producto      Int
+  id_almacen       Int
+  id_venta         Int?
+  tipo             TipoMovimientoInventario
+  origen           OrigenMovimiento
+  cantidad         Int
+  stock_anterior   Int
+  stock_posterior  Int
+  costo_unitario   Decimal              @db.Decimal(10, 2)
+  id_referencia    Int?
+  tipo_referencia  String?
+  id_usuario       Int?
+  observaciones    String?
+  created_at       DateTime             @default(now())
+  producto         Producto             @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade)
+  almacen          Almacen              @relation(fields: [id_almacen], references: [id_almacen], onDelete: Cascade)
+  usuario          Usuario?             @relation(fields: [id_usuario], references: [id_usuario], onDelete: SetNull)
+  venta            Venta?               @relation(fields: [id_venta], references: [id_venta], onDelete: SetNull)
+
+  @@map("inventario_movimientos")
+}
+
+model IaInteracciones {
+  id_interaccion Int      @id @default(autoincrement())
+  id_producto    Int?
+  prompt         String
+  respuesta      String
+  created_at     DateTime @default(now())
+
+  @@map("ia_interacciones")
+}
