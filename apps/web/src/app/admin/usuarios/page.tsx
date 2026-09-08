@@ -1,8 +1,6 @@
 'use client';
 
 import { Users, Plus, Search, MoreVertical } from 'lucide-react';
-import { AppLayout } from '@/components/AppLayout';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
@@ -69,7 +67,7 @@ export default function UsuariosPage() {
   );
 
   return (
-    <AppLayout title="Gestión de Usuarios">
+    <>
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
@@ -139,6 +137,6 @@ export default function UsuariosPage() {
           </div>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 }

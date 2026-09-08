@@ -18,7 +18,9 @@ export async function apiClient(path: string, options: RequestInit = {}) {
       await refreshToken();
       return apiClient(path, options);
     } catch {
-      window.location.href = '/login';
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
       throw new Error('No autorizado');
     }
   }

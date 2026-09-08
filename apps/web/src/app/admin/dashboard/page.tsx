@@ -1,8 +1,6 @@
 'use client';
 
 import { Package, Users, FileText, DollarSign, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
-import { AppLayout } from '@/components/AppLayout';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
@@ -58,14 +56,7 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <AppLayout title="Dashboard">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500">Bienvenido, {usuario?.nombre}</p>
-        </div>
-      </div>
-
+    <>
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
@@ -115,6 +106,6 @@ export default function AdminDashboardPage() {
           </div>
         </>
       )}
-    </AppLayout>
+    </>
   );
 }

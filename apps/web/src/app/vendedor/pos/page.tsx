@@ -1,8 +1,6 @@
 'use client';
 
 import { Search, CreditCard, Package, Plus, X, Check, ArrowLeft, Grid, List } from 'lucide-react';
-import { VendedorLayout } from '@/components/VendedorLayout';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
@@ -22,6 +20,80 @@ interface CartItem {
   producto: Producto;
   cantidad: number;
   tipo_venta: 'unidad' | 'docena' | 'mayor';
+}
+
+function EmptyState() {
+  return (
+    <div className="text-center py-12 text-gray-500">
+      <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+      <p>No se encontraron productos</p>
+    </div>
+  );
+}
+
+function GridView({ filteredProductos, getPrecio, agregarAlCarrito }: { 
+  filteredProductos: Producto[]; 
+  getPrecio: (p: Producto, t: 'unidad' | 'docena' | 'mayor') => number;
+  agregarAlCarrito: (p: Producto) => void;
+}) {
+  if (filteredProductos.length === 0) {
+    return <EmptyState />;
+  }
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-h-[50vh] overflow-y-auto">
+      {filteredProductos.map((producto) => (
+        <div
+          key={producto.id_producto}
+          onClick={() => agregarAlCarrito(producto)}
+          className="bg-white rounded-xl border border-gray-200 p-4 cursor-pointer hover:border-green-300 hover:shadow-md transition-all"
+        >
+          <div className="h-24 bg-gray-50 rounded-lg flex items-center justify-center mb-3">
+            <Package className="h-12 w-12 text-gray-400" />
+          </div>
+          <p className="font-medium text-gray-900 text-sm line-clamp-1">{producto.codigo}</p>
+          <p className="text-gray-500 text-sm line-clamp-2">{producto.descripcion}</p>
+          <p className="text-lg font-bold text-green-700 mt-2">S/ ${getPrecio(producto, 'unidad').toFixed(2)}</p>
+          <p className="text-xs text-gray-400 mt-1">Stock: {producto.stock_total}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ListView({ filteredProductos, getPrecio, agregarAlCarrito }: { 
+  filteredProductos: Producto[]; 
+  getPrecio: (p: Producto, t: 'unidad' | 'docena' | 'mayor') => number;
+  agregarAlCarrito: (p: Producto) => void;
+}) {
+  if (filteredProductos.length === 0) {
+    return (
+      <tr>
+        <td colSpan={5} className="p-12 text-center text-gray-500">
+          <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+          <p>No se encontraron productos</p>
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <>
+      {filteredProductos.map((producto) => (
+        <tr key={producto.id_producto} className="hover:bg-gray-50 cursor-pointer" onClick={() => agregarAlCarrito(producto)}>
+          <td className="p-3 font-mono text-sm text-gray-900">{producto.codigo}</td>
+          <td className="p-3 text-sm text-gray-900">{producto.descripcion}</td>
+          <td className="p-3 text-sm text-gray-500">{producto.stock_total}</td>
+          <td className="p-3 font-semibold text-green-700">S/ ${getPrecio(producto, 'unidad').toFixed(2)}</td>
+          <td className="p-3">
+            <button className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200 transition-colors">
+              Agregar
+            </button>
+          </td>
+        </tr>
+      ))}
+    </>
+  );
 }
 
 export default function POSPage() {
@@ -116,16 +188,16 @@ export default function POSPage() {
         idProducto: item.producto.id_producto,
         cantidad: item.cantidad,
         tipoVenta: item.tipo_venta,
-    }));
+      }));
 
-await apiClient('/ventas', {
+      await apiClient('/ventas', {
         method: 'POST',
         body: JSON.stringify({
           idCliente: selectedClient.id,
           detalles,
           tipoPago: 'contado',
         }),
-    })
+      });
 
       setCart([]);
       setSelectedClient(null);
@@ -137,7 +209,7 @@ await apiClient('/ventas', {
   };
 
   return (
-    <VendedorLayout title="Punto de Venta">
+    <>
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         <div className="flex flex-col gap-4">
           <div className="relative">
@@ -179,59 +251,17 @@ await apiClient('/ventas', {
               ))}
             </div>
           ) : viewMode === 'grid' ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-h-[50vh] overflow-y-auto">
-              {filteredProductos.map((producto) => (
-                <div
-                  key={producto.id_producto}
-                  onClick={() => agregarAlCarrito(producto)}
-                  className="bg-white rounded-xl border border-gray-200 p-4 cursor-pointer hover:border-green-300 hover:shadow-md transition-all"
-                >
-                  <div className="h-24 bg-gray-50 rounded-lg flex items-center justify-center mb-3">
-                    <Package className="h-12 w-12 text-gray-400" />
-                  </div>
-                  <p className="font-medium text-gray-900 text-sm line-clamp-1">{producto.codigo}</p>
-                  <p className="text-gray-500 text-sm line-clamp-2">{producto.descripcion}</p>
-                  <p className="text-lg font-bold text-green-700 mt-2">S/ ${getPrecio(producto, 'unidad').toFixed(2)}</p>
-                  <p className="text-xs text-gray-400 mt-1">Stock: {producto.stock_total}</p>
-                </div>
-              ))}
-            </div>
+            <GridView 
+              filteredProductos={filteredProductos} 
+              getPrecio={getPrecio} 
+              agregarAlCarrito={agregarAlCarrito} 
+            />
           ) : (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden max-h-[50vh] overflow-y-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr className="text-left text-sm text-gray-500">
-                    <th className="p-3">Código</th>
-                    <th className="p-3">Producto</th>
-                    <th className="p-3">Stock</th>
-                    <th className="p-3">Precio</th>
-                    <th className="p-3 w-24"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredProductos.map((producto) => (
-                    <tr key={producto.id_producto} className="hover:bg-gray-50 cursor-pointer" onClick={() => agregarAlCarrito(producto)}>
-                      <td className="p-3 font-mono text-sm text-gray-900">{producto.codigo}</td>
-                      <td className="p-3 text-sm text-gray-900">{producto.descripcion}</td>
-                      <td className="p-3 text-sm text-gray-500">{producto.stock_total}</td>
-                      <td className="p-3 font-semibold text-green-700">S/ ${getPrecio(producto, 'unidad').toFixed(2)}</td>
-                      <td className="p-3">
-                        <button className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200 transition-colors">
-                          Agregar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {filteredProductos.length === 0 && !loading && (
-            <div className="text-center py-12 text-gray-500">
-              <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p>No se encontraron productos</p>
-            </div>
+            <ListView 
+              filteredProductos={filteredProductos} 
+              getPrecio={getPrecio} 
+              agregarAlCarrito={agregarAlCarrito} 
+            />
           )}
         </div>
 
@@ -269,7 +299,7 @@ await apiClient('/ventas', {
               <p className="text-gray-500">El carrito está vacío</p>
               <p className="text-sm">Agrega productos desde el catálogo</p>
             </div>
-) : (
+          ) : (
             <div>
               <div className="space-y-3 mb-4 max-h-[30vh] overflow-y-auto">
                 {cart.map((item) => (
@@ -336,6 +366,6 @@ await apiClient('/ventas', {
           )}
         </div>
       </div>
-    </VendedorLayout>
+    </>
   );
 }

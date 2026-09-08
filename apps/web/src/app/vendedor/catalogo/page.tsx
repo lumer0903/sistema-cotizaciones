@@ -1,8 +1,6 @@
 'use client';
 
 import { Search, Filter, Grid, List, Package, Tag, ChevronDown, Eye, Plus } from 'lucide-react';
-import { VendedorLayout } from '@/components/VendedorLayout';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
@@ -183,7 +181,7 @@ export default function CatalogoPage() {
   }, [search, categoriaFilter, productos]);
 
   return (
-    <VendedorLayout title="Catálogo de Productos">
+    <>
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Catálogo</h1>
@@ -250,6 +248,6 @@ export default function CatalogoPage() {
       ) : (
         renderListView(filteredProductos)
       )}
-    </VendedorLayout>
+    </>
   );
 }

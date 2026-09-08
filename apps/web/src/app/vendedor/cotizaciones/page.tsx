@@ -1,8 +1,6 @@
 'use client';
 
 import { FileText, Plus, Search, Filter, ChevronDown, Calendar, Eye, Edit, Trash2, Send, Download } from 'lucide-react';
-import { VendedorLayout } from '@/components/VendedorLayout';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
@@ -67,7 +65,7 @@ export default function CotizacionesPage() {
   );
 
   return (
-    <VendedorLayout title="Mis Cotizaciones">
+    <>
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Mis Cotizaciones</h1>
@@ -182,6 +180,6 @@ export default function CotizacionesPage() {
           </div>
         )}
       </div>
-    </VendedorLayout>
+    </>
   );
 }
