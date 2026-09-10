@@ -1,24 +1,39 @@
-import 'dotenv/config';
-import { app } from './app';
+import { NestFactory } from '@nestjs/core';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { ValidationPipe } from '@nestjs/common';
+import cookieParser from 'cookie-parser';
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
-
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 API Gold Continent running on http://localhost:${PORT}`);
+process.on('unhandledRejection', (reason: unknown) => {
+  console.error('Unhandled Rejection at:', new Date().toISOString(), reason);
 });
 
-function shutdown(signal: string) {
-  console.log(`\n${signal}: shutting down server...`);
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  app.use(cookieParser());
+  app.enableCors({
+    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    credentials: true,
   });
 
-  setTimeout(() => {
-    console.error('Forced shutdown');
-    process.exit(1);
-  }, 10000);
-}
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.useGlobalFilters(new AllExceptionsFilter());
 
-process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('SIGTERM', () => shutdown('SIGTERM'));
+  app.setGlobalPrefix('api');
+
+  const config = new DocumentBuilder()
+    .setTitle('Goldcontinent API')
+    .setDescription('The Goldcontinent API description')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document);
+
+  const port = process.env.PORT || 3001;
+  await app.listen(port);
+  console.log(`Application is running on port ${port}`);
+}
+bootstrap();

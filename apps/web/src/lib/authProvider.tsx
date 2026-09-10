@@ -27,6 +27,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchUser = async () => {
+    // Evitar hacer la petición si no hay cookie de rol (usuario deslogueado)
+    if (typeof document !== 'undefined' && !document.cookie.includes('userRole=')) {
+      setUsuario(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       const data = await apiClient('/api/auth/me');
       if (data.success) {

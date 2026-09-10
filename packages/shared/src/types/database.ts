@@ -20,9 +20,9 @@ import {
   TipoPrecio,
   TipoVenta,
   EstadoVenta,
-  TipoDocumento,
-  EstadoCuentaCobrar,
-  TipoMovimientoInventario,
+  TipoDocumentoVenta,
+  EstadoCuenta,
+  TipoMovimiento,
   OrigenMovimiento,
 } from '@prisma/client';
 
@@ -48,11 +48,15 @@ export type {
   TipoPrecio,
   TipoVenta,
   EstadoVenta,
-  TipoDocumento,
-  EstadoCuentaCobrar,
-  TipoMovimientoInventario,
+  TipoDocumentoVenta,
+  EstadoCuenta,
+  TipoMovimiento,
   OrigenMovimiento,
 };
+
+export type TipoDocumento = TipoDocumentoVenta;
+export type TipoMovimientoInventario = TipoMovimiento;
+export type EstadoCuentaCobrar = EstadoCuenta;
 
 export type ProductoConPrecios = Producto & {
   precios_actuales: PreciosActuales | null;
