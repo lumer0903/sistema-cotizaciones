@@ -1,11 +1,13 @@
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+  binaryTargets   = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pg_trgm]
 }
 
 model Usuario {
@@ -17,12 +19,16 @@ model Usuario {
   rol               Rol                    @default(vendedor)
   activo            Boolean                @default(true)
   created_at        DateTime               @default(now())
+  updated_at        DateTime               @updatedAt
+  deleted_at        DateTime?
   cotizaciones      Cotizacion[]
   historialPrecios  HistorialPrecios[]
   movimientos       InventarioMovimiento[]
   pagos             VentaPago[]            @relation("PagoUsuario")
   ventas            Venta[]                @relation("VentaUsuario")
 
+  @@index([nombre(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([email])
   @@map("usuarios")
 }
 
@@ -46,6 +52,9 @@ model Producto {
   stock_minimo       Int                    @default(10)
   unidades_por_caja  Int                    @default(1)
   id_categoria       Int?
+  created_at         DateTime               @default(now())
+  updated_at         DateTime               @updatedAt
+  deleted_at         DateTime?
   alertas_stock      alertas_stock[]
   cotizacion_detalle CotizacionDetalle[]
   historial_precios  HistorialPrecios[]
@@ -55,6 +64,8 @@ model Producto {
   stock_actual       StockActual[]
   venta_detalle      VentaDetalle[]
 
+  @@index([descripcion(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([codigo(ops: raw("gin_trgm_ops"))], type: Gin)
   @@map("productos")
 }
 
@@ -100,10 +111,14 @@ model Cliente {
   diasGracia         Int?           @default(0)
   limiteCredito      Decimal?       @default(0) @db.Decimal(12, 2)
   tasaMora           Decimal?       @default(0) @db.Decimal(5, 2)
+  updated_at         DateTime       @updatedAt
+  deleted_at         DateTime?
   cotizaciones       Cotizacion[]
   cuentas_cobrar     CuentaCobrar[]
   ventas             Venta[]
 
+  @@index([nombre(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([ruc_dni(ops: raw("gin_trgm_ops"))], type: Gin)
   @@map("clientes")
 }
 

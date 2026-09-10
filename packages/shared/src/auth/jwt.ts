@@ -20,7 +20,7 @@ export interface RefreshTokenPayload {
 export const JWT_CONFIG = {
   ACCESS_TOKEN_EXPIRY: '15m',
   REFRESH_TOKEN_EXPIRY: '7d',
-  ACCESS_TOKEN_SECRET: process.env.JWT_ACCESS_SECRET || 'change-me-access-secret',
+  ACCESS_TOKEN_SECRET: process.env.JWT_SECRET || 'dev-secret-change-in-production',
   REFRESH_TOKEN_SECRET: process.env.JWT_REFRESH_SECRET || 'change-me-refresh-secret',
 } as const;
 

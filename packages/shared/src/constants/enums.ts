@@ -50,6 +50,10 @@ export type TipoPago = (typeof TipoPago)[keyof typeof TipoPago];
 export const TipoDocumento = {
   boleta: 'boleta',
   factura: 'factura',
+  nota_venta: 'nota_venta',
+  nota_credito: 'nota_credito',
+  nota_debito: 'nota_debito',
+  guia_remision: 'guia_remision',
 } as const;
 
 export type TipoDocumento = (typeof TipoDocumento)[keyof typeof TipoDocumento];

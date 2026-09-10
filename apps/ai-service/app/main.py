@@ -27,24 +27,35 @@ class RecommendRequest(BaseModel):
     id_producto: int
 
 class RecommendResponse(BaseModel):
-    id_producto: int
-    similitud: float
+    id: int
+    codigo: str
+    descripcion: str
+    precio: float
+    stock: int
+    similarityScore: float
 
 def load_products():
-    global product_ids, descriptions, vectorizer, tfidf_matrix
+    global product_ids, descriptions, vectorizer, tfidf_matrix, products_data
     
     conn = db_pool.getconn()
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("SELECT id_producto, descripcion FROM productos WHERE activo = true")
+            query = """
+            SELECT p.id_producto, p.codigo, p.descripcion, p.stock_total, COALESCE(pa.precio_unidad_normal, 0) as precio 
+            FROM productos p 
+            LEFT JOIN precios_actuales pa ON p.id_producto = pa.id_producto
+            WHERE p.activo = true
+            """
+            cur.execute(query)
             rows = cur.fetchall()
+            products_data = {r['id_producto']: r for r in rows}
             product_ids = [r['id_producto'] for r in rows]
             descriptions = [r['descripcion'] or "" for r in rows]
     finally:
         db_pool.putconn(conn)
     
     if descriptions and any(d.strip() for d in descriptions):
-        vectorizer = TfidfVectorizer(stop_words=STOP_WORDS_SPANISH)
+        vectorizer = TfidfVectorizer(stop_words=STOP_WORDS_SPANISH, ngram_range=(1, 2))
         tfidf_matrix = vectorizer.fit_transform(descriptions)
         print(f"TF-IDF matrix computed: {tfidf_matrix.shape[0]} products, {tfidf_matrix.shape[1]} features")
     else:
@@ -70,8 +81,8 @@ app = FastAPI(title="Gold Continent AI Service", lifespan=lifespan)
 async def health():
     return {"status": "ok", "service": "goldcontinent-ai"}
 
-@app.post("/recomendar", response_model=list[RecommendResponse])
-async def recomendar(req: RecommendRequest):
+@app.post("/suggest", response_model=list[RecommendResponse])
+async def suggest(req: RecommendRequest):
     if tfidf_matrix is None or req.id_producto not in product_ids:
         return []
     
@@ -81,9 +92,19 @@ async def recomendar(req: RecommendRequest):
     top = sorted(
         ((i, s) for i, s in zip(product_ids, sims) if i != req.id_producto),
         key=lambda x: -x[1]
-    )[:5]
+    )[:4]
     
-    return [{"id_producto": i, "similitud": round(float(s), 4)} for i, s in top]
+    return [
+        {
+            "id": i,
+            "codigo": products_data[i]["codigo"],
+            "descripcion": products_data[i]["descripcion"],
+            "precio": float(products_data[i]["precio"]),
+            "stock": products_data[i]["stock_total"],
+            "similarityScore": round(float(s), 4)
+        }
+        for i, s in top
+    ]
 
 @app.post("/admin/refresh-cache")
 async def refresh_cache():

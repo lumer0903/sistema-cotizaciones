@@ -7,13 +7,20 @@ export async function apiClient(path: string, options: RequestInit = {}) {
     ...(options.headers || {}),
   };
 
-  const response = await fetch(`${API_BASE}${path.startsWith('/api/') ? path : `/api/${path}`}`, {
+  const normalizedPath = path.startsWith('/api/') ? path : `/api/${path.replace(/^\/+/, '')}`;
+  const fullUrl = `${API_BASE}${normalizedPath}`.replace(/([^:]\/)\/+/g, '$1');
+
+  const response = await fetch(fullUrl, {
     ...options,
     headers,
     credentials: 'include',
   });
 
   if (response.status === 401) {
+    if (path.includes('/auth/login') || path.includes('/auth/refresh') || (typeof window !== 'undefined' && window.location.pathname === '/login')) {
+      throw new Error('No autorizado');
+    }
+    
     try {
       await refreshToken();
       return apiClient(path, options);

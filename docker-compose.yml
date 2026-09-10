@@ -19,6 +19,14 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: goldcontinent-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
   api:
     build:
       context: ./apps/api
@@ -81,6 +89,7 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
 
 networks:
   default:
