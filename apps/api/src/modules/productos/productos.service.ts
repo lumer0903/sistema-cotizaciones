@@ -1,6 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException, Logger, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
+import { UpdatePreciosDto } from './dto/update-precios.dto';
+import { CreateProductoDto } from './dto/create-producto.dto';
 
 export interface ProductoResponse {
   id_producto: number;
@@ -39,28 +42,17 @@ export interface PaginatedProductosResponse {
   limit: number;
 }
 
-export interface CreateProductoDto {
-  codigo: string;
-  descripcion: string;
-  foto_url?: string;
-  activo?: boolean;
-  stock_principal?: number;
-  stock_tacna?: number;
-  stock_minimo?: number;
-  unidades_por_caja?: number;
-  id_categoria?: number;
-}
-
-export interface UpdateProductoDto {
-  codigo?: string;
-  descripcion?: string;
-  foto_url?: string | null;
-  activo?: boolean;
-  stock_principal?: number;
-  stock_tacna?: number;
-  stock_minimo?: number;
-  unidades_por_caja?: number;
-  id_categoria?: number | null;
+export interface PreciosActualesResponse {
+  id_producto: number;
+  costo_normal: number;
+  precio_unidad_normal: number;
+  precio_docena_normal: number;
+  precio_mayor_normal: number;
+  costo_distribuidor: number;
+  precio_unidad_dist: number;
+  precio_docena_dist: number;
+  precio_mayor_dist: number;
+  updated_at: Date;
 }
 
 function toNumber(value: Decimal | number | null): number {
@@ -129,6 +121,7 @@ function mapProducto(item: ProductoWithRelations): ProductoResponse {
 
 @Injectable()
 export class ProductosService {
+  private readonly logger = new Logger(ProductosService.name);
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(
@@ -254,79 +247,223 @@ export class ProductosService {
   }
 
   async create(data: CreateProductoDto): Promise<ProductoResponse> {
-    const item = await this.prisma.producto.create({
-      data: {
-        codigo: data.codigo,
-        descripcion: data.descripcion,
-        foto_url: data.foto_url,
-        activo: data.activo ?? true,
-        stock_principal: data.stock_principal ?? 0,
-        stock_tacna: data.stock_tacna ?? 0,
-        stock_minimo: data.stock_minimo ?? 10,
-        unidades_por_caja: data.unidades_por_caja ?? 1,
-        id_categoria: data.id_categoria,
-      },
-      select: {
-        id_producto: true,
-        codigo: true,
-        descripcion: true,
-        foto_url: true,
-        activo: true,
-        stock_principal: true,
-        stock_tacna: true,
-        stock_total: true,
-        stock_minimo: true,
-        unidades_por_caja: true,
-        id_categoria: true,
-        created_at: true,
-        updated_at: true,
-      },
-    });
+    try {
+      const item = await this.prisma.producto.create({
+        data: {
+          codigo: data.codigo,
+          descripcion: data.descripcion,
+          foto_url: data.foto_url,
+          activo: data.activo ?? true,
+          stock_principal: data.stock_principal ?? 0,
+          stock_tacna: data.stock_tacna ?? 0,
+          stock_minimo: data.stock_minimo ?? 10,
+          unidades_por_caja: data.unidades_por_caja ?? 1,
+          id_categoria: data.id_categoria,
+        },
+        select: {
+          id_producto: true,
+          codigo: true,
+          descripcion: true,
+          foto_url: true,
+          activo: true,
+          stock_principal: true,
+          stock_tacna: true,
+          stock_total: true,
+          stock_minimo: true,
+          unidades_por_caja: true,
+          id_categoria: true,
+          created_at: true,
+          updated_at: true,
+        },
+      });
 
-    return mapProducto({
-      ...item,
-      categoria: null,
-      precios_actuales: null,
-    });
+      return mapProducto({
+        ...item,
+        categoria: null,
+        precios_actuales: null,
+      });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        throw new ConflictException('El código del producto ya existe');
+      }
+      throw error;
+    }
   }
 
-  async update(id: number, data: UpdateProductoDto): Promise<ProductoResponse> {
-    const item = await this.prisma.producto.update({
-      where: { id_producto: id },
-      data: {
-        ...data,
-        stock_total: data.stock_principal !== undefined || data.stock_tacna !== undefined
-          ? (data.stock_principal ?? 0) + (data.stock_tacna ?? 0)
-          : undefined,
-      },
-      select: {
-        id_producto: true,
-        codigo: true,
-        descripcion: true,
-        foto_url: true,
-        activo: true,
-        stock_principal: true,
-        stock_tacna: true,
-        stock_total: true,
-        stock_minimo: true,
-        unidades_por_caja: true,
-        id_categoria: true,
-        created_at: true,
-        updated_at: true,
-      },
-    });
+  async update(id: number, data: any): Promise<ProductoResponse> {
+    try {
+      // Validar unicidad de código si se está actualizando
+      if (data.codigo) {
+        const existe = await this.prisma.producto.findFirst({
+          where: {
+            codigo: data.codigo,
+            NOT: { id_producto: id },
+          },
+        });
+        if (existe) throw new ConflictException('El código del producto ya existe');
+      }
 
-    return mapProducto({
-      ...item,
-      categoria: null,
-      precios_actuales: null,
-    });
+      const item = await this.prisma.producto.update({
+        where: { id_producto: id },
+        data: {
+          ...data,
+          stock_total: data.stock_principal !== undefined || data.stock_tacna !== undefined
+            ? (data.stock_principal ?? 0) + (data.stock_tacna ?? 0)
+            : undefined,
+        },
+        select: {
+          id_producto: true,
+          codigo: true,
+          descripcion: true,
+          foto_url: true,
+          activo: true,
+          stock_principal: true,
+          stock_tacna: true,
+          stock_total: true,
+          stock_minimo: true,
+          unidades_por_caja: true,
+          id_categoria: true,
+          created_at: true,
+          updated_at: true,
+        },
+      });
+
+      return mapProducto({
+        ...item,
+        categoria: null,
+        precios_actuales: null,
+      });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Producto no encontrado');
+      }
+      if (error.code === 'P2002') {
+        throw new ConflictException('El código del producto ya existe');
+      }
+      throw error;
+    }
   }
 
   async delete(id: number): Promise<void> {
-    await this.prisma.producto.update({
-      where: { id_producto: id },
-      data: { deleted_at: new Date() },
+    try {
+      await this.prisma.producto.update({
+        where: { id_producto: id },
+        data: { deleted_at: new Date() },
+      });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Producto no encontrado');
+      }
+      throw error;
+    }
+  }
+
+  async updatePrecios(
+    id: number,
+    data: UpdatePreciosDto,
+    id_usuario: number,
+  ): Promise<PreciosActualesResponse> {
+    const producto = await this.prisma.producto.findUnique({
+      where: { id_producto: id, deleted_at: null },
+      select: { id_producto: true },
     });
+    if (!producto) throw new NotFoundException('Producto no encontrado');
+
+    const fields = Object.keys(data) as (keyof UpdatePreciosDto)[];
+    if (fields.length === 0) throw new BadRequestException('Al menos un precio es requerido');
+
+    // Validar que el usuario existe para evitar error de Foreign Key
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id_usuario },
+      select: { id_usuario: true },
+    });
+    if (!usuario) {
+      this.logger.warn(`Usuario ${id_usuario} no encontrado, usando usuario sistema (id: 1)`);
+      // Fallback a usuario sistema (id: 1) o al primer usuario disponible
+      const sistemaUser = await this.prisma.usuario.findFirst({
+        select: { id_usuario: true },
+      });
+      if (sistemaUser) {
+        id_usuario = sistemaUser.id_usuario;
+      } else {
+        throw new BadRequestException('No hay usuarios disponibles para auditoría');
+      }
+    }
+
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const current = await tx.preciosActuales.findUnique({
+          where: { id_producto: id },
+        });
+
+        this.logger.log(`Current prices for product ${id}: ${JSON.stringify(current)}`);
+
+        const changes: { campo: string; anterior: number; nuevo: number }[] = [];
+        const updateData: Record<string, number> = {};
+
+        for (const campo of fields) {
+          const nuevoValor = data[campo]!;
+          const anterior = current?.[campo]?.toNumber() ?? 0;
+
+          if (nuevoValor !== anterior) {
+            changes.push({ campo, anterior, nuevo: nuevoValor });
+            updateData[campo] = nuevoValor;
+          }
+        }
+
+        this.logger.log(`Changes to apply: ${JSON.stringify(changes)}`);
+
+        if (changes.length > 0) {
+          await tx.preciosActuales.upsert({
+            where: { id_producto: id },
+            create: { id_producto: id, ...updateData },
+            update: updateData,
+          });
+
+          await tx.historialPrecios.createMany({
+            data: changes.map(c => ({
+              id_producto: id,
+              id_usuario,
+              campo_modificado: c.campo,
+              valor_anterior: new Prisma.Decimal(c.anterior.toFixed(2)),
+              valor_nuevo: new Prisma.Decimal(c.nuevo.toFixed(2)),
+            })),
+          });
+        }
+
+        const updated = await tx.preciosActuales.findUnique({
+          where: { id_producto: id },
+        });
+
+        this.logger.log(`Updated prices: ${JSON.stringify(updated)}`);
+
+        if (!updated) {
+          throw new InternalServerErrorException('Error al actualizar precios: no se encontró el registro actualizado');
+        }
+
+        return {
+          id_producto: id,
+          costo_normal: updated!.costo_normal.toNumber(),
+          precio_unidad_normal: updated!.precio_unidad_normal.toNumber(),
+          precio_docena_normal: updated!.precio_docena_normal.toNumber(),
+          precio_mayor_normal: updated!.precio_mayor_normal.toNumber(),
+          costo_distribuidor: updated!.costo_distribuidor.toNumber(),
+          precio_unidad_dist: updated!.precio_unidad_dist.toNumber(),
+          precio_docena_dist: updated!.precio_docena_dist.toNumber(),
+          precio_mayor_dist: updated!.precio_mayor_dist.toNumber(),
+          updated_at: updated!.updated_at,
+        };
+      });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Producto no encontrado');
+      }
+      if (error.code === 'P2003') {
+        throw new BadRequestException('Error de referencia: usuario inválido para auditoría');
+      }
+      const err = error as Error;
+      this.logger.error(`Error updating prices for product ${id}: ${err.message}`, err.stack);
+      throw new InternalServerErrorException(`Error al actualizar precios: ${err.message}`);
+    }
   }
 }

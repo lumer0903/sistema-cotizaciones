@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
 import { HistorialPreciosService, HistorialPrecioResponse, PaginatedHistorialPreciosResponse } from './historial-precios.service';
@@ -40,8 +40,8 @@ export class HistorialPreciosController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get price history entry by ID' })
-  async findById(@Param('id') id: string): Promise<{ success: true; data: HistorialPrecioResponse | null }> {
-    const historial = await this.historialPreciosService.findById(Number(id));
+  async findById(@Param('id', ParseIntPipe) id: number): Promise<{ success: true; data: HistorialPrecioResponse | null }> {
+    const historial = await this.historialPreciosService.findById(id);
     return { success: true, data: historial };
   }
 }

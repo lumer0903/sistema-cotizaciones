@@ -2,6 +2,7 @@ import { Controller, Post, Body, Get, UseGuards, Req, Res, UnauthorizedException
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { LoginUseCase } from '../application/login.use-case';
 import { LoginDto } from '../application/login.dto';
+import { ChangePasswordDto } from '../application/change-password.dto';
 import { JwtAuthGuard } from '../infrastructure/jwt-auth.guard';
 import { refreshAccessToken, login as loginService, obtenerSesion, logout, changePassword } from '../auth.service';
 
@@ -65,7 +66,7 @@ export class AuthController {
       return {
         success: true,
         message: 'Inicio de sesión correcto',
-        data: { usuario },
+        data: { usuario, access_token: tokenPair.accessToken },
       };
     } catch (error: any) {
       throw new UnauthorizedException(error.message || 'Credenciales incorrectas');
@@ -118,7 +119,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Change password' })
   @ApiBearerAuth()
-  async changePassword(@Req() req: any, @Body() body: { currentPassword: string; newPassword: string }) {
+  async changePassword(@Req() req: any, @Body() body: ChangePasswordDto) {
     const usuario = req.user;
     await changePassword(usuario.id_usuario, body.currentPassword, body.newPassword);
 

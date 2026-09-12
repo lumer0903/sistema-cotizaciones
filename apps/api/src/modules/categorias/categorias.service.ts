@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 export interface CategoriaResponse {
@@ -47,29 +47,53 @@ export class CategoriasService {
   }
 
   async create(nombre_categoria: string): Promise<CategoriaResponse> {
-    return this.prisma.categoria.create({
-      data: { nombre_categoria },
-      select: {
-        id_categoria: true,
-        nombre_categoria: true,
-      },
-    });
+    try {
+      return this.prisma.categoria.create({
+        data: { nombre_categoria },
+        select: {
+          id_categoria: true,
+          nombre_categoria: true,
+        },
+      });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        throw new ConflictException('La categoría ya existe');
+      }
+      throw error;
+    }
   }
 
   async update(id: number, nombre_categoria: string): Promise<CategoriaResponse> {
-    return this.prisma.categoria.update({
-      where: { id_categoria: id },
-      data: { nombre_categoria },
-      select: {
-        id_categoria: true,
-        nombre_categoria: true,
-      },
-    });
+    try {
+      return this.prisma.categoria.update({
+        where: { id_categoria: id },
+        data: { nombre_categoria },
+        select: {
+          id_categoria: true,
+          nombre_categoria: true,
+        },
+      });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Categoría no encontrada');
+      }
+      if (error.code === 'P2002') {
+        throw new ConflictException('La categoría ya existe');
+      }
+      throw error;
+    }
   }
 
   async delete(id: number): Promise<void> {
-    await this.prisma.categoria.delete({
-      where: { id_categoria: id },
-    });
+    try {
+      await this.prisma.categoria.delete({
+        where: { id_categoria: id },
+      });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Categoría no encontrada');
+      }
+      throw error;
+    }
   }
 }

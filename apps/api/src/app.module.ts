@@ -12,6 +12,10 @@ import { CobranzaModule } from './modules/cobranza/cobranza.module';
 import { ClientesModule } from './modules/clientes/clientes.module';
 import { CategoriasModule } from './modules/categorias/categorias.module';
 import { HistorialPreciosModule } from './modules/historial-precios/historial-precios.module';
+import { AlmacenesModule } from './modules/almacenes/almacenes.module';
+import { InventarioModule } from './modules/inventario/inventario.module';
+import { RecomendacionesModule } from './modules/cotizaciones/recomendaciones/recomendaciones.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -35,6 +39,10 @@ import { HistorialPreciosModule } from './modules/historial-precios/historial-pr
     ClientesModule,
     CategoriasModule,
     HistorialPreciosModule,
+    AlmacenesModule,
+    InventarioModule,
+    RecomendacionesModule,
+    DashboardModule,
   ],
   controllers: [],
   providers: [],

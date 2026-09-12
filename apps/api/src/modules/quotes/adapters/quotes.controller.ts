@@ -1,28 +1,38 @@
-import { Controller, Post, Get, Body, UseGuards, Inject, Query, Param } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, UseGuards, Inject, Query, Param, Req, ParseIntPipe, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/infrastructure/jwt-auth.guard';
 import { CreateQuoteUseCase } from '../application/use-cases/create-quote.use-case';
-import { CreateQuoteDto } from '../application/dtos/create-quote.dto';
+import { ChangeQuoteStateUseCase } from '../application/use-cases/change-quote-state.use-case';
+import { RegistrarPagoUseCase } from '../application/use-cases/registrar-pago.use-case';
+import { CreateQuoteDto, UpdateQuoteStateDto, RegistrarPagoDto } from '../application/dtos/create-quote.dto';
 import { IQuoteRepository, PaginatedQuotesResponse, QuoteFilters } from '../domain/repositories/quote.repository.interface';
+import type { QuoteEntity } from '../domain/entities/quote.entity';
 
-@ApiTags('Quotes')
+@ApiTags('Cotizaciones')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('cotizaciones')
 export class QuotesController {
   constructor(
     private readonly createQuoteUseCase: CreateQuoteUseCase,
+    private readonly changeQuoteStateUseCase: ChangeQuoteStateUseCase,
+    private readonly registrarPagoUseCase: RegistrarPagoUseCase,
     @Inject(IQuoteRepository) private readonly quoteRepository: IQuoteRepository,
   ) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new quote and trigger PDF generation' })
-  async createQuote(@Body() createQuoteDto: CreateQuoteDto) {
-    return this.createQuoteUseCase.execute(createQuoteDto);
+  @ApiOperation({ summary: 'Crear nueva cotización con items (estado: borrador)' })
+  async createQuote(@Body() createQuoteDto: CreateQuoteDto, @Req() req: Request & { user: { id_usuario: number; id?: number } }) {
+    const userId = req.user.id_usuario ?? req.user.id;
+    const dto = {
+      ...createQuoteDto,
+      id_usuario: userId,
+    };
+    return this.createQuoteUseCase.execute(dto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all quotes with pagination and filters' })
+  @ApiOperation({ summary: 'Listar cotizaciones con paginación y filtros' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'estado', required: false, type: String })
@@ -51,9 +61,36 @@ export class QuotesController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get quote by ID' })
-  async getQuoteById(@Param('id') id: string) {
-    const quote = await this.quoteRepository.findById(Number(id));
+  @ApiOperation({ summary: 'Obtener cotización por ID con detalle' })
+  async getQuoteById(@Param('id', ParseIntPipe) id: number): Promise<{ success: true; data: QuoteEntity | null }> {
+    const quote = await this.quoteRepository.findById(id);
     return { success: true, data: quote };
+  }
+
+  @Patch(':id/estado')
+  @ApiOperation({ summary: 'Cambiar estado de cotización (borrador→enviada, enviada→aprobada/rechazada)' })
+  async changeState(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateQuoteStateDto,
+    @Req() req: Request & { user: { id_usuario: number; id?: number } },
+  ): Promise<{ success: true; data: QuoteEntity }> {
+    const userId = req.user.id_usuario ?? req.user.id;
+    const quote = await this.changeQuoteStateUseCase.execute(id, body, userId);
+    return { success: true, data: quote };
+  }
+
+  @Post(':id/registrar-pago')
+  @ApiOperation({ summary: 'Registrar abono/pago a una cotización' })
+  async registrarPago(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: RegistrarPagoDto,
+    @Req() req: Request & { user: { id_usuario?: number; id?: number; sub?: number | string } },
+  ) {
+    const rawId = req.user?.id_usuario ?? req.user?.id ?? req.user?.sub;
+    const userId = Number(rawId);
+    if (!userId || isNaN(userId)) {
+      throw new BadRequestException('Usuario no identificado');
+    }
+    return this.registrarPagoUseCase.execute(id, body, userId);
   }
 }

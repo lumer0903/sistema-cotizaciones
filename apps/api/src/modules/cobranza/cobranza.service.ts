@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EstadoCuentaCobrar } from '@goldcontinent/shared/constants/enums';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -189,54 +189,61 @@ export class CobranzaService {
   }
 
   async update(id: number, data: UpdateCobranzaDto): Promise<CuentaCobrarResponse> {
-    const item = await this.prisma.cuentaCobrar.update({
-      where: { id_cuenta: id },
-      data: {
-        ...data,
-        estado: data.estado as any,
-      },
-      select: {
-        id_cuenta: true,
-        id_venta: true,
-        id_cliente: true,
-        montoOriginal: true,
-        montoPendiente: true,
-        estado: true,
-        fechaVencimiento: true,
-        diasAtraso: true,
-        moraAcumulada: true,
-        created_at: true,
-        updated_at: true,
-        venta: {
-          select: {
-            id_venta: true,
-            numero_completo: true,
-            fecha_emision: true,
-            total: true,
+    try {
+      const item = await this.prisma.cuentaCobrar.update({
+        where: { id_cuenta: id },
+        data: {
+          ...data,
+          estado: data.estado as any,
+        },
+        select: {
+          id_cuenta: true,
+          id_venta: true,
+          id_cliente: true,
+          montoOriginal: true,
+          montoPendiente: true,
+          estado: true,
+          fechaVencimiento: true,
+          diasAtraso: true,
+          moraAcumulada: true,
+          created_at: true,
+          updated_at: true,
+          venta: {
+            select: {
+              id_venta: true,
+              numero_completo: true,
+              fecha_emision: true,
+              total: true,
+            },
+          },
+          cliente: {
+            select: {
+              id_cliente: true,
+              nombre: true,
+              ruc_dni: true,
+              email: true,
+              telefono: true,
+            },
           },
         },
-        cliente: {
-          select: {
-            id_cliente: true,
-            nombre: true,
-            ruc_dni: true,
-            email: true,
-            telefono: true,
-          },
-        },
-      },
-    });
+      });
 
-    return {
-      ...item,
-      estado: mapEstadoCuenta(item.estado),
-      montoOriginal: toNumber(item.montoOriginal),
-      montoPendiente: toNumber(item.montoPendiente),
-      moraAcumulada: toNumber(item.moraAcumulada),
-      venta: item.venta ? {
-        ...item.venta,
-        total: toNumber(item.venta.total) ?? 0,
-      } : null,
-    };
+      return {
+        ...item,
+        estado: mapEstadoCuenta(item.estado),
+        montoOriginal: toNumber(item.montoOriginal),
+        montoPendiente: toNumber(item.montoPendiente),
+        moraAcumulada: toNumber(item.moraAcumulada),
+        venta: item.venta ? {
+          ...item.venta,
+          total: toNumber(item.venta.total) ?? 0,
+        } : null,
+      };
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Cuenta por cobrar no encontrada');
+      }
+      throw error;
+    }
   }
 }

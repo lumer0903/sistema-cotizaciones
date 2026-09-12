@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { Rol } from '@goldcontinent/shared/constants/enums';
 
@@ -72,48 +72,69 @@ export class UsuariosService {
   }
 
   async updateActivo(id: number, activo: boolean): Promise<UsuarioResponse> {
-    return this.prisma.usuario.update({
-      where: { id_usuario: id },
-      data: { activo },
-      select: {
-        id_usuario: true,
-        nombre: true,
-        email: true,
-        rol: true,
-        activo: true,
-        created_at: true,
-        updated_at: true,
-      },
-    });
+    try {
+      return this.prisma.usuario.update({
+        where: { id_usuario: id },
+        data: { activo },
+        select: {
+          id_usuario: true,
+          nombre: true,
+          email: true,
+          rol: true,
+          activo: true,
+          created_at: true,
+          updated_at: true,
+        },
+      });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Usuario no encontrado');
+      }
+      throw error;
+    }
   }
 
   async create(data: { nombre: string; email: string; password: string; rol?: Rol }): Promise<UsuarioResponse> {
-    const bcrypt = require('bcryptjs');
-    const password_hash = await bcrypt.hash(data.password, 10);
+    try {
+      const bcrypt = require('bcryptjs');
+      const password_hash = await bcrypt.hash(data.password, 10);
 
-    return this.prisma.usuario.create({
-      data: {
-        nombre: data.nombre,
-        email: data.email.toLowerCase(),
-        password_hash,
-        rol: data.rol || 'vendedor',
-      },
-      select: {
-        id_usuario: true,
-        nombre: true,
-        email: true,
-        rol: true,
-        activo: true,
-        created_at: true,
-        updated_at: true,
-      },
-    });
+      return this.prisma.usuario.create({
+        data: {
+          nombre: data.nombre,
+          email: data.email.toLowerCase(),
+          password_hash,
+          rol: data.rol || 'vendedor',
+        },
+        select: {
+          id_usuario: true,
+          nombre: true,
+          email: true,
+          rol: true,
+          activo: true,
+          created_at: true,
+          updated_at: true,
+        },
+      });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        throw new ConflictException('El email ya está registrado');
+      }
+      throw error;
+    }
   }
 
   async delete(id: number): Promise<void> {
-    await this.prisma.usuario.update({
-      where: { id_usuario: id },
-      data: { deleted_at: new Date() },
-    });
+    try {
+      await this.prisma.usuario.update({
+        where: { id_usuario: id },
+        data: { deleted_at: new Date() },
+      });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Usuario no encontrado');
+      }
+      throw error;
+    }
   }
 }

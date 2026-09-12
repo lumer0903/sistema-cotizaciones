@@ -1,9 +1,29 @@
-import { Controller, Get, Patch, Param, Query, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Patch, Param, Query, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
 import { CobranzaService } from './cobranza.service';
-import type { CuentaCobrarResponse, PaginatedCobranzaResponse, UpdateCobranzaDto } from './cobranza.service';
+import type { CuentaCobrarResponse, PaginatedCobranzaResponse } from './cobranza.service';
 import { EstadoCuentaCobrar } from '@goldcontinent/shared/constants/enums';
+import { IsOptional, IsEnum, IsInt, Min, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class UpdateCobranzaDto {
+  @ApiPropertyOptional({ enum: EstadoCuentaCobrar, example: 'pendiente' })
+  @IsOptional() @IsEnum(EstadoCuentaCobrar)
+  estado?: EstadoCuentaCobrar;
+
+  @ApiPropertyOptional({ example: 1000, minimum: 0 })
+  @IsOptional() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) @Type(() => Number)
+  montoPendiente?: number;
+
+  @ApiPropertyOptional({ example: 50, minimum: 0 })
+  @IsOptional() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) @Type(() => Number)
+  moraAcumulada?: number;
+
+  @ApiPropertyOptional({ example: 10, minimum: 0 })
+  @IsOptional() @IsInt() @Min(0) @Type(() => Number)
+  diasAtraso?: number;
+}
 
 @ApiTags('Cobranza')
 @ApiBearerAuth()
@@ -42,18 +62,18 @@ export class CobranzaController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get account receivable by ID' })
-  async findById(@Param('id') id: string): Promise<{ success: true; data: CuentaCobrarResponse | null }> {
-    const cuenta = await this.cobranzaService.findById(Number(id));
+  async findById(@Param('id', ParseIntPipe) id: number): Promise<{ success: true; data: CuentaCobrarResponse | null }> {
+    const cuenta = await this.cobranzaService.findById(id);
     return { success: true, data: cuenta };
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update account receivable' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateCobranzaDto,
   ): Promise<{ success: true; data: CuentaCobrarResponse }> {
-    const cuenta = await this.cobranzaService.update(Number(id), body);
+    const cuenta = await this.cobranzaService.update(id, body);
     return { success: true, data: cuenta };
   }
 }

@@ -22,4 +22,5 @@ export interface IQuoteRepository {
   findById(id: number): Promise<QuoteEntity | null>;
   findAll(): Promise<QuoteEntity[]>;
   findPaginated(page: number, limit: number, filters?: QuoteFilters): Promise<PaginatedQuotesResponse>;
+  updateState(id: number, estado: string, tiempo_fin?: Date): Promise<QuoteEntity | null>;
 }
