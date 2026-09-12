@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
 import { VentasService } from './ventas.service';
@@ -45,8 +45,8 @@ export class VentasController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get sale by ID with details' })
-  async findById(@Param('id') id: string): Promise<{ success: true; data: VentaResponse | null }> {
-    const venta = await this.ventasService.findById(Number(id));
+  async findById(@Param('id', ParseIntPipe) id: number): Promise<{ success: true; data: VentaResponse | null }> {
+    const venta = await this.ventasService.findById(id);
     return { success: true, data: venta };
   }
 
@@ -60,17 +60,17 @@ export class VentasController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update sale' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateVentaDto,
   ): Promise<{ success: true; data: VentaResponse }> {
-    const venta = await this.ventasService.update(Number(id), body);
+    const venta = await this.ventasService.update(id, body);
     return { success: true, data: venta };
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete/Anul sale' })
-  async delete(@Param('id') id: string): Promise<{ success: true; message: string }> {
-    await this.ventasService.delete(Number(id));
+  async delete(@Param('id', ParseIntPipe) id: number): Promise<{ success: true; message: string }> {
+    await this.ventasService.delete(id);
     return { success: true, message: 'Venta anulada correctamente' };
   }
 }

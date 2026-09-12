@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ValidationPipe } from '@nestjs/common';
@@ -18,19 +19,32 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.useGlobalPipes(new ValidationPipe({ 
+    transform: true, 
+    whitelist: true, 
+    forbidNonWhitelisted: true,
+    forbidUnknownValues: true,
+  }));
   app.useGlobalFilters(new AllExceptionsFilter());
 
   app.setGlobalPrefix('api');
 
   const config = new DocumentBuilder()
-    .setTitle('Goldcontinent API')
-    .setDescription('The Goldcontinent API description')
+    .setTitle('GoldContinent API')
+    .setDescription('Documentación interactiva de la API')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+
+  app.use(
+    '/reference',
+    apiReference({
+      spec: {
+        content: document,
+      },
+    }),
+  );
 
   const port = process.env.PORT || 3001;
   await app.listen(port);

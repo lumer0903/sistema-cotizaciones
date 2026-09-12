@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EstadoVenta, TipoPago, TipoDocumento, TipoVenta } from '@goldcontinent/shared/constants/enums';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -327,29 +327,128 @@ export class VentasService {
     };
   }
 
-  async create(data: CreateVentaDto): Promise<VentaResponse> {
+async create(data: CreateVentaDto): Promise<VentaResponse> {
     const numero_completo = `${data.serie}-${data.correlativo.toString().padStart(8, '0')}`;
 
-    return this.prisma.$transaction(async (tx) => {
-      const venta = await tx.venta.create({
-        data: {
-          serie: data.serie,
-          correlativo: data.correlativo,
-          numero_completo,
-          tipo_documento: data.tipo_documento,
-          id_cliente: data.id_cliente,
-          id_usuario: data.id_usuario,
-          id_almacen: data.id_almacen,
-          subtotal: data.subtotal,
-          igv: data.igv,
-          total: data.total,
-          descuento_global: data.descuento_global ?? 0,
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const venta = await tx.venta.create({
+          data: {
+            serie: data.serie,
+            correlativo: data.correlativo,
+            numero_completo,
+            tipo_documento: data.tipo_documento,
+            id_cliente: data.id_cliente,
+            id_usuario: data.id_usuario,
+            id_almacen: data.id_almacen,
+            subtotal: data.subtotal,
+            igv: data.igv,
+            total: data.total,
+            descuento_global: data.descuento_global ?? 0,
+            tipoPago: data.tipoPago,
+            diasPlazo: data.diasPlazo,
+            id_cotizacion: data.id_cotizacion,
+            observaciones: data.observaciones,
+            montoPagado: data.tipoPago === 'contado' ? data.total : 0,
+            montoPendiente: data.tipoPago === 'contado' ? 0 : data.total,
+          },
+          select: {
+            id_venta: true,
+            serie: true,
+            correlativo: true,
+            numero_completo: true,
+            tipo_documento: true,
+            estado: true,
+            fecha_emision: true,
+            fecha_vencimiento: true,
+            id_cotizacion: true,
+            id_cliente: true,
+            id_usuario: true,
+            id_almacen: true,
+            subtotal: true,
+            igv: true,
+            total: true,
+            descuento_global: true,
+            tipoPago: true,
+            diasPlazo: true,
+            montoPagado: true,
+            montoPendiente: true,
+            autorizadoPor: true,
+            autorizadoAt: true,
+            hash_cpe: true,
+            qr_code: true,
+            xml_enviado: true,
+            observaciones: true,
+            created_at: true,
+            updated_at: true,
+          },
+        });
+
+        await Promise.all(
+          data.detalles.map((detalle) =>
+            tx.ventaDetalle.create({
+              data: {
+                id_venta: venta.id_venta,
+                id_producto: detalle.id_producto,
+                tipo_venta: detalle.tipo_venta,
+                cantidad: detalle.cantidad,
+                precio_unitario: detalle.precio_unitario,
+                descuento_item: detalle.descuento_item ?? 0,
+                subtotal: detalle.precio_unitario * detalle.cantidad,
+                igv_item: (detalle.precio_unitario * detalle.cantidad) * 0.18,
+                total_item: (detalle.precio_unitario * detalle.cantidad) * 1.18,
+                es_sugerido_ia: false,
+              },
+            }),
+          ),
+        );
+
+        if (data.tipoPago === 'credito' && data.diasPlazo) {
+          await tx.cuentaCobrar.create({
+            data: {
+              id_venta: venta.id_venta,
+              id_cliente: data.id_cliente,
+              montoOriginal: data.total,
+              montoPendiente: data.total,
+              estado: 'pendiente',
+              fechaVencimiento: new Date(Date.now() + data.diasPlazo * 24 * 60 * 60 * 1000),
+              diasAtraso: 0,
+              moraAcumulada: 0,
+              updated_at: new Date(),
+            },
+          });
+        }
+
+        return {
+          ...venta,
           tipoPago: data.tipoPago,
-          diasPlazo: data.diasPlazo,
-          id_cotizacion: data.id_cotizacion,
-          observaciones: data.observaciones,
-          montoPagado: data.tipoPago === 'contado' ? data.total : 0,
-          montoPendiente: data.tipoPago === 'contado' ? 0 : data.total,
+          estado: mapEstadoVenta(venta.estado),
+          subtotal: toNumber(venta.subtotal),
+          igv: toNumber(venta.igv),
+          total: toNumber(venta.total),
+          descuento_global: toNumber(venta.descuento_global),
+          montoPagado: toNumber(venta.montoPagado),
+          montoPendiente: toNumber(venta.montoPendiente),
+        };
+      });
+} catch (error: any) {
+      if (error.code === 'P2003') {
+        throw new NotFoundException('Cliente, usuario, almacén o producto no encontrado');
+      }
+      if (error.code === 'P2002') {
+        throw new ConflictException('Número de venta duplicado');
+      }
+      throw error;
+    }
+  }
+
+  async update(id: number, data: UpdateVentaDto): Promise<VentaResponse> {
+    try {
+      const item = await this.prisma.venta.update({
+        where: { id_venta: id },
+        data: {
+          ...data,
+          autorizadoAt: data.autorizadoPor ? new Date() : undefined,
         },
         select: {
           id_venta: true,
@@ -383,115 +482,40 @@ export class VentasService {
         },
       });
 
-      await Promise.all(
-        data.detalles.map((detalle) =>
-          tx.ventaDetalle.create({
-            data: {
-              id_venta: venta.id_venta,
-              id_producto: detalle.id_producto,
-              tipo_venta: detalle.tipo_venta,
-              cantidad: detalle.cantidad,
-              precio_unitario: detalle.precio_unitario,
-              descuento_item: detalle.descuento_item ?? 0,
-              subtotal: detalle.precio_unitario * detalle.cantidad,
-              igv_item: (detalle.precio_unitario * detalle.cantidad) * 0.18,
-              total_item: (detalle.precio_unitario * detalle.cantidad) * 1.18,
-              es_sugerido_ia: false,
-            },
-          }),
-        ),
-      );
-
-      if (data.tipoPago === 'credito' && data.diasPlazo) {
-        await tx.cuentaCobrar.create({
-          data: {
-            id_venta: venta.id_venta,
-            id_cliente: data.id_cliente,
-            montoOriginal: data.total,
-            montoPendiente: data.total,
-            estado: 'pendiente',
-            fechaVencimiento: new Date(Date.now() + data.diasPlazo * 24 * 60 * 60 * 1000),
-            diasAtraso: 0,
-            moraAcumulada: 0,
-            updated_at: new Date(),
-          },
-        });
-      }
-
       return {
-        ...venta,
-        tipoPago: data.tipoPago,
-        estado: mapEstadoVenta(venta.estado),
-        subtotal: toNumber(venta.subtotal),
-        igv: toNumber(venta.igv),
-        total: toNumber(venta.total),
-        descuento_global: toNumber(venta.descuento_global),
-        montoPagado: toNumber(venta.montoPagado),
-        montoPendiente: toNumber(venta.montoPendiente),
+        ...item,
+        estado: mapEstadoVenta(item.estado),
+        subtotal: toNumber(item.subtotal),
+        igv: toNumber(item.igv),
+        total: toNumber(item.total),
+        descuento_global: toNumber(item.descuento_global),
+        montoPagado: toNumber(item.montoPagado),
+        montoPendiente: toNumber(item.montoPendiente),
       };
-    });
-  }
-
-  async update(id: number, data: UpdateVentaDto): Promise<VentaResponse> {
-    const item = await this.prisma.venta.update({
-      where: { id_venta: id },
-      data: {
-        ...data,
-        autorizadoAt: data.autorizadoPor ? new Date() : undefined,
-      },
-      select: {
-        id_venta: true,
-        serie: true,
-        correlativo: true,
-        numero_completo: true,
-        tipo_documento: true,
-        estado: true,
-        fecha_emision: true,
-        fecha_vencimiento: true,
-        id_cotizacion: true,
-        id_cliente: true,
-        id_usuario: true,
-        id_almacen: true,
-        subtotal: true,
-        igv: true,
-        total: true,
-        descuento_global: true,
-        tipoPago: true,
-        diasPlazo: true,
-        montoPagado: true,
-        montoPendiente: true,
-        autorizadoPor: true,
-        autorizadoAt: true,
-        hash_cpe: true,
-        qr_code: true,
-        xml_enviado: true,
-        observaciones: true,
-        created_at: true,
-        updated_at: true,
-      },
-    });
-
-    return {
-      ...item,
-      estado: mapEstadoVenta(item.estado),
-      subtotal: toNumber(item.subtotal),
-      igv: toNumber(item.igv),
-      total: toNumber(item.total),
-      descuento_global: toNumber(item.descuento_global),
-      montoPagado: toNumber(item.montoPagado),
-      montoPendiente: toNumber(item.montoPendiente),
-    };
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Venta no encontrada');
+      }
+      throw error;
+    }
   }
 
   async delete(id: number): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
-      await tx.ventaDetalle.deleteMany({ where: { id_venta: id } });
-      await tx.cuentaCobrar.deleteMany({ where: { id_venta: id } });
-      await tx.ventaPago.deleteMany({ where: { id_venta: id } });
-      await tx.venta.update({
-        where: { id_venta: id },
-        data: { estado: 'anulada' },
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.ventaDetalle.deleteMany({ where: { id_venta: id } });
+        await tx.cuentaCobrar.deleteMany({ where: { id_venta: id } });
+        await tx.ventaPago.deleteMany({ where: { id_venta: id } });
+        await tx.venta.update({
+          where: { id_venta: id },
+          data: { estado: 'anulada' },
+        });
       });
-    });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Venta no encontrada');
+      }
+      throw error;
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TipoPrecio } from '@goldcontinent/shared/constants/enums';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -23,30 +23,6 @@ export interface PaginatedClientesResponse {
   total: number;
   page: number;
   limit: number;
-}
-
-export interface CreateClienteDto {
-  nombre: string;
-  telefono?: string;
-  email?: string;
-  ruc_dni?: string;
-  tipo?: TipoPrecio;
-  diasCreditoDefecto?: number;
-  diasGracia?: number;
-  limiteCredito?: number;
-  tasaMora?: number;
-}
-
-export interface UpdateClienteDto {
-  nombre?: string;
-  telefono?: string | null;
-  email?: string | null;
-  ruc_dni?: string | null;
-  tipo?: TipoPrecio;
-  diasCreditoDefecto?: number | null;
-  diasGracia?: number | null;
-  limiteCredito?: number | null;
-  tasaMora?: number | null;
 }
 
 function toNumber(value: Decimal | number | null): number | null {
@@ -135,76 +111,100 @@ export class ClientesService {
     };
   }
 
-  async create(data: CreateClienteDto): Promise<ClienteResponse> {
-    const item = await this.prisma.cliente.create({
-      data: {
-        nombre: data.nombre,
-        telefono: data.telefono,
-        email: data.email?.toLowerCase(),
-        ruc_dni: data.ruc_dni,
-        tipo: data.tipo ?? 'normal',
-        diasCreditoDefecto: data.diasCreditoDefecto,
-        diasGracia: data.diasGracia ?? 0,
-        limiteCredito: data.limiteCredito ?? 0,
-        tasaMora: data.tasaMora ?? 0,
-      },
-      select: {
-        id_cliente: true,
-        nombre: true,
-        telefono: true,
-        email: true,
-        ruc_dni: true,
-        tipo: true,
-        created_at: true,
-        diasCreditoDefecto: true,
-        diasGracia: true,
-        limiteCredito: true,
-        tasaMora: true,
-        updated_at: true,
-      },
-    });
+  async create(data: any): Promise<ClienteResponse> {
+    try {
+      const item = await this.prisma.cliente.create({
+        data: {
+          nombre: data.nombre,
+          telefono: data.telefono,
+          email: data.email?.toLowerCase(),
+          ruc_dni: data.ruc_dni,
+          tipo: data.tipo ?? 'normal',
+          diasCreditoDefecto: data.diasCreditoDefecto,
+          diasGracia: data.diasGracia ?? 0,
+          limiteCredito: data.limiteCredito ?? 0,
+          tasaMora: data.tasaMora ?? 0,
+        },
+        select: {
+          id_cliente: true,
+          nombre: true,
+          telefono: true,
+          email: true,
+          ruc_dni: true,
+          tipo: true,
+          created_at: true,
+          diasCreditoDefecto: true,
+          diasGracia: true,
+          limiteCredito: true,
+          tasaMora: true,
+          updated_at: true,
+        },
+      });
 
-    return {
-      ...item,
-      limiteCredito: toNumber(item.limiteCredito),
-      tasaMora: toNumber(item.tasaMora),
-    };
+      return {
+        ...item,
+        limiteCredito: toNumber(item.limiteCredito),
+        tasaMora: toNumber(item.tasaMora),
+      };
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        throw new ConflictException('El email o RUC/DNI ya está registrado');
+      }
+      throw error;
+    }
   }
 
-  async update(id: number, data: UpdateClienteDto): Promise<ClienteResponse> {
-    const item = await this.prisma.cliente.update({
-      where: { id_cliente: id },
-      data: {
-        ...data,
-        email: data.email?.toLowerCase(),
-      },
-      select: {
-        id_cliente: true,
-        nombre: true,
-        telefono: true,
-        email: true,
-        ruc_dni: true,
-        tipo: true,
-        created_at: true,
-        diasCreditoDefecto: true,
-        diasGracia: true,
-        limiteCredito: true,
-        tasaMora: true,
-        updated_at: true,
-      },
-    });
+  async update(id: number, data: any): Promise<ClienteResponse> {
+    try {
+      const item = await this.prisma.cliente.update({
+        where: { id_cliente: id },
+        data: {
+          ...data,
+          email: data.email?.toLowerCase(),
+        },
+        select: {
+          id_cliente: true,
+          nombre: true,
+          telefono: true,
+          email: true,
+          ruc_dni: true,
+          tipo: true,
+          created_at: true,
+          diasCreditoDefecto: true,
+          diasGracia: true,
+          limiteCredito: true,
+          tasaMora: true,
+          updated_at: true,
+        },
+      });
 
-    return {
-      ...item,
-      limiteCredito: toNumber(item.limiteCredito),
-      tasaMora: toNumber(item.tasaMora),
-    };
+      return {
+        ...item,
+        limiteCredito: toNumber(item.limiteCredito),
+        tasaMora: toNumber(item.tasaMora),
+      };
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Cliente no encontrado');
+      }
+      if (error.code === 'P2002') {
+        throw new ConflictException('El email o RUC/DNI ya está registrado');
+      }
+      throw error;
+    }
   }
 
   async delete(id: number): Promise<void> {
-    await this.prisma.cliente.update({
-      where: { id_cliente: id },
-      data: { deleted_at: new Date() },
-    });
+    try {
+      await this.prisma.cliente.update({
+        where: { id_cliente: id },
+        data: { deleted_at: new Date() },
+      });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Cliente no encontrado');
+      }
+      throw error;
+    }
   }
 }

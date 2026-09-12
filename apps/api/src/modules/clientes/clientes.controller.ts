@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
 import { ClientesService } from './clientes.service';
-import type { ClienteResponse, PaginatedClientesResponse, CreateClienteDto, UpdateClienteDto } from './clientes.service';
+import { CreateClienteDto } from './dto/create-cliente.dto';
+import { UpdateClienteDto } from './dto/update-cliente.dto';
+import type { ClienteResponse, PaginatedClientesResponse } from './clientes.service';
 import { TipoPrecio } from '@goldcontinent/shared/constants/enums';
 
 @ApiTags('Clientes')
@@ -28,8 +30,8 @@ export class ClientesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get client by ID' })
-  async findById(@Param('id') id: string): Promise<{ success: true; data: ClienteResponse | null }> {
-    const cliente = await this.clientesService.findById(Number(id));
+  async findById(@Param('id', ParseIntPipe) id: number): Promise<{ success: true; data: ClienteResponse | null }> {
+    const cliente = await this.clientesService.findById(id);
     return { success: true, data: cliente };
   }
 
@@ -43,17 +45,17 @@ export class ClientesController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update client' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateClienteDto,
   ): Promise<{ success: true; data: ClienteResponse }> {
-    const cliente = await this.clientesService.update(Number(id), body);
+    const cliente = await this.clientesService.update(id, body);
     return { success: true, data: cliente };
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete client (soft delete)' })
-  async delete(@Param('id') id: string): Promise<{ success: true; message: string }> {
-    await this.clientesService.delete(Number(id));
+  async delete(@Param('id', ParseIntPipe) id: number): Promise<{ success: true; message: string }> {
+    await this.clientesService.delete(id);
     return { success: true, message: 'Cliente eliminado correctamente' };
   }
 }

@@ -15,5 +15,6 @@ import { HttpAiService } from './clients/http-ai.service';
       useClass: HttpAiService,
     },
   ],
+  exports: [IAiService],
 })
 export class AiModule {}

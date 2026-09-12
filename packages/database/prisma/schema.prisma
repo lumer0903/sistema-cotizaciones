@@ -25,6 +25,7 @@ model Usuario {
   historialPrecios  HistorialPrecios[]
   movimientos       InventarioMovimiento[]
   pagos             VentaPago[]            @relation("PagoUsuario")
+  cotizacionPagos   CotizacionPago[]       @relation("CotizacionPagoUsuario")
   ventas            Venta[]                @relation("VentaUsuario")
 
   @@index([nombre(ops: raw("gin_trgm_ops"))], type: Gin)
@@ -140,6 +141,7 @@ model Cotizacion {
   created_at        DateTime            @default(now())
   fecha_vencimiento DateTime?
   detalle           CotizacionDetalle[]
+  pagos             CotizacionPago[]
   cliente           Cliente?            @relation(fields: [id_cliente], references: [id_cliente])
   usuario           Usuario?            @relation(fields: [id_usuario], references: [id_usuario])
   ventas            Venta[]
@@ -161,6 +163,21 @@ model CotizacionDetalle {
   producto        Producto   @relation(fields: [id_producto], references: [id_producto])
 
   @@map("cotizacion_detalle")
+}
+
+model CotizacionPago {
+  id_pago       Int           @id @default(autoincrement())
+  id_cotizacion Int
+  monto         Decimal       @db.Decimal(12, 2)
+  metodo_pago   MetodoPago
+  referencia    String?
+  id_usuario    Int?
+  created_at    DateTime      @default(now())
+  cotizacion    Cotizacion    @relation(fields: [id_cotizacion], references: [id_cotizacion], onDelete: Cascade)
+  usuario       Usuario?      @relation("CotizacionPagoUsuario", fields: [id_usuario], references: [id_usuario])
+
+  @@index([id_cotizacion])
+  @@map("cotizacion_pagos")
 }
 
 model Almacen {
@@ -351,6 +368,7 @@ enum Rol {
 enum EstadoCotizacion {
   borrador
   enviada
+  parcialmente_pagada
   aprobada
   rechazada
 }

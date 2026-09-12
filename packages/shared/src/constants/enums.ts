@@ -80,14 +80,26 @@ export type TipoMovimientoInventario = (typeof TipoMovimientoInventario)[keyof t
 export const OrigenMovimiento = {
   compra: 'compra',
   venta: 'venta',
+  devolucion_cliente: 'devolucion_cliente',
+  ajuste_fisico: 'ajuste_fisico',
+  merma: 'merma',
+  transferencia: 'transferencia',
   cotizacion_aprobada: 'cotizacion_aprobada',
-  ajuste_manual: 'ajuste_manual',
-  transferencia_origen: 'transferencia_origen',
-  transferencia_destino: 'transferencia_destino',
-  inventario_inicial: 'inventario_inicial',
 } as const;
 
 export type OrigenMovimiento = (typeof OrigenMovimiento)[keyof typeof OrigenMovimiento];
+
+export const MetodoPago = {
+  efectivo: 'efectivo',
+  transferencia: 'transferencia',
+  tarjeta_credito: 'tarjeta_credito',
+  tarjeta_debito: 'tarjeta_debito',
+  yape_plin: 'yape_plin',
+  mixto: 'mixto',
+  credito: 'credito',
+} as const;
+
+export type MetodoPago = (typeof MetodoPago)[keyof typeof MetodoPago];
 
 export const PermisoModulo = {
   dashboard: 'dashboard',
