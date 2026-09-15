@@ -45,6 +45,13 @@ model Producto {
   id_producto        Int                    @id @default(autoincrement())
   codigo             String                 @unique
   descripcion        String
+  tipo_flor          String?
+  material           String?
+  composicion        String?
+  presentacion       String?
+  numero_cabezas     Int?
+  tamano             String?
+  colores_surtido    Json?                  @map("colores_surtido")
   foto_url           String?
   activo             Boolean                @default(true)
   stock_principal    Int                    @default(0)

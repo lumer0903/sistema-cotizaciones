@@ -37,7 +37,7 @@ export class ProductosController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'include', required: false, type: String, description: 'Comma-separated: precios,categoria' })
+  @ApiQuery({ name: 'include', required: false, type: String, description: 'Comma-separated: precios,categoria,stock' })
   async findAll(
     @Query('page') page = 1,
     @Query('limit') limit = 50,
@@ -46,6 +46,7 @@ export class ProductosController {
   ): Promise<{ success: true; data: PaginatedProductosResponse['data']; total: number; page: number; limit: number }> {
     const includePrecios = include?.includes('precios') ?? false;
     const includeCategoria = include?.includes('categoria') ?? false;
+    const includeStockActual = include?.includes('stock') ?? false;
 
     const result = await this.productosService.findAll(
       Number(page),
@@ -53,21 +54,23 @@ export class ProductosController {
       search,
       includePrecios,
       includeCategoria,
+      includeStockActual,
     );
     return { success: true, ...result };
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get product by ID' })
-  @ApiQuery({ name: 'include', required: false, type: String, description: 'Comma-separated: precios,categoria' })
+  @ApiQuery({ name: 'include', required: false, type: String, description: 'Comma-separated: precios,categoria,stock' })
   async findById(
     @Param('id', ParseIntPipe) id: number,
     @Query('include') include?: string,
   ): Promise<{ success: true; data: ProductoResponse | null }> {
     const includePrecios = include?.includes('precios') ?? false;
     const includeCategoria = include?.includes('categoria') ?? false;
+    const includeStockActual = include?.includes('stock') ?? false;
 
-    const producto = await this.productosService.findById(id, includePrecios, includeCategoria);
+    const producto = await this.productosService.findById(id, includePrecios, includeCategoria, includeStockActual);
     return { success: true, data: producto };
   }
 

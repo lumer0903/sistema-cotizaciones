@@ -26,9 +26,14 @@ export class AlmacenesService {
     page = 1,
     limit = 50,
     search?: string,
+    activo?: boolean,
   ): Promise<PaginatedAlmacenesResponse> {
     const skip = (page - 1) * limit;
     const where: any = {};
+
+    if (activo !== undefined) {
+      where.activo = activo;
+    }
 
     if (search) {
       where.OR = [

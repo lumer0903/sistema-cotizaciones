@@ -5,10 +5,36 @@ import { Prisma } from '@prisma/client';
 import { UpdatePreciosDto } from './dto/update-precios.dto';
 import { CreateProductoDto } from './dto/create-producto.dto';
 
+function jsonToStringArray(value: Prisma.JsonValue | null): string[] | null {
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) {
+    return value.filter((v): v is string => typeof v === 'string');
+  }
+  return null;
+}
+
+export interface StockActualConAlmacen {
+  id_almacen: number;
+  cantidad: number;
+  almacen: {
+    id_almacen: number;
+    codigo: string;
+    nombre: string;
+    ubicacion: string | null;
+  };
+}
+
 export interface ProductoResponse {
   id_producto: number;
   codigo: string;
   descripcion: string;
+  tipo_flor: string | null;
+  material: string | null;
+  composicion: string | null;
+  presentacion: string | null;
+  numero_cabezas: number | null;
+  tamano: string | null;
+  colores_surtido: string[] | null;
   foto_url: string | null;
   activo: boolean;
   stock_principal: number;
@@ -33,6 +59,7 @@ export interface ProductoResponse {
     precio_docena_dist: number;
     precio_mayor_dist: number;
   } | null;
+  stock_actual?: StockActualConAlmacen[] | null;
 }
 
 export interface PaginatedProductosResponse {
@@ -64,6 +91,13 @@ interface ProductoWithRelations {
   id_producto: number;
   codigo: string;
   descripcion: string;
+  tipo_flor: string | null;
+  material: string | null;
+  composicion: string | null;
+  presentacion: string | null;
+  numero_cabezas: number | null;
+  tamano: string | null;
+  colores_surtido: Prisma.JsonValue | null;
   foto_url: string | null;
   activo: boolean;
   stock_principal: number;
@@ -88,6 +122,16 @@ interface ProductoWithRelations {
     precio_docena_dist: Decimal | number;
     precio_mayor_dist: Decimal | number;
   } | null;
+  stock_actual?: Array<{
+    id_almacen: number;
+    cantidad: number;
+    almacen: {
+      id_almacen: number;
+      codigo: string;
+      nombre: string;
+      ubicacion: string | null;
+    };
+  }> | null;
 }
 
 function mapProducto(item: ProductoWithRelations): ProductoResponse {
@@ -95,6 +139,13 @@ function mapProducto(item: ProductoWithRelations): ProductoResponse {
     id_producto: item.id_producto,
     codigo: item.codigo,
     descripcion: item.descripcion,
+    tipo_flor: item.tipo_flor,
+    material: item.material,
+    composicion: item.composicion,
+    presentacion: item.presentacion,
+    numero_cabezas: item.numero_cabezas,
+    tamano: item.tamano,
+    colores_surtido: jsonToStringArray(item.colores_surtido),
     foto_url: item.foto_url,
     activo: item.activo,
     stock_principal: item.stock_principal,
@@ -116,6 +167,7 @@ function mapProducto(item: ProductoWithRelations): ProductoResponse {
       precio_docena_dist: toNumber(item.precios_actuales.precio_docena_dist),
       precio_mayor_dist: toNumber(item.precios_actuales.precio_mayor_dist),
     } : null,
+    stock_actual: item.stock_actual ?? null,
   };
 }
 
@@ -130,6 +182,7 @@ export class ProductosService {
     search?: string,
     includePrecios = false,
     includeCategoria = false,
+    includeStockActual = false,
   ): Promise<PaginatedProductosResponse> {
     const skip = (page - 1) * limit;
     const where: any = { deleted_at: null };
@@ -164,6 +217,22 @@ export class ProductosService {
         },
       };
     }
+    if (includeStockActual) {
+      include.stock_actual = {
+        select: {
+          id_almacen: true,
+          cantidad: true,
+          almacen: {
+            select: {
+              id_almacen: true,
+              codigo: true,
+              nombre: true,
+              ubicacion: true,
+            },
+          },
+        },
+      };
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.producto.findMany({
@@ -172,6 +241,13 @@ export class ProductosService {
           id_producto: true,
           codigo: true,
           descripcion: true,
+          tipo_flor: true,
+          material: true,
+          composicion: true,
+          presentacion: true,
+          numero_cabezas: true,
+          tamano: true,
+          colores_surtido: true,
           foto_url: true,
           activo: true,
           stock_principal: true,
@@ -196,7 +272,7 @@ export class ProductosService {
     return { data: mappedData, total, page, limit };
   }
 
-  async findById(id: number, includePrecios = false, includeCategoria = false): Promise<ProductoResponse | null> {
+  async findById(id: number, includePrecios = false, includeCategoria = false, includeStockActual = false): Promise<ProductoResponse | null> {
     const include: any = {};
     if (includeCategoria) {
       include.categoria = {
@@ -220,6 +296,22 @@ export class ProductosService {
         },
       };
     }
+    if (includeStockActual) {
+      include.stock_actual = {
+        select: {
+          id_almacen: true,
+          cantidad: true,
+          almacen: {
+            select: {
+              id_almacen: true,
+              codigo: true,
+              nombre: true,
+              ubicacion: true,
+            },
+          },
+        },
+      };
+    }
 
     const item = await this.prisma.producto.findUnique({
       where: { id_producto: id, deleted_at: null },
@@ -227,6 +319,13 @@ export class ProductosService {
         id_producto: true,
         codigo: true,
         descripcion: true,
+        tipo_flor: true,
+        material: true,
+        composicion: true,
+        presentacion: true,
+        numero_cabezas: true,
+        tamano: true,
+        colores_surtido: true,
         foto_url: true,
         activo: true,
         stock_principal: true,
@@ -247,40 +346,87 @@ export class ProductosService {
   }
 
   async create(data: CreateProductoDto): Promise<ProductoResponse> {
-    try {
-      const item = await this.prisma.producto.create({
-        data: {
-          codigo: data.codigo,
-          descripcion: data.descripcion,
-          foto_url: data.foto_url,
-          activo: data.activo ?? true,
-          stock_principal: data.stock_principal ?? 0,
-          stock_tacna: data.stock_tacna ?? 0,
-          stock_minimo: data.stock_minimo ?? 10,
-          unidades_por_caja: data.unidades_por_caja ?? 1,
-          id_categoria: data.id_categoria,
-        },
-        select: {
-          id_producto: true,
-          codigo: true,
-          descripcion: true,
-          foto_url: true,
-          activo: true,
-          stock_principal: true,
-          stock_tacna: true,
-          stock_total: true,
-          stock_minimo: true,
-          unidades_por_caja: true,
-          id_categoria: true,
-          created_at: true,
-          updated_at: true,
-        },
-      });
+    // Auto-generar descripción según especificación
+    const descripcionGenerada = `${data.presentacion} ${data.tipo_flor} ${data.material} x ${data.numero_cabezas} (${data.tamano})`;
+    const stockTotal = data.stock_principal + (data.stock_tacna ?? 0);
 
-      return mapProducto({
-        ...item,
-        categoria: null,
-        precios_actuales: null,
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        // 1. Crear el producto con todos los nuevos campos
+        const producto = await tx.producto.create({
+          data: {
+            codigo: data.codigo,
+            descripcion: descripcionGenerada,
+            tipo_flor: data.tipo_flor,
+            material: data.material,
+            composicion: data.composicion,
+            presentacion: data.presentacion,
+            numero_cabezas: data.numero_cabezas,
+            tamano: data.tamano,
+            colores_surtido: data.colores_surtido,
+            foto_url: data.foto_url,
+            activo: true,
+            stock_principal: data.stock_principal,
+            stock_tacna: data.stock_tacna ?? 0,
+            stock_total: stockTotal,
+            stock_minimo: data.stock_minimo,
+            unidades_por_caja: data.unidades_por_caja,
+            id_categoria: data.id_categoria,
+          },
+          select: {
+            id_producto: true,
+            codigo: true,
+            descripcion: true,
+            tipo_flor: true,
+            material: true,
+            composicion: true,
+            presentacion: true,
+            numero_cabezas: true,
+            tamano: true,
+            colores_surtido: true,
+            foto_url: true,
+            activo: true,
+            stock_principal: true,
+            stock_tacna: true,
+            stock_total: true,
+            stock_minimo: true,
+            unidades_por_caja: true,
+            id_categoria: true,
+            created_at: true,
+            updated_at: true,
+          },
+        });
+
+        // 2. Insertar Precios - Mapeo UI "caja" -> BD "mayor"
+        await tx.preciosActuales.create({
+          data: {
+            id_producto: producto.id_producto,
+            costo_normal: data.costo_normal ?? 0,
+            precio_unidad_normal: data.precio_tienda_unidad,
+            precio_docena_normal: data.precio_tienda_docena,
+            precio_mayor_normal: data.precio_tienda_caja,        // Mapeo: caja -> mayor
+            costo_distribuidor: data.costo_distribuidor ?? 0,
+            precio_unidad_dist: data.precio_distribuidor_unidad,
+            precio_docena_dist: data.precio_distribuidor_docena,
+            precio_mayor_dist: data.precio_distribuidor_caja,    // Mapeo: caja -> mayor
+          },
+        });
+
+        // 3. Crear Registro en StockActual vinculando el Almacén
+        await tx.stockActual.create({
+          data: {
+            id_producto: producto.id_producto,
+            id_almacen: data.id_almacen,
+            cantidad: data.stock_principal,
+          },
+        });
+
+        return mapProducto({
+          ...producto,
+          categoria: null,
+          precios_actuales: null,
+          stock_actual: null,
+        });
       });
     } catch (error: any) {
       if (error.code === 'P2002') {
@@ -315,6 +461,13 @@ export class ProductosService {
           id_producto: true,
           codigo: true,
           descripcion: true,
+          tipo_flor: true,
+          material: true,
+          composicion: true,
+          presentacion: true,
+          numero_cabezas: true,
+          tamano: true,
+          colores_surtido: true,
           foto_url: true,
           activo: true,
           stock_principal: true,
@@ -332,6 +485,7 @@ export class ProductosService {
         ...item,
         categoria: null,
         precios_actuales: null,
+        stock_actual: null,
       });
     } catch (error: any) {
       if (error.code === 'P2025') {
