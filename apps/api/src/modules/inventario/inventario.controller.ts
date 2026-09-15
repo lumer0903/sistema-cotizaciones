@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Body, Param, UseGuards, Req, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, Param, UseGuards, Req, ParseIntPipe, Res } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
 import { InventarioService } from './inventario.service';
@@ -6,6 +6,7 @@ import { CreateMovimientoDto } from './dto/create-movimiento.dto';
 import type { MovimientoResponse, KardexResponse } from './inventario.service';
 import { TipoMovimientoInventario, OrigenMovimiento } from '@goldcontinent/shared/constants/enums';
 import { TipoMovimiento, OrigenMovimiento as PrismaOrigenMovimiento } from '@prisma/client';
+import type { Response } from 'express';
 
 @ApiTags('Inventario')
 @ApiBearerAuth()
@@ -48,6 +49,67 @@ export class InventarioController {
       body.observaciones,
     );
     return { success: true, data: result };
+  }
+
+  @Get('kardex/:id_producto/export')
+  @ApiOperation({ summary: 'Exportar kardex a CSV' })
+  @ApiQuery({ name: 'id_almacen', required: false, type: Number })
+  @ApiQuery({ name: 'tipo', required: false, enum: TipoMovimientoInventario })
+  @ApiQuery({ name: 'origen', required: false, enum: OrigenMovimiento })
+  @ApiQuery({ name: 'fecha_inicio', required: false, type: String })
+  @ApiQuery({ name: 'fecha_fin', required: false, type: String })
+  async exportKardex(
+    @Param('id_producto', ParseIntPipe) id_producto: number,
+    @Query('id_almacen') id_almacen?: string,
+    @Query('tipo') tipo?: TipoMovimientoInventario,
+    @Query('origen') origen?: OrigenMovimiento,
+    @Query('fecha_inicio') fecha_inicio?: string,
+    @Query('fecha_fin') fecha_fin?: string,
+    @Res() res?: Response,
+  ): Promise<void> {
+    const result = await this.inventarioService.getKardex(id_producto, {
+      id_almacen: id_almacen ? Number(id_almacen) : undefined,
+      tipo,
+      origen,
+      fecha_inicio: fecha_inicio ? new Date(fecha_inicio) : undefined,
+      fecha_fin: fecha_fin ? new Date(fecha_fin) : undefined,
+      page: 1,
+      limit: 10000, // Límite alto para exportación
+    });
+
+    const headers = [
+      'Fecha',
+      'Tipo',
+      'Origen',
+      'Cantidad',
+      'Stock Anterior',
+      'Stock Posterior',
+      'Costo Unitario',
+      'Referencia',
+      'Usuario',
+      'Observaciones',
+    ];
+
+    const rows = result.data.map(m => [
+      m.fecha.toISOString().split('T')[0],
+      m.tipo,
+      m.origen,
+      m.cantidad.toString(),
+      m.stock_anterior.toString(),
+      m.stock_posterior.toString(),
+      m.costo_unitario?.toString() ?? '',
+      m.referencia ?? '',
+      m.usuario ?? '',
+      m.observaciones ?? '',
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+
+    if (res) {
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="kardex-${id_producto}-${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send(csvContent);
+    }
   }
 
   @Get('kardex/:id_producto')

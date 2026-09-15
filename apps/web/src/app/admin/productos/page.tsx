@@ -2,18 +2,23 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Search, 
   ChevronDown, 
+  ChevronUp,
   ChevronRight, 
   ChevronsRight, 
   Pencil, 
   Trash2, 
   Plus,
-  Package
+  Package,
+  LayoutList,
+  LayoutGrid
 } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
+import { AgregarProductoModal } from '@/components/inventario/AgregarProductoModal';
 
 interface Producto {
   id_producto: number;
@@ -21,37 +26,185 @@ interface Producto {
   descripcion: string;
   stock_total: number;
   stock_minimo: number;
+  stock_principal: number;
   precio_unidad_normal: string;
   foto_url: string | null;
-  // Campos simulados para el diseño
-  categoria?: string;
-  ubicacion?: string;
+  id_categoria: number | null;
+  categoria?: {
+    id_categoria: number;
+    nombre_categoria: string;
+  } | null;
+}
+
+interface Categoria {
+  id_categoria: number;
+  nombre_categoria: string;
+}
+
+interface Almacen {
+  id_almacen: number;
+  codigo: string;
+  nombre: string;
+  ubicacion: string | null;
+  activo: boolean;
 }
 
 const ITEMS_PER_PAGE = 10;
 
+function ProductoRow({ item, onEdit, onDelete }: { item: Producto, onEdit: (p: Producto) => void, onDelete: (id: number) => void }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="border-b border-gray-100 last:border-none">
+      {/* FILA PRINCIPAL */}
+      <div
+        onClick={() => setExpanded(!expanded)}
+        className="grid grid-cols-12 items-center py-3 px-6 hover:bg-amber-50/30 cursor-pointer transition-colors text-sm text-gray-700"
+      >
+        <div className="col-span-3 font-medium text-gray-800 truncate pr-2">{item.codigo}</div>
+        <div className="col-span-3 text-gray-600 uppercase truncate pr-2">{item.categoria?.nombre_categoria || 'Sin categoría'}</div>
+        <div className="col-span-3 text-gray-600 uppercase truncate pr-2">{item.stock_principal > 0 ? 'Stock Principal' : 'Sin asignar'}</div>
+        <div className="col-span-1 font-bold text-emerald-500">{item.stock_total}</div>
+        <div className="col-span-2 flex items-center justify-end gap-3 text-amber-600">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(item);
+            }}
+            className="p-1 hover:text-amber-700 transition-colors"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(item.id_producto);
+            }}
+            className="p-1 text-red-400 hover:text-red-600 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+          <button className="p-1 text-gray-400">
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+
+      {/* DETALLE EXPANDIDO */}
+      {expanded && (
+        <div className="bg-gray-50/70 p-6 border-y border-gray-100 transition-all">
+          <div className="flex flex-col md:flex-row items-start gap-8">
+            <div className="w-32 h-32 rounded-lg overflow-hidden border border-gray-200 bg-white flex-shrink-0">
+              {item.foto_url ? (
+                <img
+                  src={item.foto_url}
+                  alt={item.codigo}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-300">
+                  <Package className="w-12 h-12" />
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-y-4 gap-x-6 text-xs">
+              <div>
+                <span className="block font-bold text-gray-400 uppercase tracking-wider">CODIGO</span>
+                <span className="font-medium text-gray-800 text-sm">{item.codigo}</span>
+              </div>
+
+              <div>
+                <span className="block font-bold text-gray-400 uppercase tracking-wider">TIPO</span>
+                <span className="font-medium text-gray-800 text-sm">{item.categoria?.nombre_categoria || 'General'}</span>
+              </div>
+
+              <div>
+                <span className="block font-bold text-gray-400 uppercase tracking-wider">UBICACIÓN</span>
+                <span className="font-medium text-gray-800 text-sm">{item.stock_principal > 0 ? 'Stock Principal' : 'Sin asignar'}</span>
+              </div>
+
+              <div>
+                <span className="block font-bold text-gray-400 uppercase tracking-wider">DESCRIPCIÓN</span>
+                <span className="font-medium text-gray-800 text-sm line-clamp-2">{item.descripcion || 'Sin descripción'}</span>
+              </div>
+
+              <div>
+                <span className="block font-bold text-gray-400 uppercase tracking-wider">STOCK</span>
+                <span className="font-medium text-gray-800 text-sm">{item.stock_total}</span>
+              </div>
+
+              <div>
+                <span className="block font-bold text-gray-400 uppercase tracking-wider">ACCIONES</span>
+                <div className="flex items-center gap-2 mt-1">
+                  <button onClick={() => onEdit(item)} className="text-amber-600 hover:text-amber-700">
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => onDelete(item.id_producto)} className="text-red-400 hover:text-red-600">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <span className="block font-bold text-gray-400 uppercase tracking-wider">CATEGORIA</span>
+                <span className="font-medium text-gray-800 text-sm">{item.categoria?.nombre_categoria || 'N/A'}</span>
+              </div>
+
+              <div>
+                <span className="block font-bold text-gray-400 uppercase tracking-wider">PRECIO</span>
+                <span className="font-medium text-gray-800 text-sm">S/ {item.precio_unidad_normal}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminProductosPage() {
   const { usuario } = useAuth();
+  const router = useRouter();
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [almacenes, setAlmacenes] = useState<Almacen[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingFilters, setLoadingFilters] = useState(true);
   
   // Estados de filtros y paginación
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoria, setSelectedCategoria] = useState('');
   const [selectedUbicacion, setSelectedUbicacion] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
+  // Cargar categorías y almacenes para filtros
+  useEffect(() => {
+    const fetchFilters = async () => {
+      try {
+        const [catRes, almRes] = await Promise.all([
+          apiClient('/categorias?limit=100'),
+          apiClient('/almacenes?activo=true&limit=100'),
+        ]);
+        setCategorias(catRes.data || []);
+        setAlmacenes(almRes.data || []);
+      } catch (error) {
+        console.error('Error fetching filters:', error);
+      } finally {
+        setLoadingFilters(false);
+      }
+    };
+    fetchFilters();
+  }, []);
+
+  // Cargar productos
   useEffect(() => {
     const fetchProductos = async () => {
       try {
-        const response = await apiClient('/productos?limit=100');
-        // Agregamos categorías y ubicaciones falsas para que coincida con tu diseño temporalmente
-        const dataConFalsos = (response.data || []).map((p: any, i: number) => ({
-          ...p,
-          categoria: 'ADORNO',
-          ubicacion: 'ESTANTE ' + (i % 3 === 0 ? 'A' : i % 2 === 0 ? 'B' : 'C')
-        }));
-        setProductos(dataConFalsos);
+        const response = await apiClient('/productos?limit=100&include=categoria');
+        setProductos(response.data || []);
       } catch (error) {
         console.error('Error fetching productos:', error);
       } finally {
@@ -62,25 +215,16 @@ export default function AdminProductosPage() {
     fetchProductos();
   }, []);
 
-  // Categorías y Ubicaciones dinámicas
-  const categoriasUnicas = useMemo(() => {
-    return Array.from(new Set(productos.map((i) => i.categoria))).filter(Boolean) as string[];
-  }, [productos]);
-
-  const ubicacionesUnicas = useMemo(() => {
-    return Array.from(new Set(productos.map((i) => i.ubicacion))).filter(Boolean) as string[];
-  }, [productos]);
-
   // Filtrado de productos en tiempo real
   const filteredData = useMemo(() => {
     return productos.filter((item) => {
       const matchSearch =
         item.codigo.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.descripcion.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (item.categoria?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+        (item.categoria?.nombre_categoria?.toLowerCase() || '').includes(searchQuery.toLowerCase());
 
-      const matchCategoria = selectedCategoria ? item.categoria === selectedCategoria : true;
-      const matchUbicacion = selectedUbicacion ? item.ubicacion === selectedUbicacion : true;
+      const matchCategoria = selectedCategoria ? item.id_categoria?.toString() === selectedCategoria : true;
+      const matchUbicacion = selectedUbicacion ? true : true; // TODO: filtrar por almacén real
 
       return matchSearch && matchCategoria && matchUbicacion;
     });
@@ -94,221 +238,191 @@ export default function AdminProductosPage() {
     return filteredData.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredData, currentPage]);
 
+  const handleEdit = (p: Producto) => {
+    router.push(`/admin/productos/${p.id_producto}`);
+  };
+
+  const handleDelete = (id: number) => {
+    if (confirm('¿Eliminar producto?')) {
+      console.log('Eliminar', id);
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* BARRA SUPERIOR CON BOTÓN DE ACCIÓN */}
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-lg font-bold text-gray-800 tracking-wide">
-          Gestión de Stock
-        </h2>
-
-        {/* BOTÓN AGREGAR PRODUCTO */}
-        <Link
-          href="/admin/productos/crear"
-          className="flex items-center gap-2 bg-[#f8b602] hover:bg-[#e0a400] text-white px-5 py-2.5 rounded-[11px] font-black text-xs tracking-wider transition-colors cursor-pointer shadow-md"
-        >
-          <Plus className="w-4 h-4" />
-          <span>AGREGAR PRODUCTO</span>
-        </Link>
-      </div>
-
+    <div className="p-2 sm:p-8 bg-gray-50/50 min-h-screen">
       {/* FILTROS */}
-      <section className="bg-white p-6 rounded-[15px] border-2 border-[#f8b602] shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="bg-white p-4 rounded-xl border-2 border-amber-400 shadow-sm mb-6">
+        <div className="flex flex-col md:flex-row items-end justify-between gap-4">
           {/* BUSCAR */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-[#f8b602] uppercase tracking-wider">
+          <div className="flex-1 w-full">
+            <label className="block text-xs font-black text-amber-600 uppercase tracking-wider mb-1">
               BUSCAR
             </label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f8b602]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500" />
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder="Buscar por código o descripción"
-                className="w-full h-10 pl-9 pr-3 text-xs border border-[#f8b602] rounded-lg outline-none focus:ring-1 focus:ring-[#f8b602]"
+                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                placeholder="Buscar por todo"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-amber-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/50"
               />
             </div>
           </div>
 
           {/* CATEGORÍA */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-[#f8b602] uppercase tracking-wider">
+          <div className="w-full md:w-48">
+            <label className="block text-xs font-black text-amber-600 uppercase tracking-wider mb-1">
               CATEGORIA
             </label>
             <div className="relative">
               <select
                 value={selectedCategoria}
-                onChange={(e) => {
-                  setSelectedCategoria(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full h-10 px-3 text-xs border border-[#f8b602] rounded-lg outline-none appearance-none bg-white pr-8 text-gray-600 cursor-pointer"
+                onChange={(e) => { setSelectedCategoria(e.target.value); setCurrentPage(1); }}
+                className="w-full appearance-none bg-white border border-amber-400 rounded-lg px-3 py-2 text-sm text-gray-500 pr-8 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
               >
                 <option value="">Seleccione</option>
-                {categoriasUnicas.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
+                {categorias.map((cat) => (
+                  <option key={cat.id_categoria} value={cat.id_categoria.toString()}>
+                    {cat.nombre_categoria}
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f8b602] pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500 pointer-events-none" />
             </div>
           </div>
 
           {/* UBICACIÓN */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-[#f8b602] uppercase tracking-wider">
+          <div className="w-full md:w-48">
+            <label className="block text-xs font-black text-amber-600 uppercase tracking-wider mb-1">
               UBICACIÓN
             </label>
             <div className="relative">
               <select
                 value={selectedUbicacion}
-                onChange={(e) => {
-                  setSelectedUbicacion(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full h-10 px-3 text-xs border border-[#f8b602] rounded-lg outline-none appearance-none bg-white pr-8 text-gray-600 cursor-pointer"
+                onChange={(e) => { setSelectedUbicacion(e.target.value); setCurrentPage(1); }}
+                className="w-full appearance-none bg-white border border-amber-400 rounded-lg px-3 py-2 text-sm text-gray-500 pr-8 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
               >
                 <option value="">Seleccione</option>
-                {ubicacionesUnicas.map((ubic) => (
-                  <option key={ubic} value={ubic}>
-                    {ubic}
+                {almacenes.map((alm) => (
+                  <option key={alm.id_almacen} value={alm.id_almacen.toString()}>
+                    {alm.nombre}
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f8b602] pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-500 pointer-events-none" />
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* TABLA DE INVENTARIO */}
-      <section className="space-y-3">
-        {/* ENCABEZADO */}
-        <div className="grid grid-cols-5 px-6 py-3 bg-[#eef0f2] rounded-lg text-xs font-bold text-gray-700 tracking-wider">
-          <div>CODIGO</div>
-          <div>CATEGORIA / DESCRIPCIÓN</div>
-          <div>UBICACIÓN</div>
-          <div>STOCK</div>
-          <div className="text-right pr-4">ACCIONES</div>
+          {/* VISTAS Y BOTÓN CREAR */}
+          <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+            <div className="flex gap-1">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-lg border border-amber-400 ${
+                  viewMode === 'list' ? 'bg-amber-50 text-amber-600' : 'text-amber-500 bg-white'
+                }`}
+              >
+                <LayoutList className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-lg border border-amber-400 ${
+                  viewMode === 'grid' ? 'bg-amber-50 text-amber-600' : 'text-amber-500 bg-white'
+                }`}
+              >
+                <LayoutGrid className="w-5 h-5" />
+              </button>
+            </div>
+
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm px-4 py-2.5 rounded-lg transition-colors shadow-sm whitespace-nowrap"
+            >
+              Agregar Producto <Plus className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* TABLA PRINCIPAL */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+        {/* ENCABEZADOS DE TABLA */}
+        <div className="hidden md:grid grid-cols-12 py-3 px-6 bg-gray-100 text-xs font-bold text-gray-600 uppercase tracking-wider">
+          <div className="col-span-3">CODIGO</div>
+          <div className="col-span-3">CATEGORIA</div>
+          <div className="col-span-3">UBICACIÓN</div>
+          <div className="col-span-1">STOCK</div>
+          <div className="col-span-2 text-right">ACCIONES</div>
         </div>
 
-        {/* REGISTROS */}
-        <div className="space-y-2">
+        {/* FILAS */}
+        <div className="divide-y divide-gray-100">
           {loading ? (
-             <div className="p-12 text-center bg-white rounded-lg border border-dashed border-gray-300 text-sm text-gray-500">
+             <div className="p-12 text-center text-sm text-gray-500 bg-white">
                Cargando inventario...
              </div>
           ) : currentItems.length > 0 ? (
             currentItems.map((item) => (
-              <div
-                key={item.id_producto}
-                className="grid grid-cols-5 px-6 py-4 bg-white rounded-lg border border-gray-100 shadow-sm items-center text-xs font-medium text-gray-600 hover:border-amber-200 transition-colors"
-              >
-                <div className="font-semibold text-gray-800">{item.codigo}</div>
-                <div>
-                  <div className="truncate">{item.categoria}</div>
-                  <div className="text-[10px] text-gray-400 truncate mt-0.5">{item.descripcion}</div>
-                </div>
-                <div>{item.ubicacion}</div>
-                <div className="flex flex-col">
-                  <span className={`font-bold ${item.stock_total <= item.stock_minimo ? 'text-red-500' : 'text-emerald-500'}`}>
-                    {item.stock_total}
-                  </span>
-                  {item.stock_total <= item.stock_minimo && (
-                    <span className="text-[9px] text-red-400">Stock bajo</span>
-                  )}
-                </div>
-                <div className="flex items-center justify-end gap-3 pr-2">
-                  <Link 
-                    href={`/admin/productos/${item.id_producto}`}
-                    className="text-amber-500 hover:text-amber-600 transition-colors cursor-pointer" 
-                    title="Editar"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Link>
-                  <button 
-                    onClick={() => {
-                      if (confirm('¿Eliminar producto?')) {
-                        // Aquí iría la lógica de eliminar
-                        console.log('Eliminar', item.id_producto);
-                      }
-                    }}
-                    className="text-amber-700 hover:text-red-600 transition-colors cursor-pointer" 
-                    title="Eliminar"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <button className="text-gray-400 hover:text-gray-600 ml-2 cursor-pointer">
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+              <ProductoRow key={item.id_producto} item={item} onEdit={handleEdit} onDelete={handleDelete} />
             ))
           ) : (
-            <div className="p-12 flex flex-col items-center justify-center text-center bg-white rounded-lg border border-dashed border-gray-300 text-sm text-gray-500">
+            <div className="p-12 flex flex-col items-center justify-center text-center bg-white text-sm text-gray-500">
               <Package className="w-12 h-12 text-gray-300 mb-3" />
               <span>No hay productos registrados o no coinciden con la búsqueda.</span>
             </div>
           )}
         </div>
-      </section>
+      </div>
 
       {/* PAGINACIÓN */}
       {!loading && filteredData.length > 0 && (
-        <footer className="flex items-center justify-between pt-4 text-xs text-gray-600">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500 font-medium px-2">
           <div className="flex items-center gap-2">
-            <span className="font-light text-gray-500">Page</span>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-              const isActive = currentPage === page;
-              return (
-                <button
-                  key={page}
-                  type="button"
-                  onClick={() => setCurrentPage(page)}
-                  className={`w-7 h-7 flex items-center justify-center rounded font-bold transition-colors cursor-pointer ${
-                    isActive
-                      ? 'bg-[#f8b602] text-white'
-                      : 'text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {page}
-                </button>
-              );
-            })}
-
-            <button
-              type="button"
+            <span>Page</span>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`w-7 h-7 flex items-center justify-center rounded-md font-bold transition-colors ${
+                  currentPage === page
+                    ? 'bg-amber-500 text-white'
+                    : 'hover:bg-gray-200 text-gray-700'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            <button 
               onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              className="p-1 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
-
-            <button
-              type="button"
+            <button 
               onClick={() => setCurrentPage(totalPages)}
               disabled={currentPage === totalPages}
-              className="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              className="p-1 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ChevronsRight className="w-4 h-4" />
             </button>
           </div>
 
-          <p>
-            <span className="font-light">Mostrando </span>
-            <span className="font-bold">{currentItems.length}</span>
-            <span className="font-light"> de </span>
-            <span className="font-bold">{filteredData.length}</span>
-          </p>
-        </footer>
+          <div>
+            Mostrando <span className="font-bold text-gray-800">{currentItems.length}</span> de{' '}
+            <span className="font-bold text-gray-800">{filteredData.length}</span>
+          </div>
+        </div>
       )}
+
+      <AgregarProductoModal 
+        open={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onSuccess={() => {
+          // Opcional: recargar los productos aquí
+        }} 
+      />
     </div>
   );
 }

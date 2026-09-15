@@ -1,5 +1,39 @@
-import { z } from 'zod';
-import { TipoPrecio, TipoVenta } from '../constants/enums';
+import { z } from "zod";
+
+export const CrearProductoSchema = z.object({
+  codigo: z.string().min(2, "El código es obligatorio"),
+  id_categoria: z.coerce.number().min(1, "Seleccione una categoría"),
+  tipo_flor: z.string().min(1, "Seleccione el tipo de flor"),
+  material: z.string().min(1, "Seleccione el material"),
+  composicion: z.string().min(1, "Seleccione la composición"),
+  presentacion: z.string().min(1, "Seleccione la presentación"),
+  numero_cabezas: z.coerce.number().min(1, "Ingrese el número de cabezas"),
+  tamano: z.string().min(1, "Ingrese el tamaño"),
+  id_almacen: z.coerce.number().min(1, "Seleccione una ubicación válida"),
+  unidades_por_caja: z.coerce.number().min(1, "Ingrese unidades por caja"),
+  stock_principal: z.coerce.number().min(0, "El stock no puede ser negativo"),
+  stock_minimo: z.coerce.number().min(0, "El stock mínimo no puede ser negativo"),
+  stock_tacna: z.coerce.number().default(0),
+  descripcion: z.string().min(5),
+  colores_surtido: z.array(z.string()).min(1, "Configure al menos un color para el surtido"),
+  
+  // Precios Tienda (Normal)
+  precio_tienda_unidad: z.coerce.number().positive("Ingrese precio válido"),
+  precio_tienda_docena: z.coerce.number().positive("Ingrese precio válido"),
+  precio_tienda_caja: z.coerce.number().positive("Ingrese precio válido"),
+  
+  // Precios Distribuidor
+  precio_distribuidor_unidad: z.coerce.number().positive("Ingrese precio válido"),
+  precio_distribuidor_docena: z.coerce.number().positive("Ingrese precio válido"),
+  precio_distribuidor_caja: z.coerce.number().positive("Ingrese precio válido"),
+  
+  // Costos opcionales (Default 0.00)
+  costo_normal: z.coerce.number().min(0).default(0),
+  costo_distribuidor: z.coerce.number().min(0).default(0)
+});
+
+export type CrearProductoInput = z.infer<typeof CrearProductoSchema>;
+
 
 export const productoBaseSchema = z.object({
   codigo: z.string().min(1, 'Código es obligatorio').max(50),
@@ -22,9 +56,6 @@ export const preciosSchema = z.object({
   precio_mayor_dist: z.coerce.number().multipleOf(0.01).default(0),
 });
 
-export const createProductoSchema = productoBaseSchema.merge(preciosSchema);
-export type CreateProductoInput = z.infer<typeof createProductoSchema>;
-
 export const updateProductoSchema = productoBaseSchema.partial().merge(preciosSchema.partial());
 export type UpdateProductoInput = z.infer<typeof updateProductoSchema>;
 
@@ -38,7 +69,7 @@ export const productoQuerySchema = z.object({
 export type ProductoQueryInput = z.infer<typeof productoQuerySchema>;
 
 export const importarProductosSchema = z.object({
-  file: z.any(), // Multer file handled separately
+  file: z.any(),
 });
 
 export type ImportarProductosInput = z.infer<typeof importarProductosSchema>;

@@ -14,16 +14,18 @@ export class AlmacenesController {
   constructor(private readonly almacenesService: AlmacenesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar almacenes con paginación y búsqueda' })
+  @ApiOperation({ summary: 'Listar almacenes con paginación, búsqueda y filtro activo' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'activo', required: false, type: Boolean })
   async findAll(
     @Query('page') page = 1,
     @Query('limit') limit = 50,
     @Query('search') search?: string,
+    @Query('activo') activo?: string,
   ): Promise<{ success: true; data: PaginatedAlmacenesResponse['data']; total: number; page: number; limit: number }> {
-    const result = await this.almacenesService.findAll(Number(page), Number(limit), search);
+    const result = await this.almacenesService.findAll(Number(page), Number(limit), search, activo === 'true');
     return { success: true, ...result };
   }
 

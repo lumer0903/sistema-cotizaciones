@@ -59,7 +59,7 @@ const ADMIN_NAV_ITEMS: {
   { href: '/admin/configuracion', icon: Settings, label: 'Configuración', permission: 'configuracion' },
 ];
 
-export function AdminLayout({ title, children }: { title: string; children: React.ReactNode }) {
+export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
   const pathname = usePathname();
@@ -77,6 +77,12 @@ export function AdminLayout({ title, children }: { title: string; children: Reac
       setExpandedMenu(itemHref);
     }
   };
+
+  const currentItem = ADMIN_NAV_ITEMS.find(item => 
+    pathname === item.href || 
+    (item.href !== '/admin/dashboard' && pathname.startsWith(item.href))
+  );
+  const title = currentItem ? currentItem.label : 'Dashboard';
 
   return (
     <div 
