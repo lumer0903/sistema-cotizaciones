@@ -1,245 +1,181 @@
 'use client';
 
-import { Plus, Search, Filter, Tag, History, FileSpreadsheet } from 'lucide-react';
-import { useAuth } from '@/lib/authProvider';
-import { apiClient } from '@/lib/apiClient';
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Search } from 'lucide-react';
+import { toast } from 'sonner';
 
-interface PrecioActual {
-  id_producto: number;
-  codigo: string;
-  descripcion: string;
-  costo_normal: string;
-  precio_unidad_normal: string;
-  precio_docena_normal: string;
-  precio_mayor_normal: string;
-  costo_distribuidor: string;
-  precio_unidad_dist: string;
-  precio_docena_dist: string;
-  precio_mayor_dist: string;
-  updated_at: string;
-}
+import { Input, Select, FilterCard, Pagination } from '@/components/ui';
+import { PriceCard } from '@/features/precio-historial/components/PriceCard';
+import { HistorialPrecioModal } from '@/features/precio-historial/components/HistorialPrecioModal';
+import { ProductoConsulta } from '@/features/precio-historial/types/precio';
+import {
+  getProductosConsulta,
+  getHistorialPrecios,
+  HistorialPrecioItem,
+} from '@/features/precio-historial/api/precioApi';
 
-interface HistorialPrecio {
-  id_historial: number;
-  id_producto: number;
-  campo_modificado: string;
-  valor_anterior: string;
-  valor_nuevo: string;
-  fecha_cambio: string;
-  producto: { descripcion: string };
-  usuario: { nombre: string } | null;
-}
+export default function ConsultaPrecioPage() {
+  const [productos, setProductos] = useState<ProductoConsulta[]>([]);
+  const [busqueda, setBusqueda] = useState('');
+  const [tipoPrecio, setTipoPrecio] = useState<'distribuidor' | 'tienda' | ''>('');
+  const [stockFiltro, setStockFiltro] = useState('');
+  const [vista, setVista] = useState<'grid' | 'list'>('grid');
 
-type ActiveTab = 'actuales' | 'historial';
+  // Paginación con el estado global de limite
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [limit, setLimit] = useState(8);
 
-export default function AdminPreciosPage() {
-  const { usuario } = useAuth();
-  const [activeTab, setActiveTab] = useState<ActiveTab>('actuales');
-  const [precios, setPrecios] = useState<PrecioActual[]>([]);
-  const [historial, setHistorial] = useState<HistorialPrecio[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
-  const [search, setSearch] = useState('');
+  const [productoHistorialId, setProductoHistorialId] = useState<string | null>(null);
+  const [historialData, setHistorialData] = useState<HistorialPrecioItem[]>([]);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        if (activeTab === 'actuales') {
-          const response = await apiClient('/productos?include=precios&limit=100');
-          setPrecios(
-            (response.data || [])
-              .filter((p: any) => p.precios_actuales)
-              .map((p: any) => ({ ...p.precios_actuales, codigo: p.codigo, descripcion: p.descripcion }))
-          );
-          setTotal(response.total || 0);
-        } else {
-          const response = await apiClient('/historial-precios?limit=100');
-          setHistorial(response.data || []);
-          setTotal(response.total || 0);
-        }
-      } catch (error) {
-        console.error('Error fetching precios:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    getProductosConsulta().then((data) => setProductos(data));
+  }, []);
 
-    fetchData();
-  }, [activeTab]);
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [busqueda, stockFiltro]);
 
-  const filteredPrecios = precios.filter(
-    (p) =>
-      p.codigo.toLowerCase().includes(search.toLowerCase()) ||
-      p.descripcion.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleVerHistorial = async (id: string) => {
+    setLoadingHistorial(true);
+    try {
+      const data = await getHistorialPrecios(id);
+      setHistorialData(data);
+      setProductoHistorialId(id);
+    } catch (error) {
+      console.error('Error cargando historial:', error);
+      toast.error('No se pudo cargar el historial de precios');
+      setHistorialData([]);
+      setProductoHistorialId(id);
+    } finally {
+      setLoadingHistorial(false);
+    }
+  };
 
-  const filteredHistorial = historial.filter(
-    (h) =>
-      h.producto?.descripcion.toLowerCase().includes(search.toLowerCase()) ||
-      h.campo_modificado.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleCerrarHistorial = () => {
+    setProductoHistorialId(null);
+    setHistorialData([]);
+  };
+
+  const productosFiltrados = useMemo(() => {
+    return productos.filter((p) => {
+      const coincideBusqueda =
+        !busqueda ||
+        p.codigo?.toLowerCase().includes(busqueda.toLowerCase()) ||
+        p.descripcion?.toLowerCase().includes(busqueda.toLowerCase());
+
+      const filtroNormalizado = stockFiltro.toLowerCase();
+      const esFiltroBajo = filtroNormalizado === 'bajo' || filtroNormalizado === 'stock-bajo';
+      const esFiltroDisponible = filtroNormalizado === 'disponible' || filtroNormalizado === 'con-stock';
+
+      const stockMin = (p as any).stockMinimo ?? (p as any).stock_minimo ?? 10;
+
+      const coincideStock =
+        !stockFiltro ||
+        (esFiltroDisponible && p.stock > 0) ||
+        (esFiltroBajo && p.stock <= stockMin);
+
+      return coincideBusqueda && coincideStock;
+    });
+  }, [productos, busqueda, stockFiltro]);
+
+  // Cálculos de paginación
+  const totalItems = productosFiltrados.length;
+  const totalPaginas = Math.ceil(totalItems / limit) || 1;
+  const inicio = (paginaActual - 1) * limit;
+  const productosVisibles = productosFiltrados.slice(inicio, inicio + limit);
+
+  const codigoProductoSeleccionado = productos.find(
+    (p) => String(p.id) === String(productoHistorialId)
+  )?.codigo;
 
   return (
-    <>
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Precios e Historial</h1>
-          <p className="text-gray-500">Gestión de listas de precios y auditoría de cambios</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {activeTab === 'actuales' && (
-            <Link
-              href="/admin/precios/importar"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-800 transition-colors"
-            >
-              <FileSpreadsheet className="h-4 w-4" />
-              Importar Precios
-            </Link>
-          )}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="border-b border-gray-200">
-          <nav className="flex -mb-px" aria-label="Tabs">
-            <button
-              onClick={() => setActiveTab('actuales')}
-              className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'actuales'
-                  ? 'border-primary-700 text-primary-700'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <Tag className="h-4 w-4 inline mr-1.5" />
-              Precios Actuales
-            </button>
-            <button
-              onClick={() => setActiveTab('historial')}
-              className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'historial'
-                  ? 'border-primary-700 text-primary-700'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <History className="h-4 w-4 inline mr-1.5" />
-              Historial de Cambios
-            </button>
-          </nav>
-        </div>
-
-        <div className="p-4 border-b border-gray-200">
-          <div className="relative max-w-md w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
+    <div className="p-0 md:p-0 w-full max-w-[1700px] mx-auto space-y-6 font-['DM_Sans']">
+      {/* Filtros */}
+      <FilterCard>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+          {/* BUSCAR */}
+          <div className="md:col-span-6">
+            <Input
+              label="BUSCAR"
               type="text"
-              placeholder={activeTab === 'actuales' ? 'Buscar producto...' : 'Buscar en historial...'}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar por código o descripción..."
+              icon={<Search className="size-4" />}
+            />
+          </div>
+
+          {/* TIPO PRECIO */}
+          <div className="md:col-span-3">
+            <Select
+              label="TIPO PRECIO"
+              value={tipoPrecio}
+              onChange={(e) => setTipoPrecio(e.target.value as 'distribuidor' | 'tienda' | '')}
+              options={[
+                { label: 'Todos', value: '' },
+                { label: 'DISTRIBUIDOR', value: 'distribuidor' },
+                { label: 'TIENDA', value: 'tienda' },
+              ]}
+            />
+          </div>
+
+          {/* STOCK */}
+          <div className="md:col-span-3">
+            <Select
+              label="STOCK"
+              value={stockFiltro}
+              onChange={(e) => setStockFiltro(e.target.value)}
+              options={[
+                { label: 'Todos', value: '' },
+                { label: 'DISPONIBLE', value: 'disponible' },
+                { label: 'STOCK BAJO', value: 'bajo' },
+              ]}
             />
           </div>
         </div>
+      </FilterCard>
 
-        {loading ? (
-          <div className="p-6">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="animate-pulse flex items-center gap-4 py-4 border-b border-gray-100">
-                <div className="h-12 w-12 bg-gray-200 rounded-lg" />
-                <div className="flex-1">
-                  <div className="h-4 w-3/4 bg-gray-200 rounded mb-2" />
-                  <div className="h-3 w-1/2 bg-gray-200 rounded" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : activeTab === 'actuales' ? (
-          <div className="overflow-x-auto">
-            {filteredPrecios.length === 0 ? (
-              <div className="p-12 text-center text-gray-500">
-                <Tag className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                <p className="text-lg">No se encontraron precios</p>
-              </div>
-            ) : (
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Producto</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Normal</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Docena</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Mayor</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Distribuidor</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Docena Dist</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Mayor Dist</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actualizado</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredPrecios.map((p) => (
-                    <tr key={p.id_producto} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-gray-900">{p.descripcion}</p>
-                        <p className="text-sm text-gray-500 font-mono">{p.codigo}</p>
-                      </td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-900">S/ {Number(p.precio_unidad_normal).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-900">S/ {Number(p.precio_docena_normal).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-900">S/ {Number(p.precio_mayor_normal).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-900">S/ {Number(p.precio_unidad_dist).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-900">S/ {Number(p.precio_docena_dist).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-900">S/ {Number(p.precio_mayor_dist).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500">
-                        {new Date(p.updated_at).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            {filteredHistorial.length === 0 ? (
-              <div className="p-12 text-center text-gray-500">
-                <History className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                <p className="text-lg">No hay cambios registrados</p>
-              </div>
-            ) : (
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Producto</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Campo</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Anterior</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Nuevo</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Usuario</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fecha</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredHistorial.map((h) => (
-                    <tr key={h.id_historial} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-900">{h.producto?.descripcion || 'N/A'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600 capitalize">{h.campo_modificado.replace(/_/g, ' ')}</td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-900">
-                        S/ {Number(h.valor_anterior).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="px-4 py-3 text-right text-sm text-primary-700 font-medium">
-                        S/ {Number(h.valor_nuevo).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">{h.usuario?.nombre || 'Sistema'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500">
-                        {new Date(h.fecha_cambio).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
+      {/* Grid de PriceCard */}
+      <div
+        className={
+          vista === 'grid'
+            ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4'
+            : 'flex flex-col gap-4'
+        }
+      >
+        {productosVisibles.map((producto, index) => (
+          <PriceCard
+            key={producto.id ?? producto.codigo ?? `prod-${index}`}
+            producto={producto}
+            tipoPrecio={tipoPrecio}
+            onVerHistorial={handleVerHistorial}
+          />
+        ))}
       </div>
-    </>
+
+      {/* Paginación */}
+      <Pagination
+        currentPage={paginaActual}
+        totalPages={totalPaginas}
+        totalItems={totalItems}
+        limit={limit}
+        onPageChange={setPaginaActual}
+        onLimitChange={(newLimit) => {
+          setLimit(newLimit);
+          setPaginaActual(1);
+        }}
+        itemLabel="productos"
+      />
+
+      {/* Modal Historial */}
+      <HistorialPrecioModal
+        open={productoHistorialId !== null}
+        onClose={handleCerrarHistorial}
+        codigoProducto={codigoProductoSeleccionado}
+        historial={historialData}
+      />
+    </div>
   );
 }

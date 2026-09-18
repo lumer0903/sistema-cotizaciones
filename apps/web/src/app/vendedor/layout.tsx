@@ -1,7 +1,7 @@
 'use client';
 
-import { VendedorLayout } from '@/components/VendedorLayout';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { VendedorLayout } from '@/components/layouts/VendedorLayout';
+import { ProtectedRoute } from '@/components/shared/ProtectedRoute';
 import { PermisoModulo } from '@goldcontinent/shared/auth';
 
 export default function VendedorRootLayout({

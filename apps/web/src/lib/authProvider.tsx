@@ -65,6 +65,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(data.message || 'Error al iniciar sesión');
     }
 
+    // Guardar token en ambas ubicaciones para compatibilidad con apiClient
+    if (data.access_token) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('access_token', data.access_token);
+        document.cookie = `accessToken=${data.access_token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+      }
+    }
+
     setUsuario(data.data.usuario);
     setRoleCookie(data.data.usuario.rol);
   };

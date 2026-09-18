@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { CuentaPorCobrar, HistorialPago, EstadoCobranza } from '@/types/cobranza';
 
 interface CuentaCobrar {
   id_cuenta: number;
@@ -94,13 +95,6 @@ export default function AdminCobranzaPage() {
 
   return (
     <>
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Cobranza</h1>
-          <p className="text-gray-500">Gestión de cuentas por cobrar y seguimiento de pagos</p>
-        </div>
-      </div>
-
       <div className="grid gap-4 md:grid-cols-4 mb-8">
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between">
@@ -213,7 +207,7 @@ export default function AdminCobranzaPage() {
                   {cuentas.map((cuenta) => (
                     <tr key={cuenta.id_cuenta} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
-                        <span className="font-mono text-sm font-medium text-gray-900">{cuenta.venta.numero_completo}</span>
+                        <span className="text-sm font-medium text-gray-900">{cuenta.venta.numero_completo}</span>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
                         {cuenta.venta.cliente?.nombre || 'Cliente general'}

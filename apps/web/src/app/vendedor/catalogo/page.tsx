@@ -32,7 +32,7 @@ function renderGridView(productos: Producto[]) {
             <Package className="h-16 w-16 text-gray-300" />
           </div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="font-mono text-sm text-gray-500">{producto.codigo}</span>
+            <span className="text-sm text-gray-500">{producto.codigo}</span>
             {producto.nombre_categoria && (
               <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">{producto.nombre_categoria}</span>
             )}
@@ -95,7 +95,7 @@ function renderTableRows({ productos }: { productos: Producto[] }) {
     <>
       {productos.map((producto) => (
         <tr key={producto.id_producto} className="hover:bg-gray-50">
-          <td className="p-3 font-mono text-sm text-gray-900">{producto.codigo}</td>
+          <td className="p-3 text-sm text-gray-900">{producto.codigo}</td>
           <td className="p-3 text-sm font-medium text-gray-900">{producto.descripcion}</td>
           <td className="p-3 text-sm text-gray-500">{producto.nombre_categoria || '-'}</td>
           <td className="p-3 text-sm text-gray-500">

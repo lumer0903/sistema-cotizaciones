@@ -3,6 +3,7 @@
 import { Settings, User, Bell, Shield, Database, Palette, Key, Globe, Mail, Truck, CreditCard, Save, FileText } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
 import { useEffect, useState } from 'react';
+import { Configuracion as ConfigType } from '@/types/configuracion';
 
 interface Configuracion {
   empresa_nombre: string;
@@ -29,7 +30,7 @@ interface Configuracion {
   idioma: string;
 }
 
-export default function AdminConfiguracionPage() {
+export default function ConfiguracionPage() {
   const { usuario } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -89,12 +90,7 @@ export default function AdminConfiguracionPage() {
 
   return (
     <>
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
-          <p className="text-gray-500">Parámetros generales del sistema</p>
-        </div>
-        <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3">
           {saved && (
             <span className="px-3 py-1 text-sm font-medium bg-green-100 text-green-700 rounded-full flex items-center gap-1">
               <CheckCircle className="h-4 w-4" />
@@ -110,7 +106,6 @@ export default function AdminConfiguracionPage() {
             {loading ? 'Guardando...' : 'Guardar Cambios'}
           </button>
         </div>
-      </div>
 
       <div className="bg-white rounded-xl border border-gray-200">
         <div className="border-b border-gray-200 overflow-x-auto">

@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { MetodoPago, TipoComprobante, DetalleVenta, Venta as VentaType } from '@/types/venta';
 
 interface Venta {
   id_venta: number;
@@ -56,7 +57,7 @@ const DOCUMENTO_LABELS: Record<string, string> = {
   guia_remision: 'Guía Remisión',
 };
 
-export default function AdminVentasPage() {
+export default function VentasPage() {
   const { usuario } = useAuth();
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,11 +102,7 @@ export default function AdminVentasPage() {
 
   return (
     <>
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Ventas</h1>
-          <p className="text-gray-500">Gestión de ventas y documentos</p>
-        </div>
+      <div className="flex items-center gap-3">
         <Link
           href="/admin/ventas/crear"
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-800 transition-colors"
@@ -195,7 +192,7 @@ export default function AdminVentasPage() {
                           <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded">
                             {DOCUMENTO_LABELS[venta.tipo_documento] || venta.tipo_documento}
                           </span>
-                          <span className="font-mono text-sm font-medium text-gray-900">{venta.numero_completo}</span>
+                          <span className="text-sm font-medium text-gray-900">{venta.numero_completo}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">{venta.cliente?.nombre || 'Cliente general'}</td>

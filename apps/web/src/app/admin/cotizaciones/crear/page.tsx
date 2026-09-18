@@ -1,504 +1,457 @@
 'use client';
 
-import { Plus, Search, X, FileText, ArrowLeft, Save, Send } from 'lucide-react';
-import { useAuth } from '@/lib/authProvider';
-import { apiClient } from '@/lib/apiClient';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import {
+  MessageSquare,
+  Search,
+  ShoppingCart,
+  X,
+  Loader2,
+  FileText,
+  Trash2,
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-interface Producto {
-  id_producto: number;
-  codigo: string;
-  descripcion: string;
-  stock_total: number;
-  precios_actuales: {
-    precio_unidad_normal: string;
-    precio_docena_normal: string;
-    precio_mayor_normal: string;
-    precio_unidad_dist: string;
-    precio_docena_dist: string;
-    precio_mayor_dist: string;
-  } | null;
-}
+import {
+  Input,
+  Select,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui';
+import { ProductoCarrito } from '@/features/cotizaciones/types/cotizacion';
+import AgregarProductoModal, { ProductoBase } from '@/features/cotizaciones/components/AgregarProductoModal';
+import CardRecomendacion from '@/features/cotizaciones/components/CardRecomendacion';
+import { obtenerProductosImportados } from '@/features/cotizaciones/api/cotizacionApi';
 
-interface Cliente {
-  id_cliente: number;
-  nombre: string;
-  ruc_dni: string | null;
-}
+export default function CrearCotizacionPage() {
+  const [items, setItems] = useState<ProductoCarrito[]>([]);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [incluyeCarreta, setIncluyeCarreta] = useState(false);
+  const [tipoPrecioCliente, setTipoPrecioCliente] = useState<'DISTRIBUIDOR' | 'TIENDA'>('DISTRIBUIDOR');
 
-interface DetalleItem {
-  id_producto: number;
-  codigo: string;
-  descripcion: string;
-  tipo_venta: 'unidad' | 'docena' | 'mayor';
-  cantidad: number;
-  precio_unitario: number;
-  descuento_item: number;
-  subtotal: number;
-}
+  // Formulario Información General
+  const [nombre, setNombre] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [email, setEmail] = useState('');
+  const [tipoDocumento, setTipoDocumento] = useState('');
+  const [numIdentificacion, setNumIdentificacion] = useState('');
+  const [ruc, setRuc] = useState('');
+  const [fechaVencimiento, setFechaVencimiento] = useState('');
+  const [tipoPago, setTipoPago] = useState('');
 
-type TipoVenta = 'unidad' | 'docena' | 'mayor';
-type TipoPrecio = 'normal' | 'distribuidor';
-type TipoPago = 'contado' | 'credito';
+  // Estados del Buscador y Productos de API
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [productosApi, setProductosApi] = useState<ProductoBase[]>([]);
+  const [isLoadingProductos, setIsLoadingProductos] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-export default function AdminCotizacionCrearPage() {
-  const { usuario } = useAuth();
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [filteredProductos, setFilteredProductos] = useState<Producto[]>([]);
-  const [searchProducto, setSearchProducto] = useState('');
-  const [showProductModal, setShowProductModal] = useState(false);
-  const [selectedProducto, setSelectedProducto] = useState<Producto | null>(null);
+  // Estados para el Modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [productoParaModal, setProductoParaModal] = useState<ProductoBase | null>(null);
 
-  const [formData, setFormData] = useState({
-    id_cliente: '',
-    tipo_precio: 'normal' as TipoPrecio,
-    tipo_venta: 'unidad' as TipoVenta,
-    tipo_pago: 'contado' as TipoPago,
-    dias_plazo: '',
-    observaciones: '',
-    incluye_carreta: true,
-    costo_carreta: 15,
-    fecha_vencimiento: '',
-  });
-
-  const [detalles, setDetalles] = useState<DetalleItem[]>([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [clientesRes, productosRes] = await Promise.all([
-          apiClient('/clientes?activo=true&limit=1000'),
-          apiClient('/productos?activo=true&include=precios&limit=1000'),
-        ]);
-        setClientes(clientesRes.data || []);
-        setProductos(productosRes.data || []);
-        setFilteredProductos(productosRes.data || []);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    fetchData();
+  // Cargar productos desde la API al montar
+  const fetchProductos = useCallback(async () => {
+    try {
+      setIsLoadingProductos(true);
+      const data = await obtenerProductosImportados();
+      setProductosApi(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error al obtener productos de la API:', error);
+      toast.error('No se pudieron cargar los productos del catálogo');
+    } finally {
+      setIsLoadingProductos(false);
+    }
   }, []);
 
   useEffect(() => {
-    const filtered = productos.filter(
-      (p) =>
-        p.codigo.toLowerCase().includes(searchProducto.toLowerCase()) ||
-        p.descripcion.toLowerCase().includes(searchProducto.toLowerCase())
-    );
-    setFilteredProductos(filtered);
-  }, [searchProducto, productos]);
+    fetchProductos();
+  }, [fetchProductos]);
 
-  const getPrecio = (producto: Producto): number => {
-    if (!producto.precios_actuales) return 0;
-    const precios = producto.precios_actuales;
-    const key = `${formData.tipo_venta}_${formData.tipo_precio}` as keyof typeof precios;
-    return Number(precios[key] || precios.precio_unidad_normal || 0);
+  // Filtrar productos en tiempo real (Límite máximo: 3 resultados)
+  const resultadosBusqueda = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    return productosApi
+      .filter(
+        (p) =>
+          p.codigo?.toLowerCase().includes(query) ||
+          p.descripcion?.toLowerCase().includes(query)
+      )
+      .slice(0, 3);
+  }, [searchQuery, productosApi]);
+
+  // Selección de producto para modal
+  const handleSeleccionarProducto = (producto: ProductoBase) => {
+    setProductoParaModal(producto);
+    setIsModalOpen(true);
+    setShowDropdown(false);
+    setSearchQuery('');
   };
 
-  const agregarProducto = (producto: Producto) => {
-    const precio = getPrecio(producto);
-    if (precio <= 0) return;
-
-    const existingIndex = detalles.findIndex(
-      (d) => d.id_producto === producto.id_producto && d.tipo_venta === formData.tipo_venta
-    );
-
-    if (existingIndex >= 0) {
-      const newDetalles = [...detalles];
-      newDetalles[existingIndex] = {
-        ...newDetalles[existingIndex],
-        cantidad: newDetalles[existingIndex].cantidad + 1,
-        subtotal: (newDetalles[existingIndex].cantidad + 1) * precio,
-      };
-      setDetalles(newDetalles);
-    } else {
-      setDetalles([
-        ...detalles,
-        {
-          id_producto: producto.id_producto,
-          codigo: producto.codigo,
-          descripcion: producto.descripcion,
-          tipo_venta: formData.tipo_venta,
-          cantidad: 1,
-          precio_unitario: precio,
-          descuento_item: 0,
-          subtotal: precio,
-        },
-      ]);
-    }
-    setShowProductModal(false);
-    setSelectedProducto(null);
+  // Agregar item al carrito
+  const handleAgregarProducto = (nuevoItem: ProductoCarrito) => {
+    setItems((prev) => [...prev, { ...nuevoItem, id: Date.now().toString() }]);
   };
 
-  const actualizarCantidad = (index: number, cantidad: number) => {
-    if (cantidad <= 0) {
-      setDetalles(detalles.filter((_, i) => i !== index));
-      return;
-    }
-    const precio = detalles[index].precio_unitario;
-    const newDetalles = [...detalles];
-    newDetalles[index] = { ...newDetalles[index], cantidad, subtotal: cantidad * precio };
-    setDetalles(newDetalles);
+  // Eliminar item del carrito
+  const handleEliminarItem = (id: string) => {
+    setItems((prev) => prev.filter((item) => item.id !== id));
+    if (selectedItemId === id) setSelectedItemId(null);
   };
 
-  const eliminarItem = (index: number) => {
-    setDetalles(detalles.filter((_, i) => i !== index));
-  };
-
-  const subtotal = detalles.reduce((sum, d) => sum + d.subtotal, 0);
-  const descuentoGlobal = 0;
-  const subtotalConDescuento = subtotal - descuentoGlobal;
-  const igv = subtotalConDescuento * 0.18;
-  const total = subtotalConDescuento + igv + (formData.incluye_carreta ? formData.costo_carreta : 0);
-
-  const handleSubmit = async (estado: 'borrador' | 'enviada') => {
-    if (!formData.id_cliente) {
-      alert('Seleccione un cliente');
-      return;
-    }
-    if (detalles.length === 0) {
-      alert('Agregue al menos un producto');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await apiClient('/cotizaciones', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...formData,
-          estado,
-          tipo_precio: formData.tipo_precio,
-          tipo_venta: formData.tipo_venta,
-          tipo_pago: formData.tipo_pago,
-          dias_plazo: formData.tipo_pago === 'credito' ? Number(formData.dias_plazo) : null,
-          incluye_carreta: formData.incluye_carreta,
-          costo_carreta: formData.incluye_carreta ? formData.costo_carreta : 0,
-          detalle: detalles.map((d) => ({
-            id_producto: d.id_producto,
-            tipo_venta: d.tipo_venta,
-            cantidad: d.cantidad,
-            precio_unitario: d.precio_unitario,
-            descuento_item: d.descuento_item,
-            subtotal: d.subtotal,
-          })),
-        }),
-      });
-      router.push('/admin/cotizaciones');
-    } catch (error: any) {
-      alert(error.message || 'Error al crear cotización');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Cálculos de montos
+  const subtotal = useMemo(() => items.reduce((acc, item) => acc + item.total, 0), [items]);
+  const costoCarreta = incluyeCarreta ? 15.00 : 0.00;
+  const igv = useMemo(() => (subtotal + costoCarreta) * 0.18, [subtotal, costoCarreta]);
+  const total = subtotal + costoCarreta + igv;
 
   return (
-    <>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Nueva Cotización</h1>
-          <p className="text-gray-500">Complete los datos y agregue productos</p>
+    <div className="p-0 md:p-0 w-full max-w-[1700px] mx-auto space-y-6 font-['DM_Sans']">
+
+      {/* Encabezado */}
+      <div className="flex justify-between items-center w-full px-1">
+        <div className="flex items-center gap-2.5">
+          <FileText className="w-5 h-5 text-amber-500" />
+          <span className="text-xl font-black text-zinc-700 tracking-tight">
+            COT-190626
+          </span>
         </div>
-        <Link href="/admin/cotizaciones" className="text-sm text-primary-700 hover:text-primary-900 flex items-center gap-1">
-          <ArrowLeft className="h-4 w-4" />
-          Volver
-        </Link>
+
+        <span className="bg-neutral-100 text-neutral-600 font-bold px-3 py-1 rounded-lg text-xs border border-zinc-300 shadow-sm uppercase tracking-wider">
+          BORRADOR
+        </span>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Información General</h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
-                <select
-                  value={formData.id_cliente}
-                  onChange={(e) => setFormData({ ...formData, id_cliente: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="">Seleccionar cliente</option>
-                  {clientes.map((c) => (
-                    <option key={c.id_cliente} value={c.id_cliente}>
-                      {c.nombre} {c.ruc_dni ? `(${c.ruc_dni})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
+      <div className="grid grid-cols-12 gap-6">
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Precio *</label>
-                <select
-                  value={formData.tipo_precio}
-                  onChange={(e) => setFormData({ ...formData, tipo_precio: e.target.value as TipoPrecio })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="normal">Normal</option>
-                  <option value="distribuidor">Distribuidor</option>
-                </select>
-              </div>
+        {/* Columna Izquierda: Formulario y Carrito */}
+        <div className="col-span-12 lg:col-span-8 space-y-6">
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Venta *</label>
-                <select
-                  value={formData.tipo_venta}
-                  onChange={(e) => setFormData({ ...formData, tipo_venta: e.target.value as TipoVenta })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="unidad">Unidad</option>
-                  <option value="docena">Docena</option>
-                  <option value="mayor">Mayor</option>
-                </select>
-              </div>
+          {/* Formulario Información General */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80 space-y-4">
+            <h2 className="text-lg font-bold text-zinc-700 mb-2">Información general</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <Input
+                label="Nombre"
+                placeholder="Nombre del cliente"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+              />
+              <Select
+                label="Tipo de precio"
+                value={tipoPrecioCliente}
+                onChange={(e) => setTipoPrecioCliente(e.target.value as 'DISTRIBUIDOR' | 'TIENDA')}
+                options={[
+                  { label: 'Distribuidor', value: 'DISTRIBUIDOR' },
+                  { label: 'Tienda', value: 'TIENDA' },
+                ]}
+              />
+              <Input
+                label="Teléfono"
+                placeholder="Teléfono de contacto"
+                value={telefono}
+                onChange={(e) => setTelefono(e.target.value)}
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Pago *</label>
-                <select
-                  value={formData.tipo_pago}
-                  onChange={(e) => setFormData({ ...formData, tipo_pago: e.target.value as TipoPago })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="contado">Contado</option>
-                  <option value="credito">Crédito</option>
-                </select>
-              </div>
+              <Input
+                label="Email"
+                type="email"
+                placeholder="correo@ejemplo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <Select
+                label="Tipo de Documento"
+                value={tipoDocumento}
+                onChange={(e) => setTipoDocumento(e.target.value)}
+                options={[
+                  { label: 'DNI', value: 'DNI' },
+                  { label: 'CE', value: 'CE' },
+                ]}
+              />
+              <Input
+                label="N° de identificación"
+                placeholder="Número de doc."
+                value={numIdentificacion}
+                onChange={(e) => setNumIdentificacion(e.target.value)}
+              />
 
-              {formData.tipo_pago === 'credito' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Días de Plazo</label>
-                  <input
-                    type="number"
-                    value={formData.dias_plazo}
-                    onChange={(e) => setFormData({ ...formData, dias_plazo: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    min="1"
-                    max="360"
-                  />
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Vencimiento</label>
-                <input
-                  type="date"
-                  value={formData.fecha_vencimiento}
-                  onChange={(e) => setFormData({ ...formData, fecha_vencimiento: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="mt-4 flex items-center gap-4">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.incluye_carreta}
-                  onChange={(e) => setFormData({ ...formData, incluye_carreta: e.target.checked })}
-                  className="h-4 w-4 text-primary-700 border-gray-300 rounded focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700">Incluye carreta (S/ {formData.costo_carreta})</span>
-              </label>
+              <Input
+                label="RUC"
+                placeholder="Número de RUC"
+                value={ruc}
+                onChange={(e) => setRuc(e.target.value)}
+              />
+              <Input
+                label="Fecha de vencimiento"
+                type="date"
+                value={fechaVencimiento}
+                onChange={(e) => setFechaVencimiento(e.target.value)}
+              />
+              <Select
+                label="Tipo de pago"
+                value={tipoPago}
+                onChange={(e) => setTipoPago(e.target.value)}
+                options={[
+                  { label: 'Contado', value: 'CONTADO' },
+                  { label: 'Crédito', value: 'CREDITO' },
+                ]}
+              />
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Productos</h2>
-              <button
-                onClick={() => setShowProductModal(true)}
-                className="inline-flex items-center gap-2 px-3 py-2 bg-primary-700 text-white text-sm font-medium rounded-lg hover:bg-primary-800 transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                Agregar
-              </button>
+          {/* Carrito y Buscador */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80 space-y-4">
+            <h2 className="text-lg font-bold text-zinc-700">Carrito</h2>
+
+            {/* Input de Buscador */}
+            <div className="relative">
+              <div className="relative">
+                <Input
+                  ref={searchInputRef}
+                  placeholder="Escribe el código o nombre del producto (ej: RY-)..."
+                  icon={
+                    isLoadingProductos ? (
+                      <Loader2 className="size-4 animate-spin text-amber-500" />
+                    ) : (
+                      <Search className="size-4 text-amber-500" />
+                    )
+                  }
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowDropdown(true);
+                  }}
+                  onFocus={() => setShowDropdown(true)}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setShowDropdown(false);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                  >
+                    <X className="size-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Menú Desplegable con Máximo 3 Resultados */}
+              {showDropdown && searchQuery.trim() !== '' && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
+                  <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-xl shadow-lg max-h-64 overflow-y-auto divide-y divide-zinc-100">
+                    {resultadosBusqueda.length > 0 ? (
+                      resultadosBusqueda.map((prod, index) => (
+                        <div
+                          key={prod.id || prod.codigo || index}
+                          onClick={() => handleSeleccionarProducto(prod)}
+                          className="p-3 hover:bg-amber-50/60 cursor-pointer transition-colors flex items-center justify-between gap-3"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-xs bg-stone-100 px-2 py-1 rounded text-zinc-700 border border-stone-200">
+                              {prod.codigo}
+                            </span>
+                            <div>
+                              <p className="text-xs font-medium text-zinc-700 leading-tight">
+                                {prod.descripcion}
+                              </p>
+                              <p className="text-[10px] text-zinc-400 mt-0.5">
+                                Stock Total: {prod.stockTotal ?? 'N/A'} | {prod.estante || 'Sin estante'}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-colors shrink-0"
+                          >
+                            Seleccionar
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-xs text-zinc-400">
+                        {isLoadingProductos
+                          ? 'Cargando catálogo...'
+                          : `No se encontraron productos importados con "${searchQuery}"`}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
-            {detalles.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-                <FileText className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                <p className="text-gray-500">No hay productos agregados</p>
-                <p className="text-sm text-gray-400 mt-1">Haga clic en "Agregar" para buscar productos</p>
+            {/* Contenido Tabla Global / Estado Vacío */}
+            {items.length === 0 ? (
+              <div
+                onClick={() => searchInputRef.current?.focus()}
+                className="h-44 border-2 border-dashed border-zinc-200 rounded-xl flex flex-col justify-center items-center gap-2 cursor-pointer hover:bg-stone-50/80 transition-colors"
+              >
+                <ShoppingCart className="size-8 text-zinc-300" />
+                <span className="text-zinc-400 font-medium text-xs">
+                  Busca un producto importado arriba para agregarlo
+                </span>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Producto</th>
-                      <th className="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Tipo</th>
-                      <th className="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Cant.</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">P. Unit.</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Desc.</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Subtotal</th>
-                      <th className="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {detalles.map((item, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-4 py-3">
-                          <p className="font-medium text-gray-900">{item.descripcion}</p>
-                          <p className="text-xs text-gray-500 font-mono">{item.codigo}</p>
-                        </td>
-                        <td className="px-4 py-3 text-center text-sm text-gray-600 capitalize">{item.tipo_venta}</td>
-                        <td className="px-4 py-3 text-center">
-                          <input
-                            type="number"
-                            value={item.cantidad}
-                            onChange={(e) => actualizarCantidad(index, Number(e.target.value))}
-                            min="1"
-                            className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-right text-sm text-gray-900">
-                          S/ {item.precio_unitario.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <input
-                            type="number"
-                            value={item.descuento_item}
-                            onChange={(e) => {
-                              const newDetalles = [...detalles];
-                              newDetalles[index] = { ...newDetalles[index], descuento_item: Number(e.target.value) || 0 };
-                              setDetalles(newDetalles);
-                            }}
-                            min="0"
-                            className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-right font-medium text-gray-900">
-                          S/ {item.subtotal.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-4 py-3 text-center">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>CÓDIGO</TableHead>
+                    <TableHead>PRECIO UNITARIO</TableHead>
+                    <TableHead>CANTIDAD</TableHead>
+                    <TableHead>TOTAL</TableHead>
+                    <TableHead className="text-center">ACCIONES</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.map((item) => (
+                    <TableRow
+                      key={item.id}
+                      className={selectedItemId === item.id ? 'bg-amber-50/60' : ''}
+                    >
+                      <TableCell className="font-bold text-zinc-800">{item.codigo}</TableCell>
+                      <TableCell className="text-zinc-600">S/ {item.precioUnitario.toFixed(2)}</TableCell>
+                      <TableCell className="text-zinc-600">{item.cantidad}</TableCell>
+                      <TableCell className="font-bold text-zinc-800">S/ {item.total.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <div className="flex justify-center items-center gap-2">
                           <button
-                            onClick={() => eliminarItem(index)}
-                            className="text-red-600 hover:text-red-800 p-1"
+                            type="button"
+                            onClick={() => setSelectedItemId(item.id)}
+                            className={`p-1.5 rounded-lg border transition-colors ${selectedItemId === item.id
+                                ? 'border-amber-400 bg-amber-50 text-amber-600'
+                                : 'border-zinc-200 text-zinc-400 hover:text-amber-500'
+                              }`}
+                            title="Ver sugerencias"
                           >
-                            <X className="h-4 w-4" />
+                            <MessageSquare className="size-4" />
                           </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          <button
+                            type="button"
+                            onClick={() => handleEliminarItem(item.id)}
+                            className="p-1.5 rounded-lg border border-zinc-200 text-zinc-400 hover:text-red-500 transition-colors"
+                            title="Eliminar del carrito"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6 sticky top-24">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Resumen</h2>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between text-gray-600">
-                <span>Subtotal ({detalles.length} items)</span>
-                <span className="font-medium text-gray-900">S/ {subtotal.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+        {/* Columna Derecha: Resumen y Recomendaciones */}
+        <div className="col-span-12 lg:col-span-4 space-y-6">
+
+          {/* Card Resumen */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80 space-y-3">
+            <h3 className="text-lg font-black text-zinc-700 tracking-wide">RESUMEN</h3>
+
+            <div className="space-y-2 text-xs text-zinc-600">
+              <div className="flex justify-between">
+                <span>Subtotal ({items.length} items)</span>
+                <span className="font-semibold text-zinc-800">S/ {subtotal.toFixed(2)}</span>
               </div>
-              {formData.incluye_carreta && (
-                <div className="flex justify-between text-gray-600">
-                  <span>Carreta</span>
-                  <span className="font-medium text-gray-900">S/ {formData.costo_carreta.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between">
+                <span>Carreta</span>
+                <span className="font-semibold text-zinc-800">S/ {costoCarreta.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between border-b border-zinc-100 pb-2">
                 <span>IGV (18%)</span>
-                <span className="font-medium text-gray-900">S/ {igv.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+                <span className="font-semibold text-zinc-800">S/ {igv.toFixed(2)}</span>
               </div>
-              <div className="border-t border-gray-200 pt-3 flex justify-between text-lg">
-                <span className="font-semibold text-gray-900">Total</span>
-                <span className="font-bold text-primary-700">S/ {total.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+              <div className="flex justify-between text-base font-black pt-1 text-zinc-800">
+                <span>Total</span>
+                <span className="text-amber-600">S/ {total.toFixed(2)}</span>
               </div>
             </div>
-            <div className="mt-6 space-y-3">
-              <button
-                onClick={() => handleSubmit('borrador')}
-                disabled={loading || detalles.length === 0 || !formData.id_cliente}
-                className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <Save className="h-4 w-4 inline mr-2" />
-                Guardar Borrador
-              </button>
-              <button
-                onClick={() => handleSubmit('enviada')}
-                disabled={loading || detalles.length === 0 || !formData.id_cliente}
-                className="w-full px-4 py-2.5 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <Send className="h-4 w-4 inline mr-2" />
-                Enviar Cotización
-              </button>
+
+            <div className="flex items-center gap-2 pt-2">
+              <input
+                type="checkbox"
+                id="carreta"
+                checked={incluyeCarreta}
+                onChange={(e) => setIncluyeCarreta(e.target.checked)}
+                className="accent-emerald-600 size-4 cursor-pointer rounded"
+              />
+              <label htmlFor="carreta" className="text-xs text-emerald-600 font-semibold cursor-pointer">
+                Carreta
+              </label>
             </div>
+            <p className="text-[10px] text-zinc-400">*Carreta precio aproximado S/15</p>
+
+            <button
+              type="button"
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold h-10 rounded-xl mt-2 transition-colors text-xs shadow-sm"
+            >
+              Continuar
+            </button>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-900 mb-3">Observaciones</h3>
-            <textarea
-              value={formData.observaciones}
-              onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm resize-none"
-              placeholder="Observaciones adicionales para el cliente..."
-            />
+          {/* Panel Recomendaciones */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80">
+            <h3 className="text-base font-bold text-zinc-700 mb-3">RECOMENDACIONES</h3>
+
+            {!selectedItemId ? (
+              <div className="text-center py-10 text-zinc-400 space-y-2">
+                <MessageSquare className="size-7 mx-auto text-amber-500 opacity-80" />
+                <p className="text-xs font-medium">Haz clic en el icono de mensaje de un producto para ver sugerencias</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <CardRecomendacion
+                  tag="SIMILAR"
+                  badgeColor="bg-blue-100 text-blue-700"
+                  codigo="V-GRSS-01"
+                  descripcion="Ramo con 10 cabezas (30 cm)"
+                  estante="Estante B"
+                  stock={20}
+                  precio={1000}
+                />
+                <CardRecomendacion
+                  tag="MEJOR OPCIÓN"
+                  badgeColor="bg-amber-100 text-amber-700"
+                  codigo="V-GRSS-01"
+                  descripcion="Ramo con 10 cabezas (30 cm)"
+                  estante="Estante B"
+                  stock={20}
+                  precio={1000}
+                />
+                <CardRecomendacion
+                  tag="EQUILIBRIO"
+                  badgeColor="bg-emerald-100 text-emerald-700"
+                  codigo="V-GRSS-01"
+                  descripcion="Ramo con 10 cabezas (30 cm)"
+                  estante="Estante B"
+                  stock={20}
+                  precio={1000}
+                />
+              </div>
+            )}
           </div>
+
         </div>
       </div>
 
-      {showProductModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[80vh] flex flex-col">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Seleccionar Producto</h3>
-              <button onClick={() => setShowProductModal(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="p-4 border-b border-gray-200">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar por código o descripción..."
-                  value={searchProducto}
-                  onChange={(e) => setSearchProducto(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              {filteredProductos.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">
-                  <p>No se encontraron productos</p>
-                </div>
-              ) : (
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {filteredProductos.map((p) => (
-                    <button
-                      key={p.id_producto}
-                      onClick={() => {
-                        setSelectedProducto(p);
-                        agregarProducto(p);
-                      }}
-                      className="p-3 border border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors text-left"
-                    >
-                      <p className="font-medium text-gray-900">{p.descripcion}</p>
-                      <p className="text-sm text-gray-500 font-mono">{p.codigo}</p>
-                      <p className="text-sm text-primary-700 font-medium mt-1">
-                        S/ {Number(getPrecio(p)).toLocaleString('es-PE', { minimumFractionDigits: 2 })} / {formData.tipo_venta}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+      {/* Modal de Agregar Producto */}
+      <AgregarProductoModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        producto={productoParaModal}
+        tipoPrecioCliente={tipoPrecioCliente}
+        onAgregar={handleAgregarProducto}
+      />
+    </div>
   );
 }

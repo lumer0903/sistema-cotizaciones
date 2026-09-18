@@ -180,6 +180,7 @@ export class ProductosService {
     page = 1,
     limit = 50,
     search?: string,
+    stock_status?: string,
     includePrecios = false,
     includeCategoria = false,
     includeStockActual = false,
@@ -192,6 +193,16 @@ export class ProductosService {
         { codigo: { contains: search, mode: 'insensitive' } },
         { descripcion: { contains: search, mode: 'insensitive' } },
       ];
+    }
+
+    if (stock_status) {
+      if (stock_status === 'agotado') {
+        where.stock_total = { lte: 0 };
+      } else if (stock_status === 'bajo') {
+        where.stock_total = { gt: 0, lte: 20 };
+      } else if (stock_status === 'disponible') {
+        where.stock_total = { gt: 20 };
+      }
     }
 
     const include: any = {};

@@ -2,8 +2,10 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export async function apiClient(path: string, options: RequestInit = {}) {
   const isFormData = options.body instanceof FormData;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const headers: HeadersInit = {
     ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
 
@@ -15,6 +17,20 @@ export async function apiClient(path: string, options: RequestInit = {}) {
     headers,
     credentials: 'include',
   });
+
+  if (!response.ok && response.status !== 401) {
+    let errorDetail = response.statusText;
+    try {
+      const errorData = await response.clone().json();
+      console.error('Error backend:', errorData);
+      errorDetail = Array.isArray(errorData.message) 
+        ? errorData.message.join(', ') 
+        : (errorData.message || errorData.error || response.statusText);
+    } catch (e) {
+      console.error('Error backend:', response.statusText);
+    }
+    throw new Error(errorDetail);
+  }
 
   if (response.status === 401) {
     if (path.includes('/auth/login') || path.includes('/auth/refresh') || (typeof window !== 'undefined' && window.location.pathname === '/login')) {

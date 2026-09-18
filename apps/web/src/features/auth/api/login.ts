@@ -1,7 +1,11 @@
 import { apiClient } from '../../../lib/api-client';
 
+interface LoginResponse {
+  access_token: string;
+}
+
 export const login = async (credentials: { email: string; password: string }) => {
-  const response = await apiClient('/auth/login', {
+  const response: LoginResponse = await apiClient('/auth/login', {
     method: 'POST',
     body: JSON.stringify(credentials),
   });

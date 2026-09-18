@@ -433,7 +433,7 @@ export default function AdminVentaCrearPage() {
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-3">
                           <p className="font-medium text-gray-900">{item.descripcion}</p>
-                          <p className="text-xs text-gray-500 font-mono">{item.codigo}</p>
+                          <p className="text-xs text-gray-500">{item.codigo}</p>
                         </td>
                         <td className="px-4 py-3 text-center text-sm text-gray-600 capitalize">{item.tipo_venta}</td>
                         <td className="px-4 py-3 text-center text-sm text-gray-500">
@@ -605,7 +605,7 @@ export default function AdminVentaCrearPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-medium text-gray-900">{p.descripcion}</p>
-                            <p className="text-sm text-gray-500 font-mono">{p.codigo}</p>
+                            <p className="text-sm text-gray-500">{p.codigo}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-sm text-primary-700 font-medium">

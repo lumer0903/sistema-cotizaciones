@@ -3,7 +3,7 @@
 import { FileText, Plus, Search, Filter, ChevronDown, Calendar, Eye, Edit, Trash2, Send, Download } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { EstadoCotizacion } from '@goldcontinent/shared/constants/enums';
 import Link from 'next/link';
 
@@ -36,12 +36,23 @@ export default function CotizacionesPage() {
   const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [fecha, setFecha] = useState('');
   const [estadoFilter, setEstadoFilter] = useState<EstadoCotizacion | 'todos'>('todos');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
+  // Obtener dataset filtrado (sin paginado de servidor, con filtros al API)
   useEffect(() => {
     const fetchCotizaciones = async () => {
       try {
-        let url = '/cotizaciones?limit=100';
+        setLoading(true);
+        let url = '/cotizaciones?limit=1000';
+        if (search.trim()) {
+          url += `&buscar=${encodeURIComponent(search.trim())}`;
+        }
+        if (fecha) {
+          url += `&fecha=${fecha}`;
+        }
         if (estadoFilter !== 'todos') {
           url += `&estado=${estadoFilter}`;
         }
@@ -51,18 +62,46 @@ export default function CotizacionesPage() {
         }
       } catch (error) {
         console.error('Error fetching cotizaciones:', error);
+        // Fallback: intentar sin parámetros
+        try {
+          const fallbackData = await apiClient('/cotizaciones');
+          if (fallbackData.success) {
+            setCotizaciones(fallbackData.data);
+          }
+        } catch (fallbackError) {
+          console.error('Fallback también falló:', fallbackError);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchCotizaciones();
-  }, [estadoFilter]);
+  }, [search, fecha, estadoFilter]);
 
-  const filteredCotizaciones = cotizaciones.filter(c =>
-    c.numero.toLowerCase().includes(search.toLowerCase()) ||
-    c.cliente_nombre?.toLowerCase().includes(search.toLowerCase())
-  );
+  // Filtrado reactivo en cliente como fallback
+  const filteredCotizaciones = useMemo(() => {
+    return cotizaciones.filter((c) => {
+      const matchBuscar =
+        !search.trim() ||
+        c.numero.toLowerCase().includes(search.toLowerCase()) ||
+        c.cliente_nombre?.toLowerCase().includes(search.toLowerCase());
+
+      const matchFecha = !fecha || c.created_at.includes(fecha);
+
+      const matchEstado =
+        estadoFilter === 'todos' || c.estado === estadoFilter;
+
+      return matchBuscar && matchFecha && matchEstado;
+    });
+  }, [cotizaciones, search, fecha, estadoFilter]);
+
+  // Paginación local
+  const totalPages = Math.ceil(filteredCotizaciones.length / itemsPerPage) || 1;
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredCotizaciones.slice(start, start + itemsPerPage);
+  }, [filteredCotizaciones, currentPage, itemsPerPage]);
 
   return (
     <>
@@ -88,15 +127,33 @@ export default function CotizacionesPage() {
               type="text"
               placeholder="Buscar por número o cliente..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+            />
+          </div>
+          <div className="w-full sm:w-48">
+            <label className="block text-xs font-medium text-gray-500 mb-1">FECHA</label>
+            <input
+              type="date"
+              value={fecha}
+              onChange={(e) => {
+                setFecha(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
             />
           </div>
           <div className="relative">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <select
               value={estadoFilter}
-              onChange={(e) => setEstadoFilter(e.target.value as EstadoCotizacion | 'todos')}
+              onChange={(e) => {
+                setEstadoFilter(e.target.value as EstadoCotizacion | 'todos');
+                setCurrentPage(1);
+              }}
               className="pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm appearance-none"
             >
               <option value="todos">Todos los estados</option>
@@ -125,59 +182,101 @@ export default function CotizacionesPage() {
             <p className="text-sm">Intenta cambiar los filtros o crea una nueva</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
-            {filteredCotizaciones.map((cot) => (
-              <div key={cot.id_cotizacion} className="p-4 hover:bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="font-mono font-semibold text-gray-900">{cot.numero}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${ESTADO_COLORS[cot.estado]}`}>
-                      {ESTADO_LABELS[cot.estado]}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {new Date(cot.created_at).toLocaleDateString('es-PE')}
-                    </span>
+          <>
+            <div className="divide-y divide-gray-200">
+              {paginatedData.map((cot) => (
+                <div key={cot.id_cotizacion} className="p-4 hover:bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="font-semibold text-gray-900">{cot.numero}</span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${ESTADO_COLORS[cot.estado]}`}>
+                        {ESTADO_LABELS[cot.estado]}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {new Date(cot.created_at).toLocaleDateString('es-PE')}
+                      </span>
+                    </div>
+                    <p className="text-gray-900 font-medium mt-1 truncate sm:max-w-md">{cot.cliente_nombre || 'Cliente no especificado'}</p>
+                    <p className="text-lg font-bold text-green-700 mt-1">S/ ${cot.total.toLocaleString()}</p>
                   </div>
-                  <p className="text-gray-900 font-medium mt-1 truncate sm:max-w-md">{cot.cliente_nombre || 'Cliente no especificado'}</p>
-                  <p className="text-lg font-bold text-green-700 mt-1">S/ ${cot.total.toLocaleString()}</p>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/vendedor/cotizaciones/${cot.id_cotizacion}`}
+                      className="p-2 text-gray-500 hover:text-green-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Ver detalle"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Link>
+                    {cot.estado === 'borrador' && (
+                      <>
+                        <Link
+                          href={`/vendedor/cotizaciones/${cot.id_cotizacion}/editar`}
+                          className="p-2 text-gray-500 hover:text-green-700 hover:bg-gray-100 rounded-lg transition-colors"
+                          title="Editar"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                        <button
+                          className="p-2 text-gray-500 hover:text-red-700 hover:bg-gray-100 rounded-lg transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
+                    {cot.estado === 'enviada' && (
+                      <button className="p-2 text-gray-500 hover:text-blue-700 hover:bg-gray-100 rounded-lg transition-colors" title="Reenviar">
+                        <Send className="h-4 w-4" />
+                      </button>
+                    )}
+                    <button className="p-2 text-gray-500 hover:text-green-700 hover:bg-gray-100 rounded-lg transition-colors" title="Descargar PDF">
+                      <Download className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Link
-                    href={`/vendedor/cotizaciones/${cot.id_cotizacion}`}
-                    className="p-2 text-gray-500 hover:text-green-700 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Ver detalle"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Link>
-                  {cot.estado === 'borrador' && (
+              ))}
+            </div>
+
+            {/* Paginación */}
+            {totalPages > 1 && (
+              <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-gray-500">
+                  Mostrando <span className="font-medium">{paginatedData.length}</span> de{' '}
+                  <span className="font-medium">{filteredCotizaciones.length}</span> cotizaciones
+                </div>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-8 h-8 rounded-lg font-medium text-sm transition-colors ${currentPage === page
+                          ? 'bg-green-700 text-white shadow-sm'
+                          : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  {currentPage < totalPages && (
                     <>
-                      <Link
-                        href={`/vendedor/cotizaciones/${cot.id_cotizacion}/editar`}
-                        className="p-2 text-gray-500 hover:text-green-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Editar"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Link>
                       <button
-                        className="p-2 text-gray-500 hover:text-red-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Eliminar"
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setCurrentPage(totalPages)}
+                        className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg"
+                      >
+                        <ChevronDown className="w-4 h-4" style={{ transform: 'rotate(-90deg)' }} />
                       </button>
                     </>
                   )}
-                  {cot.estado === 'enviada' && (
-                    <button className="p-2 text-gray-500 hover:text-blue-700 hover:bg-gray-100 rounded-lg transition-colors" title="Reenviar">
-                      <Send className="h-4 w-4" />
-                    </button>
-                  )}
-                  <button className="p-2 text-gray-500 hover:text-green-700 hover:bg-gray-100 rounded-lg transition-colors" title="Descargar PDF">
-                    <Download className="h-4 w-4" />
-                  </button>
                 </div>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </>

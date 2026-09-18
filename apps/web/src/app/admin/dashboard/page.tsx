@@ -5,17 +5,9 @@ import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { DashboardStats, DashboardMetrics, MetricaKpi, AccesoRapidoItem } from '@/types';
 
-interface DashboardStats {
-  totalProductos: number;
-  totalCotizaciones: number;
-  totalVentas: number;
-  montoPendiente: number;
-  productosBajoStock: number;
-  cotizacionesEsteMes: number;
-}
-
-export default function AdminDashboardPage() {
+export default function DashboardPage() {
   const { usuario } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);

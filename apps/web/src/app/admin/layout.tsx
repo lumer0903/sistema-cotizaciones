@@ -1,7 +1,7 @@
 'use client';
 
-import { AdminLayout } from '@/components/AdminLayout';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { AdminLayout } from '@/components/layouts/AdminLayout';
+import { ProtectedRoute } from '@/components/shared/ProtectedRoute';
 import { PermisoModulo } from '@goldcontinent/shared/auth';
 
 export default function AdminRootLayout({
@@ -11,7 +11,7 @@ export default function AdminRootLayout({
 }) {
   return (
     <ProtectedRoute permission="dashboard" roles={['admin', 'gerente']} fallback={null}>
-      <AdminLayout title="Dashboard">{children}</AdminLayout>
+      <AdminLayout>{children}</AdminLayout>
     </ProtectedRoute>
   );
 }
