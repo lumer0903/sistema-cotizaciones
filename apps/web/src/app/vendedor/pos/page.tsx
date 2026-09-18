@@ -81,7 +81,7 @@ function ListView({ filteredProductos, getPrecio, agregarAlCarrito }: {
     <>
       {filteredProductos.map((producto) => (
         <tr key={producto.id_producto} className="hover:bg-gray-50 cursor-pointer" onClick={() => agregarAlCarrito(producto)}>
-          <td className="p-3 font-mono text-sm text-gray-900">{producto.codigo}</td>
+          <td className="p-3 text-sm font-medium text-gray-900">{producto.codigo}</td>
           <td className="p-3 text-sm text-gray-900">{producto.descripcion}</td>
           <td className="p-3 text-sm text-gray-500">{producto.stock_total}</td>
           <td className="p-3 font-semibold text-green-700">S/ ${getPrecio(producto, 'unidad').toFixed(2)}</td>

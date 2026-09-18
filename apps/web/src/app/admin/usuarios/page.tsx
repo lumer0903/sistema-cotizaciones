@@ -5,6 +5,8 @@ import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
 import { Rol } from '@goldcontinent/shared/auth';
+import { Usuario as UsuarioType, RolUsuario } from '@/types/usuario';
+import Link from 'next/link';
 
 interface Usuario {
   id_usuario: number;

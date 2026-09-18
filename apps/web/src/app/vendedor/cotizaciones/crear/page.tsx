@@ -345,7 +345,7 @@ export default function VendedorCotizacionCrearPage() {
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-3">
                           <p className="font-medium text-gray-900">{item.descripcion}</p>
-                          <p className="text-xs text-gray-500 font-mono">{item.codigo}</p>
+                          <p className="text-xs text-gray-500">{item.codigo}</p>
                         </td>
                         <td className="px-4 py-3 text-center text-sm text-gray-600 capitalize">{item.tipo_venta}</td>
                         <td className="px-4 py-3 text-center">
@@ -487,7 +487,7 @@ export default function VendedorCotizacionCrearPage() {
                       className="p-3 border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left"
                     >
                       <p className="font-medium text-gray-900">{p.descripcion}</p>
-                      <p className="text-sm text-gray-500 font-mono">{p.codigo}</p>
+                      <p className="text-sm text-gray-500">{p.codigo}</p>
                       <p className="text-sm text-green-700 font-medium mt-1">
                         S/ {Number(getPrecio(p)).toLocaleString('es-PE', { minimumFractionDigits: 2 })} / {formData.tipo_venta}
                       </p>

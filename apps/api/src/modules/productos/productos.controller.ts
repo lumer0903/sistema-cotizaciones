@@ -37,11 +37,13 @@ export class ProductosController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'stock_status', required: false, type: String, description: 'disponible, bajo, agotado' })
   @ApiQuery({ name: 'include', required: false, type: String, description: 'Comma-separated: precios,categoria,stock' })
   async findAll(
     @Query('page') page = 1,
     @Query('limit') limit = 50,
     @Query('search') search?: string,
+    @Query('stock_status') stock_status?: string,
     @Query('include') include?: string,
   ): Promise<{ success: true; data: PaginatedProductosResponse['data']; total: number; page: number; limit: number }> {
     const includePrecios = include?.includes('precios') ?? false;
@@ -52,6 +54,7 @@ export class ProductosController {
       Number(page),
       Number(limit),
       search,
+      stock_status,
       includePrecios,
       includeCategoria,
       includeStockActual,

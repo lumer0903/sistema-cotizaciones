@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
 import { useForm } from 'react-hook-form';
@@ -22,6 +22,8 @@ export default function LoginPage() {
 
   const { login, usuario } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirectTo') || '/admin/inventario';
 
   const {
     register,
@@ -38,11 +40,7 @@ export default function LoginPage() {
 
     try {
       await login(data.email.trim().toLowerCase(), data.password);
-      if (usuario?.rol === 'vendedor') {
-        router.push('/vendedor/pos');
-      } else {
-        router.push('/admin/dashboard');
-      }
+      router.push(redirectTo);
     } catch (err: any) {
       const errorMessage = err?.response?.data?.message || err?.message || 'Error al iniciar sesión';
       setError(Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage);
