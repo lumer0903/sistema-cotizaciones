@@ -36,6 +36,7 @@ export const EstadoVenta = {
   pagada: 'pagada',
   parcial: 'parcial',
   anulada: 'anulada',
+  devuelta: 'devuelta',
 } as const;
 
 export type EstadoVenta = (typeof EstadoVenta)[keyof typeof EstadoVenta];

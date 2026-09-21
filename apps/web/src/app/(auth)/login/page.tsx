@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
@@ -15,7 +15,7 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -195,5 +195,35 @@ export default function LoginPage() {
         </section>
       </main>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="min-h-screen w-full bg-white flex items-center justify-center p-4 sm:p-6 md:p-8">
+        <div className="w-full max-w-[1280px] flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 my-auto">
+          <div className="w-full lg:w-[666px] flex justify-center lg:justify-start">
+            <img
+              className="w-full lg:h-[500px] object-contain"
+              alt="Gold Continent Import & Export"
+              src="/LOGO_GRANDE.svg"
+            />
+          </div>
+          <section className="relative w-full max-w-[468px] min-h-[558px] bg-white rounded-2xl border border-gray-200 shadow-xl p-6 sm:p-10 flex flex-col justify-center">
+            <img className="absolute top-8 right-8 w-[120px] h-[120px] object-contain opacity-50" alt="Gold Continent Icon" src="/MUNDO.svg" />
+            <div className="w-full flex flex-col mt-10 sm:mt-12 animate-pulse space-y-6">
+              <div className="h-8 bg-gray-200 rounded w-3/4" />
+              <div className="h-4 bg-gray-200 rounded w-1/2" />
+              <div className="h-11 bg-gray-200 rounded" />
+              <div className="h-11 bg-gray-200 rounded" />
+              <div className="h-11 bg-gray-200 rounded" />
+            </div>
+          </section>
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </React.Suspense>
   );
 }

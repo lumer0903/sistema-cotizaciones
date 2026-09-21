@@ -51,6 +51,35 @@ export async function apiClient(path: string, options: RequestInit = {}) {
   return response.json();
 }
 
+export async function uploadFile(path: string, formData: FormData) {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const headers: HeadersInit = {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    // Don't set Content-Type - browser will set it with boundary
+  };
+
+  const normalizedPath = path.startsWith('/api/') ? path : `/api/${path.replace(/^\/+/, '')}`;
+  const fullUrl = `${API_BASE}${normalizedPath}`.replace(/([^:]\/)\/+/g, '$1');
+
+  const response = await fetch(fullUrl, {
+    method: 'POST',
+    headers,
+    credentials: 'include',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let errorDetail = response.statusText;
+    try {
+      const errorData = await response.clone().json();
+      errorDetail = errorData.message || errorData.error || response.statusText;
+    } catch (e) {}
+    throw new Error(errorDetail);
+  }
+
+  return response.json();
+}
+
 async function refreshToken() {
   const response = await fetch(`${API_BASE}/api/auth/refresh`, {
     method: 'POST',

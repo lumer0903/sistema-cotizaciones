@@ -1,11 +1,14 @@
 'use client';
 
-import { Plus, Search, X, FileText, ArrowLeft, Save, Send } from 'lucide-react';
+import { Plus, Search, X, FileText, ArrowLeft, Save, Send, MessageSquare, Loader2, Zap, TrendingUp, Scale } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
+import { RecomendacionesPanel } from '@/features/cotizaciones/components/RecomendacionesPanel';
+import { obtenerRecomendacionesItem } from '@/features/cotizaciones/api/cotizacionApi';
 
 interface Producto {
   id_producto: number;
@@ -67,6 +70,73 @@ export default function VendedorCotizacionCrearPage() {
   });
 
   const [detalles, setDetalles] = useState<DetalleItem[]>([]);
+
+  // Estados para Recomendaciones IA
+  const [isRecomendacionesOpen, setIsRecomendacionesOpen] = useState(false);
+  const [productoParaRecomendaciones, setProductoParaRecomendaciones] = useState<{ id: number; codigo: string; descripcion: string } | null>(null);
+  const [itemExistenteIndex, setItemExistenteIndex] = useState<number | null>(null);
+
+  const handleAbrirRecomendaciones = useCallback((index: number, item: DetalleItem) => {
+    setItemExistenteIndex(index);
+    setProductoParaRecomendaciones({ id: item.id_producto, codigo: item.codigo, descripcion: item.descripcion });
+    setIsRecomendacionesOpen(true);
+  }, []);
+
+  const handleAgregarRecomendacion = useCallback((item: any, tipo: 'similar' | 'upsell' | 'equilibrio') => {
+    const precio = item.precio;
+    if (precio <= 0) return;
+
+    const existingIndex = detalles.findIndex(
+      (d) => d.id_producto === item.id_producto && d.tipo_venta === formData.tipo_venta
+    );
+
+    if (existingIndex >= 0) {
+      const newDetalles = [...detalles];
+      newDetalles[existingIndex] = {
+        ...newDetalles[existingIndex],
+        cantidad: newDetalles[existingIndex].cantidad + 1,
+        subtotal: (newDetalles[existingIndex].cantidad + 1) * precio,
+      };
+      setDetalles(newDetalles);
+    } else {
+      setDetalles([
+        ...detalles,
+        {
+          id_producto: item.id_producto,
+          codigo: item.codigo,
+          descripcion: item.descripcion,
+          tipo_venta: formData.tipo_venta,
+          cantidad: 1,
+          precio_unitario: precio,
+          descuento_item: 0,
+          subtotal: precio,
+        },
+      ]);
+    }
+    toast.success(`Recomendación (${tipo.toUpperCase()}) agregada`);
+    setIsRecomendacionesOpen(false);
+    setProductoParaRecomendaciones(null);
+    setItemExistenteIndex(null);
+  }, [detalles, formData.tipo_venta]);
+
+  const handleReemplazarRecomendacion = useCallback((itemExistenteId: string, nuevoItem: any, tipo: 'similar' | 'upsell' | 'equilibrio') => {
+    const index = Number(itemExistenteId);
+    const precio = nuevoItem.precio;
+    const newDetalles = [...detalles];
+    newDetalles[index] = {
+      ...newDetalles[index],
+      id_producto: nuevoItem.id_producto,
+      codigo: nuevoItem.codigo,
+      descripcion: nuevoItem.descripcion,
+      precio_unitario: precio,
+      subtotal: newDetalles[index].cantidad * precio,
+    };
+    setDetalles(newDetalles);
+    toast.success(`Reemplazado por recomendación (${tipo.toUpperCase()})`);
+    setIsRecomendacionesOpen(false);
+    setProductoParaRecomendaciones(null);
+    setItemExistenteIndex(null);
+  }, [detalles]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -378,6 +448,13 @@ export default function VendedorCotizacionCrearPage() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <button
+                            onClick={() => handleAbrirRecomendaciones(index, item)}
+                            className="text-amber-500 hover:text-amber-700 p-1 mr-1"
+                            title="Ver recomendaciones IA"
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </button>
+                          <button
                             onClick={() => eliminarItem(index)}
                             className="text-red-600 hover:text-red-800 p-1"
                           >
@@ -499,6 +576,18 @@ export default function VendedorCotizacionCrearPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de Recomendaciones IA */}
+      <RecomendacionesPanel
+        isOpen={isRecomendacionesOpen}
+        onClose={() => { setIsRecomendacionesOpen(false); setProductoParaRecomendaciones(null); setItemExistenteIndex(null); }}
+        productoBase={productoParaRecomendaciones}
+        tipoPrecioCliente={formData.tipo_precio === 'distribuidor' ? 'DISTRIBUIDOR' : 'TIENDA'}
+        idCliente={formData.id_cliente ? Number(formData.id_cliente) : undefined}
+        onAgregar={handleAgregarRecomendacion}
+        onReemplazar={handleReemplazarRecomendacion}
+        itemExistenteId={itemExistenteIndex !== null ? String(itemExistenteIndex) : null}
+      />
     </>
   );
 }

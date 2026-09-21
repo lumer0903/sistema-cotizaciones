@@ -55,7 +55,6 @@ model Producto {
   foto_url           String?
   activo             Boolean                @default(true)
   stock_principal    Int                    @default(0)
-  stock_tacna        Int                    @default(0)
   stock_total        Int                    @default(0)
   stock_minimo       Int                    @default(10)
   unidades_por_caja  Int                    @default(1)
@@ -342,11 +341,16 @@ model InventarioMovimiento {
 }
 
 model IaInteracciones {
-  id_interaccion Int      @id @default(autoincrement())
-  id_producto    Int?
-  prompt         String
-  respuesta      String
-  created_at     DateTime @default(now())
+  id_interaccion      Int      @id @default(autoincrement())
+  id_producto         Int?     @map("id_producto")
+  id_producto_sugerido Int?    @map("id_producto_sugerido")
+  tipo_sugerencia     String?  @map("tipo_sugerencia")
+  accion_usuario      String?  @map("accion_usuario")
+  id_cotizacion       Int?     @map("id_cotizacion")
+  id_usuario          Int?     @map("id_usuario")
+  prompt              String
+  respuesta           String
+  created_at          DateTime @default(now())
 
   @@map("ia_interacciones")
 }
@@ -427,6 +431,15 @@ enum EstadoCuenta {
   pagada
   vencida
   castigada
+}
+
+model Configuracion {
+  clave       String   @id @map("clave")
+  valor       String   @map("valor")
+  descripcion String?  @map("descripcion")
+  updated_at  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("configuracion")
 }
 
 enum MetodoPago {

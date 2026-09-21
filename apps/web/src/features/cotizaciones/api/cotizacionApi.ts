@@ -3,8 +3,18 @@ import {
     CotizacionItem,
     CotizacionesFilterParams,
     CotizacionesPaginatedResponse,
+    RecomendarItemRequest,
+    RecomendacionItem,
+    RecomendarItemResponse,
 } from '../types/cotizacion';
 import { ProductoBase } from '../components/AgregarProductoModal';
+
+// Re-export types for consumers
+export type {
+    RecomendarItemRequest,
+    RecomendacionItem,
+    RecomendarItemResponse,
+};
 
 export async function getCotizaciones(
     params: CotizacionesFilterParams = {}
@@ -62,4 +72,15 @@ export async function obtenerProductosImportados(): Promise<ProductoBase[]> {
         console.error('[cotizacionApi] Error al obtener productos:', error);
         return [];
     }
+}
+
+export async function obtenerRecomendacionesItem(
+    data: RecomendarItemRequest
+): Promise<RecomendarItemResponse> {
+    const response = await apiClient('/cotizaciones/recomendar-item', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    return response as RecomendarItemResponse;
 }

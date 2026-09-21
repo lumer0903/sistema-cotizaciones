@@ -1,9 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { Sidebar } from '@/components/ui/Sidebar';
-import { Settings } from 'lucide-react';
+import { Settings, Bell } from 'lucide-react';
+import { apiClient } from '@/lib/apiClient';
+import { AlertasStockTable } from '@/features/inventario/components/AlertasStockTable';
 
 const ROUTE_TITLES: Record<string, string> = {
   '/admin/dashboard': 'DASHBOARD',
@@ -21,6 +23,25 @@ const ROUTE_TITLES: Record<string, string> = {
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [isAlertasOpen, setIsAlertasOpen] = useState(false);
+  const [alertasCount, setAlertasCount] = useState(0);
+
+  const fetchAlertasCount = useCallback(async () => {
+    try {
+      const res = await apiClient('/inventario/alertas?estado=activa');
+      const alertas = res.data || [];
+      setAlertasCount(alertas.length);
+    } catch (e) {
+      console.error('Error cargando contador de alertas:', e);
+      setAlertasCount(0);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAlertasCount();
+    const interval = setInterval(fetchAlertasCount, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [fetchAlertasCount]);
 
   // Detecta el título según la ruta actual
   const matchedRoute = Object.keys(ROUTE_TITLES).find(
@@ -53,6 +74,20 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
             <button
               type="button"
+              onClick={() => setIsAlertasOpen(true)}
+              className="relative w-8 h-8 flex items-center justify-center text-neutral-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+              title="Notificaciones"
+            >
+              <Bell className="w-5 h-5 stroke-[2]" />
+              {alertasCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {alertasCount > 9 ? '9+' : alertasCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
               className="w-8 h-8 flex items-center justify-center text-neutral-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
               title="Configuración"
             >
@@ -66,6 +101,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+
+      <AlertasStockTable
+        open={isAlertasOpen}
+        onClose={() => setIsAlertasOpen(false)}
+        onSuccess={() => fetchAlertasCount()}
+      />
     </div>
   );
 }

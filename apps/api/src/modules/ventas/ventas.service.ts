@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { EstadoVenta, TipoPago, TipoDocumento, TipoVenta } from '@goldcontinent/shared/constants/enums';
+import { EstadoVenta, TipoPago, TipoDocumento, TipoVenta, EstadoCuentaCobrar } from '@goldcontinent/shared/constants/enums';
 import { Decimal } from '@prisma/client/runtime/library';
 
 export interface VentaResponse {
@@ -117,13 +117,22 @@ function toNumber(value: Decimal | number | null): number {
 }
 
 function mapEstadoVenta(estado: string): EstadoVenta {
-  const validEstados: EstadoVenta[] = ['borrador', 'emitida', 'pagada', 'parcial', 'anulada'];
-  return validEstados.includes(estado as EstadoVenta) ? estado as EstadoVenta : 'emitida';
+  const validEstados: EstadoVenta[] = [
+    'borrador',
+    'emitida',
+    'parcial',
+    'pagada',
+    'anulada',
+    'devuelta',
+  ];
+  return validEstados.includes(estado as EstadoVenta)
+    ? (estado as EstadoVenta)
+    : 'emitida';
 }
 
 @Injectable()
 export class VentasService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(
     page = 1,
@@ -141,8 +150,13 @@ export class VentasService {
       const skip = (page - 1) * limit;
       const where: any = {};
 
-      if (filters.estado) where.estado = filters.estado.toUpperCase() as EstadoVenta;
-      if (filters.tipoPago) where.tipoPago = filters.tipoPago.toUpperCase() as TipoPago;
+      if (filters.estado) {
+        // Sanitiza el estado antes de enviarlo a Prisma
+        where.estado = mapEstadoVenta(filters.estado.toLowerCase());
+      }
+      if (filters.tipoPago) {
+        where.tipoPago = filters.tipoPago.toLowerCase() as TipoPago;
+      }
       if (filters.id_cliente) where.id_cliente = filters.id_cliente;
       if (filters.id_usuario) where.id_usuario = filters.id_usuario;
       if (filters.fecha_inicio || filters.fecha_fin) {
@@ -210,7 +224,7 @@ export class VentasService {
         this.prisma.venta.count({ where }),
       ]);
 
-      const mappedData = data.map(item => ({
+      const mappedData = data.map((item) => ({
         ...item,
         estado: mapEstadoVenta(item.estado),
         subtotal: toNumber(item.subtotal),
@@ -315,7 +329,7 @@ export class VentasService {
       descuento_global: toNumber(item.descuento_global),
       montoPagado: toNumber(item.montoPagado),
       montoPendiente: toNumber(item.montoPendiente),
-      detalles: item.detalles?.map(detalle => ({
+      detalles: item.detalles?.map((detalle) => ({
         ...detalle,
         tipo_venta: detalle.tipo_venta as TipoVenta,
         precio_unitario: toNumber(detalle.precio_unitario),
@@ -327,7 +341,19 @@ export class VentasService {
     };
   }
 
-async create(data: CreateVentaDto): Promise<VentaResponse> {
+  async create(data: CreateVentaDto): Promise<VentaResponse> {
+    if (!data.detalles || !Array.isArray(data.detalles) || data.detalles.length === 0) {
+      throw new BadRequestException(
+        'El campo "detalles" es obligatorio y debe contener al menos un producto.',
+      );
+    }
+
+    if (!data.serie || !data.correlativo || !data.tipo_documento) {
+      throw new BadRequestException(
+        'Los campos serie, correlativo y tipo_documento son obligatorios.',
+      );
+    }
+
     const numero_completo = `${data.serie}-${data.correlativo.toString().padStart(8, '0')}`;
 
     try {
@@ -395,8 +421,8 @@ async create(data: CreateVentaDto): Promise<VentaResponse> {
                 precio_unitario: detalle.precio_unitario,
                 descuento_item: detalle.descuento_item ?? 0,
                 subtotal: detalle.precio_unitario * detalle.cantidad,
-                igv_item: (detalle.precio_unitario * detalle.cantidad) * 0.18,
-                total_item: (detalle.precio_unitario * detalle.cantidad) * 1.18,
+                igv_item: detalle.precio_unitario * detalle.cantidad * 0.18,
+                total_item: detalle.precio_unitario * detalle.cantidad * 1.18,
                 es_sugerido_ia: false,
               },
             }),
@@ -410,8 +436,10 @@ async create(data: CreateVentaDto): Promise<VentaResponse> {
               id_cliente: data.id_cliente,
               montoOriginal: data.total,
               montoPendiente: data.total,
-              estado: 'pendiente',
-              fechaVencimiento: new Date(Date.now() + data.diasPlazo * 24 * 60 * 60 * 1000),
+              estado: EstadoCuentaCobrar.pendiente,
+              fechaVencimiento: new Date(
+                Date.now() + data.diasPlazo * 24 * 60 * 60 * 1000,
+              ),
               diasAtraso: 0,
               moraAcumulada: 0,
               updated_at: new Date(),
@@ -431,9 +459,11 @@ async create(data: CreateVentaDto): Promise<VentaResponse> {
           montoPendiente: toNumber(venta.montoPendiente),
         };
       });
-} catch (error: any) {
+    } catch (error: any) {
       if (error.code === 'P2003') {
-        throw new NotFoundException('Cliente, usuario, almacén o producto no encontrado');
+        throw new NotFoundException(
+          'Cliente, usuario, almacén o producto no encontrado',
+        );
       }
       if (error.code === 'P2002') {
         throw new ConflictException('Número de venta duplicado');

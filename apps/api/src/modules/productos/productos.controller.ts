@@ -11,11 +11,15 @@ import {
   Req,
   BadRequestException,
   ParseIntPipe,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
 import { ProductosService } from './productos.service';
+import { MinioService } from '../../common/storage/minio.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
 import { UpdatePreciosDto } from './dto/update-precios.dto';
@@ -30,7 +34,10 @@ import type {
 @UseGuards(JwtAuthGuard)
 @Controller('productos')
 export class ProductosController {
-  constructor(private readonly productosService: ProductosService) { }
+  constructor(
+    private readonly productosService: ProductosService,
+    private readonly minioService: MinioService,
+  ) { }
 
   @Get()
   @ApiOperation({ summary: 'List all products with pagination, search, and optional relations' })
@@ -40,19 +47,22 @@ export class ProductosController {
   @ApiQuery({ name: 'stock_status', required: false, type: String, description: 'disponible, bajo, agotado' })
   @ApiQuery({ name: 'include', required: false, type: String, description: 'Comma-separated: precios,categoria,stock' })
   async findAll(
-    @Query('page') page = 1,
-    @Query('limit') limit = 50,
+    @Query('page') page?: string | number,
+    @Query('limit') limit?: string | number,
     @Query('search') search?: string,
     @Query('stock_status') stock_status?: string,
     @Query('include') include?: string,
   ): Promise<{ success: true; data: PaginatedProductosResponse['data']; total: number; page: number; limit: number }> {
+    const pageNum = Math.max(1, Number(page) || 1);
+    const limitNum = Math.max(1, Number(limit) || 50);
+
     const includePrecios = include?.includes('precios') ?? false;
     const includeCategoria = include?.includes('categoria') ?? false;
     const includeStockActual = include?.includes('stock') ?? false;
 
     const result = await this.productosService.findAll(
-      Number(page),
-      Number(limit),
+      pageNum,
+      limitNum,
       search,
       stock_status,
       includePrecios,
@@ -121,5 +131,38 @@ export class ProductosController {
   async delete(@Param('id', ParseIntPipe) id: number): Promise<{ success: true; message: string }> {
     await this.productosService.delete(id);
     return { success: true, message: 'Producto eliminado correctamente' };
+  }
+
+  @Post('upload')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+      fileFilter: (req, file, callback) => {
+        const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowedMimeTypes.includes(file.mimetype)) {
+          return callback(new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed.'), false);
+        }
+        callback(null, true);
+      },
+    }),
+  )
+  @ApiOperation({ summary: 'Upload product image to MinIO' })
+  async uploadImage(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<{ url: string }> {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    const url = await this.minioService.uploadProductImage(file);
+    return { url: url || '' };
   }
 }

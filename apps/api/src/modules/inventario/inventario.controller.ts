@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Body, Param, UseGuards, Req, ParseIntPipe, Res } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, Param, UseGuards, Req, ParseIntPipe, Res, Patch } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
 import { InventarioService } from './inventario.service';
@@ -158,6 +158,25 @@ export class InventarioController {
       id_almacen: id_almacen ? Number(id_almacen) : undefined,
       soloBajoMinimo: soloBajoMinimo === 'true',
     });
+    return { success: true, data };
+  }
+
+  @Get('alertas')
+  @ApiOperation({ summary: 'Obtener alertas de stock' })
+  @ApiQuery({ name: 'estado', required: false, enum: ['activa', 'resuelta'] })
+  async getAlertas(
+    @Query('estado') estado?: 'activa' | 'resuelta',
+  ) {
+    const data = await this.inventarioService.getAlertasStock(estado);
+    return { success: true, data };
+  }
+
+  @Patch('alertas/:id_alerta/reconocer')
+  @ApiOperation({ summary: 'Reconocer alerta de stock' })
+  async reconocerAlerta(
+    @Param('id_alerta', ParseIntPipe) id_alerta: number,
+  ) {
+    const data = await this.inventarioService.reconocerAlerta(id_alerta);
     return { success: true, data };
   }
 }

@@ -9,3 +9,4 @@ export * from './Badge';
 export * from './Table';
 export * from './FilterCard';
 export * from './Pagination';
+export * from './Textarea';

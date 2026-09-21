@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Edit2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
+import { getImageUrl, handleImageError } from '@/lib/imageUtils';
 
 interface InventarioRowProps {
   producto: ProductoInventario;
@@ -81,9 +82,10 @@ export function InventarioRow({ producto, onEditar, onEliminar, isFirst = false 
           {/* FOTO DEL PRODUCTO */}
           <div className="w-32 h-36 flex shrink-0 justify-center items-center">
             <img
-              src={producto.foto_url || 'https://placehold.co/115x128'}
+              src={getImageUrl(producto.foto_url, '115')}
               alt={producto.descripcion || 'Producto'}
               className="w-28 h-32 rounded-[5px] object-cover border border-gray-200 bg-white"
+              onError={(e) => handleImageError(e, '115')}
             />
           </div>
 

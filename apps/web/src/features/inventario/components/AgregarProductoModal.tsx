@@ -55,7 +55,6 @@ export function AgregarProductoModal({ open, onClose, onSuccess }: AgregarProduc
   } = useForm<CrearProductoFormInput>({
     resolver: zodResolver(CrearProductoSchema),
     defaultValues: {
-      stock_tacna: 0,
       costo_normal: 0,
       costo_distribuidor: 0,
       colores_surtido: ['Estándar'],
@@ -93,19 +92,16 @@ export function AgregarProductoModal({ open, onClose, onSuccess }: AgregarProduc
   };
 
   const handleFormSubmit = async (data: any) => {
-    const partesDescripcion = [
-      data.tipo_flor?.trim(),
-      data.material?.trim() ? `de ${data.material.trim()}` : null,
+    // Fórmula estándar: [Presentación] de [Material], [Nº Cabezas] cabezas, [Follaje], colores: [Tags]
+    const partes = [
       data.presentacion?.trim(),
-      data.numero_cabezas ? `de ${data.numero_cabezas} cabezas` : null,
+      data.material?.trim() ? `de ${data.material.trim()}` : null,
+      data.numero_cabezas ? `${data.numero_cabezas} cabezas` : null,
       data.composicion?.trim(),
-      data.tamano?.trim() ? `tamaño ${data.tamano.trim()}` : null,
+      data.colores_surtido?.length ? `colores: ${data.colores_surtido.map((c: any) => c.name || c).join(', ')}` : null,
     ].filter(Boolean);
 
-    let descripcionFinal = data.descripcion?.trim() || partesDescripcion.join(', ');
-    if (!descripcionFinal || descripcionFinal.length < 5) {
-      descripcionFinal = `${data.codigo || 'PRD'} - Producto sin descripción detallada`;
-    }
+    const descripcionFinal = partes.join(', ') || `${data.codigo || 'PRD'} - Producto sin descripción`;
 
     const id_almacen = data.ubicacion === 'TACNA' ? 2 : 1;
 
@@ -114,8 +110,7 @@ export function AgregarProductoModal({ open, onClose, onSuccess }: AgregarProduc
       descripcion: descripcionFinal,
       id_categoria: Number(data.id_categoria) || 1,
       id_almacen,
-      stock_principal: id_almacen === 1 ? Number(data.stock_principal) || 0 : 0,
-      stock_tacna: id_almacen === 2 ? Number(data.stock_principal) || 0 : 0,
+      stock_principal: Number(data.stock_principal) || 0,
       stock_minimo: Number(data.stock_minimo) || 10,
       unidades_por_caja: Number(data.unidades_por_caja) || 1,
       colores_surtido:
@@ -151,12 +146,13 @@ export function AgregarProductoModal({ open, onClose, onSuccess }: AgregarProduc
 
   const openColorModal = () => setIsColorModalOpen(true);
 
-  const [presentacion, tipoFlor, material, numeroCabezas, tamano] = watch([
+  const [presentacion, tipoFlor, material, numeroCabezas, tamano, composicion] = watch([
     'presentacion',
     'tipo_flor',
     'material',
     'numero_cabezas',
     'tamano',
+    'composicion',
   ]);
 
   useEffect(() => {
@@ -164,13 +160,15 @@ export function AgregarProductoModal({ open, onClose, onSuccess }: AgregarProduc
       tipoFlor && `${tipoFlor}`,
       material && `de ${material}`,
       presentacion && `${presentacion}`,
-      numeroCabezas && `de ${numeroCabezas} cabezas`,
+      numeroCabezas && `${numeroCabezas} cabezas`,
+      composicion && `${composicion}`,
       tamano && `tamaño ${tamano}`,
+      coloresSurtidos?.length && `colores: ${coloresSurtidos.map((c: any) => c.name || c).join(', ')}`,
     ].filter(Boolean);
 
     const autogen = parts.join(', ');
     setValue('descripcion', autogen, { shouldValidate: !!autogen });
-  }, [presentacion, tipoFlor, material, numeroCabezas, tamano, setValue]);
+  }, [presentacion, tipoFlor, material, numeroCabezas, tamano, composicion, coloresSurtidos, setValue]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();

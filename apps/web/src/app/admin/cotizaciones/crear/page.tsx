@@ -24,7 +24,7 @@ import {
 } from '@/components/ui';
 import { ProductoCarrito } from '@/features/cotizaciones/types/cotizacion';
 import AgregarProductoModal, { ProductoBase } from '@/features/cotizaciones/components/AgregarProductoModal';
-import CardRecomendacion from '@/features/cotizaciones/components/CardRecomendacion';
+import { RecomendacionesPanel } from '@/features/cotizaciones/components/RecomendacionesPanel';
 import { obtenerProductosImportados } from '@/features/cotizaciones/api/cotizacionApi';
 
 export default function CrearCotizacionPage() {
@@ -50,9 +50,14 @@ export default function CrearCotizacionPage() {
   const [isLoadingProductos, setIsLoadingProductos] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Estados para el Modal
+  // Estados para el Modal Agregar Producto
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [productoParaModal, setProductoParaModal] = useState<ProductoBase | null>(null);
+
+  // Estados para Recomendaciones IA
+  const [isRecomendacionesOpen, setIsRecomendacionesOpen] = useState(false);
+  const [productoParaRecomendaciones, setProductoParaRecomendaciones] = useState<{ id: number; codigo: string; descripcion: string } | null>(null);
+  const [itemExistenteId, setItemExistenteId] = useState<string | null>(null);
 
   // Cargar productos desde la API al montar
   const fetchProductos = useCallback(async () => {
@@ -102,6 +107,56 @@ export default function CrearCotizacionPage() {
   const handleEliminarItem = (id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
     if (selectedItemId === id) setSelectedItemId(null);
+  };
+
+  // Manejar apertura de recomendaciones
+  const handleAbrirRecomendaciones = (itemId: string, item: ProductoCarrito) => {
+    setSelectedItemId(itemId);
+    setItemExistenteId(itemId);
+    setProductoParaRecomendaciones({ id: Number(item.id), codigo: item.codigo, descripcion: item.descripcion });
+    setIsRecomendacionesOpen(true);
+  };
+
+  // Manejar agregar recomendación al carrito
+  const handleAgregarRecomendacion = (item: any, tipo: 'similar' | 'upsell' | 'equilibrio') => {
+    const nuevoItem: ProductoCarrito = {
+      id: Date.now().toString(),
+      codigo: item.codigo,
+      descripcion: item.descripcion,
+      precioUnitario: item.precio,
+      cantidad: 1,
+      total: item.precio,
+      observacion: `Sugerido por IA (${tipo.toUpperCase()})`,
+      es_sugerido_ia: true,
+    };
+    setItems((prev) => [...prev, nuevoItem]);
+    setIsRecomendacionesOpen(false);
+    setProductoParaRecomendaciones(null);
+    setSelectedItemId(null);
+    setItemExistenteId(null);
+  };
+
+  // Manejar reemplazar item por recomendación
+  const handleReemplazarRecomendacion = (itemExistenteId: string, nuevoItem: any, tipo: 'similar' | 'upsell' | 'equilibrio') => {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === itemExistenteId
+          ? {
+              ...item,
+              codigo: nuevoItem.codigo,
+              descripcion: nuevoItem.descripcion,
+              precioUnitario: nuevoItem.precio,
+              total: nuevoItem.precio * item.cantidad,
+              observacion: `Reemplazado por IA (${tipo.toUpperCase()})`,
+              es_sugerido_ia: true,
+            }
+          : item
+      )
+    );
+    setIsRecomendacionesOpen(false);
+    setProductoParaRecomendaciones(null);
+    setSelectedItemId(null);
+    setItemExistenteId(null);
   };
 
   // Cálculos de montos
@@ -408,37 +463,7 @@ export default function CrearCotizacionPage() {
                 <MessageSquare className="size-7 mx-auto text-amber-500 opacity-80" />
                 <p className="text-xs font-medium">Haz clic en el icono de mensaje de un producto para ver sugerencias</p>
               </div>
-            ) : (
-              <div className="space-y-3">
-                <CardRecomendacion
-                  tag="SIMILAR"
-                  badgeColor="bg-blue-100 text-blue-700"
-                  codigo="V-GRSS-01"
-                  descripcion="Ramo con 10 cabezas (30 cm)"
-                  estante="Estante B"
-                  stock={20}
-                  precio={1000}
-                />
-                <CardRecomendacion
-                  tag="MEJOR OPCIÓN"
-                  badgeColor="bg-amber-100 text-amber-700"
-                  codigo="V-GRSS-01"
-                  descripcion="Ramo con 10 cabezas (30 cm)"
-                  estante="Estante B"
-                  stock={20}
-                  precio={1000}
-                />
-                <CardRecomendacion
-                  tag="EQUILIBRIO"
-                  badgeColor="bg-emerald-100 text-emerald-700"
-                  codigo="V-GRSS-01"
-                  descripcion="Ramo con 10 cabezas (30 cm)"
-                  estante="Estante B"
-                  stock={20}
-                  precio={1000}
-                />
-              </div>
-            )}
+            ) : null}
           </div>
 
         </div>
@@ -451,6 +476,17 @@ export default function CrearCotizacionPage() {
         producto={productoParaModal}
         tipoPrecioCliente={tipoPrecioCliente}
         onAgregar={handleAgregarProducto}
+      />
+
+      {/* Modal de Recomendaciones IA */}
+      <RecomendacionesPanel
+        isOpen={isRecomendacionesOpen}
+        onClose={() => { setIsRecomendacionesOpen(false); setProductoParaRecomendaciones(null); setSelectedItemId(null); setItemExistenteId(null); }}
+        productoBase={productoParaRecomendaciones}
+        tipoPrecioCliente={tipoPrecioCliente}
+        onAgregar={handleAgregarRecomendacion}
+        onReemplazar={handleReemplazarRecomendacion}
+        itemExistenteId={itemExistenteId}
       />
     </div>
   );

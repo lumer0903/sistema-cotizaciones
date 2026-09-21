@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Eye, Pencil, Trash2, ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react';
+import { Eye, Pencil, Trash2, ChevronDown, ChevronUp, Image as ImageIcon, PackagePlus, ArrowLeftRight, ClipboardList } from 'lucide-react';
 import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
+import { getImageUrl, handleImageError } from '@/lib/imageUtils';
 
 type ProductoConImagen = ProductoInventario & {
   imagen_url?: string;
@@ -17,6 +18,9 @@ interface InventarioTableProps {
   onVerDetalle: (producto: ProductoInventario) => void;
   onEditar: (producto: ProductoInventario) => void;
   onEliminar: (id: number) => void;
+  onMovimiento?: (productoId: number) => void;
+  onTransferencia?: (productoId: number) => void;
+  onKardex?: (producto: ProductoInventario) => void;
 }
 
 export function InventarioTable({
@@ -25,6 +29,9 @@ export function InventarioTable({
   onVerDetalle,
   onEditar,
   onEliminar,
+  onMovimiento,
+  onTransferencia,
+  onKardex,
 }: InventarioTableProps) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
@@ -78,37 +85,37 @@ export function InventarioTable({
 
           return (
             <React.Fragment key={id}>
-              {/* Fila Principal */}
+              {/* Fila Principal (Compacta) */}
               <TableRow className={isExpanded ? 'bg-amber-50/30' : ''}>
                 <TableCell className="font-bold text-neutral-900">{prod.codigo}</TableCell>
                 <TableCell>{categoria}</TableCell>
                 <TableCell>{ubicacion}</TableCell>
                 <TableCell className="text-center font-bold text-emerald-600">{stockVal}</TableCell>
                 <TableCell className="text-center">
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-1.5 bg-transparent">
                     <button
                       type="button"
                       onClick={() => onVerDetalle(prod)}
-                      className="p-1 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
-                      title="Ver Detalle"
+                      className="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
                   </div>
                 </TableCell>
                 <TableCell className="text-center">
-                  <button
-                    type="button"
-                    onClick={() => toggleExpand(id)}
-                    className="p-1 text-neutral-500 hover:text-neutral-900 transition-colors"
-                    title={isExpanded ? 'Ocultar detalles' : 'Ver detalles'}
-                  >
-                    {isExpanded ? (
-                      <ChevronUp className="w-4 h-4" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4" />
-                    )}
-                  </button>
+                  <div className="flex items-center justify-center gap-1.5 bg-transparent">
+                    <button
+                      type="button"
+                      onClick={() => toggleExpand(id)}
+                      className="p-1.5 text-neutral-500 hover:text-neutral-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </TableCell>
               </TableRow>
 
@@ -122,9 +129,10 @@ export function InventarioTable({
                       <div className="w-28 h-28 shrink-0 bg-stone-100 rounded-lg border border-stone-200 flex items-center justify-center overflow-hidden">
                         {imagenUrl ? (
                           <img
-                            src={imagenUrl}
+                            src={getImageUrl(imagenUrl, '115')}
                             alt={prod.codigo}
                             className="w-full h-full object-cover"
+                            onError={(e) => handleImageError(e, '115')}
                           />
                         ) : (
                           <ImageIcon className="w-8 h-8 text-stone-300" />
@@ -159,23 +167,22 @@ export function InventarioTable({
                           <p className="text-neutral-700 font-light text-sm mt-0.5">{fechaIngreso}</p>
                         </div>
 
-                        {/* Botones de Acción */}
-                        <div className="flex flex-col justify-start">
+                        <div className="flex flex-col items-center justify-start"> {/* 👈 Añadido items-center aquí */}
                           <p className="font-bold text-gray-400 uppercase tracking-wide text-[11px]">ACCIONES</p>
-                          <div className="flex items-center gap-2 mt-2">
+                          <div className="flex items-center gap-1.5 mt-2 flex-wrap justify-center">
                             <button
                               type="button"
                               onClick={() => onEditar(prod)}
-                              className="p-1.5 rounded-lg border border-amber-300 text-amber-600 bg-amber-50 hover:bg-amber-100 transition-colors"
                               title="Editar producto"
+                              className="p-2 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors"
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button
                               type="button"
                               onClick={() => onEliminar(id)}
-                              className="p-1.5 rounded-lg border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
                               title="Eliminar producto"
+                              className="p-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>

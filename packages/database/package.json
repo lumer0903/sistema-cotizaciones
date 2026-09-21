@@ -25,5 +25,12 @@
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
+  },
+  "pnpm": {
+    "ignoredBuiltScripts": [
+      "esbuild",
+      "msgpackr-extract",
+      "workerd"
+    ]
   }
 }

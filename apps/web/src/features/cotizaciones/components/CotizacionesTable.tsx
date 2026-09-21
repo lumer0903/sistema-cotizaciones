@@ -33,7 +33,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
         );
     }
 
-    return (
+return (
         <div className="w-full bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -49,11 +49,11 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-sm font-['DM_Sans']">
-                        {data.map((item) => {
+                        {data.map((item, index) => {
                             const isBorrador = item.estado === 'BORRADOR';
 
                             return (
-                                <tr key={item.id} className="hover:bg-gray-50/60 transition-colors">
+                                <tr key={item.id_cotizacion || item.id || index} className="hover:bg-gray-50/60 transition-colors">
                                     {/* CODIGO */}
                                     <td className="py-3 px-4 w-36 font-normal text-zinc-600 whitespace-nowrap">
                                         {item.codigo}
@@ -62,7 +62,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                                     {/* CLIENTE */}
                                     <td className="py-3 px-4 flex-1 min-w-[200px] font-light text-neutral-700 whitespace-nowrap">
                                         {item.cliente}
-</td>
+                                    </td>
 
                                     {/* TIPO BADGE */}
                                     <td className="py-3 px-4 w-28 text-center whitespace-nowrap">
@@ -109,7 +109,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                                             <button
                                                 type="button"
                                                 disabled={!isBorrador}
-                                                onClick={() => onEdit?.(item.id)}
+                                                onClick={() => onEdit?.(item.id_cotizacion || item.id)}
                                                 className={`p-1 transition-colors ${isBorrador
                                                         ? 'text-yellow-500 hover:text-yellow-600 cursor-pointer'
                                                         : 'text-gray-200 cursor-not-allowed'
@@ -123,7 +123,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                                             <button
                                                 type="button"
                                                 disabled={isBorrador}
-                                                onClick={() => onView?.(item.id)}
+                                                onClick={() => onView?.(item.id_cotizacion || item.id)}
                                                 className={`p-1 transition-colors ${!isBorrador
                                                         ? 'text-yellow-500 hover:text-yellow-600 cursor-pointer'
                                                         : 'text-gray-200 cursor-not-allowed'

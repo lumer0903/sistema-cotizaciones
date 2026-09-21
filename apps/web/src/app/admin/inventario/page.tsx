@@ -2,9 +2,14 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/apiClient';
+import { toast } from 'sonner';
+import { Plus, List } from 'lucide-react';
 import { InventarioFilters } from '@/features/inventario/components/InventarioFilters';
 import { InventarioTable } from '@/features/inventario/components/InventarioTable';
 import { ProductoModal } from '@/features/inventario/components/ProductoModal';
+import { MovimientoModal } from '@/features/inventario/components/MovimientoModal';
+import { TransferenciaModal } from '@/features/inventario/components/TransferenciaModal';
+import { KardexModal } from '@/features/inventario/components/KardexModal';
 import { Pagination } from '@/components/ui';
 import { Categoria, Almacen, ProductoInventario } from '@goldcontinent/shared/types/inventario';
 
@@ -58,7 +63,6 @@ const mapToProductoInventario = (p: ProductoAPI): ProductoInventario => ({
   stock_total: p.stock_total,
   stock_minimo: p.stock_minimo,
   stock_principal: p.stock_principal,
-  stock_tacna: p.stock_tacna,
   foto_url: p.foto_url,
   activo: p.activo,
   stock_actual: p.stock_actual?.map(s => ({
@@ -96,6 +100,13 @@ export default function InventarioPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modoModal, setModoModal] = useState<'crear' | 'editar'>('crear');
   const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoInventario | null>(null);
+
+  const [isMovimientoOpen, setIsMovimientoOpen] = useState(false);
+  const [productoParaMovimiento, setProductoParaMovimiento] = useState<number | null>(null);
+  const [isTransferenciaOpen, setIsTransferenciaOpen] = useState(false);
+  const [productoParaTransferencia, setProductoParaTransferencia] = useState<number | null>(null);
+  const [isKardexOpen, setIsKardexOpen] = useState(false);
+  const [productoParaKardex, setProductoParaKardex] = useState<ProductoInventario | null>(null);
 
   const fetchMetadata = useCallback(async () => {
     try {
@@ -145,12 +156,33 @@ export default function InventarioPage() {
     }
   }, [fetchProductos]);
 
+  const handleVerDetalle = useCallback((producto: ProductoInventario) => {
+    alert(`Detalle del producto: ${producto.codigo}`);
+  }, []);
+
+  const handleAbrirMovimiento = useCallback((productoId?: number) => {
+    setProductoParaMovimiento(productoId ?? null);
+    setIsMovimientoOpen(true);
+  }, []);
+
+  const handleAbrirTransferencia = useCallback((productoId?: number) => {
+    setProductoParaTransferencia(productoId ?? null);
+    setIsTransferenciaOpen(true);
+  }, []);
+
+  const handleAbrirKardex = useCallback((producto?: ProductoInventario) => {
+    setProductoParaKardex(producto ?? null);
+    setIsKardexOpen(true);
+  }, []);
+
   useEffect(() => {
     fetchMetadata();
   }, [fetchMetadata]);
 
   useEffect(() => {
-    const timer = setTimeout(() => fetchProductos(), 300);
+    const timer = setTimeout(() => {
+      fetchProductos();
+    }, 300);
     return () => clearTimeout(timer);
   }, [fetchProductos]);
 
@@ -168,6 +200,9 @@ export default function InventarioPage() {
         selectedUbicacion={selectedUbicacion}
         onUbicacionChange={(v) => { setSelectedUbicacion(v); setCurrentPage(1); }}
         onAgregarProducto={() => { setModoModal('crear'); setProductoSeleccionado(null); setIsModalOpen(true); }}
+        onMovimiento={() => handleAbrirMovimiento()}
+        onTransferencia={() => handleAbrirTransferencia()}
+        onKardex={() => handleAbrirKardex()}
         onRefresh={fetchProductos}
         loading={loading}
       />
@@ -190,9 +225,12 @@ export default function InventarioPage() {
         <InventarioTable
           productos={productos}
           loading={loading}
-          onVerDetalle={(producto) => alert(`Detalle del producto: ${producto.codigo}`)}
+          onVerDetalle={handleVerDetalle}
           onEditar={(producto) => { setModoModal('editar'); setProductoSeleccionado(producto); setIsModalOpen(true); }}
           onEliminar={handleEliminar}
+          onMovimiento={handleAbrirMovimiento}
+          onTransferencia={handleAbrirTransferencia}
+          onKardex={handleAbrirKardex}
         />
 
         {Pagination && (
@@ -215,9 +253,29 @@ export default function InventarioPage() {
       <ProductoModal
         open={isModalOpen}
         onClose={() => { setIsModalOpen(false); setProductoSeleccionado(null); }}
-        onSuccess={() => fetchProductos()}
+        onSuccess={() => { fetchProductos(); toast.success('Producto guardado correctamente'); }}
         modo={modoModal}
         productoInicial={productoSeleccionado ?? undefined}
+      />
+
+      <MovimientoModal
+        open={isMovimientoOpen}
+        onClose={() => { setIsMovimientoOpen(false); setProductoParaMovimiento(null); }}
+        onSuccess={() => { fetchProductos(); toast.success('Movimiento registrado correctamente'); }}
+        productoPreseleccionado={productoParaMovimiento}
+      />
+
+      <TransferenciaModal
+        open={isTransferenciaOpen}
+        onClose={() => { setIsTransferenciaOpen(false); setProductoParaTransferencia(null); }}
+        onSuccess={() => { fetchProductos(); toast.success('Transferencia realizada correctamente'); }}
+        productoPreseleccionado={productoParaTransferencia}
+      />
+
+      <KardexModal
+        open={isKardexOpen}
+        onClose={() => { setIsKardexOpen(false); setProductoParaKardex(null); }}
+        producto={productoParaKardex}
       />
     </div>
   );

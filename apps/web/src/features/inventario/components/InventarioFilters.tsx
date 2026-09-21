@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Search, ChevronDown, LayoutList, LayoutGrid, Plus, RotateCw, SlidersHorizontal } from 'lucide-react';
+import React from 'react';
+import { Search, ChevronDown, Plus, RotateCw, PackagePlus, ArrowLeftRight, ClipboardList, Bell } from 'lucide-react';
 import { Categoria, Almacen } from '@goldcontinent/shared/types/inventario';
 
 interface InventarioFiltersProps {
@@ -14,9 +14,13 @@ interface InventarioFiltersProps {
   selectedUbicacion: string;
   onUbicacionChange: (value: string) => void;
   onAgregarProducto: () => void;
+  onMovimiento?: () => void;
+  onTransferencia?: () => void;
+  onKardex?: () => void;
+  onAlertas?: () => void;
   onRefresh?: () => void;
-  onAjustarStock?: () => void;
   loading?: boolean;
+  alertasCount?: number;
 }
 
 export function InventarioFilters({
@@ -29,34 +33,37 @@ export function InventarioFilters({
   selectedUbicacion,
   onUbicacionChange,
   onAgregarProducto,
-  onAjustarStock,
+  onMovimiento,
+  onTransferencia,
+  onKardex,
+  onAlertas,
   onRefresh,
   loading = false,
+  alertasCount = 0,
 }: InventarioFiltersProps) {
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-
   return (
-    <div className="w-full bg-white rounded-2xl shadow-sm border-l-4 border-yellow-500 p-4 flex flex-wrap lg:flex-nowrap justify-between items-end gap-4 text-xs font-['DM_Sans']">
+    <div className="w-full bg-white rounded-2xl shadow-sm border-l-4 border-yellow-500 p-4 flex flex-wrap lg:flex-nowrap justify-between items-end gap-3 text-xs font-['DM_Sans']">
+
       {/* BUSCADOR */}
       <div className="flex-1 min-w-[200px] flex flex-col gap-1">
-        <span className="text-xs font-black tracking-wide uppercase text-zinc-500">
+        <span className="text-[11px] font-black tracking-wide uppercase text-zinc-500">
           BUSCAR
         </span>
-        <div className="relative w-full h-10 px-3 bg-white rounded-lg border border-yellow-500 flex items-center gap-2">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-yellow-500 shrink-0" />
+        <div className="relative w-full h-10 bg-white rounded-lg border border-yellow-500 flex items-center">
+          <Search className="w-4 h-4 text-yellow-500 shrink-0 ml-3" />
           <input
             type="text"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Buscar por código o flor..."
-            className="w-full bg-transparent text-neutral-700 text-xs focus:outline-none pl-3"
+            className="w-full h-full bg-transparent text-neutral-700 text-xs focus:outline-none px-2"
           />
         </div>
       </div>
 
       {/* CATEGORIA */}
       <div className="w-36 flex flex-col gap-1">
-        <span className="text-xs font-black tracking-wide uppercase text-zinc-500">
+        <span className="text-[11px] font-black tracking-wide uppercase text-zinc-500">
           CATEGORIA
         </span>
         <div className="relative w-full h-10 bg-white rounded-lg border border-yellow-500 flex items-center">
@@ -78,7 +85,7 @@ export function InventarioFilters({
 
       {/* UBICACIÓN */}
       <div className="w-36 flex flex-col gap-1">
-        <span className="text-xs font-black tracking-wide uppercase text-zinc-500">
+        <span className="text-[11px] font-black tracking-wide uppercase text-zinc-500">
           UBICACIÓN
         </span>
         <div className="relative w-full h-10 bg-white rounded-lg border border-yellow-500 flex items-center">
@@ -98,47 +105,85 @@ export function InventarioFilters({
         </div>
       </div>
 
-      {/* ICONOS EN FILTRO: ACTUALIZAR, AJUSTAR STOCK, VISTAS */}
-      <div className="flex items-center gap-1 h-10">
+      {/* BLOQUE DE ACCIONES (Refrescar + Iconos + Agregar) */}
+      <div className="flex items-center gap-2 h-10">
+
+        {/* Refrescar */}
         <button
           type="button"
           onClick={onRefresh}
           disabled={loading}
-          className="h-10 w-10 rounded-lg border border-yellow-500 bg-white hover:bg-yellow-50 text-yellow-600 flex items-center justify-center transition-colors disabled:opacity-50"
+          className="h-10 w-10 rounded-lg border border-yellow-500 bg-white hover:bg-yellow-50 text-yellow-600 flex items-center justify-center transition-colors disabled:opacity-50 shrink-0"
           title="Actualizar lista"
         >
           <RotateCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
-        <button
-          type="button"
-          onClick={() => setViewMode('list')}
-          className={`h-10 w-10 rounded-lg border border-yellow-500 flex items-center justify-center transition-colors ${viewMode === 'list' ? 'bg-yellow-500/20 text-yellow-600' : 'bg-white text-yellow-500'
-            }`}
-          title="Vista Lista"
-        >
-          <LayoutList className="w-4 h-4" />
-        </button>
 
+        {/* Movimiento */}
+        {onMovimiento && (
+          <button
+            type="button"
+            onClick={onMovimiento}
+            className="h-10 w-10 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center transition-colors shrink-0"
+            title="Nuevo Movimiento Global"
+          >
+            <PackagePlus className="w-4 h-4" />
+          </button>
+        )}
+
+        {/* Transferencia */}
+        {onTransferencia && (
+          <button
+            type="button"
+            onClick={onTransferencia}
+            className="h-10 w-10 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center transition-colors shrink-0"
+            title="Transferencia Global"
+          >
+            <ArrowLeftRight className="w-4 h-4" />
+          </button>
+        )}
+
+        {/* Kardex */}
+        {onKardex && (
+          <button
+            type="button"
+            onClick={onKardex}
+            className="h-10 w-10 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center transition-colors shrink-0"
+            title="Kárdex Global"
+          >
+            <ClipboardList className="w-4 h-4" />
+          </button>
+        )}
+
+        {/* Alertas */}
+        {onAlertas && (
+          <button
+            type="button"
+            onClick={onAlertas}
+            className="relative h-10 px-3 bg-rose-500 hover:bg-rose-600 rounded-lg text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shrink-0"
+            title="Ver Alertas de Stock"
+          >
+            <Bell className="w-4 h-4" />
+            <span>Alertas</span>
+            {alertasCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                {alertasCount > 9 ? '9+' : alertasCount}
+              </span>
+            )}
+          </button>
+        )}
+
+        {/* BOTÓN AGREGAR */}
         <button
           type="button"
-          onClick={() => setViewMode('grid')}
-          className={`h-10 w-10 rounded-lg border border-yellow-500 flex items-center justify-center transition-colors ${viewMode === 'grid' ? 'bg-yellow-500/20 text-yellow-600' : 'bg-white text-yellow-500'
-            }`}
-          title="Vista Cuadrícula"
+          onClick={onAgregarProducto}
+          className="h-10 px-4 bg-yellow-500 hover:bg-yellow-600 rounded-lg text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-colors shrink-0 ml-1 whitespace-nowrap"
         >
-          <LayoutGrid className="w-4 h-4" />
+          <Plus className="w-4 h-4 stroke-[3]" />
+          <span>Agregar Producto</span>
         </button>
       </div>
 
-      {/* BOTÓN AGREGAR */}
-      <button
-        type="button"
-        onClick={onAgregarProducto}
-        className="h-10 px-4 bg-yellow-500 hover:bg-yellow-600 rounded-lg text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm transition-colors shrink-0"
-      >
-        <Plus className="w-4 h-4 stroke-[3]" />
-        <span>Agregar Producto</span>
-      </button>
     </div>
   );
 }

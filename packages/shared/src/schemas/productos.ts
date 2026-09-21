@@ -3,18 +3,17 @@ import { z } from "zod";
 export const CrearProductoSchema = z.object({
   codigo: z.string().min(2, "El código es obligatorio"),
   id_categoria: z.coerce.number().min(1, "Seleccione una categoría"),
+  id_almacen: z.coerce.number().min(1, "Seleccione un almacén"),
   tipo_flor: z.string().min(1, "Seleccione el tipo de flor"),
-  material: z.string().min(1, "Seleccione el material"),
+  material: z.string().optional().nullable(),
   composicion: z.string().min(1, "Seleccione la composición"),
-  presentacion: z.string().min(1, "Seleccione la presentación"),
+  presentacion: z.string().optional().nullable(),
   numero_cabezas: z.coerce.number().min(1, "Ingrese el número de cabezas"),
-  tamano: z.string().min(1, "Ingrese el tamaño"),
-  id_almacen: z.coerce.number().min(1, "Seleccione una ubicación válida"),
+  tamano: z.string().optional().nullable(),
   unidades_por_caja: z.coerce.number().min(1, "Ingrese unidades por caja"),
   stock_principal: z.coerce.number().min(0, "El stock no puede ser negativo"),
   stock_minimo: z.coerce.number().min(0, "El stock mínimo no puede ser negativo"),
-  stock_tacna: z.coerce.number().default(0),
-  descripcion: z.string().min(5),
+  descripcion: z.string().min(5, "La descripción es obligatoria (mínimo 5 caracteres)"),
   colores_surtido: z.array(z.string()).min(1, "Configure al menos un color para el surtido"),
   
   // Precios Tienda (Normal)

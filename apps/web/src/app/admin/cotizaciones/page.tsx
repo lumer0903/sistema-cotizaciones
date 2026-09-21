@@ -35,8 +35,19 @@ export default function MisCotizacionesPage() {
         limit: itemsPerPage,
       });
 
-      const list = Array.isArray(res) ? res : res?.data || [];
-      setRawCotizaciones(list);
+      const rawList = Array.isArray(res) ? res : res?.data || [];
+      // Mapear respuesta de API (con id_cotizacion, cliente objeto, created_at) a formato UI
+      const mappedList = rawList.map((item: any) => ({
+        id: item.id_cotizacion,
+        id_cotizacion: item.id_cotizacion,
+        codigo: item.numero,
+        cliente: typeof item.cliente === 'object' ? (item.cliente?.nombre || '-') : (item.cliente || '-'),
+        fecha: item.created_at ? new Date(item.created_at).toLocaleDateString('es-PE') : (item.fecha || '-'),
+        tipo: (item.tipo_precio === 'distribuidor' ? 'DISTRIBUIDOR' : 'TIENDA') as 'DISTRIBUIDOR' | 'TIENDA',
+        estado: (item.estado?.toUpperCase() || 'BORRADOR') as EstadoCotizacion,
+        total: Number(item.total),
+      }));
+      setRawCotizaciones(mappedList);
     } catch (error) {
       console.error('Error fetching cotizaciones:', error);
       toast.error('No se pudieron cargar las cotizaciones');

@@ -16,7 +16,7 @@ export interface ProductoInventario extends Producto {
   stock_actual: (StockActual & { almacen: Almacen })[];
 }
 
-export type TipoModal = 'CREAR' | 'EDITAR' | 'DETALLE' | 'KARDEX' | null;
+export type TipoModal = 'CREAR' | 'EDITAR' | 'DETALLE' | 'KARDEX' | 'MOVIMIENTO' | 'TRANSFERENCIA' | 'ALERTAS' | null;
 
 export interface InventarioFilters {
   search: string;
@@ -69,4 +69,112 @@ export interface MovimientoInventarioForm {
   id_referencia?: number | null;
   tipo_referencia?: string | null;
   observaciones?: string | null;
+}
+
+export interface MovimientoResponse {
+  id_movimiento: number;
+  id_producto: number;
+  id_almacen: number;
+  tipo: TipoMovimiento;
+  origen: OrigenMovimiento;
+  cantidad: number;
+  stock_anterior: number;
+  stock_posterior: number;
+  costo_unitario: number | null;
+  id_referencia: number | null;
+  tipo_referencia: string | null;
+  observaciones: string | null;
+  id_usuario: number | null;
+  created_at: Date;
+  producto?: {
+    id_producto: number;
+    codigo: string;
+    descripcion: string;
+  } | null;
+  almacen?: {
+    id_almacen: number;
+    codigo: string;
+    nombre: string;
+  } | null;
+  usuario?: {
+    id_usuario: number;
+    nombre: string;
+  } | null;
+}
+
+export interface PaginatedMovimientosResponse {
+  data: MovimientoResponse[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface StockActualResponse {
+  id_producto: number;
+  codigo: string;
+  descripcion: string;
+  id_almacen: number;
+  almacen_codigo: string;
+  almacen_nombre: string;
+  cantidad: number;
+  stock_minimo: number;
+  estado: 'normal' | 'bajo_minimo' | 'sin_stock';
+}
+
+export interface AlertaStockResponse {
+  id_alerta: number;
+  id_producto: number;
+  id_almacen: number;
+  stock_actual: number;
+  stock_minimo: number;
+  estado: 'activa' | 'resuelta';
+  reconocida_at: Date | null;
+  created_at: Date;
+  producto?: {
+    id_producto: number;
+    codigo: string;
+    descripcion: string;
+  } | null;
+  almacen?: {
+    id_almacen: number;
+    codigo: string;
+    nombre: string;
+  } | null;
+}
+
+export interface CreateMovimientoDTO {
+  id_producto: number;
+  id_almacen: number;
+  tipo: TipoMovimiento;
+  origen: OrigenMovimiento;
+  cantidad: number;
+  costo_unitario?: number | null;
+  id_referencia?: number | null;
+  tipo_referencia?: string | null;
+  observaciones?: string | null;
+}
+
+export interface CreateTransferenciaDTO {
+  id_producto: number;
+  id_almacen_origen: number;
+  id_almacen_destino: number;
+  cantidad: number;
+  observaciones?: string | null;
+}
+
+export interface FiltrosMovimientos {
+  id_producto?: number;
+  id_almacen?: number;
+  tipo?: TipoMovimiento;
+  origen?: OrigenMovimiento;
+  fecha_inicio?: Date | string;
+  fecha_fin?: Date | string;
+  page?: number;
+  limit?: number;
+}
+
+export interface FiltrosStock {
+  id_producto?: number;
+  id_almacen?: number;
+  soloBajoMinimo?: boolean;
 }

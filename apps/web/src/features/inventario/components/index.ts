@@ -5,3 +5,6 @@ export * from './InventarioPagination';
 export * from './InventarioRow';
 export * from './InventarioTable';
 export * from './HomeInventario';
+export * from './MovimientoModal';
+export * from './TransferenciaModal';
+export * from './AlertasStockTable';

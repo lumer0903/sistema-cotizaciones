@@ -6,8 +6,14 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 
-process.on('unhandledRejection', (reason: unknown) => {
-  console.error('Unhandled Rejection at:', new Date().toISOString(), reason);
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
+  console.error('Unhandled Rejection at:', new Date().toISOString(), 'Promise:', promise, 'Reason:', reason);
+  // Don't exit the process on unhandled rejection
+});
+
+process.on('uncaughtException', (error: Error) => {
+  console.error('Uncaught Exception at:', new Date().toISOString(), error);
+  // Don't exit the process on uncaught exception
 });
 
 async function bootstrap() {
@@ -49,5 +55,8 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port);
   console.log(`Application is running on port ${port}`);
+  
+  // Keep the process alive
+  process.stdin.resume();
 }
 bootstrap();

@@ -15,10 +15,12 @@ export interface ProductoCarrito {
     cantidad: number;
     total: number;
     observacion?: string;
+    es_sugerido_ia?: boolean;
 }
 
 export interface CotizacionItem {
-    id: string | number;
+    id: number;
+    id_cotizacion: number;
     codigo: string;
     cliente: string;
     fecha: string;
@@ -40,4 +42,28 @@ export interface CotizacionesPaginatedResponse {
     total: number;
     page: number;
     limit: number;
+}
+
+export interface RecomendacionItem {
+    id_producto: number;
+    codigo: string;
+    descripcion: string;
+    precio: number;
+    stock: number;
+    similarityScore: number;
+    categoria?: string;
+    margen?: number;
+    es_sugerido_ia: boolean;
+}
+
+export interface RecomendarItemRequest {
+    id_producto_base: number;
+    id_cliente?: number;
+    id_almacen?: number;
+}
+
+export interface RecomendarItemResponse {
+    similar: RecomendacionItem[];
+    upsell: RecomendacionItem[];
+    equilibrio: RecomendacionItem[];
 }
