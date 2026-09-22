@@ -89,9 +89,9 @@ export function Sidebar() {
                                 (e.target as HTMLElement).style.display = 'none';
                             }}
                         />
-                        <div className="text-center font-black text-[10px] text-zinc-800 tracking-widest uppercase leading-tight mt-1.5 transition-colors group-hover:text-amber-500">
+                        <div className="text-center font-black text-[10px] text-zinc-800 tracking-widest uppercase leading-tight mt-1.5 transition-colors group-hover:text-brand-primary">
                             IMPORT &amp; EXPORT <br />
-                            <span className="text-xs text-amber-500 tracking-wider">GOLD CONTINENT</span>
+                            <span className="text-xs text-brand-primary tracking-wider">GOLD CONTINENT</span>
                         </div>
                     </Link>
                 </div>
@@ -111,16 +111,16 @@ export function Sidebar() {
                                         type="button"
                                         onClick={() => handleItemClick(item)}
                                         className={`w-full h-11 px-3.5 py-2 rounded-xl inline-flex items-center justify-between gap-3 transition-all duration-200 ${isActive
-                                                ? 'bg-amber-50 text-amber-600 font-bold shadow-sm shadow-amber-400/5'
+                                                ? 'bg-brand-selection text-brand-primary font-bold shadow-sm shadow-brand-modalFocus/5'
                                                 : 'text-zinc-600 font-medium hover:bg-zinc-50 hover:text-zinc-900'
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <Icon className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-amber-500' : 'text-zinc-400'}`} />
+                                            <Icon className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-brand-primary' : 'text-zinc-400'}`} />
                                             <span className="text-xs sm:text-sm">{item.name}</span>
                                         </div>
                                         <ChevronDown
-                                            className={`w-4 h-4 transition-transform duration-200 ${isActive ? 'text-amber-500' : 'text-zinc-400'
+                                            className={`w-4 h-4 transition-transform duration-200 ${isActive ? 'text-brand-primary' : 'text-zinc-400'
                                                 } ${isSubmenuOpen ? 'rotate-180' : ''}`}
                                         />
                                     </button>
@@ -135,7 +135,7 @@ export function Sidebar() {
                                                         key={sub.name}
                                                         href={sub.href}
                                                         className={`w-full h-9 pl-9 pr-4 rounded-lg inline-flex items-center text-xs sm:text-sm transition-all duration-150 ${isSubActive
-                                                                ? 'text-amber-500 font-bold bg-white shadow-sm shadow-zinc-200/50'
+                                                                ? 'text-brand-primary font-bold bg-white shadow-sm shadow-zinc-200/50'
                                                                 : 'text-zinc-400 font-medium hover:text-zinc-700 hover:bg-white/60'
                                                             }`}
                                                     >
@@ -155,11 +155,11 @@ export function Sidebar() {
                                 href={item.href}
                                 onClick={() => handleItemClick(item)}
                                 className={`w-full h-11 px-3.5 py-2 rounded-xl inline-flex items-center gap-3 text-xs sm:text-sm transition-all duration-200 ${isActive
-                                        ? 'bg-amber-50 text-amber-600 font-bold shadow-sm shadow-amber-400/5'
+                                        ? 'bg-brand-selection text-brand-primary font-bold shadow-sm shadow-brand-modalFocus/5'
                                         : 'text-zinc-600 font-medium hover:bg-zinc-50 hover:text-zinc-900'
                                     }`}
                             >
-                                <Icon className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-amber-500' : 'text-zinc-400'}`} />
+                                <Icon className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-brand-primary' : 'text-zinc-400'}`} />
                                 <span>{item.name}</span>
                             </Link>
                         );

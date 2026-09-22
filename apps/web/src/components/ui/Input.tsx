@@ -6,28 +6,80 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     label?: string;
     error?: string;
     icon?: ReactNode;
+    variant?: 'default' | 'modal';
+    sizeVariant?: 'sm' | 'md'; // Prop para controlar el tamaño
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-    ({ label, error, icon, className = '', disabled, ...props }, ref) => {
+    (
+        {
+            label,
+            error,
+            icon,
+            variant = 'default',
+            sizeVariant = 'md',
+            className = '',
+            disabled,
+            ...props
+        },
+        ref
+    ) => {
+        const isModal = variant === 'modal';
+        const borderColor = isModal ? '#8E8E8E' : '#F8B602';
+        const focusColor = isModal ? '#C9A962' : '#F8B602';
+        const textColor = '#414141';
+        const labelIconColor = isModal ? '#8E8E8E' : '#F8B602';
+
+        // Altura y padding dinámicos según el tamaño
+        const heightClass = sizeVariant === 'sm' ? 'h-8 text-xs' : 'h-10 text-xs sm:text-sm';
+
         return (
             <div className="w-full space-y-1">
                 {label && (
-                    <label className="block text-[10px] sm:text-xs font-black text-amber-500 uppercase tracking-wider">
+                    <label
+                        className="block text-[10px] sm:text-xs font-black uppercase tracking-wider transition-colors"
+                        style={{ color: labelIconColor }}
+                    >
                         {label}
                     </label>
                 )}
                 <div className="relative flex items-center">
                     {icon && (
-                        <div className="absolute left-3 text-amber-500 pointer-events-none flex items-center justify-center">
+                        <div
+                            className="absolute left-3 pointer-events-none flex items-center justify-center transition-colors"
+                            style={{ color: labelIconColor }}
+                        >
                             {icon}
                         </div>
                     )}
                     <input
                         ref={ref}
                         disabled={disabled}
-                        className={`w-full h-10 rounded-xl border border-amber-400/80 bg-white text-xs sm:text-sm font-medium text-zinc-800 transition-colors placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 disabled:bg-gray-100 disabled:cursor-not-allowed ${icon ? 'pl-9 pr-3' : 'px-3'
-                            } ${error ? 'border-red-500 focus:ring-red-500' : ''} ${className}`}
+                        className={`
+              w-full ${heightClass} rounded-xl border bg-white 
+              font-medium transition-colors 
+              placeholder:text-zinc-400 focus:outline-none 
+              disabled:bg-gray-100 disabled:cursor-not-allowed
+              ${icon ? 'pl-9 pr-3' : 'px-3'} 
+              ${error ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200' : ''} 
+              ${className}
+            `}
+                        style={{
+                            borderColor: error ? undefined : borderColor,
+                            color: textColor,
+                        }}
+                        onFocus={(e) => {
+                            if (!error) {
+                                e.currentTarget.style.borderColor = focusColor;
+                                e.currentTarget.style.boxShadow = `0 0 0 2px ${focusColor}33`;
+                            }
+                        }}
+                        onBlur={(e) => {
+                            if (!error) {
+                                e.currentTarget.style.borderColor = borderColor;
+                                e.currentTarget.style.boxShadow = 'none';
+                            }
+                        }}
                         {...props}
                     />
                 </div>
@@ -37,4 +89,4 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     }
 );
 
-Input.displayName = 'Input'; 
+Input.displayName = 'Input';

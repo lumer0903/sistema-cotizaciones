@@ -25,14 +25,9 @@ export function HomeInventario() {
     productoSeleccionado,
     abrirCrear,
     abrirEditar,
-    abrirDetalle,
     abrirKardex,
     cerrarModales,
   } = useInventarioModals();
-
-  const handleRowClick = (p: any) => {
-    if (p) abrirDetalle(p);
-  };
 
   const handleEditarClick = (p: any) => {
     abrirEditar(p);
@@ -40,10 +35,6 @@ export function HomeInventario() {
 
   const handleKardexClick = (p: any) => {
     abrirKardex(p);
-  };
-
-  const handleVerDetalle = (p: any) => {
-    abrirDetalle(p);
   };
 
   const handleEliminar = (id: number) => {
@@ -66,7 +57,6 @@ export function HomeInventario() {
       <InventarioTable
         productos={productos}
         loading={loading}
-        onVerDetalle={handleVerDetalle}
         onEditar={handleEditarClick}
         onEliminar={handleEliminar}
       />

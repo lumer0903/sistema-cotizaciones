@@ -69,7 +69,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
     for (const line of lines) {
       const name = line.trim();
       if (name && !colors.some((c) => c.name.toLowerCase() === name.toLowerCase()) &&
-          !newColors.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+        !newColors.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
         const hex = COLOR_MAP[name.toLowerCase()] || '#6b7280';
         newColors.push({ name, hex });
       }
@@ -139,12 +139,12 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
           </div>
 
           {isAdding && (
-            <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg border border-brand-options/30">
+            <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg">
               <input
                 type="color"
                 value={newHex}
                 onChange={(e) => setNewHex(e.target.value)}
-                className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
+                className="w-2.5 h-2.5 rounded-full cursor-pointer border-0 bg-transparent p-0 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-full [&::-moz-color-swatch]:border-none [&::-moz-color-swatch]:rounded-full"
               />
               <input
                 ref={inputRef}
@@ -152,9 +152,9 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
                 value={newName}
                 onChange={(e) => handleNameChange(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addColor()}
-                placeholder="Nombre color"
+                placeholder="Color"
                 autoFocus
-                className="w-24 px-2 py-1 text-xs border border-brand-options/30 rounded outline-none focus:border-brand-primary"
+                className="w-24 px-2 py-1 text-xs border border-gray-400 rounded-lg outline-none focus:border-brand-primary"
               />
               <button onClick={addColor} className="text-xs font-bold text-brand-subtitle hover:text-black px-1">
                 OK
@@ -188,7 +188,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
           <Button variant="primary" onClick={handleSave}>

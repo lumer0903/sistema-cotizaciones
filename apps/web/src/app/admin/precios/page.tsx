@@ -102,7 +102,7 @@ export default function ConsultaPrecioPage() {
               type="text"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar por código o descripción..."
+              placeholder="Buscar"
               icon={<Search className="size-4" />}
             />
           </div>
@@ -112,9 +112,9 @@ export default function ConsultaPrecioPage() {
             <Select
               label="TIPO PRECIO"
               value={tipoPrecio}
-              onChange={(e) => setTipoPrecio(e.target.value as 'distribuidor' | 'tienda' | '')}
+              onChange={(e) => setTipoPrecio(String(e.target.value) as 'distribuidor' | 'tienda' | '')}
               options={[
-                { label: 'Todos', value: '' },
+                { label: 'Seleccionar', value: '' },
                 { label: 'DISTRIBUIDOR', value: 'distribuidor' },
                 { label: 'TIENDA', value: 'tienda' },
               ]}
@@ -126,9 +126,9 @@ export default function ConsultaPrecioPage() {
             <Select
               label="STOCK"
               value={stockFiltro}
-              onChange={(e) => setStockFiltro(e.target.value)}
+              onChange={(e) => setStockFiltro(String(e.target.value))}
               options={[
-                { label: 'Todos', value: '' },
+                { label: 'Seleccionar', value: '' },
                 { label: 'DISPONIBLE', value: 'disponible' },
                 { label: 'STOCK BAJO', value: 'bajo' },
               ]}

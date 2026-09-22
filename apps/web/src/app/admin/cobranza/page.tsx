@@ -6,6 +6,15 @@ import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CuentaPorCobrar, HistorialPago, EstadoCobranza } from '@/types/cobranza';
+import { Select } from '@/components/ui/Select';
+
+const ESTADO_CUENTA_OPTIONS = [
+  { label: 'Todos los estados', value: '' },
+  { label: 'Pendiente', value: 'pendiente' },
+  { label: 'Parcial', value: 'parcial' },
+  { label: 'Vencida', value: 'vencida' },
+  { label: 'Castigada', value: 'castigada' },
+];
 
 interface CuentaCobrar {
   id_cuenta: number;
@@ -154,17 +163,12 @@ export default function AdminCobranzaPage() {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
             />
           </div>
-          <select
+          <Select
             value={estadoFilter}
-            onChange={(e) => setEstadoFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm w-full sm:w-48"
-          >
-            <option value="">Todos los estados</option>
-            <option value="pendiente">Pendiente</option>
-            <option value="parcial">Parcial</option>
-            <option value="vencida">Vencida</option>
-            <option value="castigada">Castigada</option>
-          </select>
+            onChange={(e) => setEstadoFilter(String(e.target.value))}
+            options={ESTADO_CUENTA_OPTIONS}
+            className="w-full sm:w-48"
+          />
         </div>
 
         {loading ? (

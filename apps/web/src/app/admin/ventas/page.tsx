@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { MetodoPago, TipoComprobante, DetalleVenta, Venta as VentaType } from '@/types/venta';
+import { Select } from '@/components/ui/Select';
 
 interface Venta {
   id_venta: number;
@@ -56,6 +57,21 @@ const DOCUMENTO_LABELS: Record<string, string> = {
   nota_debito: 'Nota Débito',
   guia_remision: 'Guía Remisión',
 };
+
+const ESTADO_OPTIONS = [
+  { label: 'Todos los estados', value: '' },
+  { label: 'Borrador', value: 'borrador' },
+  { label: 'Emitida', value: 'emitida' },
+  { label: 'Pagada', value: 'pagada' },
+  { label: 'Parcial', value: 'parcial' },
+  { label: 'Anulada', value: 'anulada' },
+];
+
+const TIPO_PAGO_OPTIONS = [
+  { label: 'Tipo de pago', value: '' },
+  { label: 'Contado', value: 'contado' },
+  { label: 'Crédito', value: 'credito' },
+];
 
 export default function VentasPage() {
   const { usuario } = useAuth();
@@ -124,27 +140,18 @@ export default function VentasPage() {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
             />
           </div>
-          <select
+          <Select
             value={estadoFilter}
-            onChange={(e) => setEstadoFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm w-full sm:w-40"
-          >
-            <option value="">Todos los estados</option>
-            <option value="borrador">Borrador</option>
-            <option value="emitida">Emitida</option>
-            <option value="pagada">Pagada</option>
-            <option value="parcial">Parcial</option>
-            <option value="anulada">Anulada</option>
-          </select>
-          <select
+            onChange={(e) => setEstadoFilter(String(e.target.value))}
+            options={ESTADO_OPTIONS}
+            className="w-full sm:w-40"
+          />
+          <Select
             value={tipoPagoFilter}
-            onChange={(e) => setTipoPagoFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm w-full sm:w-40"
-          >
-            <option value="">Tipo de pago</option>
-            <option value="contado">Contado</option>
-            <option value="credito">Crédito</option>
-          </select>
+            onChange={(e) => setTipoPagoFilter(String(e.target.value))}
+            options={TIPO_PAGO_OPTIONS}
+            className="w-full sm:w-40"
+          />
         </div>
 
         {loading ? (

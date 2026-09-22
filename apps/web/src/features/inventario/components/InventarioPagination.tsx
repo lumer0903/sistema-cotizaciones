@@ -50,9 +50,9 @@ export function InventarioPagination({
   };
 
   return (
-    <footer className="flex flex-col sm:flex-row items-center justify-between pt-4 gap-4 text-sm text-gray-600">
+    <footer className="flex flex-col sm:flex-row items-center justify-between pt-4 gap-4 text-sm text-brand-subtitle">
       <div className="flex items-center gap-2">
-        <span className="font-light text-gray-500">Página</span>
+        <span className="font-light text-brand-options">Página</span>
         {getPageNumbers().map((page, idx) => (
           <button
             key={idx}
@@ -61,10 +61,10 @@ export function InventarioPagination({
             disabled={page === '...' || page === currentPage}
             className={`w-8 h-8 flex items-center justify-center rounded font-bold transition-colors ${
               page === '...'
-                ? 'text-gray-400 cursor-default'
+                ? 'text-brand-options cursor-default'
                 : page === currentPage
-                  ? 'bg-amber-500 text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-brand-primary text-white'
+                  : 'text-brand-subtitle hover:bg-brand-selection'
             }`}
             aria-label={page === '...' ? undefined : `Ir a página ${page}`}
             aria-current={page === currentPage ? 'page' : undefined}
@@ -77,7 +77,7 @@ export function InventarioPagination({
           type="button"
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className="p-1.5 text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed rounded"
+          className="p-1.5 text-brand-options hover:text-brand-text disabled:opacity-30 disabled:cursor-not-allowed rounded"
           aria-label="Página anterior"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -87,7 +87,7 @@ export function InventarioPagination({
           type="button"
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className="p-1.5 text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed rounded"
+          className="p-1.5 text-brand-options hover:text-brand-text disabled:opacity-30 disabled:cursor-not-allowed rounded"
           aria-label="Página siguiente"
         >
           <ChevronRight className="w-4 h-4" />
@@ -97,7 +97,7 @@ export function InventarioPagination({
           type="button"
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
-          className="p-1.5 text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed rounded"
+          className="p-1.5 text-brand-options hover:text-brand-text disabled:opacity-30 disabled:cursor-not-allowed rounded"
           aria-label="Primera página"
         >
           <ChevronsLeft className="w-4 h-4" />
@@ -107,7 +107,7 @@ export function InventarioPagination({
           type="button"
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
-          className="p-1.5 text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed rounded"
+          className="p-1.5 text-brand-options hover:text-brand-text disabled:opacity-30 disabled:cursor-not-allowed rounded"
           aria-label="Última página"
         >
           <ChevronsRight className="w-4 h-4" />

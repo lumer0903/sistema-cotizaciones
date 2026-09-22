@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { toast } from 'sonner';
-import { Plus, List } from 'lucide-react';
 import { InventarioFilters } from '@/features/inventario/components/InventarioFilters';
 import { InventarioTable } from '@/features/inventario/components/InventarioTable';
 import { ProductoModal } from '@/features/inventario/components/ProductoModal';
@@ -156,10 +155,6 @@ export default function InventarioPage() {
     }
   }, [fetchProductos]);
 
-  const handleVerDetalle = useCallback((producto: ProductoInventario) => {
-    alert(`Detalle del producto: ${producto.codigo}`);
-  }, []);
-
   const handleAbrirMovimiento = useCallback((productoId?: number) => {
     setProductoParaMovimiento(productoId ?? null);
     setIsMovimientoOpen(true);
@@ -225,7 +220,6 @@ export default function InventarioPage() {
         <InventarioTable
           productos={productos}
           loading={loading}
-          onVerDetalle={handleVerDetalle}
           onEditar={(producto) => { setModoModal('editar'); setProductoSeleccionado(producto); setIsModalOpen(true); }}
           onEliminar={handleEliminar}
           onMovimiento={handleAbrirMovimiento}

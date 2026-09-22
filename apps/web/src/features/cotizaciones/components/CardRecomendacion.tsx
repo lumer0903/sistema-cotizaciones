@@ -33,7 +33,7 @@ export default function CardRecomendacion({
                         <span className="bg-white border border-gray-200 px-1 rounded">
                             {estante}
                         </span>
-                        <span className="bg-amber-50 text-amber-700 border border-amber-200 px-1 rounded">
+                        <span className="bg-brand-selection text-brand-subtitle border border-brand-primary/40 px-1 rounded">
                             {stock}
                         </span>
                         <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-1 rounded">
@@ -46,7 +46,7 @@ export default function CardRecomendacion({
                 <button className="flex-1 h-7 text-[11px] font-bold border border-gray-300 rounded bg-white hover:bg-gray-50 transition-colors">
                     AGREGAR
                 </button>
-                <button className="flex-1 h-7 text-[11px] font-bold border border-amber-400 text-amber-600 rounded bg-amber-50 hover:bg-amber-100 transition-colors">
+                <button className="flex-1 h-7 text-[11px] font-bold border border-brand-primary text-brand-primary rounded bg-brand-selection hover:bg-brand-primary/10 transition-colors">
                     REEMPLAZAR
                 </button>
             </div>

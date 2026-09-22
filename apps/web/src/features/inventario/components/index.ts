@@ -1,4 +1,3 @@
-export * from './AgregarProductoModal';
 export * from './ColorTags';
 export * from './InventarioFilters';
 export * from './InventarioPagination';

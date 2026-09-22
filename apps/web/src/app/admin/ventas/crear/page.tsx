@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Select } from '@/components/ui/Select';
 
 interface Producto {
   id_producto: number;
@@ -59,6 +60,32 @@ type TipoDocumento = 'boleta' | 'factura' | 'nota_venta' | 'nota_credito' | 'not
 const ALMACENES_DEFAULT: Almacen[] = [
   { id_almacen: 1, nombre: 'Principal', codigo: 'PRIN' },
   { id_almacen: 2, nombre: 'Tacna', codigo: 'TAC' },
+];
+
+// Select options
+const TIPO_DOCUMENTO_OPTIONS = [
+  { label: 'Boleta', value: 'boleta' },
+  { label: 'Factura', value: 'factura' },
+  { label: 'Nota de Venta', value: 'nota_venta' },
+  { label: 'Nota de Crédito', value: 'nota_credito' },
+  { label: 'Nota de Débito', value: 'nota_debito' },
+  { label: 'Guía de Remisión', value: 'guia_remision' },
+];
+
+const TIPO_PRECIO_OPTIONS = [
+  { label: 'Normal', value: 'normal' },
+  { label: 'Distribuidor', value: 'distribuidor' },
+];
+
+const TIPO_VENTA_OPTIONS = [
+  { label: 'Unidad', value: 'unidad' },
+  { label: 'Docena', value: 'docena' },
+  { label: 'Mayor', value: 'mayor' },
+];
+
+const TIPO_PAGO_OPTIONS = [
+  { label: 'Contado', value: 'contado' },
+  { label: 'Crédito', value: 'credito' },
 ];
 
 export default function AdminVentaCrearPage() {
@@ -281,89 +308,69 @@ export default function AdminVentaCrearPage() {
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Información General</h2>
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
-                <select
-                  value={formData.id_cliente}
-                  onChange={(e) => setFormData({ ...formData, id_cliente: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="">Seleccionar cliente</option>
-                  {clientes.map((c) => (
-                    <option key={c.id_cliente} value={c.id_cliente}>
-                      {c.nombre} {c.ruc_dni ? `(${c.ruc_dni})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
+  <Select
+    value={formData.id_cliente}
+    onChange={(e) => setFormData({ ...formData, id_cliente: String(e.target.value) })}
+    options={clientes.map((c) => ({
+      label: `${c.nombre} ${c.ruc_dni ? `(${c.ruc_dni})` : ''}`,
+      value: String(c.id_cliente),
+    }))}
+    placeholder="Seleccionar cliente"
+    className="w-full"
+  />
+</div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Almacén *</label>
-                <select
-                  value={formData.id_almacen}
-                  onChange={(e) => setFormData({ ...formData, id_almacen: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  {almacenes.map((a) => (
-                    <option key={a.id_almacen} value={a.id_almacen}>
-                      {a.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Almacén *</label>
+  <Select
+    value={formData.id_almacen}
+    onChange={(e) => setFormData({ ...formData, id_almacen: String(e.target.value) })}
+    options={almacenes.map((a) => ({ label: a.nombre, value: String(a.id_almacen) }))}
+    className="w-full"
+  />
+</div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo Documento *</label>
-                <select
-                  value={formData.tipo_documento}
-                  onChange={(e) => setFormData({ ...formData, tipo_documento: e.target.value as TipoDocumento })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="boleta">Boleta</option>
-                  <option value="factura">Factura</option>
-                  <option value="nota_venta">Nota de Venta</option>
-                  <option value="nota_credito">Nota de Crédito</option>
-                  <option value="nota_debito">Nota de Débito</option>
-                  <option value="guia_remision">Guía de Remisión</option>
-                </select>
-              </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo Documento *</label>
+  <Select
+    value={formData.tipo_documento}
+    onChange={(e) => setFormData({ ...formData, tipo_documento: String(e.target.value) as TipoDocumento })}
+    options={TIPO_DOCUMENTO_OPTIONS}
+    className="w-full"
+  />
+</div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Precio *</label>
-                <select
-                  value={formData.tipo_precio}
-                  onChange={(e) => setFormData({ ...formData, tipo_precio: e.target.value as TipoPrecio })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="normal">Normal</option>
-                  <option value="distribuidor">Distribuidor</option>
-                </select>
-              </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Precio *</label>
+  <Select
+    value={formData.tipo_precio}
+    onChange={(e) => setFormData({ ...formData, tipo_precio: String(e.target.value) as TipoPrecio })}
+    options={TIPO_PRECIO_OPTIONS}
+    className="w-full"
+  />
+</div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Venta *</label>
-                <select
-                  value={formData.tipo_venta}
-                  onChange={(e) => setFormData({ ...formData, tipo_venta: e.target.value as TipoVenta })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="unidad">Unidad</option>
-                  <option value="docena">Docena</option>
-                  <option value="mayor">Mayor</option>
-                </select>
-              </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Venta *</label>
+  <Select
+    value={formData.tipo_venta}
+    onChange={(e) => setFormData({ ...formData, tipo_venta: String(e.target.value) as TipoVenta })}
+    options={TIPO_VENTA_OPTIONS}
+    className="w-full"
+  />
+</div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Pago *</label>
-                <select
-                  value={formData.tipo_pago}
-                  onChange={(e) => setFormData({ ...formData, tipo_pago: e.target.value as TipoPago })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="contado">Contado</option>
-                  <option value="credito">Crédito</option>
-                </select>
-              </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Pago *</label>
+  <Select
+    value={formData.tipo_pago}
+    onChange={(e) => setFormData({ ...formData, tipo_pago: String(e.target.value) as TipoPago })}
+    options={TIPO_PAGO_OPTIONS}
+    className="w-full"
+  />
+</div>
 
               {formData.tipo_pago === 'credito' && (
                 <div>

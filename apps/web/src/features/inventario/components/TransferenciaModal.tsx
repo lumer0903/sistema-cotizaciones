@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 import { Modal, Input, Select, Button } from '@/components/ui';
-import { inventarioApi, TransferenciaFormData } from '../api/inventario.api';
+import { inventarioApi } from '../api/inventario.api';
+import { formatCode } from '@/lib/formatters';
 
 const TransferenciaSchema = z.object({
     id_producto: z.number().min(1, 'Seleccione un producto'),
@@ -52,7 +53,12 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
     const [loadingFilters, setLoadingFilters] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [stockOrigen, setStockOrigen] = useState<number | null>(null);
+
+    // Estado para el buscador basado en tu patrón
+    const [searchQuery, setSearchQuery] = useState('');
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const [selectedProducto, setSelectedProducto] = useState<ProductoSimple | null>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     const {
         register,
@@ -90,11 +96,13 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                     }));
                     setProductos(prods);
                     setAlmacenes(almRes.data || almRes.items || []);
+
                     if (productoPreseleccionado) {
                         const prod = prods.find((p: ProductoSimple) => p.id_producto === productoPreseleccionado);
                         if (prod) {
-                            setValue('id_producto', prod.id_producto);
+                            setValue('id_producto', prod.id_producto, { shouldValidate: true });
                             setSelectedProducto(prod);
+                            setSearchQuery(`${formatCode(prod.codigo)} - ${prod.descripcion}`);
                         }
                     }
                 } catch (error) {
@@ -121,6 +129,35 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
         }
     }, [idProducto, idAlmacenOrigen, productos]);
 
+    // Cerrar desplegable al hacer clic fuera
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Sugerencias filtradas
+    const sugerencias = productos.filter((p) => {
+        const query = searchQuery.toLowerCase().trim();
+        return (
+            p.codigo.toLowerCase().includes(query) ||
+            p.descripcion.toLowerCase().includes(query)
+        );
+    });
+
+    const handleSelectProducto = (p: ProductoSimple) => {
+        setSelectedProducto(p);
+        setValue('id_producto', p.id_producto, { shouldValidate: true });
+
+        setSearchQuery(formatCode(p.codigo));
+
+        setShowSuggestions(false);
+    };
+
     const getAlmacenesDestino = useCallback(() => {
         return almacenes.filter((a) => a.id_almacen !== idAlmacenOrigen);
     }, [almacenes, idAlmacenOrigen]);
@@ -128,7 +165,9 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
     const handleClose = () => {
         reset();
         setSelectedProducto(null);
+        setSearchQuery('');
         setStockOrigen(null);
+        setShowSuggestions(false);
         onClose();
     };
 
@@ -149,113 +188,132 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
     if (!open) return null;
 
     return (
-        <Modal open={open} onClose={handleClose} title="Transferencia entre Almacenes" maxWidth="lg">
+        <Modal open={open} onClose={handleClose} title="Transferencia entre Almacenes" maxWidth="md">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Select
-                        label="PRODUCTO *"
-                        error={errors.id_producto?.message}
-                        disabled={loadingFilters}
-                        {...register('id_producto', { valueAsNumber: true })}
-                    >
-                        <option value="">Seleccione un producto</option>
-                        {productos.map((p) => (
-                            <option key={p.id_producto} value={p.id_producto}>
-                                {p.codigo} - {p.descripcion}
-                            </option>
-                        ))}
-                    </Select>
 
-                    <div className="sm:col-span-2">
-                        <label className="block text-xs font-bold text-brand-subtitle uppercase tracking-wider mb-1.5">
-                            STOCK POR ALMACÉN (referencia)
-                        </label>
-                        {selectedProducto && selectedProducto.stock_actual.length > 0 ? (
-                            <div className="bg-gray-50/80 border border-gray-200/80 rounded-xl p-3 max-h-40 overflow-y-auto">
-                                {selectedProducto.stock_actual.map((s) => (
-                                    <div
-                                        key={s.id_almacen}
-                                        className="flex justify-between py-1.5 border-b border-gray-200/50 last:border-0 text-xs"
-                                    >
-                                        <span className="text-brand-options">{s.almacen?.codigo} - {s.almacen?.nombre}</span>
-                                        <span className="font-bold text-brand-subtitle">{s.cantidad} u.</span>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="bg-gray-50/80 border border-gray-200/80 rounded-xl p-3 text-center text-xs text-brand-options">
-                                Seleccione un producto para ver stock por almacén
-                            </div>
-                        )}
-                    </div>
+                {/* BUSCADOR CON AUTOCOMPLETADO */}
+                <div className="relative mb-4" ref={dropdownRef}>
+                    <Input
+                        label="BUSCAR PRODUCTO"
+                        placeholder="Buscar"
+                        value={searchQuery}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setShowSuggestions(true);
+                            if (selectedProducto) {
+                                setSelectedProducto(null);
+                                setValue('id_producto', 0, { shouldValidate: true });
+                            }
+                        }}
+                        onFocus={() => setShowSuggestions(true)}
+                        icon={<Search className="w-4 h-4 text-brand-options" />}
+                        error={errors.id_producto?.message}
+                        variant="modal"
+                    />
+
+                    {/* Desplegable de sugerencias (Máximo 3 opciones) */}
+                    {showSuggestions && searchQuery.trim().length > 0 && (
+                        <div className="absolute z-50 w-full bg-white border border-stone-200 rounded-lg shadow-lg mt-1 overflow-hidden">
+                            {sugerencias.length > 0 ? (
+                                sugerencias.slice(0, 3).map((p) => {
+                                    const stockTotal = p.stock_actual.reduce((acc, curr) => acc + curr.cantidad, 0);
+
+                                    return (
+                                        <button
+                                            key={p.id_producto}
+                                            type="button"
+                                            className="w-full text-left px-4 py-2.5 hover:bg-stone-50 transition-colors flex items-center justify-between border-b last:border-b-0 border-stone-100"
+                                            onClick={() => handleSelectProducto(p)}
+                                        >
+                                            <div>
+                                                <span className="font-bold text-xs text-stone-800 block">
+                                                    {formatCode(p.codigo)}
+                                                </span>
+                                                <span className="text-xs text-stone-500 truncate max-w-sm block">
+                                                    {p.descripcion}
+                                                </span>
+                                            </div>
+                                            <span className="text-[10px] bg-stone-100 px-2 py-0.5 rounded font-medium text-stone-600">
+                                                Stock: {stockTotal} u.
+                                            </span>
+                                        </button>
+                                    );
+                                })
+                            ) : (
+                                <div className="p-3 text-xs text-stone-400 text-center">
+                                    No se encontraron productos coincidentes
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <Select
-                        label="ALMACÉN ORIGEN *"
+                        label="ALMACÉN ORIGEN"
                         error={errors.id_almacen_origen?.message}
                         disabled={loadingFilters}
                         {...register('id_almacen_origen', { valueAsNumber: true })}
+                        variant="modal"
                     >
-                        <option value="">Seleccione almacén origen</option>
+                        <option value="">Seleccionar</option>
                         {almacenes.map((a) => (
                             <option key={a.id_almacen} value={a.id_almacen}>
-                                {a.codigo} - {a.nombre}
+                                {a.codigo}
                             </option>
                         ))}
                     </Select>
 
-                    <Select
-                        label="ALMACÉN DESTINO *"
-                        error={errors.id_almacen_destino?.message}
-                        disabled={loadingFilters}
-                        {...register('id_almacen_destino', { valueAsNumber: true })}
-                    >
-                        <option value="">Seleccione almacén destino</option>
-                        {getAlmacenesDestino().map((a) => (
-                            <option key={a.id_almacen} value={a.id_almacen}>
-                                {a.codigo} - {a.nombre}
-                            </option>
-                        ))}
-                    </Select>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input
-                        label="CANTIDAD A TRANSFERIR *"
+                        label="CANTIDAD A TRANSFERIR"
                         type="number"
                         min="1"
                         placeholder="Ej: 50"
                         error={errors.cantidad?.message}
                         {...register('cantidad', { valueAsNumber: true })}
+                        variant="modal"
                     />
-                    {stockOrigen !== null && (
-                        <div className="flex items-end">
-                            <label className="block w-full">
-                                <span className="block text-xs font-bold text-brand-subtitle uppercase tracking-wider mb-1.5">
-                                    STOCK EN ORIGEN
-                                </span>
-                                <div className="bg-blue-50 border border-blue-200 rounded-xl px-3 py-2.5">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs text-blue-800">Disponible</span>
-                                        <span className="font-bold text-blue-800 text-lg">{stockOrigen} unidades</span>
-                                    </div>
-                                </div>
-                            </label>
-                        </div>
-                    )}
+
+                    <Select
+                        label="ALMACÉN DESTINO"
+                        error={errors.id_almacen_destino?.message}
+                        disabled={loadingFilters}
+                        {...register('id_almacen_destino', { valueAsNumber: true })}
+                        variant="modal"
+                    >
+                        <option value="">Seleccionar</option>
+                        {getAlmacenesDestino().map((a) => (
+                            <option key={a.id_almacen} value={a.id_almacen}>
+                                {a.codigo}
+                            </option>
+                        ))}
+                    </Select>
+
+
                 </div>
 
-                {idAlmacenOrigen && idProducto && stockOrigen !== null && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2">
-                        <ArrowRight className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                        <div className="text-xs text-amber-800">
-                            <span className="font-semibold">Validación: </span>
-                            El almacén de origen tiene {stockOrigen} unidades disponibles.
-                            {Number(watch('cantidad') || 0) > stockOrigen && ' ⚠️ Stock insuficiente para la cantidad solicitada.'}
+                <div className="space-y-1.5">
+                    {stockOrigen !== null && (
+                        <div className="flex flex-col">
+                            <span className="block text-[11px] font-bold text-brand-subtitle uppercase tracking-wider mb-1.5">
+                                STOCK EN ORIGEN
+                            </span>
+                            <div className="bg-blue-50 border border-blue-200 rounded-xl px-3 h-[46px] flex items-center justify-between">
+                                <span className="text-m text-blue-900 font-bold">DISPONIBLE</span>
+                                <span className="font-bold text-blue-900 text-base">{stockOrigen} UNIDADES</span>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+
+                    {idAlmacenOrigen && idProducto && stockOrigen !== null && (stockOrigen === 0 || Number(watch('cantidad') || 0) > stockOrigen) && (
+                        <p className="animate-in fade-in slide-in-from-top-1 duration-200 text-xs font-medium text-red-600 mt-1.5">
+                            * {stockOrigen === 0
+                                ? "El almacén de origen no cuenta con stock disponible."
+                                : `Stock insuficiente (${stockOrigen} unidades disponibles).`}
+                        </p>
+                    )}
+                </div>
 
                 <Input
                     label="OBSERVACIONES (opcional)"
@@ -263,6 +321,7 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                     maxLength={500}
                     error={errors.observaciones?.message}
                     {...register('observaciones')}
+                    variant="modal"
                 />
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">

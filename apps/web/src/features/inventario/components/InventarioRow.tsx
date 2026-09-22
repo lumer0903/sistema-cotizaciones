@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Edit2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
 import { getImageUrl, handleImageError } from '@/lib/imageUtils';
+import { formatCode, formatText } from '@/lib/formatters';
 
 interface InventarioRowProps {
   producto: ProductoInventario;
@@ -26,18 +27,18 @@ export function InventarioRow({ producto, onEditar, onEliminar, isFirst = false 
           } ${!isExpanded ? 'rounded-b-none' : ''}`}
       >
         {/* CÓDIGO */}
-        <div className="w-1/6 h-14 px-5 flex items-center justify-center text-neutral-700 text-base font-light">
-          {producto.codigo || 'RUF-FL'}
+        <div className="w-1/6 h-14 px-5 flex items-center justify-center text-neutral-700 text-base font-light font-mono">
+          {formatCode(producto.codigo || 'RUF-FL')}
         </div>
 
         {/* CATEGORÍA */}
-        <div className="w-1/4 h-14 px-5 flex items-center justify-center text-neutral-700 text-base font-light uppercase">
-          {producto.categoria?.nombre_categoria || 'ADORNO'}
+        <div className="w-1/4 h-14 px-5 flex items-center justify-center text-neutral-700 text-base font-light">
+          {formatText(producto.categoria?.nombre_categoria || 'ADORNO')}
         </div>
 
         {/* UBICACIÓN */}
-        <div className="w-1/4 h-14 px-5 flex items-center justify-center text-neutral-700 text-base font-light uppercase">
-          {ubicacionNombre}
+        <div className="w-1/4 h-14 px-5 flex items-center justify-center text-neutral-700 text-base font-light">
+          {formatText(ubicacionNombre)}
         </div>
 
         {/* STOCK */}
@@ -78,7 +79,6 @@ export function InventarioRow({ producto, onEditar, onEliminar, isFirst = false 
       {/* 2. PANEL DESPLEGABLE CON DETALLES Y FOTO (FIGMA MATCH) */}
       {isExpanded && (
         <div className="w-full px-6 sm:px-10 py-4 bg-neutral-50 border-l-2 border-r-2 border-b-2 border-gray-100 flex flex-wrap lg:flex-nowrap justify-between items-start gap-6 overflow-hidden transition-all">
-
           {/* FOTO DEL PRODUCTO */}
           <div className="w-32 h-36 flex shrink-0 justify-center items-center">
             <img
@@ -93,17 +93,17 @@ export function InventarioRow({ producto, onEditar, onEliminar, isFirst = false 
           <div className="flex-1 min-w-[200px] flex flex-col justify-start items-start gap-3">
             <div className="border-b border-gray-200 pb-1 w-full">
               <span className="block text-gray-400 text-xs font-semibold tracking-wide uppercase">CÓDIGO / TIPO</span>
-              <span className="text-neutral-700 text-sm font-light">{producto.codigo || 'RUF-FL'} - {producto.tipo_flor || 'Follaje'}</span>
+              <span className="text-neutral-700 text-sm font-light">{formatCode(producto.codigo || 'RUF-FL')} - {producto.tipo_flor || 'Follaje'}</span>
             </div>
 
             <div className="border-b border-gray-200 pb-1 w-full">
               <span className="block text-gray-400 text-xs font-semibold tracking-wide uppercase">DESCRIPCIÓN</span>
-              <span className="text-neutral-700 text-sm font-light">{producto.descripcion || 'Clavos con cabeza 3"x14'}</span>
+              <span className="text-neutral-700 text-sm font-light">{formatText(producto.descripcion || 'Sin descripción')}</span>
             </div>
 
             <div className="border-b border-gray-200 pb-1 w-full">
               <span className="block text-gray-400 text-xs font-semibold tracking-wide uppercase">CATEGORÍA</span>
-              <span className="text-neutral-700 text-sm font-light">{producto.categoria?.nombre_categoria || 'Adorno'}</span>
+              <span className="text-neutral-700 text-sm font-light">{formatText(producto.categoria?.nombre_categoria || 'Adorno')}</span>
             </div>
           </div>
 
@@ -111,7 +111,7 @@ export function InventarioRow({ producto, onEditar, onEliminar, isFirst = false 
           <div className="flex-1 min-w-[200px] flex flex-col justify-start items-start gap-3">
             <div className="border-b border-gray-200 pb-1 w-full">
               <span className="block text-gray-400 text-xs font-semibold tracking-wide uppercase">UBICACIÓN</span>
-              <span className="text-neutral-700 text-sm font-light">{ubicacionNombre}</span>
+              <span className="text-neutral-700 text-sm font-light">{formatText(ubicacionNombre)}</span>
             </div>
 
             <div className="border-b border-gray-200 pb-1 w-full">

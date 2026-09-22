@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Select } from './Select';
 
 interface PaginationProps {
     currentPage: number;
@@ -27,26 +28,30 @@ export const Pagination: React.FC<PaginationProps> = ({
     const startItem = totalItems === 0 ? 0 : (currentPage - 1) * limit + 1;
     const endItem = Math.min(currentPage * limit, totalItems);
 
+    const limitOptions = [
+        { label: '8', value: 8 },
+        { label: '16', value: 16 },
+        { label: '24', value: 24 },
+    ];
+
     return (
         <div className="px-5 py-3 bg-gray-50/80 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500">
             <div className="flex items-center gap-2">
                 <span>Mostrar</span>
-                <select
+                <Select
                     value={limit}
                     onChange={(e) => onLimitChange(Number(e.target.value))}
-                    className="h-8 border border-amber-400/80 rounded-lg px-2 bg-white text-xs font-bold text-zinc-700 focus:outline-none focus:border-amber-500"
-                >
-                    <option value={8}>8</option>
-                    <option value={16}>16</option>
-                    <option value={24}>24</option>
-                </select>
+                    options={limitOptions}
+                    sizeVariant="sm"
+                    className="w-auto"
+                />
                 <span>registros por página</span>
             </div>
 
             <div>
-                Mostrando <span className="font-bold text-zinc-800">{startItem}</span> a{' '}
-                <span className="font-bold text-zinc-800">{endItem}</span> de{' '}
-                <span className="font-bold text-zinc-800">{totalItems}</span> {itemLabel}
+                Mostrando <span className="font-bold text-brand-subtitle">{startItem}</span> a{' '}
+                <span className="font-bold text-brand-subtitle">{endItem}</span> de{' '}
+                <span className="font-bold text-brand-subtitle">{totalItems}</span> {itemLabel}
             </div>
 
             <div className="flex items-center gap-1">
@@ -65,9 +70,9 @@ export const Pagination: React.FC<PaginationProps> = ({
                         type="button"
                         onClick={() => onPageChange(numPage)}
                         className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors ${currentPage === numPage
-                            ? 'bg-amber-500 text-white'
+                            ? 'bg-brand-primary text-white'
                             : 'border border-gray-200 text-zinc-600 hover:bg-gray-100'
-                            }`}
+                        }`}
                     >
                         {numPage}
                     </button>

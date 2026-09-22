@@ -171,7 +171,7 @@ export default function CrearCotizacionPage() {
       {/* Encabezado */}
       <div className="flex justify-between items-center w-full px-1">
         <div className="flex items-center gap-2.5">
-          <FileText className="w-5 h-5 text-amber-500" />
+          <FileText className="w-5 h-5 text-brand-primary" />
           <span className="text-xl font-black text-zinc-700 tracking-tight">
             COT-190626
           </span>
@@ -223,7 +223,7 @@ export default function CrearCotizacionPage() {
               <Select
                 label="Tipo de Documento"
                 value={tipoDocumento}
-                onChange={(e) => setTipoDocumento(e.target.value)}
+                onChange={(e) => setTipoDocumento(String(e.target.value))}
                 options={[
                   { label: 'DNI', value: 'DNI' },
                   { label: 'CE', value: 'CE' },
@@ -251,7 +251,7 @@ export default function CrearCotizacionPage() {
               <Select
                 label="Tipo de pago"
                 value={tipoPago}
-                onChange={(e) => setTipoPago(e.target.value)}
+                onChange={(e) => setTipoPago(String(e.target.value))}
                 options={[
                   { label: 'Contado', value: 'CONTADO' },
                   { label: 'Crédito', value: 'CREDITO' },
@@ -272,9 +272,9 @@ export default function CrearCotizacionPage() {
                   placeholder="Escribe el código o nombre del producto (ej: RY-)..."
                   icon={
                     isLoadingProductos ? (
-                      <Loader2 className="size-4 animate-spin text-amber-500" />
+                      <Loader2 className="size-4 animate-spin text-brand-primary" />
                     ) : (
-                      <Search className="size-4 text-amber-500" />
+                      <Search className="size-4 text-brand-primary" />
                     )
                   }
                   value={searchQuery}
@@ -325,7 +325,7 @@ export default function CrearCotizacionPage() {
                           </div>
                           <button
                             type="button"
-                            className="bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-colors shrink-0"
+                            className="bg-brand-primary hover:bg-brand-hover text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-colors shrink-0"
                           >
                             Seleccionar
                           </button>
@@ -381,8 +381,8 @@ export default function CrearCotizacionPage() {
                             type="button"
                             onClick={() => setSelectedItemId(item.id)}
                             className={`p-1.5 rounded-lg border transition-colors ${selectedItemId === item.id
-                                ? 'border-amber-400 bg-amber-50 text-amber-600'
-                                : 'border-zinc-200 text-zinc-400 hover:text-amber-500'
+                                ? 'border-brand-modalFocus bg-brand-selection text-brand-primary'
+                                : 'border-zinc-200 text-zinc-400 hover:text-brand-primary'
                               }`}
                             title="Ver sugerencias"
                           >
@@ -428,7 +428,7 @@ export default function CrearCotizacionPage() {
               </div>
               <div className="flex justify-between text-base font-black pt-1 text-zinc-800">
                 <span>Total</span>
-                <span className="text-amber-600">S/ {total.toFixed(2)}</span>
+                <span className="text-brand-primary">S/ {total.toFixed(2)}</span>
               </div>
             </div>
 
@@ -448,7 +448,7 @@ export default function CrearCotizacionPage() {
 
             <button
               type="button"
-              className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold h-10 rounded-xl mt-2 transition-colors text-xs shadow-sm"
+              className="w-full bg-brand-primary hover:bg-brand-hover text-white font-bold h-10 rounded-xl mt-2 transition-colors text-xs shadow-sm"
             >
               Continuar
             </button>
@@ -460,7 +460,7 @@ export default function CrearCotizacionPage() {
 
             {!selectedItemId ? (
               <div className="text-center py-10 text-zinc-400 space-y-2">
-                <MessageSquare className="size-7 mx-auto text-amber-500 opacity-80" />
+                <MessageSquare className="size-7 mx-auto text-brand-primary opacity-80" />
                 <p className="text-xs font-medium">Haz clic en el icono de mensaje de un producto para ver sugerencias</p>
               </div>
             ) : null}

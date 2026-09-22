@@ -7,6 +7,15 @@ import { useRouter } from 'next/navigation';
 import { getCotizaciones } from '@/features/cotizaciones/api/cotizacionApi';
 import { CotizacionItem, EstadoCotizacion } from '@/features/cotizaciones/types/cotizacion';
 import { CotizacionesTable } from '@/features/cotizaciones/components/CotizacionesTable';
+import { Select } from '@/components/ui/Select';
+
+const ESTADO_OPTIONS = [
+  { label: 'Seleccionar', value: 'TODOS' },
+  { label: 'BORRADOR', value: 'BORRADOR' },
+  { label: 'ENVIADO', value: 'ENVIADO' },
+  { label: 'ACEPTADO', value: 'ACEPTADO' },
+  { label: 'RECHAZADO', value: 'RECHAZADO' },
+];
 
 export default function MisCotizacionesPage() {
   const router = useRouter();
@@ -137,23 +146,15 @@ export default function MisCotizacionesPage() {
           <label className="text-xs font-black tracking-wider text-amber-400 uppercase">
             ESTADO
           </label>
-          <div className="relative flex items-center">
-            <select
-              value={estadoFilter}
-              onChange={(e) => {
-                setEstadoFilter(e.target.value as EstadoCotizacion | 'TODOS');
-                setCurrentPage(1);
-              }}
-              className="w-full h-10 px-3.5 pr-9 rounded-xl border border-amber-300 focus:border-amber-400 focus:ring-2 focus:ring-amber-200 outline-none text-neutral-700 text-sm appearance-none bg-white cursor-pointer transition-all"
-            >
-              <option value="TODOS">Seleccionar</option>
-              <option value="BORRADOR">BORRADOR</option>
-              <option value="ENVIADO">ENVIADO</option>
-              <option value="ACEPTADO">ACEPTADO</option>
-              <option value="RECHAZADO">RECHAZADO</option>
-            </select>
-            <ChevronDown className="w-5 h-5 text-amber-400 absolute right-3 pointer-events-none" />
-          </div>
+          <Select
+            value={estadoFilter}
+            onChange={(e) => {
+              setEstadoFilter(String(e.target.value) as EstadoCotizacion | 'TODOS');
+              setCurrentPage(1);
+            }}
+            options={ESTADO_OPTIONS}
+            className="w-full"
+          />
         </div>
       </div>
 

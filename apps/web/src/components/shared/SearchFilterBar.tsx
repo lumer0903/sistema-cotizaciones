@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Search, List, Grid3x3 } from 'lucide-react'
+import { Select } from '@/components/ui/Select'
 
 export interface SearchFilterBarProps {
   onSearch: (query: string) => void
@@ -29,14 +30,14 @@ const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
     onSearch(value)
   }
 
-  const handlePriceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value as 'all' | 'normal' | 'distribuidor'
+  const handlePriceChange = (e: { target: { value: string | number } }) => {
+    const value = String(e.target.value) as 'all' | 'normal' | 'distribuidor';
     setPriceType(value)
     onPriceTypeChange(value)
   }
 
-  const handleStockChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value as 'all' | 'alto' | 'bajo' | 'agotado'
+  const handleStockChange = (e: { target: { value: string | number } }) => {
+    const value = String(e.target.value) as 'all' | 'alto' | 'bajo' | 'agotado'
     setStockLevel(value)
     onStockLevelChange(value)
   }
@@ -45,6 +46,19 @@ const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
     setCurrentView(view)
     onViewChange(view)
   }
+
+  const priceTypeOptions = [
+    { label: 'Todos', value: 'all' },
+    { label: 'Normal', value: 'normal' },
+    { label: 'Distribuidor', value: 'distribuidor' },
+  ]
+
+  const stockLevelOptions = [
+    { label: 'Todos', value: 'all' },
+    { label: 'Alto', value: 'alto' },
+    { label: 'Bajo', value: 'bajo' },
+    { label: 'Agotado', value: 'agotado' },
+  ]
 
   return (
     <div
@@ -67,28 +81,25 @@ const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
       {/* SECTION 2: TIPO DE PRECIO (w-44) */}
       <div className="flex flex-col gap-2 w-44">
         <label className="text-yellow-500 text-xs font-black tracking-wide">TIPO DE PRECIO</label>
-        <select
+        <Select
+          value={priceType}
           onChange={handlePriceChange}
-          className="outline outline-1 outline-yellow-500 rounded-lg px-3.5 py-2.5 h-10 flex justify-between items-center text-neutral-500"
-        >
-          <option value="all">Todos</option>
-          <option value="normal">Normal</option>
-          <option value="distribuidor">Distribuidor</option>
-        </select>
+          options={priceTypeOptions}
+          sizeVariant="md"
+          className="w-full"
+        />
       </div>
 
       {/* SECTION 3: STOCK (w-40) */}
       <div className="flex flex-col gap-2 w-40">
         <label className="text-yellow-500 text-xs font-black tracking-wide">STOCK</label>
-        <select
+        <Select
+          value={stockLevel}
           onChange={handleStockChange}
-          className="outline outline-1 outline-yellow-500 rounded-lg px-3.5 py-2.5 h-10 flex justify-between items-center text-neutral-500"
-        >
-          <option value="all">Todos</option>
-          <option value="alto">Alto</option>
-          <option value="bajo">Bajo</option>
-          <option value="agotado">Agotado</option>
-        </select>
+          options={stockLevelOptions}
+          sizeVariant="md"
+          className="w-full"
+        />
       </div>
 
       {/* SECTION 4: VISTA (w-20, flex con gap-1.5) */}
@@ -96,7 +107,7 @@ const SearchFilterBar: React.FC<SearchFilterBarProps> = ({
         {/* Botón List View */}
         <button
           onClick={() => handleViewChange('list')}
-          className={`w-10 h-10 rounded-lg flex items-center justify-center cursor-pointer transition-colors ${currentView === 'list' ? 'bg-white text-yellow-500 outline outline-1 outline-yellow-500' : 'bg-white text-neutral-400 hover:bg-yellow-50'}}`}
+          className={`w-10 h-10 rounded-lg flex items-center justify-center cursor-pointer transition-colors ${currentView === 'list' ? 'bg-white text-yellow-500 outline outline-1 outline-yellow-500' : 'bg-white text-neutral-400 hover:bg-yellow-50'}`}
         >
           <List className="w-5 h-5" />
         </button>

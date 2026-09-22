@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowUpRight, ArrowDownLeft, RefreshCw, Calendar, Filter, Download, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { ArrowUpRight, ArrowDownLeft, RefreshCw, Calendar, Download, ChevronLeft, ChevronRight, Image as ImageIcon, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import {
     Modal,
@@ -17,9 +17,10 @@ import {
     TableCell,
 } from '@/components/ui';
 import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
-import { inventarioApi, KardexResponse, PaginatedKardexResponse } from '../api/inventario.api';
+import { inventarioApi, KardexResponse } from '../api/inventario.api';
 import { apiClient } from '@/lib/apiClient';
 import { getImageUrl, handleImageError } from '@/lib/imageUtils';
+import { formatCode, formatText } from '@/lib/formatters';
 
 interface KardexModalProps {
     open: boolean;
@@ -44,9 +45,19 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
     const [productos, setProductos] = useState<ProductoInventario[]>([]);
     const [loadingProductos, setLoadingProductos] = useState(false);
 
+    // Estado para el buscador con autocompletado (3 opciones)
+    const [searchQuery, setSearchQuery] = useState('');
+    const [showSuggestions, setShowSuggestions] = useState(false);
+
     useEffect(() => {
         setSelectedProducto(producto);
-        if (open && !producto) {
+        if (producto) {
+            setSearchQuery(formatCode(producto.codigo));
+        } else {
+            setSearchQuery('');
+        }
+
+        if (open && !producto && productos.length === 0) {
             const fetchProds = async () => {
                 setLoadingProductos(true);
                 try {
@@ -61,6 +72,27 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
             fetchProds();
         }
     }, [open, producto]);
+
+    // Filtrar máximo 3 sugerencias coincidente al escribir
+    const sugerencias = useMemo(() => {
+        if (!searchQuery.trim()) return [];
+        const query = searchQuery.toLowerCase();
+        return productos
+            .filter((p) =>
+                p.codigo.toLowerCase().includes(query) ||
+                (p.descripcion && p.descripcion.toLowerCase().includes(query))
+            )
+            .slice(0, 3);
+    }, [productos, searchQuery]);
+
+    const handleSelectProducto = (prod: ProductoInventario) => {
+        setSelectedProducto(prod);
+        setSearchQuery(formatCode(prod.codigo));
+        setShowSuggestions(false);
+        setMovimientos([]);
+        setTotal(0);
+        setPage(1);
+    };
 
     const fetchKardex = useCallback(async (pageNum: number = 1) => {
         if (!selectedProducto) return;
@@ -98,7 +130,7 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `kardex-${selectedProducto.codigo}-${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `kardex-${formatCode(selectedProducto.codigo)}-${new Date().toISOString().split('T')[0]}.csv`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -172,115 +204,153 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
         <Modal
             open={open}
             onClose={onClose}
-            title={selectedProducto ? `Kárdex de Producto: ${selectedProducto.codigo}` : 'Kárdex Global'}
+            title={selectedProducto ? `Kárdex de Producto: ${formatCode(selectedProducto.codigo)}` : 'Kárdex Global'}
             maxWidth="xl"
         >
             <div className="space-y-5">
-                {!producto && (
-                    <div className="mb-4">
-                        <Select
-                            label="SELECCIONAR PRODUCTO *"
-                            value={selectedProducto?.id_producto?.toString() || ''}
-                            onChange={(e) => {
-                                const prod = productos.find(p => p.id_producto.toString() === e.target.value);
-                                setSelectedProducto(prod || null);
-                                setMovimientos([]);
-                                setTotal(0);
-                            }}
-                            disabled={loadingProductos}
-                        >
-                            <option value="">Seleccione un producto</option>
-                            {productos.map((p) => (
-                                <option key={p.id_producto} value={p.id_producto}>
-                                    {p.codigo} - {p.descripcion} (Stock: {p.stock_total ?? p.stock_actual?.[0]?.cantidad ?? 0})
-                                </option>
-                            ))}
-                        </Select>
-                    </div>
-                )}
-                
-                {selectedProducto && (
-                    <>
-                        {/* ENCABEZADO RESUMEN DEL PRODUCTO */}
-                        <div className="bg-brand-selection/40 border border-brand-primary/20 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              {/* Miniatura del producto */}
-                              <div className="w-14 h-14 shrink-0 bg-stone-100 rounded-lg border border-stone-200 flex items-center justify-center overflow-hidden">
-                                {selectedProducto.foto_url ? (
-                                  <img
-                                    src={getImageUrl(selectedProducto.foto_url, '115')}
-                                    alt={selectedProducto.descripcion}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => handleImageError(e, '115')}
-                                  />
-                                ) : (
-                                  <ImageIcon className="w-6 h-6 text-stone-300" />
-                                )}
-                              </div>
-                              <div>
-                                <h4 className="font-bold text-brand-subtitle text-base">{selectedProducto.descripcion}</h4>
-                                <p className="text-xs text-brand-options mt-0.5">
-                                    Categoría: <span className="font-medium text-brand-subtitle">{selectedProducto.categoria?.nombre_categoria || 'Sin categoría'}</span> |
-                                    Tipo: <span className="font-medium text-brand-subtitle">{selectedProducto.tipo_flor || 'N/A'}</span>
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3 border-t md:border-t-0 md:border-l border-brand-primary/20 pt-2 md:pt-0 md:pl-4">
-                                <div className="text-center">
-                                    <span className="block text-[10px] font-bold text-brand-options uppercase">Stock Actual</span>
-                                    <span className="text-lg font-black text-brand-subtitle">{selectedProducto.stock_total ?? selectedProducto.stock_actual?.[0]?.cantidad ?? 0} u.</span>
+                {/* BUSCADOR CON AUTOCOMPLETADO (MAX 3 OPCIONES) */}
+                <div className="relative mb-4">
+                    <Input
+                        label="SELECCIONAR O BUSCAR PRODUCTO POR CÓDIGO"
+                        placeholder="Escriba el código del producto..."
+                        value={searchQuery}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setShowSuggestions(true);
+                            if (selectedProducto) setSelectedProducto(null);
+                        }}
+                        onFocus={() => setShowSuggestions(true)}
+                        icon={<Search className="w-4 h-4 text-brand-options" />}
+                        variant="modal"
+                    />
+
+                    {/* Desplegable de 3 sugerencias */}
+                    {showSuggestions && searchQuery.trim().length > 0 && (
+                        <div className="absolute z-50 w-full bg-white border border-stone-200 rounded-lg shadow-lg mt-1 overflow-hidden">
+                            {sugerencias.length > 0 ? (
+                                sugerencias.map((p) => (
+                                    <button
+                                        key={p.id_producto}
+                                        type="button"
+                                        className="w-full text-left px-4 py-2.5 hover:bg-stone-50 transition-colors flex items-center justify-between border-b last:border-b-0 border-stone-100"
+                                        onClick={() => handleSelectProducto(p)}
+                                    >
+                                        <div>
+                                            <span className="font-bold text-xs text-stone-800 block">
+                                                {formatCode(p.codigo)}
+                                            </span>
+                                            <span className="text-xs text-stone-500 truncate max-w-sm block">
+                                                {formatText(p.descripcion)}
+                                            </span>
+                                        </div>
+                                        <span className="text-[10px] bg-stone-100 px-2 py-0.5 rounded font-medium text-stone-600">
+                                            Stock: {p.stock_total ?? p.stock_actual?.[0]?.cantidad ?? 0} u.
+                                        </span>
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="p-3 text-xs text-stone-400 text-center">
+                                    No se encontraron productos coincidentes
                                 </div>
-                                <div className="text-center">
-                                    <span className="block text-[10px] font-bold text-brand-options uppercase">Stock Mínimo</span>
-                                    <span className="text-sm font-bold text-brand-options">{selectedProducto.stock_minimo} u.</span>
-                                </div>
-                            </div>
+                            )}
                         </div>
+                    )}
+                </div>
 
                 {/* BARRA DE FILTROS DE MOVIMIENTOS */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end bg-gray-50/80 p-3 rounded-xl border border-gray-200/80">
                     <Select
                         label="Tipo Movimiento"
                         value={filtroTipo}
-                        onChange={(e) => { setFiltroTipo(e.target.value); fetchKardex(1); }}
+                        onChange={(e) => { setFiltroTipo(String(e.target.value)); fetchKardex(1); }}
+                        disabled={!selectedProducto}
                         options={[
-                            { label: 'Todos los tipos', value: 'TODOS' },
+                            { label: 'Todos', value: 'TODOS' },
                             { label: 'Entradas', value: 'entrada' },
                             { label: 'Salidas', value: 'salida' },
                             { label: 'Ajustes', value: 'ajuste' },
                             { label: 'Transferencias', value: 'transferencia' },
                         ]}
+                        variant="modal"
                     />
                     <Input
-                        label="Fecha Desde"
+                        label="Inicio"
                         type="date"
                         value={fechaInicio}
                         onChange={(e) => { setFechaInicio(e.target.value); fetchKardex(1); }}
+                        disabled={!selectedProducto}
                         icon={<Calendar className="w-4 h-4 text-brand-options" />}
+                        variant="modal"
                     />
                     <Input
-                        label="Fecha Hasta"
+                        label="Hasta"
                         type="date"
                         value={fechaFin}
                         onChange={(e) => { setFechaFin(e.target.value); fetchKardex(1); }}
+                        disabled={!selectedProducto}
                         icon={<Calendar className="w-4 h-4 text-brand-options" />}
+                        variant="modal"
                     />
                     <Select
-                        label="Almacén"
+                        label="Ubicación"
                         value={filtroAlmacen}
-                        onChange={(e) => { setFiltroAlmacen(e.target.value); fetchKardex(1); }}
+                        onChange={(e) => { setFiltroAlmacen(String(e.target.value)); fetchKardex(1); }}
+                        disabled={!selectedProducto}
                         options={[
                             { label: 'Todos los almacenes', value: '' },
                             ...(selectedProducto?.stock_actual?.map((s) => ({
-                                label: `${s.almacen?.codigo} - ${s.almacen?.nombre}`,
+                                label: `${s.almacen?.codigo} - ${formatText(s.almacen?.nombre || '')}`,
                                 value: String(s.id_almacen),
                             })) || []),
                         ]}
+                        variant="modal"
                     />
                 </div>
 
+                {/* ENCABEZADO RESUMEN DEL PRODUCTO */}
+                {selectedProducto && (
+                    <div className="bg-brand-selection/40 border border-yellow-600/40 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 animate-in fade-in duration-200">
+                        <div className="flex items-center gap-3">
+                            <div className="w-14 h-14 shrink-0 bg-stone-100 rounded-lg border border-stone-200 flex items-center justify-center overflow-hidden">
+                                {selectedProducto.foto_url ? (
+                                    <img
+                                        src={getImageUrl(selectedProducto.foto_url, '115')}
+                                        alt={selectedProducto.descripcion}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => handleImageError(e, '115')}
+                                    />
+                                ) : (
+                                    <ImageIcon className="w-6 h-6 text-stone-300" />
+                                )}
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-yellow-500 text-xl text-outline">
+                                    {formatText(selectedProducto.codigo)}
+                                </h4>
+                                <h4 className="font-medium text-brand-text text-gray-700 text-sm">
+                                    {formatText(selectedProducto.descripcion)}
+                                </h4>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 border-t md:border-t-0 md:border-l border-yellow-600/40 pt-2 md:pt-0 md:pl-4">
+                            <div className="text-center">
+                                <span className="block text-[10px] font-bold text-gray-700 uppercase">Stock Actual</span>
+                                <span className="text-lg font-bold text-emerald-600 text-outline">
+                                    {selectedProducto.stock_total ?? selectedProducto.stock_actual?.[0]?.cantidad ?? 0} u.
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* TABLA DE MOVIMIENTOS */}
-                {loading ? (
+                {!selectedProducto ? (
+                    <div className="p-12 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                        <p className="text-xs font-medium text-stone-400">
+                            Selecciona un producto para cargar el historial de movimientos.
+                        </p>
+                    </div>
+                ) : loading ? (
                     <div className="p-8 text-center text-brand-options text-sm animate-pulse">
                         <RefreshCw className="w-6 h-6 mx-auto mb-2 animate-spin text-brand-primary" />
                         Cargando historial de movimientos del Kárdex...
@@ -299,9 +369,9 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
                                     <TableHead>FECHA</TableHead>
                                     <TableHead>TIPO</TableHead>
                                     <TableHead>ALMACÉN</TableHead>
-                                    <TableHead>ORIGEN / REF.</TableHead>
+                                    <TableHead>MOTIVO</TableHead>
                                     <TableHead className="text-right">CANTIDAD</TableHead>
-                                    <TableHead className="text-right">STOCK RESULTANTE</TableHead>
+                                    <TableHead className="text-right">STOCK</TableHead>
                                     <TableHead>USUARIO</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -312,12 +382,11 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
                                         <TableCell>{renderBadgeTipo(mov.tipo)}</TableCell>
                                         <TableCell className="text-xs text-brand-options">{mov.usuario || 'Sistema'}</TableCell>
                                         <TableCell className="font-medium text-xs">{renderOrigen(mov.origen, mov.tipo, mov.referencia)}</TableCell>
-                                        <TableCell className={`text-right font-bold ${
-                                            mov.tipo === 'entrada' ? 'text-emerald-600' :
-                                            mov.tipo === 'salida' ? 'text-rose-600' :
-                                            mov.tipo === 'ajuste' ? 'text-amber-600' :
-                                            'text-blue-600'
-                                        }`}>
+                                        <TableCell className={`text-right font-bold ${mov.tipo === 'entrada' ? 'text-emerald-600' :
+                                                mov.tipo === 'salida' ? 'text-rose-600' :
+                                                    mov.tipo === 'ajuste' ? 'text-amber-600' :
+                                                        'text-blue-600'
+                                            }`}>
                                             {mov.tipo === 'entrada' ? `+${mov.cantidad}` : mov.tipo === 'salida' ? `-${mov.cantidad}` : mov.cantidad}
                                         </TableCell>
                                         <TableCell className="text-right font-bold text-brand-subtitle">
@@ -380,21 +449,19 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
                         )}
                     </>
                 )}
-            </>
-        )}
 
-        {/* PIE Y BOTONES */}
+                {/* PIE Y BOTONES */}
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                     <Button
-                        variant="outline"
+                        variant="yellowOutline"
                         onClick={handleExportCSV}
-                        disabled={exportando || loading || movimientos.length === 0}
+                        disabled={!selectedProducto || exportando || loading || movimientos.length === 0}
                         loading={exportando}
                     >
                         <Download className="w-4 h-4 mr-1" />
                         Exportar CSV
                     </Button>
-                    <Button variant="outline" onClick={onClose}>
+                    <Button variant="ghost" onClick={onClose}>
                         Cerrar
                     </Button>
                 </div>

@@ -37,7 +37,7 @@ export function ColorTags({
 
   if (validColors.length === 0) {
     return (
-      <span className={`text-xs text-gray-400 italic ${className}`}>
+      <span className={`text-xs text-brand-options italic ${className}`}>
         Sin colores
       </span>
     );
@@ -48,13 +48,13 @@ export function ColorTags({
       {visibleColors.map((color) => (
         <span
           key={color}
-          className={`inline-flex items-center ${sizeClasses[size]} bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-medium`}
+          className={`inline-flex items-center ${sizeClasses[size]} bg-brand-selection text-brand-subtitle border border-brand-primary/40 rounded-full font-medium`}
         >
           {color}
           {interactive && onRemove && (
             <button
               onClick={() => onRemove(color)}
-              className={`ml-1 p-0.5 rounded-full hover:bg-amber-200 transition-colors text-amber-500 hover:text-amber-700 ${iconSize[size]}`}
+              className={`ml-1 p-0.5 rounded-full hover:bg-brand-selection transition-colors text-brand-primary hover:text-brand-hover ${iconSize[size]}`}
               aria-label={`Eliminar ${color}`}
             >
               <X className={iconSize[size]} />
@@ -63,7 +63,7 @@ export function ColorTags({
         </span>
       ))}
       {showCount && remainingCount > 0 && (
-        <span className={`inline-flex items-center justify-center ${sizeClasses[size]} bg-gray-100 text-gray-600 border border-gray-200 rounded-full font-medium`}>
+        <span className={`inline-flex items-center justify-center ${sizeClasses[size]} bg-gray-100 text-brand-options border border-gray-200 rounded-full font-medium`}>
           +{remainingCount}
         </span>
       )}

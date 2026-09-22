@@ -7,6 +7,7 @@ export interface ModalProps {
     open: boolean;
     onClose: () => void;
     title?: string;
+    headerExtra?: ReactNode; // <-- Nueva variable/prop para contenido al lado del título
     children: ReactNode;
     maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
 }
@@ -15,6 +16,7 @@ export const Modal = ({
     open,
     onClose,
     title,
+    headerExtra,
     children,
     maxWidth = 'md',
 }: ModalProps) => {
@@ -33,7 +35,7 @@ export const Modal = ({
 
     const maxWidthClasses = {
         sm: 'max-w-sm',
-        md: 'max-w-[500px]',
+        md: 'max-w-[600px]',
         lg: 'max-w-2xl',
         xl: 'max-w-4xl',
     };
@@ -51,11 +53,16 @@ export const Modal = ({
                 className={`w-full ${maxWidthClasses[maxWidth]} bg-white rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]`}
                 onClick={(e) => e.stopPropagation()}
             >
-                {title && (
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
-                        <h3 className="text-base font-bold text-brand-subtitle">
-                            {title}
-                        </h3>
+                {(title || headerExtra) && (
+                    <div className="flex items-center justify-between px-6 py-2 border-b border-gray-100 flex-shrink-0">
+                        <div className="flex items-center gap-2">
+                            {title && (
+                                <h3 className="text-base font-bold text-brand-subtitle">
+                                    {title}
+                                </h3>
+                            )}
+                            {headerExtra}
+                        </div>
                         <button
                             onClick={onClose}
                             className="p-1.5 rounded-lg text-brand-options hover:text-brand-subtitle hover:bg-gray-100 transition-colors"

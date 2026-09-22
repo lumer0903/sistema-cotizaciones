@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
 import { inventarioApi, AlertaStockResponse } from '../api/inventario.api';
 import { Modal, Button, Badge, Select, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
+import { formatCode, formatText } from '@/lib/formatters';
 
 interface AlertasStockTableProps {
     open: boolean;
@@ -96,120 +97,121 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
                     Ventas
                 </button>
             </div>
-            
-            {activeTab === 'inventario' && (
-            <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-brand-options uppercase">Filtrar:</span>
-                        <Select
-                            value={estadoFiltro}
-                            onChange={(e) => setEstadoFiltro(e.target.value as 'activa' | 'resuelta' | 'todas')}
-                            options={[
-                                { label: 'Activas', value: 'activa' },
-                                { label: 'Resueltas', value: 'resuelta' },
-                                { label: 'Todas', value: 'todas' },
-                            ]}
-                            className="w-40"
-                        />
-                    </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={fetchAlertas}
-                        disabled={loading}
-                        className="gap-1.5"
-                    >
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                        Actualizar
-                    </Button>
-                </div>
 
-                {loading ? (
-                    <div className="p-8 text-center text-brand-options text-sm animate-pulse">
-                        <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-brand-primary" />
-                        Cargando alertas...
+            {activeTab === 'inventario' && (
+                <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-brand-options uppercase">Filtrar:</span>
+                            <Select
+                                value={estadoFiltro}
+                                onChange={(e) => setEstadoFiltro(e.target.value as 'activa' | 'resuelta' | 'todas')}
+                                options={[
+                                    { label: 'Activas', value: 'activa' },
+                                    { label: 'Resueltas', value: 'resuelta' },
+                                    { label: 'Todas', value: 'todas' },
+                                ]}
+                                className="w-40"
+                                variant="modal"
+                            />
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={fetchAlertas}
+                            disabled={loading}
+                            className="gap-1.5"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                            Actualizar
+                        </Button>
                     </div>
-                ) : alertas.length === 0 ? (
-                    <div className="p-8 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-300">
-                        <AlertCircle className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-                        <p className="text-xs font-semibold text-brand-options">
-                            {estadoFiltro === 'activa' ? 'No hay alertas activas' : 'No hay alertas en este filtro'}
-                        </p>
-                    </div>
-                ) : (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>PRODUCTO</TableHead>
-                                <TableHead>ALMACÉN</TableHead>
-                                <TableHead className="text-center">STOCK ACTUAL</TableHead>
-                                <TableHead className="text-center">STOCK MÍNIMO</TableHead>
-                                <TableHead className="text-center">ESTADO</TableHead>
-                                <TableHead>DETECTADA</TableHead>
-                                <TableHead className="text-right">ACCIÓN</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {alertas.map((alerta) => (
-                                <TableRow key={alerta.id_alerta}>
-                                    <TableCell className="font-medium">
-                                        {alerta.producto?.codigo} - {alerta.producto?.descripcion}
-                                    </TableCell>
-                                    <TableCell className="text-xs text-brand-options">
-                                        {alerta.almacen?.codigo} - {alerta.almacen?.nombre}
-                                    </TableCell>
-                                    <TableCell className="text-center font-bold text-rose-600">
-                                        {alerta.stock_actual} u.
-                                    </TableCell>
-                                    <TableCell className="text-center font-bold text-brand-options">
-                                        {alerta.stock_minimo} u.
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        {renderEstadoBadge(alerta.estado)}
-                                    </TableCell>
-                                    <TableCell className="text-xs text-brand-options">
-                                        {new Date(alerta.created_at).toLocaleString('es-PE')}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {alerta.estado === 'activa' && (
-                                            <Button
-                                                variant="primary"
-                                                size="sm"
-                                                onClick={() => handleReconocer(alerta.id_alerta)}
-                                                disabled={reconociendoId === alerta.id_alerta}
-                                                className="gap-1.5"
-                                            >
-                                                {reconociendoId === alerta.id_alerta ? (
-                                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                                ) : (
-                                                    <>
-                                                        <CheckCircle2 className="w-3 h-3" />
-                                                        Reconocer
-                                                    </>
-                                                )}
-                                            </Button>
-                                        )}
-                                        {alerta.estado === 'resuelta' && alerta.reconocida_at && (
-                                            <span className="text-xs text-emerald-600 font-medium">
-                                                {new Date(alerta.reconocida_at).toLocaleString('es-PE')}
-                                            </span>
-                                        )}
-                                    </TableCell>
+
+                    {loading ? (
+                        <div className="p-8 text-center text-brand-options text-sm animate-pulse">
+                            <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-brand-primary" />
+                            Cargando alertas...
+                        </div>
+                    ) : alertas.length === 0 ? (
+                        <div className="p-8 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-300">
+                            <AlertCircle className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                            <p className="text-xs font-semibold text-brand-options">
+                                {estadoFiltro === 'activa' ? 'No hay alertas activas' : 'No hay alertas en este filtro'}
+                            </p>
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>PRODUCTO</TableHead>
+                                    <TableHead>ALMACÉN</TableHead>
+                                    <TableHead className="text-center">STOCK ACTUAL</TableHead>
+                                    <TableHead className="text-center">STOCK MÍNIMO</TableHead>
+                                    <TableHead className="text-center">ESTADO</TableHead>
+                                    <TableHead>DETECTADA</TableHead>
+                                    <TableHead className="text-right">ACCIÓN</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                )}
-            </div>
+                            </TableHeader>
+                            <TableBody>
+                                {alertas.map((alerta) => (
+                                    <TableRow key={alerta.id_alerta}>
+                                        <TableCell className="font-medium">
+                                            {formatCode(alerta.producto?.codigo || '')} - {formatText(alerta.producto?.descripcion || '')}
+                                        </TableCell>
+                                        <TableCell className="text-xs text-brand-options">
+                                            {alerta.almacen?.codigo} - {formatText(alerta.almacen?.nombre || '')}
+                                        </TableCell>
+                                        <TableCell className="text-center font-bold text-rose-600">
+                                            {alerta.stock_actual} u.
+                                        </TableCell>
+                                        <TableCell className="text-center font-bold text-brand-options">
+                                            {alerta.stock_minimo} u.
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            {renderEstadoBadge(alerta.estado)}
+                                        </TableCell>
+                                        <TableCell className="text-xs text-brand-options">
+                                            {new Date(alerta.created_at).toLocaleString('es-PE')}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {alerta.estado === 'activa' && (
+                                                <Button
+                                                    variant="primary"
+                                                    size="sm"
+                                                    onClick={() => handleReconocer(alerta.id_alerta)}
+                                                    disabled={reconociendoId === alerta.id_alerta}
+                                                    className="gap-1.5"
+                                                >
+                                                    {reconociendoId === alerta.id_alerta ? (
+                                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                                    ) : (
+                                                        <>
+                                                            <CheckCircle2 className="w-3 h-3" />
+                                                            Reconocer
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            )}
+                                            {alerta.estado === 'resuelta' && alerta.reconocida_at && (
+                                                <span className="text-xs text-emerald-600 font-medium">
+                                                    {new Date(alerta.reconocida_at).toLocaleString('es-PE')}
+                                                </span>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
+                </div>
             )}
-            
+
             {activeTab === 'cobranzas' && (
                 <div className="p-8 text-center text-gray-400">
                     No hay alertas de cobranzas
                 </div>
             )}
-            
+
             {activeTab === 'ventas' && (
                 <div className="p-8 text-center text-gray-400">
                     No hay alertas de ventas

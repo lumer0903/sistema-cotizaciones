@@ -4,6 +4,23 @@ import { Settings, User, Bell, Shield, Database, Palette, Key, Globe, Mail, Truc
 import { useAuth } from '@/lib/authProvider';
 import { useEffect, useState } from 'react';
 import { Configuracion as ConfigType } from '@/types/configuracion';
+import { Select } from '@/components/ui/Select';
+
+const MONEDA_OPTIONS = [
+  { label: 'PEN - Soles', value: 'PEN' },
+  { label: 'USD - Dólares', value: 'USD' },
+];
+
+const TEMA_OPTIONS = [
+  { label: 'Sistema', value: 'sistema' },
+  { label: 'Claro', value: 'claro' },
+  { label: 'Oscuro', value: 'oscuro' },
+];
+
+const IDIOMA_OPTIONS = [
+  { label: 'Español', value: 'es' },
+  { label: 'English', value: 'en' },
+];
 
 interface Configuracion {
   empresa_nombre: string;
@@ -192,17 +209,15 @@ export default function ConfiguracionPage() {
             <div className="max-w-3xl space-y-6">
               <h2 className="text-lg font-semibold text-gray-900">Configuración de Documentos</h2>
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
-                  <select
-                    value={config.moneda}
-                    onChange={(e) => handleChange('moneda', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  >
-                    <option value="PEN">PEN - Soles</option>
-                    <option value="USD">USD - Dólares</option>
-                  </select>
-                </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+  <Select
+    value={config.moneda}
+    onChange={(e) => handleChange('moneda', String(e.target.value))}
+    options={MONEDA_OPTIONS}
+    className="w-full"
+  />
+</div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">IGV (%)</label>
                   <input
@@ -354,29 +369,24 @@ export default function ConfiguracionPage() {
             <div className="max-w-3xl space-y-6">
               <h2 className="text-lg font-semibold text-gray-900">Configuración del Sistema</h2>
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tema</label>
-                  <select
-                    value={config.tema}
-                    onChange={(e) => handleChange('tema', e.target.value as 'claro' | 'oscuro' | 'sistema')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  >
-                    <option value="sistema">Sistema</option>
-                    <option value="claro">Claro</option>
-                    <option value="oscuro">Oscuro</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Idioma</label>
-                  <select
-                    value={config.idioma}
-                    onChange={(e) => handleChange('idioma', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  >
-                    <option value="es">Español</option>
-                    <option value="en">English</option>
-                  </select>
-                </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Tema</label>
+  <Select
+    value={config.tema}
+    onChange={(e) => handleChange('tema', String(e.target.value) as 'claro' | 'oscuro' | 'sistema')}
+    options={TEMA_OPTIONS}
+    className="w-full"
+  />
+</div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Idioma</label>
+  <Select
+    value={config.idioma}
+    onChange={(e) => handleChange('idioma', String(e.target.value))}
+    options={IDIOMA_OPTIONS}
+    className="w-full"
+  />
+</div>
                 <div>
                   <label className="flex items-center gap-2">
                     <input

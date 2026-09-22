@@ -1,8 +1,8 @@
-'use client';
-
 import React from 'react';
 import { History } from 'lucide-react';
 import { ProductoConsulta } from '../types/precio';
+import { getImageUrl, handleImageError } from '@/lib/imageUtils';
+import { formatPrice, formatCode } from '@/lib/formatters';
 
 interface PriceCardProps {
     producto: ProductoConsulta;
@@ -16,21 +16,23 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
     return (
         <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
             {/* Imagen & Botón Historial */}
-            <div className="w-full h-28 bg-amber-500/10 rounded-xl relative flex items-center justify-center overflow-hidden">
+            <div className="w-full h-28 bg-brand-primary/10 rounded-xl relative flex items-center justify-center overflow-hidden">
                 {producto.imagenUrl ? (
                     <img
                         src={producto.imagenUrl}
                         alt={producto.descripcion}
-                        className="w-full h-full object-contain p-2"
+                        className="w-full h-full object-cover object-center"
+                        onError={(e) => handleImageError(e, '200')}
                     />
                 ) : (
-                    <div className="text-amber-500/50 font-bold text-xs uppercase tracking-wider">Sin imagen</div>
+                    <div className="text-brand-primary/50 font-bold text-xs uppercase tracking-wider">Sin imagen</div>
                 )}
 
                 <button
+                    type="button"
                     onClick={() => onVerHistorial?.(producto.id)}
                     title="Ver historial de precios"
-                    className="absolute top-2 right-2 p-1.5 text-amber-600 hover:text-amber-700 bg-white/80 rounded-lg backdrop-blur-sm transition-colors"
+                    className="absolute top-2 right-2 p-1.5 text-brand-primary hover:text-brand-hover bg-white/80 rounded-lg backdrop-blur-sm transition-colors z-10"
                 >
                     <History className="size-4" />
                 </button>
@@ -39,8 +41,8 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
             {/* Cabecera del producto */}
             <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                    <span className="text-amber-500 font-extrabold text-sm tracking-tight">
-                        {producto.codigo}
+                    <span className="text-brand-primary font-extrabold text-sm tracking-tight">
+                        {formatCode(producto.codigo)}
                     </span>
                     <div className="flex items-center gap-1.5">
                         <span
@@ -62,27 +64,27 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
 
             {/* Precio Distribuidor (1 Fila de 3 columnas) */}
             {tipoPrecio !== 'tienda' && (
-                <div className="bg-orange-50/80 border border-orange-200/60 rounded-xl p-2.5 flex flex-col items-center gap-1.5">
-                    <span className="text-orange-900 text-[10px] font-black tracking-wider uppercase">
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-2.5 flex flex-col items-center gap-1.5">
+                    <span className="text-orange-700 text-[10px] font-black tracking-wider uppercase">
                         Precio Distribuidor
                     </span>
                     <div className="w-full grid grid-cols-3 text-center">
                         <div className="flex flex-col items-center">
-                            <span className="text-zinc-500 text-[9px] font-bold uppercase">Unidad</span>
+                            <span className="text-gray-400 text-[9px] font-bold uppercase">Unidad</span>
                             <span className="text-orange-900 text-xs font-black">
-                                S/{producto.precioDistribuidor.unidad.toFixed(2)}
+                                {formatPrice(producto.precioDistribuidor.unidad)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-zinc-500 text-[9px] font-bold uppercase">Docena</span>
+                            <span className="text-gray-400 text-[9px] font-bold uppercase">Docena</span>
                             <span className="text-orange-900 text-xs font-black">
-                                S/{producto.precioDistribuidor.docena.toFixed(2)}
+                                {formatPrice(producto.precioDistribuidor.docena)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-zinc-500 text-[9px] font-bold uppercase">Mayor</span>
+                            <span className="text-gray-400 text-[9px] font-bold uppercase">Mayor</span>
                             <span className="text-orange-900 text-xs font-black">
-                                S/{producto.precioDistribuidor.mayor.toFixed(2)}
+                                {formatPrice(producto.precioDistribuidor.mayor)}
                             </span>
                         </div>
                     </div>
@@ -97,21 +99,21 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
                     </span>
                     <div className="w-full grid grid-cols-3 text-center">
                         <div className="flex flex-col items-center">
-                            <span className="text-zinc-500 text-[9px] font-bold uppercase">Unidad</span>
+                            <span className="text-gray-400 text-[9px] font-bold uppercase">Unidad</span>
                             <span className="text-blue-900 text-xs font-black">
-                                S/{producto.precioTienda.unidad.toFixed(2)}
+                                {formatPrice(producto.precioTienda.unidad)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-zinc-500 text-[9px] font-bold uppercase">Docena</span>
+                            <span className="text-gray-400 text-[9px] font-bold uppercase">Docena</span>
                             <span className="text-blue-900 text-xs font-black">
-                                S/{producto.precioTienda.docena.toFixed(2)}
+                                {formatPrice(producto.precioTienda.docena)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-zinc-500 text-[9px] font-bold uppercase">Mayor</span>
+                            <span className="text-gray-400 text-[9px] font-bold uppercase">Mayor</span>
                             <span className="text-blue-900 text-xs font-black">
-                                S/{producto.precioTienda.mayor.toFixed(2)}
+                                {formatPrice(producto.precioTienda.mayor)}
                             </span>
                         </div>
                     </div>
