@@ -376,10 +376,6 @@ try {
                 error={errors.material?.message as string}
                 {...register("material")}
               />
-            </div>
-
-            {/* Fila 2: Presentación, N° Cabezas, Tamaño */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Input
                 label="PRESENTACIÓN"
                 placeholder="Ramo"
@@ -387,7 +383,7 @@ try {
                 {...register("presentacion")}
               />
               <Input
-                label="N° DE CABEZAS *"
+                label="Nº CABEZAS"  
                 type="number"
                 min="1"
                 placeholder="18"

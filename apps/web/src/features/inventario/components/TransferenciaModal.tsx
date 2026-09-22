@@ -229,7 +229,6 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                         error={errors.cantidad?.message}
                         {...register('cantidad', { valueAsNumber: true })}
                     />
-
                     {stockOrigen !== null && (
                         <div className="flex items-end">
                             <label className="block w-full">
