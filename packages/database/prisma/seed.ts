@@ -1,511 +1,278 @@
-import { PrismaClient, TipoMovimiento } from '@prisma/client';
+import { PrismaClient, Rol } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-function generarDescripcion(p: {
-  presentacion: string;
-  material: string;
-  numero_cabezas: number;
-  composicion: string;
-  colores: string[];
-}): string {
-  const partes = [
-    p.presentacion,
-    `de ${p.material}`,
-    `${p.numero_cabezas} cabezas`,
-    p.composicion,
-    `colores: ${p.colores.join(', ')}`,
-  ];
-  return partes.join(', ');
+// Helper para generar 6 precios coherentes basados en una unidad base
+function generar6Precios(esFlor: boolean) {
+  const baseUnidad = esFlor
+    ? Math.random() * 20 + 15  // S/ 15.00 a S/ 35.00
+    : Math.random() * 7 + 8;   // S/ 8.00 a S/ 15.00
+
+  const costoNormal = baseUnidad * (0.55 + Math.random() * 0.1);
+
+  const precioUnidadNormal = baseUnidad;
+  const precioDocenaNormal = baseUnidad * 10 * (0.85 + Math.random() * 0.05);
+  const precioMayorNormal = baseUnidad * 100 * (0.65 + Math.random() * 0.05);
+
+  const factorDist = 0.82 + Math.random() * 0.06;
+
+  const costoDistribuidor = costoNormal * factorDist;
+  const precioUnidadDist = precioUnidadNormal * factorDist;
+  const precioDocenaDist = precioDocenaNormal * factorDist;
+  const precioMayorDist = precioMayorNormal * factorDist;
+
+  return {
+    costo_normal: Number(costoNormal.toFixed(2)),
+    precio_unidad_normal: Number(precioUnidadNormal.toFixed(2)),
+    precio_docena_normal: Number(precioDocenaNormal.toFixed(2)),
+    precio_mayor_normal: Number(precioMayorNormal.toFixed(2)),
+    costo_distribuidor: Number(costoDistribuidor.toFixed(2)),
+    precio_unidad_dist: Number(precioUnidadDist.toFixed(2)),
+    precio_docena_dist: Number(precioDocenaDist.toFixed(2)),
+    precio_mayor_dist: Number(precioMayorDist.toFixed(2)),
+  };
 }
 
 async function main() {
-  console.log('Iniciando seed de inventario...');
+  console.log(' Iniciando seed enriquecido...');
 
-  const almacen = await prisma.almacen.upsert({
-    where: { codigo: 'ALM-001' },
-    update: {
-      nombre: 'ALMACÉN PRINCIPAL',
-      ubicacion: 'Sede Central',
-      activo: true,
-    },
-    create: {
-      codigo: 'ALM-001',
-      nombre: 'ALMACÉN PRINCIPAL',
-      ubicacion: 'Sede Central',
-      activo: true,
-    },
-  });
-  console.log('Almacen ALMACÉN PRINCIPAL listo');
-
-  let categoriaAdorno = await prisma.categoria.findFirst({
-    where: { nombre_categoria: 'ADORNO' },
-  });
-  if (!categoriaAdorno) {
-    categoriaAdorno = await prisma.categoria.create({
-      data: { nombre_categoria: 'ADORNO' },
-    });
-  }
-
-  let categoriaFlor = await prisma.categoria.findFirst({
-    where: { nombre_categoria: 'FLOR' },
-  });
-  if (!categoriaFlor) {
-    categoriaFlor = await prisma.categoria.create({
-      data: { nombre_categoria: 'FLOR' },
-    });
-  }
-  console.log('Categorias ADORNO y FLOR listas');
-
-  const placeholderUrl = (codigo: string) => `https://placehold.co/115x128?text=${encodeURIComponent(codigo)}`;
-
-  const upsertProducto = async (producto: {
-    codigo: string;
-    tipo_flor: string | null;
-    material: string | null;
-    composicion: string | null;
-    presentacion: string | null;
-    numero_cabezas: number | null;
-    tamano: string | null;
-    colores_surtido: string[];
-    id_categoria: number;
-    stock_principal: number;
-    stock_minimo: number;
-    foto_url: string;
-  }) => {
-    const descripcion = generarDescripcion({
-      presentacion: producto.presentacion!,
-      material: producto.material!,
-      numero_cabezas: producto.numero_cabezas!,
-      composicion: producto.composicion!,
-      colores: producto.colores_surtido,
-    });
-
-    const prod = await prisma.producto.upsert({
-      where: { codigo: producto.codigo },
-      update: {
-        descripcion,
-        tipo_flor: producto.tipo_flor,
-        material: producto.material,
-        composicion: producto.composicion,
-        presentacion: producto.presentacion,
-        numero_cabezas: producto.numero_cabezas,
-        tamano: producto.tamano,
-        colores_surtido: producto.colores_surtido,
-        categoria: { connect: { id_categoria: producto.id_categoria } },
-        stock_principal: producto.stock_principal,
-        stock_total: producto.stock_principal,
-        stock_minimo: producto.stock_minimo,
-        foto_url: producto.foto_url,
-        activo: true,
-      },
-      create: {
-        codigo: producto.codigo,
-        descripcion,
-        tipo_flor: producto.tipo_flor,
-        material: producto.material,
-        composicion: producto.composicion,
-        presentacion: producto.presentacion,
-        numero_cabezas: producto.numero_cabezas,
-        tamano: producto.tamano,
-        colores_surtido: producto.colores_surtido,
-        categoria: { connect: { id_categoria: producto.id_categoria } },
-        stock_principal: producto.stock_principal,
-        stock_total: producto.stock_principal,
-        stock_minimo: producto.stock_minimo,
-        foto_url: producto.foto_url,
-        unidades_por_caja: 1,
-        activo: true,
-      },
-    });
-
-    await prisma.stockActual.upsert({
-      where: {
-        id_producto_id_almacen: {
-          id_producto: prod.id_producto,
-          id_almacen: almacen.id_almacen,
-        },
-      },
-      update: {
-        cantidad: producto.stock_principal,
-      },
-      create: {
-        id_producto: prod.id_producto,
-        id_almacen: almacen.id_almacen,
-        cantidad: producto.stock_principal,
-      },
-    });
-
-    return prod;
-  };
-
-  console.log('Insertando productos ADORNO...');
-
-  await upsertProducto({
-    codigo: 'RYG9210',
-    tipo_flor: 'Rosa',
-    material: 'Terciopelo',
-    composicion: 'Poliéster',
-    presentacion: 'Ramo',
-    numero_cabezas: 9,
-    tamano: 'Standard',
-    colores_surtido: ['Surtido', 'Rojo', 'Rosado', 'Melón', 'Blanco'],
-    id_categoria: categoriaAdorno.id_categoria,
-    stock_principal: 100,
-    stock_minimo: 10,
-    foto_url: placeholderUrl('RYG9210'),
-  });
-
-  await upsertProducto({
-    codigo: 'RYG5-A',
-    tipo_flor: 'Rosa Botón',
-    material: 'Tela simple',
-    composicion: 'Poliéster',
-    presentacion: 'Ramo',
-    numero_cabezas: 5,
-    tamano: '20cm',
-    colores_surtido: ['Azul', 'Amarillo', 'Blanco', 'Perla', 'Turquesa', 'Rosado', 'Marrón', 'Rojo', 'Lila', 'Celeste'],
-    id_categoria: categoriaAdorno.id_categoria,
-    stock_principal: 150,
-    stock_minimo: 15,
-    foto_url: placeholderUrl('RYG5-A'),
-  });
-
-  await upsertProducto({
-    codigo: 'RYG18-NU02',
-    tipo_flor: 'Rosa',
-    material: 'Tela Premium',
-    composicion: 'Poliéster premium',
-    presentacion: 'Ramo',
-    numero_cabezas: 18,
-    tamano: '35cm',
-    colores_surtido: ['Morado', 'Rosado', 'Blanco', 'Lila/Blanco', 'Melón', 'Rosado BB', 'Lila Oscuro Gris', 'Marrón'],
-    id_categoria: categoriaAdorno.id_categoria,
-    stock_principal: 80,
-    stock_minimo: 8,
-    foto_url: placeholderUrl('RYG18-NU02'),
-  });
-
-  await upsertProducto({
-    codigo: 'RYG18-H05',
-    tipo_flor: 'Rosa',
-    material: 'Tela Premium',
-    composicion: 'Poliéster premium',
-    presentacion: 'Ramo',
-    numero_cabezas: 17,
-    tamano: '35cm',
-    colores_surtido: ['Melón', 'Blanco', 'Lila/Melón', 'Rosado/Melón', 'Fucsia/Melón', 'Rosado BB', 'Melón Fuerte/Bajo'],
-    id_categoria: categoriaAdorno.id_categoria,
-    stock_principal: 80,
-    stock_minimo: 8,
-    foto_url: placeholderUrl('RYG18-H05'),
-  });
-
-  await upsertProducto({
-    codigo: 'RYG12JYJY',
-    tipo_flor: 'Rosa Botón',
-    material: 'Tela Premium',
-    composicion: 'Poliéster premium',
-    presentacion: 'Ramo',
-    numero_cabezas: 12,
-    tamano: '35cm',
-    colores_surtido: ['Amarillo', 'Azul', 'Lila', 'Morado', 'Rojo', 'Rojo Oscuro', 'Rosado', 'Perla'],
-    id_categoria: categoriaAdorno.id_categoria,
-    stock_principal: 100,
-    stock_minimo: 10,
-    foto_url: placeholderUrl('RYG12JYJY'),
-  });
-
-  await upsertProducto({
-    codigo: 'RYG10-XM',
-    tipo_flor: 'Rosa Estrella',
-    material: 'Tela Normal',
-    composicion: 'Poliéster',
-    presentacion: 'Ramo',
-    numero_cabezas: 10,
-    tamano: '35cm',
-    colores_surtido: ['Rosado BB', 'Blanco'],
-    id_categoria: categoriaAdorno.id_categoria,
-    stock_principal: 120,
-    stock_minimo: 12,
-    foto_url: placeholderUrl('RYG10-XM'),
-  });
-
-  await upsertProducto({
-    codigo: 'RYG10-RS',
-    tipo_flor: 'Rosa Abierta',
-    material: 'Tela Normal',
-    composicion: 'Poliéster',
-    presentacion: 'Ramo',
-    numero_cabezas: 10,
-    tamano: '35cm',
-    colores_surtido: ['Amarillo', 'Celeste', 'Blanco', 'Perla', 'Melón', 'Hueso', 'Azul', 'Verde Botella', 'Rosado BB', 'Rosado', 'Celeste/Blanco'],
-    id_categoria: categoriaAdorno.id_categoria,
-    stock_principal: 120,
-    stock_minimo: 12,
-    foto_url: placeholderUrl('RYG10-RS'),
-  });
-
-  await upsertProducto({
-    codigo: 'RYG10XA',
-    tipo_flor: 'Rosa Abierta',
-    material: 'Tela Normal',
-    composicion: 'Poliéster',
-    presentacion: 'Ramo',
-    numero_cabezas: 10,
-    tamano: '35cm',
-    colores_surtido: ['Blanco', 'Perla', 'Turquesa'],
-    id_categoria: categoriaAdorno.id_categoria,
-    stock_principal: 120,
-    stock_minimo: 12,
-    foto_url: placeholderUrl('RYG10XA'),
-  });
-
-  await upsertProducto({
-    codigo: 'RYG93001',
-    tipo_flor: 'Rosa Botón',
-    material: 'Tela Normal',
-    composicion: 'Poliéster',
-    presentacion: 'Ramo',
-    numero_cabezas: 9,
-    tamano: '30cm',
-    colores_surtido: ['Lila', 'Melón'],
-    id_categoria: categoriaAdorno.id_categoria,
-    stock_principal: 100,
-    stock_minimo: 10,
-    foto_url: placeholderUrl('RYG93001'),
-  });
-
-  await upsertProducto({
-    codigo: 'RYG9228',
-    tipo_flor: 'Rosa',
-    material: 'Tela Normal',
-    composicion: 'Poliéster',
-    presentacion: 'Ramo',
-    numero_cabezas: 9,
-    tamano: '30cm',
-    colores_surtido: ['Rosado', 'Lila', 'Rosado Fucsia', 'Perla'],
-    id_categoria: categoriaAdorno.id_categoria,
-    stock_principal: 100,
-    stock_minimo: 10,
-    foto_url: placeholderUrl('RYG9228'),
-  });
-
-  await upsertProducto({
-    codigo: 'RYG7-X7',
-    tipo_flor: 'Rosa Abierta',
-    material: 'Tela Simple',
-    composicion: 'Poliéster',
-    presentacion: 'Ramo',
-    numero_cabezas: 5,
-    tamano: '35cm',
-    colores_surtido: ['Otoñales'],
-    id_categoria: categoriaAdorno.id_categoria,
-    stock_principal: 150,
-    stock_minimo: 15,
-    foto_url: placeholderUrl('RYG7-X7'),
-  });
-
-  await upsertProducto({
-    codigo: 'RYG7-XS',
-    tipo_flor: 'Rosa',
-    material: 'Tela Simple',
-    composicion: 'Poliéster',
-    presentacion: 'Ramo',
-    numero_cabezas: 5,
-    tamano: '35cm',
-    colores_surtido: ['Perla', 'Marrón', 'Rojo Oscuro', 'Rosado BB'],
-    id_categoria: categoriaAdorno.id_categoria,
-    stock_principal: 150,
-    stock_minimo: 15,
-    foto_url: placeholderUrl('RYG7-XS'),
-  });
-
-  console.log('Insertando productos FLOR...');
-
-  await upsertProducto({
-    codigo: 'RMH9-01',
-    tipo_flor: 'Tulipanes',
-    material: 'Terciopelo',
-    composicion: 'Poliéster velvet',
-    presentacion: 'Ramo',
-    numero_cabezas: 9,
-    tamano: '35cm',
-    colores_surtido: ['Morado', 'Rojo', 'Amarillo', 'Perla', 'Naranja'],
-    id_categoria: categoriaFlor.id_categoria,
-    stock_principal: 60,
-    stock_minimo: 6,
-    foto_url: placeholderUrl('RMH9-01'),
-  });
-
-  await upsertProducto({
-    codigo: 'YQ12-H17',
-    tipo_flor: 'Rosas',
-    material: 'Tela Simple',
-    composicion: 'Poliéster',
-    presentacion: 'Ramo',
-    numero_cabezas: 12,
-    tamano: '25cm',
-    colores_surtido: ['Azul', 'Azul Acero', 'Fucsia', 'Perla', 'Blanco'],
-    id_categoria: categoriaFlor.id_categoria,
-    stock_principal: 100,
-    stock_minimo: 10,
-    foto_url: placeholderUrl('YQ12-H17'),
-  });
-
-  await upsertProducto({
-    codigo: 'YQ10-HMN',
-    tipo_flor: 'Rosa',
-    material: 'Tela Simple',
-    composicion: 'Poliéster',
-    presentacion: 'Ramo',
-    numero_cabezas: 10,
-    tamano: '20cm',
-    colores_surtido: ['Perla', 'Azul', 'Azul Acero', 'Rosado BB', 'Rosado/Fucsia'],
-    id_categoria: categoriaFlor.id_categoria,
-    stock_principal: 100,
-    stock_minimo: 10,
-    foto_url: placeholderUrl('YQ10-HMN'),
-  });
-
-  await upsertProducto({
-    codigo: 'RUY-05',
-    tipo_flor: 'Rosa',
-    material: 'Terciopelo',
-    composicion: 'Poliéster velvet',
-    presentacion: 'Unitario',
-    numero_cabezas: 1,
-    tamano: '35cm',
-    colores_surtido: ['Rosado', 'Fucsia', 'Azul', 'Amarillo', 'Blanco', 'Morado', 'Rojo', 'Vino', 'Naranja', 'Rosado BB'],
-    id_categoria: categoriaFlor.id_categoria,
-    stock_principal: 200,
-    stock_minimo: 20,
-    foto_url: placeholderUrl('RUY-05'),
-  });
-
-  await upsertProducto({
-    codigo: 'RUY-13N',
-    tipo_flor: 'Rosas',
-    material: 'Terciopelo',
-    composicion: 'Poliéster velvet',
-    presentacion: 'Ramo',
-    numero_cabezas: 5,
-    tamano: '35cm',
-    colores_surtido: ['Rosado', 'Fucsia', 'Azul', 'Amarillo', 'Blanco', 'Morado', 'Rojo', 'Vino', 'Naranja', 'Rosado BB'],
-    id_categoria: categoriaFlor.id_categoria,
-    stock_principal: 100,
-    stock_minimo: 10,
-    foto_url: placeholderUrl('RUY-13N'),
-  });
-
-  await upsertProducto({
-    codigo: 'RUY-CH',
-    tipo_flor: 'Rosa',
-    material: 'Terciopelo',
-    composicion: 'Poliéster velvet',
-    presentacion: 'Ramo',
-    numero_cabezas: 7,
-    tamano: '35cm',
-    colores_surtido: ['Rosado', 'Fucsia', 'Azul', 'Amarillo', 'Blanco', 'Morado', 'Rojo', 'Vino', 'Naranja', 'Rosado BB'],
-    id_categoria: categoriaFlor.id_categoria,
-    stock_principal: 80,
-    stock_minimo: 8,
-    foto_url: placeholderUrl('RUY-CH'),
-  });
-
-  await upsertProducto({
-    codigo: 'RUY10-RCH',
-    tipo_flor: 'Rosas',
-    material: 'Terciopelo',
-    composicion: 'Poliéster velvet',
-    presentacion: 'Ramo',
-    numero_cabezas: 7,
-    tamano: '35cm',
-    colores_surtido: ['Rojo', 'Vino'],
-    id_categoria: categoriaFlor.id_categoria,
-    stock_principal: 60,
-    stock_minimo: 6,
-    foto_url: placeholderUrl('RUY10-RCH'),
-  });
-
-  await upsertProducto({
-    codigo: 'GRA7-02',
-    tipo_flor: 'Girasol',
-    material: 'Tela Premium',
-    composicion: 'Poliéster premium',
-    presentacion: 'Ramo',
-    numero_cabezas: 7,
-    tamano: '35cm',
-    colores_surtido: ['Amarillo'],
-    id_categoria: categoriaFlor.id_categoria,
-    stock_principal: 50,
-    stock_minimo: 5,
-    foto_url: placeholderUrl('GRA7-02'),
-  });
-
-  await upsertProducto({
-    codigo: 'GRS10-12',
-    tipo_flor: 'Girasol',
-    material: 'Tela Premium',
-    composicion: 'Poliéster premium',
-    presentacion: 'Ramo',
-    numero_cabezas: 10,
-    tamano: '35cm',
-    colores_surtido: ['Amarillo'],
-    id_categoria: categoriaFlor.id_categoria,
-    stock_principal: 50,
-    stock_minimo: 5,
-    foto_url: placeholderUrl('GRS10-12'),
-  });
-
-  await upsertProducto({
-    codigo: 'GRS5-01',
-    tipo_flor: 'Girasol',
-    material: 'Tela Premium',
-    composicion: 'Poliéster premium',
-    presentacion: 'Vara',
-    numero_cabezas: 5,
-    tamano: 'Standard',
-    colores_surtido: ['Amarillo'],
-    id_categoria: categoriaFlor.id_categoria,
-    stock_principal: 50,
-    stock_minimo: 5,
-    foto_url: placeholderUrl('GRS5-01'),
-  });
-
-  // Seed configuración empresa
-  const configs = [
-    { clave: 'company_ruc', valor: '20123456789', descripcion: 'RUC empresa' },
-    { clave: 'company_razon_social', valor: 'Gold Continent SAC', descripcion: 'Razón social' },
-    { clave: 'company_direccion', valor: 'Av. Principal 123, Lima', descripcion: 'Dirección fiscal' },
-    { clave: 'company_telefono', valor: '+51 1 234 5678', descripcion: 'Teléfono' },
-    { clave: 'company_email', valor: 'cotizaciones@goldcontinent.com', descripcion: 'Email' },
-    { clave: 'company_logo_url', valor: '', descripcion: 'Logo URL (MinIO)' },
-    { clave: 'pdf_carreta_default', valor: '15.00', descripcion: 'Costo carreta por defecto' },
-    { clave: 'pdf_igv_rate', valor: '0.18', descripcion: 'Tasa IGV' },
+  // 1. Almacenes con Ubicaciones por Estante
+  const almacenesData = [
+    { codigo: 'ALM-001', nombre: 'Lima Centro', ubicacion: 'Estante A - Pasillo 1', activo: true },
+    { codigo: 'ALM-002', nombre: 'Lima Norte', ubicacion: 'Estante B - Pasillo 2', activo: true },
+    { codigo: 'ALM-003', nombre: 'Lima Sur', ubicacion: 'Estante C - Pasillo 3', activo: true },
+    { codigo: 'ALM-004', nombre: 'Tacna', ubicacion: 'Estante A - Depósito Central', activo: true },
   ];
 
-  for (const config of configs) {
-    await prisma.configuracion.upsert({
-      where: { clave: config.clave },
-      update: { valor: config.valor, descripcion: config.descripcion },
-      create: config,
+  const almacenesCreados = [];
+  for (const alm of almacenesData) {
+    const a = await prisma.almacen.upsert({
+      where: { codigo: alm.codigo },
+      update: alm,
+      create: alm,
     });
+    almacenesCreados.push(a);
   }
-  console.log('Configuración empresa sembrada');
+  console.log(` ${almacenesCreados.length} Almacenes y Ubicaciones creados`);
 
-  const totalProductos = await prisma.producto.count();
-  const totalStock = await prisma.stockActual.count();
+  // 2. Categorías (Se eliminó 'descripcion' para coincidir con el schema)
+  const categoriasNombres = [
+    'Ramos y Bouquets',
+    'Varas Sueltas',
+    'Adornos y Follaje',
+    'Arreglos Especiales',
+  ];
 
-  console.log('Seed inventario completado');
-  console.log(`Total productos: ${totalProductos}`);
-  console.log(`Total stock_actual: ${totalStock}`);
+  const categoriasCreadas = [];
+  for (const nombre_categoria of categoriasNombres) {
+    let c = await prisma.categoria.findFirst({
+      where: { nombre_categoria },
+    });
+    if (!c) {
+      c = await prisma.categoria.create({
+        data: { nombre_categoria },
+      });
+    }
+    categoriasCreadas.push(c);
+  }
+  console.log(' Categorías verificadas/creadas');
+
+  // 3. Productos con Atributos Completos
+  const productosData = [
+    {
+      codigo: 'RYG18-NU02',
+      tipo_flor: 'Rosa',
+      material: 'Tela Premium',
+      composicion: 'Poliéster Velvet',
+      presentacion: 'Ramo',
+      numero_cabezas: 18,
+      tamano: '10x20',
+      unidades_por_caja: 12,
+      stock_principal: 150,
+      stock_minimo: 15,
+      descripcion: 'RAMO DE ROSA TELA PREMIUM DE 18 CABEZAS 10X20 (CAJA X 12 UNID)',
+      colores_surtido: ['ROJO', 'BLANCO', 'ROSADO', 'AMARILLO'],
+      foto_url: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?w=500&auto=format&fit=crop&q=60',
+      id_categoria: categoriasCreadas[0].id_categoria,
+      esFlor: true,
+    },
+    {
+      codigo: 'PEUWBA2',
+      tipo_flor: 'Peonía',
+      material: 'Seda Sintética',
+      composicion: 'Poliéster Silky',
+      presentacion: 'Ramo',
+      numero_cabezas: 9,
+      tamano: '15x25',
+      unidades_por_caja: 24,
+      stock_principal: 80,
+      stock_minimo: 10,
+      descripcion: 'RAMO DE PEONÍA SEDA SINTÉTICA DE 9 CABEZAS 15X25 (CAJA X 24 UNID)',
+      colores_surtido: ['ROSA PASTEL', 'CORAL', 'MARFIL'],
+      foto_url: 'https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=500&auto=format&fit=crop&q=60',
+      id_categoria: categoriasCreadas[0].id_categoria,
+      esFlor: true,
+    },
+    {
+      codigo: 'CODIGO1111',
+      tipo_flor: 'Girasol',
+      material: 'Tela Simple',
+      composicion: 'Poliéster Estándar',
+      presentacion: 'Vara',
+      numero_cabezas: 5,
+      tamano: '12x30',
+      unidades_por_caja: 36,
+      stock_principal: 200,
+      stock_minimo: 20,
+      descripcion: 'VARA DE GIRASOL TELA SIMPLE DE 5 CABEZAS 12X30 (CAJA X 36 UNID)',
+      colores_surtido: ['AMARILLO INTENSO'],
+      foto_url: 'https://images.unsplash.com/photo-1597848212624-a19eb35e2651?w=500&auto=format&fit=crop&q=60',
+      id_categoria: categoriasCreadas[1].id_categoria,
+      esFlor: true,
+    },
+    {
+      codigo: 'ADORN-001',
+      tipo_flor: 'Eucalipto',
+      material: 'Plástico Flexible',
+      composicion: 'PVC Mate',
+      presentacion: 'Unitario',
+      numero_cabezas: 1,
+      tamano: '20x40',
+      unidades_por_caja: 50,
+      stock_principal: 300,
+      stock_minimo: 30,
+      descripcion: 'FOLLAJE EUCALIPTO PLÁSTICO FLEXIBLE MATE 20X40 (CAJA X 50 UNID)',
+      colores_surtido: ['VERDE OLIVA', 'VERDE EUCALIPTO'],
+      foto_url: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=500&auto=format&fit=crop&q=60',
+      id_categoria: categoriasCreadas[2].id_categoria,
+      esFlor: false,
+    },
+    {
+      codigo: 'LIL-M05',
+      tipo_flor: 'Lirio',
+      material: 'Seda Premium',
+      composicion: 'Poliéster Soft',
+      presentacion: 'Ramo',
+      numero_cabezas: 6,
+      tamano: '12x22',
+      unidades_por_caja: 18,
+      stock_principal: 120,
+      stock_minimo: 12,
+      descripcion: 'RAMO DE LIRIO SEDA PREMIUM DE 6 CABEZAS 12X22 (CAJA X 18 UNID)',
+      colores_surtido: ['BLANCO', 'AMARILLO', 'ROSADO'],
+      foto_url: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=500&auto=format&fit=crop&q=60',
+      id_categoria: categoriasCreadas[0].id_categoria,
+      esFlor: true,
+    },
+    {
+      codigo: 'ORQ-PREM1',
+      tipo_flor: 'Orquídea',
+      material: 'Látex Real Touch',
+      composicion: 'Polímero Tacto Real',
+      presentacion: 'Vara',
+      numero_cabezas: 8,
+      tamano: '15x45',
+      unidades_por_caja: 12,
+      stock_principal: 60,
+      stock_minimo: 5,
+      descripcion: 'VARA DE ORQUÍDEA LÁTEX REAL TOUCH DE 8 CABEZAS 15X45 (CAJA X 12 UNID)',
+      colores_surtido: ['BLANCO', 'MORADO', 'FUSCIA'],
+      foto_url: 'https://images.unsplash.com/photo-1525310072745-f49212b5ac6d?w=500&auto=format&fit=crop&q=60',
+      id_categoria: categoriasCreadas[1].id_categoria,
+      esFlor: true,
+    },
+  ];
+
+  const distStock = [0.55, 0.20, 0.15, 0.10];
+
+  for (const prodData of productosData) {
+    const { esFlor, ...dataProducto } = prodData;
+
+    // 3.1 Upsert Producto
+    const prod = await prisma.producto.upsert({
+      where: { codigo: dataProducto.codigo },
+      update: {
+        ...dataProducto,
+        stock_total: dataProducto.stock_principal,
+      },
+      create: {
+        ...dataProducto,
+        stock_total: dataProducto.stock_principal,
+      },
+    });
+
+    // 3.2 Llenar PreciosActuales (6 Precios por Producto)
+    const precios = generar6Precios(esFlor);
+
+    await prisma.preciosActuales.upsert({
+      where: { id_producto: prod.id_producto },
+      update: precios,
+      create: {
+        id_producto: prod.id_producto,
+        ...precios,
+      },
+    });
+
+    // 3.3 Generar HistorialPrecios Inicial
+    await prisma.historialPrecios.create({
+      data: {
+        id_producto: prod.id_producto,
+        campo_modificado: 'CREACION_INICIAL_SEED',
+        valor_anterior: 0,
+        valor_nuevo: precios.precio_unidad_normal,
+        id_usuario: null,
+      },
+    });
+
+    // 3.4 Llenar StockActual repartido en los almacenes
+    for (let i = 0; i < almacenesCreados.length; i++) {
+      const alm = almacenesCreados[i];
+      const cantidadAlm = Math.round(prod.stock_principal * distStock[i]);
+
+      await prisma.stockActual.upsert({
+        where: {
+          id_producto_id_almacen: {
+            id_producto: prod.id_producto,
+            id_almacen: alm.id_almacen,
+          },
+        },
+        update: { cantidad: cantidadAlm },
+        create: {
+          id_producto: prod.id_producto,
+          id_almacen: alm.id_almacen,
+          cantidad: cantidadAlm,
+        },
+      });
+    }
+  }
+
+  console.log(` ${productosData.length} Productos sembrados con los 6 tipos de precios y stock por almacén.`);
+
+  // 4. Usuario Administrador
+  const adminExiste = await prisma.usuario.findFirst({
+    where: { email: 'admin@goldcontinent.com' },
+  });
+
+  if (!adminExiste) {
+    await prisma.usuario.create({
+      data: {
+        nombre: 'Administrador Sistema',
+        email: 'admin@goldcontinent.com',
+        password_hash: '$2b$10$EpRvmMG5bWg71f2N.uBf9.k9YkK5Kx/dG1e.7xG.L9k9',
+        rol: Rol.admin,
+        activo: true,
+      },
+    });
+    console.log(' Usuario Administrador inicial creado (admin@goldcontinent.com)');
+  }
+
+  console.log('🎉 Seed completado exitosamente.');
 }
 
 main()
   .catch((e) => {
-    console.error('Error en seed:', e);
-    process.exit(1);
+    console.error(' Error ejecutando el seed:', e);
+    throw e;
   })
   .finally(async () => {
     await prisma.$disconnect();

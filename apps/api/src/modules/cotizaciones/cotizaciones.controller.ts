@@ -8,18 +8,24 @@ import {
     Query,
     UseGuards,
     Req,
+    Res,
     ParseIntPipe,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard'; // Ajusta la ruta a tu JwtAuthGuard
 import { CotizacionesService } from './cotizaciones.service';
+import { CotizacionesPdfService } from './pdf/cotizaciones-pdf.service';
 
 @ApiTags('Cotizaciones')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('cotizaciones')
 export class CotizacionesController {
-    constructor(private readonly cotizacionesService: CotizacionesService) { }
+    constructor(
+        private readonly cotizacionesService: CotizacionesService,
+        private readonly pdfService: CotizacionesPdfService,
+    ) { }
 
     @Post()
     @ApiOperation({ summary: 'Crear nueva cotización con items' })
@@ -35,10 +41,35 @@ export class CotizacionesController {
         return this.cotizacionesService.listar(query);
     }
 
+    @Get('proximo-numero')
+    @ApiOperation({ summary: 'Obtener próximo número secuencial COT-001' })
+    async proximoNumero() {
+        return this.cotizacionesService.proximoNumero();
+    }
+
+    @Get(':id/export-pdf')
+    @ApiOperation({ summary: 'Exportar cotización a PDF' })
+    async exportPdf(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+        const { buffer, filename } = await this.pdfService.generarPdfBuffer(id);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Length', buffer.length);
+        res.end(buffer);
+    }
+
     @Get(':id')
     @ApiOperation({ summary: 'Obtener cotización por ID con detalle' })
     async findOne(@Param('id', ParseIntPipe) id: number) {
         return this.cotizacionesService.obtenerPorId(id);
+    }
+
+    @Patch(':id')
+    @ApiOperation({ summary: 'Actualizar cotización en BORRADOR (conserva el número)' })
+    async update(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() body: any,
+    ) {
+        return this.cotizacionesService.actualizar(id, body);
     }
 
     @Patch(':id/estado')

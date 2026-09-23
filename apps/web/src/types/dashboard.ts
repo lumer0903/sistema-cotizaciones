@@ -22,7 +22,7 @@ export interface DashboardMetrics {
 export interface DashboardStats {
   totalProductos: number;
   totalCotizaciones: number;
-  totalVentas: number;
+  cotizacionesAprobadas: number;
   montoPendiente: number;
   productosBajoStock: number;
   cotizacionesEsteMes: number;

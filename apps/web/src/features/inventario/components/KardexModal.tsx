@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ArrowUpRight, ArrowDownLeft, RefreshCw, Calendar, Download, ChevronLeft, ChevronRight, Image as ImageIcon, Search } from 'lucide-react';
-import { toast } from 'sonner';
+import { showToast } from '@/lib/toast';
 import {
     Modal,
     Badge,
@@ -111,7 +111,7 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
             setPage(res.page);
         } catch (error) {
             console.error('Error fetching kardex:', error);
-            toast.error('Error al cargar el kárdex');
+            showToast.error('Error al cargar el kárdex');
         } finally {
             setLoading(false);
         }
@@ -135,10 +135,10 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-            toast.success('Kárdex exportado correctamente');
+            showToast.success('Kárdex exportado correctamente');
         } catch (error) {
             console.error('Error exporting kardex:', error);
-            toast.error('Error al exportar el kárdex');
+            showToast.error('Error al exportar el kárdex');
         } finally {
             setExportando(false);
         }
@@ -215,7 +215,7 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
                         placeholder="Escriba el código del producto..."
                         value={searchQuery}
                         onChange={(e) => {
-                            setSearchQuery(e.target.value);
+                            setSearchQuery(e.target.value.toUpperCase());
                             setShowSuggestions(true);
                             if (selectedProducto) setSelectedProducto(null);
                         }}

@@ -6,7 +6,7 @@ import { Modal, Button } from '@/components/ui';
 import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
 import { ColorTags } from './ColorTags';
 import { getImageUrl, handleImageError } from '@/lib/imageUtils';
-import { formatCode, formatText, formatPrice } from '@/lib/formatters';
+import { formatCode, formatText, formatPrice, obtenerPreciosEstandarizados } from '@/lib/formatters';
 import { ProductoConsulta } from '@/features/precio-historial/types/precio';
 
 interface DetalleProductoModalProps {
@@ -35,18 +35,7 @@ export function DetalleProductoModal({
     const categoria = prod.categoria?.nombre_categoria || prod.categoria || 'ADORNO';
     const imagenUrl = prod.foto_url || prod.imagenUrl;
 
-    // Extracción segura de precios
-    const precios = prod.precios_actuales || prod.precio_actual || prod.precios || prod;
-
-    // Precios Distribuidor
-    const precioUnidadDist = Number(precios?.precio_unidad_dist ?? 0);
-    const precioDocenaDist = Number(precios?.precio_docena_dist ?? 0);
-    const precioMayorDist = Number(precios?.precio_mayor_dist ?? 0);
-
-    // Precios Tienda / Normal
-    const precioUnidad = Number(precios?.precio_unidad_normal ?? 0);
-    const precioDocena = Number(precios?.precio_docena_normal ?? 0);
-    const precioCaja = Number(precios?.precio_mayor_normal ?? 0);
+    const { tienda, distribuidor } = obtenerPreciosEstandarizados(producto);
 
     return (
         <Modal open={open} onClose={onClose} title="Ficha Técnica" maxWidth="md">
@@ -136,21 +125,21 @@ export function DetalleProductoModal({
                                         <div className="flex flex-col items-center">
                                             <span className="text-gray-400 text-[8px] font-bold uppercase">Unidad</span>
                                             <span className="text-orange-950 text-xs font-bold font-mono mt-0.5">
-                                                {formatPrice(precioUnidadDist)}
+                                                {formatPrice(distribuidor.unidad)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
                                             <span className="text-gray-400 text-[8px] font-bold uppercase">Docena</span>
                                             <span className="text-orange-950 text-xs font-bold font-mono mt-0.5">
-                                                {formatPrice(precioDocenaDist)}
+                                                {formatPrice(distribuidor.docena)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
                                             <span className="text-gray-400 text-[8px] font-bold uppercase">Caja / Mayor</span>
                                             <span className="text-orange-950 text-xs font-bold font-mono mt-0.5">
-                                                {formatPrice(precioMayorDist)}
+                                                {formatPrice(distribuidor.mayor)}
                                             </span>
                                         </div>
                                     </div>
@@ -168,21 +157,21 @@ export function DetalleProductoModal({
                                         <div className="flex flex-col items-center">
                                             <span className="text-gray-400 text-[8px] font-bold uppercase">Unidad</span>
                                             <span className="text-blue-950 text-xs font-bold font-mono mt-0.5">
-                                                {formatPrice(precioUnidad)}
+                                                {formatPrice(tienda.unidad)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
                                             <span className="text-gray-400 text-[8px] font-bold uppercase">Docena</span>
                                             <span className="text-blue-950 text-xs font-bold font-mono mt-0.5">
-                                                {formatPrice(precioDocena)}
+                                                {formatPrice(tienda.docena)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
                                             <span className="text-gray-400 text-[8px] font-bold uppercase">Caja / Mayor</span>
                                             <span className="text-blue-950 text-xs font-bold font-mono mt-0.5">
-                                                {formatPrice(precioCaja)}
+                                                {formatPrice(tienda.mayor)}
                                             </span>
                                         </div>
                                     </div>

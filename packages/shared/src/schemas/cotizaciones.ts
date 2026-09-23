@@ -67,3 +67,11 @@ export const recomendacionSchema = z.object({
 });
 
 export type RecomendacionInput = z.infer<typeof recomendacionSchema>;
+
+export const registrarPagoCotizacionSchema = z.object({
+  monto: z.coerce.number().multipleOf(0.01).positive('El monto debe ser mayor a 0'),
+  metodo_pago: z.string().min(1).default('efectivo'),
+  referencia: z.string().optional().nullable(),
+});
+
+export type RegistrarPagoCotizacionInput = z.infer<typeof registrarPagoCotizacionSchema>;

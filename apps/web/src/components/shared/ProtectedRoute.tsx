@@ -33,12 +33,12 @@ export function ProtectedRoute({
       }
 
       if (roles?.length && !roles.includes(usuario.rol)) {
-        router.push(usuario.rol === 'vendedor' ? '/vendedor/pos' : '/admin/dashboard');
+        router.push(usuario.rol === 'vendedor' ? '/vendedor/cotizaciones' : '/admin/dashboard');
         return;
       }
 
       if (permission && !can(permission, required)) {
-        router.push(usuario.rol === 'vendedor' ? '/vendedor/pos' : '/admin/dashboard');
+        router.push(usuario.rol === 'vendedor' ? '/vendedor/cotizaciones' : '/admin/dashboard');
         return;
       }
     }

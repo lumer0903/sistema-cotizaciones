@@ -3,6 +3,7 @@
 import React from 'react';
 import { Pencil, Eye } from 'lucide-react';
 import { CotizacionItem } from '../types/cotizacion';
+import { formatCode } from '@/lib/formatters';
 
 interface CotizacionesTableProps {
     data: CotizacionItem[];
@@ -55,13 +56,15 @@ return (
                             return (
                                 <tr key={item.id_cotizacion || item.id || index} className="hover:bg-gray-50/60 transition-colors">
                                     {/* CODIGO */}
-                                    <td className="py-3 px-4 w-36 font-normal text-zinc-600 whitespace-nowrap">
-                                        {item.codigo}
+                                    <td className="py-3 px-4 w-36 font-normal text-zinc-600 whitespace-nowrap uppercase">
+                                        {formatCode(item.codigo)}
                                     </td>
 
                                     {/* CLIENTE */}
                                     <td className="py-3 px-4 flex-1 min-w-[200px] font-light text-neutral-700 whitespace-nowrap">
-                                        {item.cliente}
+                                        {typeof item.cliente === 'string'
+                                            ? item.cliente
+                                            : (item.cliente as any)?.nombre || (item.cliente as any)?.nombre_cliente || '-'}
                                     </td>
 
                                     {/* TIPO BADGE */}
@@ -114,7 +117,7 @@ return (
                                                         ? 'text-yellow-500 hover:text-yellow-600 cursor-pointer'
                                                         : 'text-gray-200 cursor-not-allowed'
                                                     }`}
-                                                title={isBorrador ? 'Editar cotización' : 'No editable'}
+                                                title={isBorrador ? 'Editar (borrador)' : 'No editable'}
                                             >
                                                 <Pencil className="w-5 h-5" />
                                             </button>
@@ -128,7 +131,7 @@ return (
                                                         ? 'text-yellow-500 hover:text-yellow-600 cursor-pointer'
                                                         : 'text-gray-200 cursor-not-allowed'
                                                     }`}
-                                                title={!isBorrador ? 'Ver cotización' : 'No disponible en borrador'}
+                                                title={!isBorrador ? 'Ver documento (solo lectura)' : 'No disponible en borrador'}
                                             >
                                                 <Eye className="w-5 h-5" />
                                             </button>

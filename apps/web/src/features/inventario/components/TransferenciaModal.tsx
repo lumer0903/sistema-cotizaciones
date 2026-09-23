@@ -198,7 +198,7 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                         placeholder="Buscar"
                         value={searchQuery}
                         onChange={(e) => {
-                            setSearchQuery(e.target.value);
+                            setSearchQuery(e.target.value.toUpperCase());
                             setShowSuggestions(true);
                             if (selectedProducto) {
                                 setSelectedProducto(null);

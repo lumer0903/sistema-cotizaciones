@@ -20,6 +20,7 @@ interface Cotizacion {
 const ESTADO_LABELS: Record<EstadoCotizacion, string> = {
   borrador: 'Borrador',
   enviada: 'Enviada',
+  parcialmente_pagada: 'Parcialmente Pagada',
   aprobada: 'Aprobada',
   rechazada: 'Rechazada',
 };
@@ -27,6 +28,7 @@ const ESTADO_LABELS: Record<EstadoCotizacion, string> = {
 const ESTADO_COLORS: Record<EstadoCotizacion, string> = {
   borrador: 'bg-gray-100 text-gray-700',
   enviada: 'bg-blue-100 text-blue-700',
+  parcialmente_pagada: 'bg-orange-100 text-orange-700',
   aprobada: 'bg-green-100 text-green-700',
   rechazada: 'bg-red-100 text-red-700',
 };
@@ -84,8 +86,8 @@ export default function CotizacionesPage() {
     return cotizaciones.filter((c) => {
       const matchBuscar =
         !search.trim() ||
-        c.numero.toLowerCase().includes(search.toLowerCase()) ||
-        c.cliente_nombre?.toLowerCase().includes(search.toLowerCase());
+        c.numero.toUpperCase().includes(search.toUpperCase()) ||
+        c.cliente_nombre?.toUpperCase().includes(search.toUpperCase());
 
       const matchFecha = !fecha || c.created_at.includes(fecha);
 
@@ -128,7 +130,7 @@ export default function CotizacionesPage() {
               placeholder="Buscar por número o cliente..."
               value={search}
               onChange={(e) => {
-                setSearch(e.target.value);
+                setSearch(e.target.value.toUpperCase());
                 setCurrentPage(1);
               }}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
@@ -159,6 +161,7 @@ export default function CotizacionesPage() {
               <option value="todos">Todos los estados</option>
               <option value="borrador">Borrador</option>
               <option value="enviada">Enviada</option>
+              <option value="parcialmente_pagada">Parcialmente Pagada</option>
               <option value="aprobada">Aprobada</option>
               <option value="rechazada">Rechazada</option>
             </select>

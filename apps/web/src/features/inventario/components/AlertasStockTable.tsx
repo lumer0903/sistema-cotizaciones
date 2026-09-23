@@ -1,7 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
+import { showToast } from '@/lib/toast';
 import { inventarioApi, AlertaStockResponse } from '../api/inventario.api';
 import { Modal, Button, Badge, Select, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
 import { formatCode, formatText } from '@/lib/formatters';
@@ -17,7 +18,7 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
     const [loading, setLoading] = useState(true);
     const [estadoFiltro, setEstadoFiltro] = useState<'activa' | 'resuelta' | 'todas'>('activa');
     const [reconociendoId, setReconociendoId] = useState<number | null>(null);
-    const [activeTab, setActiveTab] = useState<'inventario' | 'cobranzas' | 'ventas'>('inventario');
+    const [activeTab, setActiveTab] = useState<'inventario' | 'cobranzas'>('inventario');
 
     const fetchAlertas = useCallback(async () => {
         setLoading(true);
@@ -47,7 +48,7 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
             if (onSuccess) onSuccess();
         } catch (error) {
             console.error('Error reconociendo alerta:', error);
-            alert('Error al reconocer la alerta');
+            showToast.error('Error al reconocer la alerta');
         } finally {
             setReconociendoId(null);
         }
@@ -88,13 +89,6 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
                     onClick={() => setActiveTab('cobranzas')}
                 >
                     Cobranzas
-                </button>
-                <button
-                    type="button"
-                    className={`pb-2 px-4 text-sm font-semibold transition-colors ${activeTab === 'ventas' ? 'border-b-2 border-brand-primary text-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}
-                    onClick={() => setActiveTab('ventas')}
-                >
-                    Ventas
                 </button>
             </div>
 
@@ -209,12 +203,6 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
             {activeTab === 'cobranzas' && (
                 <div className="p-8 text-center text-gray-400">
                     No hay alertas de cobranzas
-                </div>
-            )}
-
-            {activeTab === 'ventas' && (
-                <div className="p-8 text-center text-gray-400">
-                    No hay alertas de ventas
                 </div>
             )}
         </Modal>

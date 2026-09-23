@@ -1,11 +1,11 @@
 'use client';
 
-import { Package, Users, FileText, DollarSign, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
+import { Package, Users, FileText, DollarSign, TrendingUp, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { DashboardStats, DashboardMetrics, MetricaKpi, AccesoRapidoItem } from '@/types';
+import { DashboardStats } from '@/types';
 
 export default function DashboardPage() {
   const { usuario } = useAuth();
@@ -15,18 +15,22 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [productos, cotizaciones, ventas, cuentasCobrar] = await Promise.all([
+        const [productos, cotizaciones, aprobadas, cobranza] = await Promise.all([
           apiClient('/productos?limit=1'),
           apiClient('/cotizaciones?limit=1'),
-          apiClient('/ventas?limit=1'),
-          apiClient('/ventas?tipoPago=credito&estado=pendiente&limit=100'),
+          apiClient('/cotizaciones?estado=aprobada&limit=1'),
+          apiClient('/cobranza?limit=100'),
         ]);
 
         setStats({
           totalProductos: productos.total || 0,
           totalCotizaciones: cotizaciones.total || 0,
-          totalVentas: ventas.total || 0,
-          montoPendiente: cuentasCobrar.data?.reduce((sum: number, c: any) => sum + (c.montoPendiente || 0), 0) || 0,
+          cotizacionesAprobadas: aprobadas.total || 0,
+          montoPendiente:
+            cobranza.data?.reduce(
+              (sum: number, c: any) => sum + Number(c.saldo ?? c.montoPendiente ?? 0),
+              0,
+            ) || 0,
           productosBajoStock: 0,
           cotizacionesEsteMes: 0,
         });
@@ -43,7 +47,7 @@ export default function DashboardPage() {
   const statCards = [
     { label: 'Productos', value: stats?.totalProductos || 0, icon: Package, color: 'bg-blue-500', href: '/admin/productos' },
     { label: 'Cotizaciones', value: stats?.totalCotizaciones || 0, icon: FileText, color: 'bg-green-500', href: '/admin/cotizaciones' },
-    { label: 'Ventas', value: stats?.totalVentas || 0, icon: DollarSign, color: 'bg-purple-500', href: '/admin/ventas' },
+    { label: 'Aprobadas', value: stats?.cotizacionesAprobadas || 0, icon: DollarSign, color: 'bg-purple-500', href: '/admin/cotizaciones' },
     { label: 'Por Cobrar', value: stats?.montoPendiente ? `S/ ${stats.montoPendiente.toLocaleString()}` : 'S/ 0', icon: TrendingUp, color: 'bg-orange-500', href: '/admin/cobranza' },
   ];
 
@@ -84,15 +88,15 @@ export default function DashboardPage() {
                 <p className="font-medium text-gray-900">Gestionar Productos</p>
                 <p className="text-sm text-gray-500 mt-1">Inventario, precios, importación</p>
               </Link>
-              <Link href="/admin/cotizaciones/crear" className="p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+              <Link href="/admin/cotizaciones/crear?nueva=1" className="p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
                 <FileText className="h-8 w-8 text-green-700 mb-2" />
                 <p className="font-medium text-gray-900">Nueva Cotización</p>
                 <p className="text-sm text-gray-500 mt-1">Crear cotización para cliente</p>
               </Link>
-              <Link href="/admin/ventas/crear" className="p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                <DollarSign className="h-8 w-8 text-purple-700 mb-2" />
-                <p className="font-medium text-gray-900">Nueva Venta</p>
-                <p className="text-sm text-gray-500 mt-1">Registrar venta contado o crédito</p>
+              <Link href="/admin/cobranza" className="p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                <DollarSign className="h-8 w-8 text-orange-700 mb-2" />
+                <p className="font-medium text-gray-900">Cobranza</p>
+                <p className="text-sm text-gray-500 mt-1">Registrar pagos de cotizaciones</p>
               </Link>
             </div>
           </div>

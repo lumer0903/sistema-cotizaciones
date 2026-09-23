@@ -223,7 +223,7 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                             placeholder="Buscar por código o nombre..."
                             value={searchQuery}
                             onChange={(e) => {
-                                setSearchQuery(e.target.value);
+                                setSearchQuery(e.target.value.toUpperCase());
                                 setShowSuggestions(true);
                                 if (selectedProducto) {
                                     setSelectedProducto(null);

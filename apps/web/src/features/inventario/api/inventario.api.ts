@@ -144,6 +144,8 @@ export const inventarioApi = {
         if (filtros?.limite) params.set('limit', String(filtros.limite));
         if (filtros?.categoriaId) params.set('id_categoria', String(filtros.categoriaId));
         if (filtros?.almacenId) params.set('id_almacen', String(filtros.almacenId));
+        // La ficha técnica necesita precios; incluir siempre
+        if (!params.has('include')) params.set('include', 'precios,categoria,stock');
         const endpoint = params.toString() ? `/productos?${params.toString()}` : '/productos';
         return apiClient<ProductosPaginadosResponse>(endpoint);
     },

@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/apiClient';
-import { toast } from 'sonner';
+import { showToast } from '@/lib/toast';
 import { InventarioFilters } from '@/features/inventario/components/InventarioFilters';
 import { InventarioTable } from '@/features/inventario/components/InventarioTable';
 import { ProductoModal } from '@/features/inventario/components/ProductoModal';
@@ -36,6 +36,8 @@ interface ProductoAPI {
     cantidad: number;
     almacen: { id_almacen: number; nombre: string; ubicacion: string | null };
   }>;
+  precios?: any;
+  precios_actuales?: any;
 }
 
 interface PaginatedResponse {
@@ -75,7 +77,7 @@ const mapToProductoInventario = (p: ProductoAPI): ProductoInventario => ({
       activo: true,
     },
   })) || [],
-  precios_actuales: null,
+  precios_actuales: (p as any).precios_actuales ?? (p as any).precios ?? null,
   unidades_por_caja: 1,
   created_at: new Date(),
   updated_at: new Date(),
@@ -127,7 +129,7 @@ export default function InventarioPage() {
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: limit.toString(),
-        include: 'categoria,stock',
+        include: 'precios,categoria,stock',
       });
       if (searchValue.trim()) params.append('search', searchValue.trim());
       if (selectedCategoria) params.append('id_categoria', selectedCategoria);
@@ -189,7 +191,7 @@ export default function InventarioPage() {
         categorias={categorias}
         almacenes={almacenes}
         searchValue={searchValue}
-        onSearchChange={(v) => { setSearchValue(v); setCurrentPage(1); }}
+        onSearchChange={(v) => { setSearchValue(v.toUpperCase()); setCurrentPage(1); }}
         selectedCategoria={selectedCategoria}
         onCategoriaChange={(v) => { setSelectedCategoria(v); setCurrentPage(1); }}
         selectedUbicacion={selectedUbicacion}
@@ -247,7 +249,7 @@ export default function InventarioPage() {
       <ProductoModal
         open={isModalOpen}
         onClose={() => { setIsModalOpen(false); setProductoSeleccionado(null); }}
-        onSuccess={() => { fetchProductos(); toast.success('Producto guardado correctamente'); }}
+        onSuccess={() => { fetchProductos(); showToast.success('Producto guardado correctamente'); }}
         modo={modoModal}
         productoInicial={productoSeleccionado ?? undefined}
       />
@@ -255,14 +257,14 @@ export default function InventarioPage() {
       <MovimientoModal
         open={isMovimientoOpen}
         onClose={() => { setIsMovimientoOpen(false); setProductoParaMovimiento(null); }}
-        onSuccess={() => { fetchProductos(); toast.success('Movimiento registrado correctamente'); }}
+        onSuccess={() => { fetchProductos(); showToast.success('Movimiento registrado correctamente'); }}
         productoPreseleccionado={productoParaMovimiento}
       />
 
       <TransferenciaModal
         open={isTransferenciaOpen}
         onClose={() => { setIsTransferenciaOpen(false); setProductoParaTransferencia(null); }}
-        onSuccess={() => { fetchProductos(); toast.success('Transferencia realizada correctamente'); }}
+        onSuccess={() => { fetchProductos(); showToast.success('Transferencia realizada correctamente'); }}
         productoPreseleccionado={productoParaTransferencia}
       />
 

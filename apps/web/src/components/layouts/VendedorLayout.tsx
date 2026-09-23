@@ -13,7 +13,6 @@ import {
   ChevronRight,
   ChevronDown,
   Search,
-  CreditCard,
   Plus,
   ArrowLeft,
 } from 'lucide-react';
@@ -28,7 +27,6 @@ const VENDEDOR_NAV_ITEMS: {
   permission: PermisoModulo;
   children?: { href: string; label: string }[];
 }[] = [
-  { href: '/vendedor/pos', icon: CreditCard, label: 'Punto de Venta', permission: 'ventas' },
   { href: '/vendedor/catalogo', icon: Package, label: 'Catálogo', permission: 'productos' },
   {
     href: '/vendedor/cotizaciones',
@@ -61,7 +59,7 @@ export function VendedorLayout({ title, children }: { title: string; children: R
 
   const filteredItems = VENDEDOR_NAV_ITEMS.filter(item => can(item.permission));
 
-  const isActive = (href: string) => pathname === href || (href !== '/vendedor/pos' && pathname.startsWith(href));
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   const handleMenuToggle = (itemHref: string) => {
     if (expandedMenu === itemHref) {

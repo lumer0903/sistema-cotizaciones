@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -8,7 +8,6 @@ import {
     Package,
     Search,
     FileText,
-    ShoppingBag,
     Wallet,
     BarChart3,
     Users,
@@ -16,6 +15,7 @@ import {
     LogOut,
     ChevronDown,
 } from 'lucide-react';
+import { showToast } from '@/lib/toast';
 
 interface MenuItem {
     name: string;
@@ -33,17 +33,8 @@ const menuItems: MenuItem[] = [
         href: '/admin/cotizaciones',
         icon: FileText,
         subItems: [
-            { name: 'Crear cotización', href: '/admin/cotizaciones/crear' },
+            { name: 'Crear cotización', href: '/admin/cotizaciones/crear?nueva=1' },
             { name: 'Mis Cotizaciones', href: '/admin/cotizaciones' },
-        ],
-    },
-    {
-        name: 'Ventas',
-        href: '/admin/ventas',
-        icon: ShoppingBag,
-        subItems: [
-            { name: 'Nueva venta', href: '/admin/ventas/nueva' },
-            { name: 'Historial ventas', href: '/admin/ventas' },
         ],
     },
     { name: 'Cobranza', href: '/admin/cobranza', icon: Wallet },
@@ -129,7 +120,7 @@ export function Sidebar() {
                                     {isSubmenuOpen && (
                                         <div className="w-full flex flex-col bg-zinc-50/60 rounded-xl p-1 mt-0.5 border border-zinc-100 space-y-0.5">
                                             {item.subItems?.map((sub) => {
-                                                const isSubActive = pathname === sub.href;
+                                                const isSubActive = pathname === sub.href.split('?')[0];
                                                 return (
                                                     <Link
                                                         key={sub.name}
@@ -171,7 +162,7 @@ export function Sidebar() {
             <div className="w-full p-3.5 border-t border-zinc-200/80">
                 <button
                     type="button"
-                    onClick={() => alert('Cerrando sesión...')}
+                    onClick={() => showToast.info('Cerrando sesión...')}
                     className="w-full h-11 px-4 py-2 rounded-xl inline-flex items-center gap-3 text-xs sm:text-sm text-zinc-500 font-semibold hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100 transition-all duration-200 focus:outline-none"
                 >
                     <LogOut className="w-4.5 h-4.5 text-zinc-400 transition-colors group-hover:text-rose-500" />

@@ -8,7 +8,6 @@ import { AuthModule } from './modules/auth/infrastructure/auth.module';
 import { CotizacionesModule } from './modules/cotizaciones/cotizaciones.module';
 import { AiModule } from './modules/ai/infrastructure/ai.module';
 import { ProductosModule } from './modules/productos/productos.module';
-import { VentasModule } from './modules/ventas/ventas.module';
 import { UsuariosModule } from './modules/usuarios/usuarios.module';
 import { CobranzaModule } from './modules/cobranza/cobranza.module';
 import { ClientesModule } from './modules/clientes/clientes.module';
@@ -38,7 +37,6 @@ import { ConfiguracionModule } from './modules/configuracion/configuracion.modul
     CotizacionesModule,
     AiModule,
     ProductosModule,
-    VentasModule,
     UsuariosModule,
     CobranzaModule,
     ClientesModule,

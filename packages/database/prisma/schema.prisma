@@ -213,6 +213,7 @@ model StockActual {
   @@map("stock_actual")
 }
 
+// LEGACY: módulo de ventas eliminado de la app; tablas se conservan hasta migración de limpieza.
 model Venta {
   id_venta          Int                @id @default(autoincrement())
   serie             String             @db.VarChar(4)
@@ -258,6 +259,7 @@ model Venta {
   @@map("ventas")
 }
 
+// LEGACY: módulo de ventas eliminado de la app; tablas se conservan hasta migración de limpieza.
 model VentaDetalle {
   id_detalle      Int       @id @default(autoincrement())
   id_venta        Int
@@ -278,6 +280,7 @@ model VentaDetalle {
   @@map("venta_detalle")
 }
 
+// LEGACY: módulo de ventas eliminado de la app; tablas se conservan hasta migración de limpieza.
 model VentaPago {
   id_pago     Int        @id @default(autoincrement())
   id_venta    Int
@@ -295,6 +298,7 @@ model VentaPago {
   @@map("venta_pagos")
 }
 
+// LEGACY: módulo de ventas eliminado de la app; cobranza ahora opera sobre cotizaciones.
 model CuentaCobrar {
   id_cuenta        Int          @id @default(autoincrement())
   id_venta         Int          @unique

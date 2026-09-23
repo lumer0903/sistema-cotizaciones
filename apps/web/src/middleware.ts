@@ -30,7 +30,7 @@ export function middleware(request: NextRequest) {
   if (isAdminRoute) {
     const userRole = request.cookies.get('userRole')?.value;
     if (userRole && !['admin', 'gerente'].includes(userRole)) {
-      return NextResponse.redirect(new URL('/vendedor/pos', request.url));
+      return NextResponse.redirect(new URL('/vendedor/cotizaciones', request.url));
     }
   }
 
@@ -44,7 +44,7 @@ export function middleware(request: NextRequest) {
   if (pathname === '/') {
     const userRole = request.cookies.get('userRole')?.value;
     if (userRole === 'vendedor') {
-      return NextResponse.redirect(new URL('/vendedor/pos', request.url));
+      return NextResponse.redirect(new URL('/vendedor/cotizaciones', request.url));
     }
     return NextResponse.redirect(new URL('/admin/dashboard', request.url));
   }

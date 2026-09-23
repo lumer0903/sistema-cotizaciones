@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, Min, IsNumber } from 'class-validator';
+import { IsInt, IsOptional, Min, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class RecomendarItemDto {
@@ -14,4 +14,8 @@ export class RecomendarItemDto {
   @ApiPropertyOptional({ example: 1, description: 'ID del almacén para consultar stock específico' })
   @IsOptional() @IsInt() @Min(1) @Type(() => Number)
   id_almacen?: number;
+
+  @ApiPropertyOptional({ example: 'distribuidor', description: 'Tipo de precio explícito (normal/distribuidor). Tiene prioridad sobre el tipo del cliente.' })
+  @IsOptional() @IsIn(['normal', 'distribuidor'])
+  tipo_precio?: 'normal' | 'distribuidor';
 }

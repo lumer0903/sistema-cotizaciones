@@ -4,6 +4,7 @@ import { Search, Filter, Grid, List, Package, Tag, ChevronDown, Eye, Plus } from
 import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
+import { formatCode } from '@/lib/formatters';
 
 interface Producto {
   id_producto: number;
@@ -32,7 +33,7 @@ function renderGridView(productos: Producto[]) {
             <Package className="h-16 w-16 text-gray-300" />
           </div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-sm text-gray-500">{producto.codigo}</span>
+            <span className="text-sm text-gray-500 uppercase">{formatCode(producto.codigo)}</span>
             {producto.nombre_categoria && (
               <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">{producto.nombre_categoria}</span>
             )}
@@ -95,7 +96,7 @@ function renderTableRows({ productos }: { productos: Producto[] }) {
     <>
       {productos.map((producto) => (
         <tr key={producto.id_producto} className="hover:bg-gray-50">
-          <td className="p-3 text-sm text-gray-900">{producto.codigo}</td>
+          <td className="p-3 text-sm text-gray-900 uppercase">{formatCode(producto.codigo)}</td>
           <td className="p-3 text-sm font-medium text-gray-900">{producto.descripcion}</td>
           <td className="p-3 text-sm text-gray-500">{producto.nombre_categoria || '-'}</td>
           <td className="p-3 text-sm text-gray-500">
@@ -197,7 +198,7 @@ export default function CatalogoPage() {
               type="text"
               placeholder="Buscar por código, descripción..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value.toUpperCase())}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
             />
           </div>

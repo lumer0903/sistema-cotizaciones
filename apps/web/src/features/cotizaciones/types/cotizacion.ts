@@ -2,20 +2,24 @@ export type EstadoCotizacion =
     | 'TODOS'
     | 'BORRADOR'
     | 'ENVIADO'
+    | 'PARCIALMENTE_PAGADA'
     | 'APROBADO'
-    | 'RECHAZADO'
-    | 'PENDIENTE'
-    | 'CANCELADO';
+    | 'RECHAZADO';
 
 export interface ProductoCarrito {
     id: string;
+    id_producto?: number;
     codigo: string;
     descripcion: string;
     precioUnitario: number;
     cantidad: number;
     total: number;
+    tipo_venta?: 'UNIDAD' | 'DOCENA' | 'MAYOR' | string;
     observacion?: string;
     es_sugerido_ia?: boolean;
+    stock?: number;
+    almacen?: string;
+    ubicacion?: string;
 }
 
 export interface CotizacionItem {
@@ -54,12 +58,16 @@ export interface RecomendacionItem {
     categoria?: string;
     margen?: number;
     es_sugerido_ia: boolean;
+    almacen?: string | null;
+    ubicacion?: string | null;
 }
 
 export interface RecomendarItemRequest {
     id_producto_base: number;
     id_cliente?: number;
     id_almacen?: number;
+    /** 'normal' = tienda, 'distribuidor' = distribuidor. Tiene prioridad sobre el tipo del cliente. */
+    tipo_precio?: 'normal' | 'distribuidor';
 }
 
 export interface RecomendarItemResponse {

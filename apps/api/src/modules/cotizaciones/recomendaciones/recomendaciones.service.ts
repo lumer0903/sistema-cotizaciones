@@ -14,6 +14,8 @@ export interface RecomendacionItemResponse {
   categoria?: string;
   margen?: number;
   es_sugerido_ia: boolean;
+  almacen?: string | null;
+  ubicacion?: string | null;
 }
 
 export interface RecomendarItemResponse {
@@ -52,7 +54,7 @@ export class RecomendacionesService {
       });
 
       // 3. Enriquecer con precios y stock en paralelo
-      const enriched = await this.enrichRecommendations(aiResponse, dto.id_cliente, dto.id_almacen);
+      const enriched = await this.enrichRecommendations(aiResponse, dto.id_cliente, dto.id_almacen, dto.tipo_precio);
 
       // 4. Auditoría asíncrona
       this.logIaInteraccion(id_usuario, dto.id_producto_base, dto, enriched);
@@ -68,10 +70,11 @@ export class RecomendacionesService {
     aiResponse: AiRecommendationResponse,
     id_cliente?: number,
     id_almacen?: number,
+    tipoPrecioOverride?: TipoPrecio,
   ): Promise<RecomendarItemResponse> {
-    let tipoPrecio: TipoPrecio = 'normal';
+    let tipoPrecio: TipoPrecio = tipoPrecioOverride ?? 'normal';
 
-    if (id_cliente) {
+    if (!tipoPrecioOverride && id_cliente) {
       const cliente = await this.prisma.cliente.findUnique({
         where: { id_cliente, deleted_at: null },
         select: { tipo: true },
@@ -85,13 +88,23 @@ export class RecomendacionesService {
       return Promise.all(
         items.map(async (item) => {
           // Consultas paralelas por cada ítem recomendado
-          const [stock, precios] = await Promise.all([
+          const [stockRow, precios] = await Promise.all([
             id_almacen
               ? this.prisma.stockActual.findUnique({
                 where: { id_producto_id_almacen: { id_producto: item.id, id_almacen } },
-                select: { cantidad: true },
+                select: {
+                  cantidad: true,
+                  almacen: { select: { nombre: true, ubicacion: true } },
+                },
               })
-              : null,
+              : this.prisma.stockActual.findFirst({
+                where: { id_producto: item.id, cantidad: { gt: 0 } },
+                orderBy: { cantidad: 'desc' },
+                select: {
+                  cantidad: true,
+                  almacen: { select: { nombre: true, ubicacion: true } },
+                },
+              }),
             this.prisma.preciosActuales.findUnique({
               where: { id_producto: item.id },
               select: {
@@ -101,7 +114,7 @@ export class RecomendacionesService {
             }),
           ]);
 
-          const stockReal = stock?.cantidad ?? item.stock ?? 0;
+          const stockReal = stockRow?.cantidad ?? item.stock ?? 0;
           const precioNormal = precios?.precio_unidad_normal ? Number(precios.precio_unidad_normal) : item.precio;
           const precioDist = precios?.precio_unidad_dist ? Number(precios.precio_unidad_dist) : item.precio;
 
@@ -117,6 +130,8 @@ export class RecomendacionesService {
             categoria: item.categoria,
             margen: item.margen,
             es_sugerido_ia: true,
+            almacen: stockRow?.almacen?.nombre ?? null,
+            ubicacion: stockRow?.almacen?.ubicacion ?? null,
           };
         }),
       );
@@ -138,7 +153,7 @@ export class RecomendacionesService {
     response: RecomendarItemResponse,
   ): Promise<void> {
     try {
-      const prompt = `Recomendación por ítem: producto_base=${id_producto_base}, cliente=${request.id_cliente ?? 'N/A'}, almacen=${request.id_almacen ?? 'N/A'}`;
+      const prompt = `Recomendación por ítem: producto_base=${id_producto_base}, cliente=${request.id_cliente ?? 'N/A'}, almacen=${request.id_almacen ?? 'N/A'}, tipo_precio=${request.tipo_precio ?? 'auto'}`;
       const respuesta = JSON.stringify({
         similar: response.similar.map((r) => ({ id: r.id_producto, score: r.similarityScore })),
         upsell: response.upsell.map((r) => ({ id: r.id_producto, score: r.similarityScore })),

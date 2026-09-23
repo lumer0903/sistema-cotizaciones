@@ -2,7 +2,7 @@ import React from 'react';
 import { History } from 'lucide-react';
 import { ProductoConsulta } from '../types/precio';
 import { getImageUrl, handleImageError } from '@/lib/imageUtils';
-import { formatPrice, formatCode } from '@/lib/formatters';
+import { formatPrice, formatCode, obtenerPreciosEstandarizados } from '@/lib/formatters';
 
 interface PriceCardProps {
     producto: ProductoConsulta;
@@ -11,7 +11,9 @@ interface PriceCardProps {
 }
 
 export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVerHistorial }) => {
-    const tieneStock = producto.stock > 0;
+    const tieneStock = (producto?.stock ?? 0) > 0;
+    // Extracción segura: soporta forma procesada (precioTienda/precioDistribuidor) y raw (precios_actuales/precios)
+    const { tienda, distribuidor } = obtenerPreciosEstandarizados(producto);
 
     return (
         <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
@@ -41,7 +43,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
             {/* Cabecera del producto */}
             <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                    <span className="text-brand-primary font-extrabold text-sm tracking-tight">
+                    <span className="text-brand-primary font-extrabold text-sm tracking-tight uppercase">
                         {formatCode(producto.codigo)}
                     </span>
                     <div className="flex items-center gap-1.5">
@@ -72,19 +74,19 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
                         <div className="flex flex-col items-center">
                             <span className="text-gray-400 text-[9px] font-bold uppercase">Unidad</span>
                             <span className="text-orange-900 text-xs font-black">
-                                {formatPrice(producto.precioDistribuidor.unidad)}
+                                {formatPrice(distribuidor.unidad)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
                             <span className="text-gray-400 text-[9px] font-bold uppercase">Docena</span>
                             <span className="text-orange-900 text-xs font-black">
-                                {formatPrice(producto.precioDistribuidor.docena)}
+                                {formatPrice(distribuidor.docena)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
                             <span className="text-gray-400 text-[9px] font-bold uppercase">Mayor</span>
                             <span className="text-orange-900 text-xs font-black">
-                                {formatPrice(producto.precioDistribuidor.mayor)}
+                                {formatPrice(distribuidor.mayor)}
                             </span>
                         </div>
                     </div>
@@ -101,19 +103,19 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
                         <div className="flex flex-col items-center">
                             <span className="text-gray-400 text-[9px] font-bold uppercase">Unidad</span>
                             <span className="text-blue-900 text-xs font-black">
-                                {formatPrice(producto.precioTienda.unidad)}
+                                {formatPrice(tienda.unidad)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
                             <span className="text-gray-400 text-[9px] font-bold uppercase">Docena</span>
                             <span className="text-blue-900 text-xs font-black">
-                                {formatPrice(producto.precioTienda.docena)}
+                                {formatPrice(tienda.docena)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
                             <span className="text-gray-400 text-[9px] font-bold uppercase">Mayor</span>
                             <span className="text-blue-900 text-xs font-black">
-                                {formatPrice(producto.precioTienda.mayor)}
+                                {formatPrice(tienda.mayor)}
                             </span>
                         </div>
                     </div>

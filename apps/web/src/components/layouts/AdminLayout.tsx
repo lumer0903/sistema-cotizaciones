@@ -13,8 +13,6 @@ const ROUTE_TITLES: Record<string, string> = {
   '/admin/precios': 'PRECIO & HISTORIAL',
   '/admin/cotizaciones': 'COTIZACIONES',
   '/admin/cotizaciones/crear': 'CREAR COTIZACIÓN',
-  '/admin/ventas': 'VENTAS',
-  '/admin/ventas/nueva': 'NUEVA VENTA',
   '/admin/cobranza': 'COBRANZA',
   '/admin/reportes': 'REPORTES',
   '/admin/usuarios': 'USUARIOS',

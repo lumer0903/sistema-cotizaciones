@@ -1,8 +1,13 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, Package, Archive, CheckSquare, Square, ChevronDown } from 'lucide-react';
+import { X, Package, Archive, CheckSquare, Square, AlertTriangle } from 'lucide-react';
 import { ProductoCarrito } from '../types/cotizacion';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { getImageUrl, handleImageError } from '@/lib/imageUtils';
+import { formatCode, obtenerPreciosEstandarizados } from '@/lib/formatters';
 
 export interface ColorDisponible {
     nombre: string;
@@ -11,15 +16,27 @@ export interface ColorDisponible {
 
 export interface ProductoBase {
     id?: string | number;
+    id_producto?: number;
     codigo: string;
     descripcion: string;
-    imagenUrl?: string;
+    foto_url?: string | null;
+    imagenUrl?: string | null;
     estante?: string;
     stockAlerta?: number;
     stockTotal?: number;
+    stock_total?: number;
     stock?: number;
     coloresDisponibles?: ColorDisponible[];
+    colores_surtido?: string[];
     precios?: {
+        // Formato API backend (snake_case)
+        precio_unidad_normal?: number;
+        precio_docena_normal?: number;
+        precio_mayor_normal?: number;
+        precio_unidad_dist?: number;
+        precio_docena_dist?: number;
+        precio_mayor_dist?: number;
+        // Formato UI alternativo (camelCase / nested)
         distribuidor?: { unidad?: number; docena?: number; mayor?: number };
         tienda?: { unidad?: number; docena?: number; mayor?: number };
     };
@@ -41,66 +58,36 @@ export default function AgregarProductoModal({
     tipoPrecioCliente,
     onAgregar,
 }: AgregarProductoModalProps) {
-    // 1. Declaración de Estados
     const [tipoColor, setTipoColor] = useState<'SURTIDO' | 'ESPECIFICO'>('SURTIDO');
     const [colorSeleccionado, setColorSeleccionado] = useState<string>('');
-    const [tipoVenta, setTipoVenta] = useState<'UNIDAD' | 'DOCENA' | 'MAYOR' | ''>('');
+    const [tipoVenta, setTipoVenta] = useState<'UNIDAD' | 'DOCENA' | 'MAYOR' | ''>('MAYOR');
     const [cantidad, setCantidad] = useState<number>(1);
     const [precioInput, setPrecioInput] = useState<string>('0.00');
+    const [imgError, setImgError] = useState<boolean>(false);
 
-    // 2. Obtención de escala de precios
-    const preciosEscala = useMemo(() => {
-        if (!producto) return { unidad: 0, docena: 0, mayor: 0 };
+    // Extracción segura de los 6 precios (tienda + distribuidor) desde cualquier forma del producto
+    const { tienda, distribuidor } = useMemo(
+        () => obtenerPreciosEstandarizados(producto),
+        [producto]
+    );
 
-        const p = producto as unknown as Record<string, any>;
-        const esTienda = String(tipoPrecioCliente).toUpperCase() === 'TIENDA';
+    const esTienda = String(tipoPrecioCliente).toUpperCase() === 'TIENDA';
+    const preciosPorCliente = esTienda ? tienda : distribuidor;
 
-        const preciosGroup = esTienda ? p.precios?.tienda : p.precios?.distribuidor;
-        if (preciosGroup) {
-            return {
-                unidad: Number(preciosGroup.unidad ?? 0),
-                docena: Number(preciosGroup.docena ?? 0),
-                mayor: Number(preciosGroup.mayor ?? 0),
-            };
-        }
-
-        const buscarPrecio = (...keys: string[]) => {
-            for (const k of keys) {
-                if (p[k] !== undefined && p[k] !== null && p[k] !== '') {
-                    const val = Number(p[k]);
-                    if (!isNaN(val) && val > 0) return val;
-                }
-            }
-            return 0;
-        };
-
-        if (esTienda) {
-            return {
-                unidad: buscarPrecio('precioTiendaUnidad', 'precio_tienda_unidad', 'precioTienda', 'precioUnidad'),
-                docena: buscarPrecio('precioTiendaDocena', 'precio_tienda_docena', 'precioDocena'),
-                mayor: buscarPrecio('precioTiendaMayor', 'precio_tienda_mayor', 'precioMayor'),
-            };
-        }
-
-        return {
-            unidad: buscarPrecio('precioDistribuidorUnidad', 'precio_distribuidor_unidad', 'precioDistribuidor', 'precioUnidad'),
-            docena: buscarPrecio('precioDistribuidorDocena', 'precio_distribuidor_docena', 'precioDocena', 'precio'),
-            mayor: buscarPrecio('precioDistribuidorMayor', 'precio_distribuidor_mayor', 'precioMayor'),
-        };
-    }, [producto, tipoPrecioCliente]);
-
-    // 3. Efectos
+    // Sincroniza el input de precio al abrir el modal / cambiar producto o tipo de cliente
     useEffect(() => {
         if (isOpen && producto) {
             setTipoColor('SURTIDO');
             setColorSeleccionado('');
             setTipoVenta('MAYOR');
             setCantidad(1);
-            setPrecioInput(preciosEscala.mayor.toFixed(2));
+            const inicial = esTienda ? tienda.mayor : distribuidor.mayor;
+            setPrecioInput(Number(inicial || 0).toFixed(2));
+            setImgError(false);
         }
-    }, [isOpen, producto, preciosEscala]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, producto, tipoPrecioCliente]);
 
-    // 4. Cálculos memorizados (Todos antes de cualquier 'return' condicional)
     const precioNum = useMemo(() => {
         const val = parseFloat(precioInput);
         return isNaN(val) ? 0 : val;
@@ -108,87 +95,101 @@ export default function AgregarProductoModal({
 
     const subtotal = useMemo(() => precioNum * cantidad, [precioNum, cantidad]);
 
-    const stockTotalDisplay = producto?.stockTotal ?? producto?.stock ?? 1000;
+    // Cálculo y fallback de stocks
+    const stockTotalDisplay = producto?.stock_total ?? producto?.stockTotal ?? producto?.stock ?? 0;
 
     const stockColorSeleccionado = useMemo(() => {
+        if (tipoColor === 'SURTIDO') return stockTotalDisplay;
         if (!colorSeleccionado || !producto?.coloresDisponibles) return stockTotalDisplay;
+
         const encontrado = producto.coloresDisponibles.find((c) => c.nombre === colorSeleccionado);
         return encontrado ? encontrado.stock : 0;
-    }, [colorSeleccionado, producto?.coloresDisponibles, stockTotalDisplay]);
+    }, [tipoColor, colorSeleccionado, producto?.coloresDisponibles, stockTotalDisplay]);
 
-    // 5. Retorno condicional colocado DESPUÉS de declarar todos los Hooks
+    // Validación para bloquear o permitir guardar
+    const sinStock = tipoColor === 'ESPECIFICO' && colorSeleccionado !== '' && stockColorSeleccionado <= 0;
+
     if (!isOpen || !producto) return null;
 
     const handleTipoVentaChange = (nuevoTipo: 'UNIDAD' | 'DOCENA' | 'MAYOR') => {
         setTipoVenta(nuevoTipo);
-        if (nuevoTipo === 'UNIDAD') setPrecioInput(preciosEscala.unidad.toFixed(2));
-        if (nuevoTipo === 'DOCENA') setPrecioInput(preciosEscala.docena.toFixed(2));
-        if (nuevoTipo === 'MAYOR') setPrecioInput(preciosEscala.mayor.toFixed(2));
+        if (nuevoTipo === 'UNIDAD') setPrecioInput(Number(preciosPorCliente.unidad || 0).toFixed(2));
+        if (nuevoTipo === 'DOCENA') setPrecioInput(Number(preciosPorCliente.docena || 0).toFixed(2));
+        if (nuevoTipo === 'MAYOR') setPrecioInput(Number(preciosPorCliente.mayor || 0).toFixed(2));
     };
 
     const handleGuardar = () => {
+        if (sinStock) return;
+
+        const p = producto as any;
         onAgregar({
             id: Date.now().toString(),
+            id_producto: Number(p.id_producto ?? p.id ?? 0) || undefined,
             codigo: producto.codigo,
             descripcion: `${producto.descripcion}${colorSeleccionado ? ` (${colorSeleccionado})` : ''}`,
             precioUnitario: precioNum,
             cantidad,
             total: subtotal,
+            tipo_venta: tipoVenta || 'MAYOR',
+            stock: Number(stockTotalDisplay || 0),
+            almacen: p.almacen?.nombre || p.stock_actual?.[0]?.almacen?.nombre,
+            ubicacion: p.almacen?.ubicacion || p.stock_actual?.[0]?.almacen?.ubicacion || p.estante,
         });
         onClose();
     };
 
-    const stockAlertaDisplay = producto.stockAlerta ?? 20;
+    const stockAlertaDisplay = producto.stockAlerta ?? producto.stock_minimo ?? 20;
     const estanteDisplay = producto.estante || 'Estante B';
-    const tituloEscala = String(tipoPrecioCliente).toUpperCase() === 'TIENDA' ? 'PRECIO TIENDA' : 'PRECIO DISTRIBUIDOR';
+    const tituloEscala = esTienda ? 'PRECIO TIENDA' : 'PRECIO DISTRIBUIDOR';
+    const preciosDisplay = preciosPorCliente;
+
+    // Imagen final procesada por getImageUrl
+    const imagenSrc = getImageUrl(producto.foto_url || producto.imagenUrl);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="bg-white rounded-3xl shadow-xl w-full max-w-[420px] p-6 relative space-y-4">
-                {/* Encabezado */}
-                <div className="flex items-center justify-between pb-1 border-b border-gray-100">
-                    <h2 className="text-xl font-bold text-zinc-800">Agregar Producto</h2>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-zinc-400 hover:text-zinc-600 transition-colors"
-                    >
-                        <X className="size-5" />
-                    </button>
-                </div>
-
-                {/* Ficha de producto */}
-                <div className="border border-brand-primary/60 rounded-2xl p-3 flex gap-3 bg-white">
-                    <div className="size-20 rounded-xl border border-brand-primary/60 flex items-center justify-center overflow-hidden bg-brand-selection shrink-0">
-                        {producto.imagenUrl ? (
+        <Modal
+            open={isOpen}
+            onClose={onClose}
+            title="Agregar Producto"
+            maxWidth="md"
+        >
+            <div className="space-y-5 text-zinc-700 p-1">
+                {/* Ficha de producto con manejo de errores de imagen */}
+                <div className="border border-zinc-200 rounded-2xl p-3.5 flex gap-3.5 bg-white items-center">
+                    <div className="size-20 rounded-xl border border-zinc-200 flex items-center justify-center overflow-hidden bg-zinc-50 shrink-0">
+                        {imagenSrc && !imgError ? (
                             <img
-                                src={producto.imagenUrl}
+                                src={getImageUrl(producto.foto_url || producto.imagenUrl)}
                                 alt={producto.descripcion}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    handleImageError(e);
+                                    setImgError(true);
+                                }}
                             />
                         ) : (
-                            <Package className="size-10 text-brand-primary" />
+                            <Package className="size-8 text-zinc-400" />
                         )}
                     </div>
-                    <div className="flex flex-col justify-between py-0.5 min-w-0">
+                    <div className="flex flex-col justify-between py-0.5 min-w-0 flex-1 gap-1">
                         <div>
-                            <span className="inline-block bg-zinc-200/80 text-zinc-700 text-[11px] font-bold px-2 py-0.5 rounded">
-                                {producto.codigo}
+                            <span className="inline-block bg-zinc-100 text-zinc-600 text-[11px] font-bold px-2.5 py-0.5 rounded-md uppercase">
+                                {formatCode(producto.codigo)}
                             </span>
-                            <p className="text-xs text-zinc-800 font-medium leading-tight truncate mt-1">
+                            <p className="text-xs text-zinc-700 font-medium leading-tight truncate mt-1">
                                 {producto.descripcion}
                             </p>
                         </div>
                         <div className="flex items-center gap-1.5 text-[11px] pt-1">
-                            <span className="inline-flex items-center gap-1 bg-stone-100 border border-stone-200/80 text-zinc-500 px-2 py-0.5 rounded">
-                                <Archive className="size-3" />
+                            <span className="inline-flex items-center gap-1 bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-md font-medium">
+                                <Archive className="size-3 text-zinc-500" />
                                 {estanteDisplay}
                             </span>
-                            <span className="inline-flex items-center gap-1 bg-red-50 border border-red-200/60 text-red-500 font-semibold px-1.5 py-0.5 rounded">
+                            <span className="inline-flex items-center gap-1 bg-red-50 text-red-500 font-bold px-2 py-0.5 rounded-md">
                                 <Package className="size-3" />
                                 {stockAlertaDisplay}
                             </span>
-                            <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200/60 text-emerald-600 font-semibold px-2 py-0.5 rounded">
+                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 font-bold px-2 py-0.5 rounded-md">
                                 <span className="size-1.5 rounded-full bg-emerald-500" />
                                 {stockTotalDisplay}
                             </span>
@@ -196,19 +197,19 @@ export default function AgregarProductoModal({
                     </div>
                 </div>
 
-                {/* Selección Tipo de Venta en Color */}
+                {/* Tipo de Venta por Color */}
                 <div className="space-y-2">
-                    <label className="block text-xs font-medium text-zinc-600">
+                    <label className="block text-xs font-semibold text-zinc-600">
                         Tipo de venta en color
                     </label>
                     <div className="flex items-center gap-6">
                         <button
                             type="button"
                             onClick={() => setTipoColor('SURTIDO')}
-                            className="flex items-center gap-1.5 text-xs text-zinc-700 cursor-pointer"
+                            className="flex items-center gap-2 text-xs font-medium text-zinc-700 cursor-pointer select-none"
                         >
                             {tipoColor === 'SURTIDO' ? (
-                                <CheckSquare className="size-4 text-brand-primary fill-brand-primary/10" />
+                                <CheckSquare className="size-4 text-zinc-700" />
                             ) : (
                                 <Square className="size-4 text-zinc-300" />
                             )}
@@ -217,79 +218,82 @@ export default function AgregarProductoModal({
                         <button
                             type="button"
                             onClick={() => setTipoColor('ESPECIFICO')}
-                            className="flex items-center gap-1.5 text-xs text-zinc-700 cursor-pointer"
+                            className="flex items-center gap-2 text-xs font-medium text-zinc-700 cursor-pointer select-none"
                         >
                             {tipoColor === 'ESPECIFICO' ? (
-                                <CheckSquare className="size-4 text-brand-primary fill-brand-primary/10" />
+                                <CheckSquare className="size-4 text-zinc-700" />
                             ) : (
                                 <Square className="size-4 text-zinc-300" />
                             )}
-                            Color especifico
+                            Color específico
                         </button>
                     </div>
                 </div>
 
-                {/* Campos condicionales para Color Específico */}
+                {/* Selección y Validación de Color Específico */}
                 {tipoColor === 'ESPECIFICO' && (
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <label className="block text-xs font-medium text-zinc-600 mb-1">
-                                Seleccionar color
-                            </label>
-                            <div className="relative">
-                                <select
+                    <div className="space-y-1.5">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-xs font-semibold text-zinc-600 mb-1">
+                                    Seleccionar color
+                                </label>
+                                <Select
                                     value={colorSeleccionado}
-                                    onChange={(e) => setColorSeleccionado(e.target.value)}
-                                    className="w-full h-10 border border-zinc-200 rounded-xl px-3 text-xs text-zinc-800 bg-white appearance-none focus:outline-none focus:border-brand-primary"
-                                >
-                                    <option value="">Seleccionar</option>
-                                    {producto.coloresDisponibles?.map((c, i) => (
-                                        <option key={i} value={c.nombre}>
-                                            {c.nombre}
-                                        </option>
-                                    )) || <option value="Rojo">Rojo</option>}
-                                </select>
-                                <ChevronDown className="size-4 text-zinc-400 absolute right-3 top-3 pointer-events-none" />
+                                    onChange={(e) => setColorSeleccionado(String(e.target.value))}
+                                    options={[
+                                        { label: 'Seleccionar', value: '' },
+                                        ...(producto.coloresDisponibles?.map((c) => ({ label: c.nombre, value: c.nombre })) ||
+                                            producto.colores_surtido?.map((c) => ({ label: c, value: c })) || []),
+                                    ]}
+                                    className="w-full h-11 rounded-xl border-amber-400 focus:ring-amber-400"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-zinc-600 mb-1">
+                                    Estado de stock
+                                </label>
+                                <input
+                                    type="text"
+                                    readOnly
+                                    value={`${stockColorSeleccionado} un.`}
+                                    className={`w-full h-11 border rounded-xl px-3 text-xs font-semibold focus:outline-none ${sinStock
+                                        ? 'border-red-300 bg-red-50 text-red-600'
+                                        : 'border-zinc-200 bg-zinc-50 text-zinc-700'
+                                        }`}
+                                />
                             </div>
                         </div>
-                        <div>
-                            <label className="block text-xs font-medium text-zinc-600 mb-1">
-                                Estado de stock
-                            </label>
-                            <input
-                                type="text"
-                                readOnly
-                                value={stockColorSeleccionado}
-                                className="w-full h-10 border border-zinc-200 rounded-xl px-3 text-xs text-zinc-700 bg-zinc-50 focus:outline-none"
-                            />
-                        </div>
+
+                        {sinStock && (
+                            <p className="flex items-center gap-1.5 text-[11px] font-semibold text-red-500 pt-0.5">
+                                <AlertTriangle className="size-3.5 shrink-0" />
+                                Sin stock disponible para el color seleccionado.
+                            </p>
+                        )}
                     </div>
                 )}
 
                 {/* Tipo de Venta y Cantidad */}
                 <div className="grid grid-cols-2 gap-3">
                     <div>
-                        <label className="block text-xs font-medium text-zinc-600 mb-1">
+                        <label className="block text-xs font-semibold text-zinc-600 mb-1">
                             Tipo de venta
                         </label>
-                        <div className="relative">
-                            <select
-                                value={tipoVenta}
-                                onChange={(e) => handleTipoVentaChange(e.target.value as any)}
-                                className="w-full h-10 border border-zinc-200 rounded-xl px-3 text-xs text-zinc-800 bg-white appearance-none focus:outline-none focus:border-brand-primary"
-                            >
-                                <option value="" disabled>
-                                    Seleccionar
-                                </option>
-                                <option value="UNIDAD">Unidad</option>
-                                <option value="DOCENA">Docena</option>
-                                <option value="MAYOR">Por Mayor</option>
-                            </select>
-                            <ChevronDown className="size-4 text-zinc-400 absolute right-3 top-3 pointer-events-none" />
-                        </div>
+                        <Select
+                            value={tipoVenta}
+                            onChange={(e) => handleTipoVentaChange(String(e.target.value) as any)}
+                            options={[
+                                { label: 'Seleccionar', value: '' },
+                                { label: 'Unidad', value: 'UNIDAD' },
+                                { label: 'Docena', value: 'DOCENA' },
+                                { label: 'Por Mayor', value: 'MAYOR' },
+                            ]}
+                            className="w-full h-11 rounded-xl border-amber-400 focus:ring-amber-400"
+                        />
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-zinc-600 mb-1">
+                        <label className="block text-xs font-semibold text-zinc-600 mb-1">
                             Cantidad
                         </label>
                         <input
@@ -297,7 +301,7 @@ export default function AgregarProductoModal({
                             min="1"
                             value={cantidad}
                             onChange={(e) => setCantidad(Math.max(1, Number(e.target.value)))}
-                            className="w-full h-10 border border-zinc-200 rounded-xl px-3 text-xs text-zinc-800 focus:outline-none focus:border-brand-primary"
+                            className="w-full h-11 border border-zinc-200 rounded-xl px-3 text-xs font-semibold text-zinc-800 focus:outline-none focus:border-amber-400"
                         />
                     </div>
                 </div>
@@ -305,11 +309,11 @@ export default function AgregarProductoModal({
                 {/* Precio y Subtotal */}
                 <div className="grid grid-cols-2 gap-3">
                     <div>
-                        <label className="block text-xs font-medium text-zinc-600 mb-1">
+                        <label className="block text-xs font-semibold text-zinc-600 mb-1">
                             Precio
                         </label>
                         <div className="relative flex items-center">
-                            <span className="absolute left-3 text-xs text-zinc-400 font-medium">
+                            <span className="absolute left-3.5 text-xs font-semibold text-zinc-400">
                                 S/
                             </span>
                             <input
@@ -317,79 +321,84 @@ export default function AgregarProductoModal({
                                 step="0.01"
                                 value={precioInput}
                                 onChange={(e) => setPrecioInput(e.target.value)}
-                                className="w-full h-10 border border-zinc-200 rounded-xl pl-8 pr-3 text-xs text-zinc-800 font-medium focus:outline-none focus:border-brand-primary"
+                                className="w-full h-11 border border-zinc-200 rounded-xl pl-9 pr-3 text-xs text-zinc-800 font-semibold focus:outline-none focus:border-amber-400"
                             />
                         </div>
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-zinc-600 mb-1">
+                        <label className="block text-xs font-semibold text-zinc-600 mb-1">
                             Subtotal
                         </label>
                         <div className="relative flex items-center">
-                            <span className="absolute left-3 text-xs text-zinc-400 font-medium">
+                            <span className="absolute left-3.5 text-xs font-semibold text-zinc-400">
                                 S/
                             </span>
                             <input
                                 type="text"
                                 readOnly
                                 value={subtotal.toFixed(2)}
-                                className="w-full h-10 border border-zinc-100 bg-zinc-50 rounded-xl pl-8 pr-3 text-xs text-zinc-800 font-bold focus:outline-none"
+                                className="w-full h-11 border border-zinc-100 bg-zinc-50/80 rounded-xl pl-9 pr-3 text-xs text-zinc-800 font-bold focus:outline-none"
                             />
                         </div>
                     </div>
                 </div>
 
                 {/* Escala de Precios */}
-                <div className="bg-brand-selection/70 border border-brand-primary/40 rounded-xl p-2.5 text-center">
-                    <span className="text-[10px] font-black text-brand-subtitle tracking-wider uppercase">
+                <div className="border border-zinc-200 rounded-2xl p-3 text-center bg-white">
+                    <span className="text-[11px] font-extrabold text-zinc-800 tracking-wide uppercase block mb-2">
                         {tituloEscala}
                     </span>
-                    <div className="grid grid-cols-3 gap-2 mt-1.5 text-center">
+                    <div className="grid grid-cols-3 gap-2 text-center">
                         <div>
-                            <span className="block text-[9px] font-bold text-zinc-700 uppercase">
+                            <span className="block text-[10px] font-bold text-zinc-500 uppercase">
                                 UNIDAD
                             </span>
-                            <span className="text-xs font-black text-brand-subtitle">
-                                S/ {preciosEscala.unidad.toFixed(2)}
+                            <span className="text-xs font-extrabold text-zinc-800">
+                                S/ {Number(preciosDisplay.unidad || 0).toFixed(2)}
                             </span>
                         </div>
-                        <div className="border-x border-brand-primary/30">
-                            <span className="block text-[9px] font-bold text-zinc-700 uppercase">
+                        <div className="border-x border-zinc-200">
+                            <span className="block text-[10px] font-bold text-zinc-500 uppercase">
                                 DOCENA
                             </span>
-                            <span className="text-xs font-black text-brand-subtitle">
-                                S/ {preciosEscala.docena.toFixed(2)}
+                            <span className="text-xs font-extrabold text-zinc-800">
+                                S/ {Number(preciosDisplay.docena || 0).toFixed(2)}
                             </span>
                         </div>
                         <div>
-                            <span className="block text-[9px] font-bold text-zinc-700 uppercase">
+                            <span className="block text-[10px] font-bold text-zinc-500 uppercase">
                                 MAYOR
                             </span>
-                            <span className="text-xs font-black text-brand-subtitle">
-                                S/ {preciosEscala.mayor.toFixed(2)}
+                            <span className="text-xs font-extrabold text-zinc-800">
+                                S/ {Number(preciosDisplay.mayor || 0).toFixed(2)}
                             </span>
                         </div>
                     </div>
                 </div>
 
                 {/* Botones de acción */}
-                <div className="flex justify-end items-center gap-4 pt-1">
-                    <button
+                <div className="flex justify-end items-center gap-3 pt-2">
+                    <Button
                         type="button"
+                        variant="ghost"
                         onClick={onClose}
-                        className="text-sm font-bold text-zinc-400 hover:text-zinc-600 transition-colors"
+                        className="px-5 py-2.5 text-sm font-bold text-zinc-400 hover:text-zinc-600 transition-colors"
                     >
                         Cancelar
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         type="button"
+                        disabled={sinStock}
                         onClick={handleGuardar}
-                        className="px-8 py-2.5 text-sm font-bold bg-brand-primary hover:bg-brand-hover text-white rounded-xl shadow-sm transition-colors"
+                        className={`px-8 py-2.5 text-sm font-bold rounded-xl shadow-none transition-colors ${sinStock
+                            ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
+                            : 'bg-amber-400 hover:bg-amber-500 text-amber-950'
+                            }`}
                     >
                         Guardar
-                    </button>
+                    </Button>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 }

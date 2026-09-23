@@ -33,7 +33,7 @@ export class CotizacionesService {
         );
         const total = subtotal + Number(costo_carreta);
 
-        const numero = data.numero || `COT-${Date.now()}`;
+        const numero = data.numero || await this.generarNumeroSecuencial();
 
         try {
             return await this.prisma.$transaction(async (tx) => {
@@ -136,9 +136,145 @@ export class CotizacionesService {
         return cotizacion;
     }
 
+    /**
+     * Genera el siguiente número secuencial COT-001, COT-002, ...
+     * Ignora numeraciones antiguas largas (COT-<timestamp>) y continúa
+     * desde el mayor correlativo corto existente.
+     */
+    async generarNumeroSecuencial(): Promise<string> {
+        const ultimas = await this.prisma.cotizacion.findMany({
+            select: { numero: true },
+            orderBy: { id_cotizacion: 'desc' },
+            take: 50,
+        });
+        let max = 0;
+        for (const c of ultimas) {
+            const m = /^COT-(\d{1,6})$/.exec(String(c.numero || '').trim());
+            if (m) {
+                const n = parseInt(m[1], 10);
+                if (!isNaN(n) && n > max) max = n;
+            }
+        }
+        // Si no hay correlativos cortos, partir de count+1 por si hay data antigua
+        if (max === 0) {
+            const total = await this.prisma.cotizacion.count();
+            max = total;
+            // Verificar que COT-(total+1) no exista (por timestamps no aplica, pero por seguridad)
+            let candidato = max + 1;
+            // eslint-disable-next-line no-constant-condition
+            while (true) {
+                const existe = await this.prisma.cotizacion.findUnique({
+                    where: { numero: `COT-${String(candidato).padStart(3, '0')}` },
+                });
+                if (!existe) {
+                    max = candidato - 1;
+                    break;
+                }
+                candidato++;
+                if (candidato > max + 1000) break;
+            }
+        }
+        const siguiente = max + 1;
+        return `COT-${String(siguiente).padStart(3, '0')}`;
+    }
+
+    async proximoNumero(): Promise<{ numero: string }> {
+        return { numero: await this.generarNumeroSecuencial() };
+    }
+
+    /**
+     * Actualiza una cotización SOLO si está en BORRADOR.
+     * El número correlativo NUNCA se modifica.
+     * Si se envía `detalle`, reemplaza todas las líneas y recalcula subtotal/total.
+     */
+    async actualizar(id: number, data: any) {
+        const actual = await this.obtenerPorId(id);
+
+        if (actual.estado !== 'borrador') {
+            throw new BadRequestException(
+                `Solo se puede editar una cotización en estado BORRADOR (actual: ${actual.estado})`,
+            );
+        }
+
+        const {
+            id_cliente,
+            tipo_precio,
+            observaciones,
+            incluye_carreta,
+            costo_carreta,
+            detalle,
+        } = data ?? {};
+
+        if (detalle !== undefined && (!Array.isArray(detalle) || detalle.length === 0)) {
+            throw new BadRequestException('La cotización debe incluir al menos un producto en el detalle');
+        }
+
+        const lineas = Array.isArray(detalle) ? detalle : null;
+        const subtotal = lineas
+            ? lineas.reduce(
+                (acc: number, item: any) => acc + Number(item.cantidad) * Number(item.precio_unitario),
+                0,
+            )
+            : Number(actual.subtotal);
+        const carreta = incluye_carreta !== undefined
+            ? Number(costo_carreta ?? 0)
+            : Number(actual.costo_carreta);
+        const total = subtotal + carreta;
+
+        try {
+            return await this.prisma.$transaction(async (tx) => {
+                return tx.cotizacion.update({
+                    where: { id_cotizacion: id },
+                    data: {
+                        ...(id_cliente !== undefined ? { id_cliente: Number(id_cliente) } : {}),
+                        ...(tipo_precio !== undefined ? { tipo_precio: tipo_precio as any } : {}),
+                        ...(observaciones !== undefined ? { observaciones } : {}),
+                        ...(incluye_carreta !== undefined ? { incluye_carreta: Boolean(incluye_carreta) } : {}),
+                        ...(costo_carreta !== undefined ? { costo_carreta: Number(costo_carreta) } : {}),
+                        subtotal,
+                        total,
+                        ...(lineas
+                            ? {
+                                detalle: {
+                                    deleteMany: {},
+                                    create: lineas.map((item: any) => ({
+                                        id_producto: Number(item.id_producto),
+                                        tipo_venta: item.tipo_venta as any,
+                                        cantidad: Number(item.cantidad),
+                                        precio_unitario: Number(item.precio_unitario),
+                                        subtotal: Number(item.cantidad) * Number(item.precio_unitario),
+                                        color_notas: item.color_notas || null,
+                                        es_sugerido_ia: Boolean(item.es_sugerido_ia),
+                                    })),
+                                },
+                            }
+                            : {}),
+                    },
+                    include: {
+                        detalle: true,
+                        cliente: true,
+                    },
+                });
+            });
+        } catch (error: any) {
+            if (error instanceof BadRequestException) throw error;
+            if (error.code === 'P2003') {
+                throw new BadRequestException(
+                    'Error de relación: Verifique que el id_cliente o id_producto existan en la base de datos.',
+                );
+            }
+            throw new BadRequestException(`Fallo en la actualización: ${error.message || error}`);
+        }
+    }
+
     async cambiarEstado(id: number, estado: string) {
         if (!estado) {
             throw new BadRequestException('El campo estado es obligatorio');
+        }
+
+        const permitidos = ['borrador', 'enviada', 'aprobada', 'parcialmente_pagada', 'rechazada'];
+        if (!permitidos.includes(estado)) {
+            throw new BadRequestException(`Estado inválido: ${estado}`);
         }
 
         await this.obtenerPorId(id);
@@ -154,16 +290,52 @@ export class CotizacionesService {
             throw new BadRequestException('Debe proporcionar el monto y el metodo_pago');
         }
 
-        await this.obtenerPorId(id);
+        const monto = Number(data.monto);
+        if (!(monto > 0)) {
+            throw new BadRequestException('El monto debe ser mayor a 0');
+        }
 
-        return this.prisma.cotizacionPago.create({
-            data: {
-                id_cotizacion: id,
-                id_usuario: Number(idUsuario) || null,
-                monto: Number(data.monto),
-                metodo_pago: data.metodo_pago,
-                referencia: data.referencia || null,
-            },
+        const cot = await this.obtenerPorId(id);
+        const estado = String((cot as any).estado || '');
+        if (!['enviada', 'aprobada', 'parcialmente_pagada'].includes(estado)) {
+            throw new BadRequestException(
+                `No se pueden registrar pagos en estado "${estado}". Debe estar enviada o aprobada.`,
+            );
+        }
+
+        const pagos = await this.prisma.cotizacionPago.findMany({
+            where: { id_cotizacion: id },
+            select: { monto: true },
         });
+        const total = Number((cot as any).total || 0);
+        const pagado = pagos.reduce((s, p) => s + Number(p.monto), 0);
+        const saldo = total - pagado;
+        if (monto > saldo + 0.009) {
+            throw new BadRequestException(
+                `El monto (S/ ${monto.toFixed(2)}) excede el saldo pendiente (S/ ${saldo.toFixed(2)})`,
+            );
+        }
+
+        const nuevoPagado = pagado + monto;
+        const nuevoEstado =
+            nuevoPagado >= total - 0.009 ? 'aprobada' : 'parcialmente_pagada';
+
+        await this.prisma.$transaction(async (tx) => {
+            await tx.cotizacionPago.create({
+                data: {
+                    id_cotizacion: id,
+                    id_usuario: Number(idUsuario) > 0 ? Number(idUsuario) : null,
+                    monto,
+                    metodo_pago: data.metodo_pago,
+                    referencia: data.referencia || null,
+                },
+            });
+            await tx.cotizacion.update({
+                where: { id_cotizacion: id },
+                data: { estado: nuevoEstado as any },
+            });
+        });
+
+        return this.obtenerPorId(id);
     }
 }

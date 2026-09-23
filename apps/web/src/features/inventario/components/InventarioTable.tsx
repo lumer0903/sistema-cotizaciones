@@ -7,6 +7,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { getImageUrl, handleImageError } from '@/lib/imageUtils';
 import { DetalleProductoModal } from './DetalleProductoModal';
 import { formatCode, formatText, formatPrice } from '@/lib/formatters';
+import { inventarioApi } from '@/features/inventario/api/inventario.api';
 
 type ProductoConImagen = ProductoInventario & {
   imagen_url?: string;
@@ -34,6 +35,24 @@ export function InventarioTable({
   onKardex,
 }: InventarioTableProps) {
   const [detalleProducto, setDetalleProducto] = useState<ProductoInventario | null>(null);
+
+  const handleVerDetalle = async (prod: ProductoInventario) => {
+    // Apertura optimista con lo que hay en la lista
+    setDetalleProducto(prod);
+    // Si la fila no trae precios (lista sin include), traer el detalle completo
+    const p = prod as any;
+    const sinPrecios =
+      !p.precios_actuales && !p.precios && !p.precioTienda && !p.precioDistribuidor;
+    if (sinPrecios && prod.id_producto) {
+      try {
+        const full = await inventarioApi.obtenerPorId(prod.id_producto);
+        const data = (full as any)?.data ?? full;
+        if (data) setDetalleProducto(data as ProductoInventario);
+      } catch (e) {
+        console.warn('[InventarioTable] No se pudo cargar detalle con precios:', e);
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -91,7 +110,7 @@ export function InventarioTable({
                   <div className="flex items-center justify-center gap-1.5">
                     <button
                       type="button"
-                      onClick={() => setDetalleProducto(prod)}
+                      onClick={() => handleVerDetalle(prod)}
                       className="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
                       title="Ver detalle"
                     >

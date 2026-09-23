@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { Search } from 'lucide-react';
-import { toast } from 'sonner';
+import { showToast } from '@/lib/toast';
 
 import { Input, Select, FilterCard, Pagination } from '@/components/ui';
 import { PriceCard } from '@/features/precio-historial/components/PriceCard';
@@ -45,7 +45,7 @@ export default function ConsultaPrecioPage() {
       setProductoHistorialId(id);
     } catch (error) {
       console.error('Error cargando historial:', error);
-      toast.error('No se pudo cargar el historial de precios');
+      showToast.error('No se pudo cargar el historial de precios');
       setHistorialData([]);
       setProductoHistorialId(id);
     } finally {
@@ -101,7 +101,7 @@ export default function ConsultaPrecioPage() {
               label="BUSCAR"
               type="text"
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => setBusqueda(e.target.value.toUpperCase())}
               placeholder="Buscar"
               icon={<Search className="size-4" />}
             />

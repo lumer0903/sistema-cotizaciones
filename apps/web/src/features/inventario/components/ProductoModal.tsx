@@ -24,6 +24,7 @@ import {
 } from "@/components/ui";
 import { ProductoInventario } from "@goldcontinent/shared/types/inventario";
 import { toast } from "sonner";
+import { obtenerPreciosEstandarizados } from "@/lib/formatters";
 
 
 
@@ -105,8 +106,12 @@ export function ProductoModal({
     mode: "onChange",
     values: (() => {
       if (!isEditing || !productoInicial) return undefined;
-      const inv = productoInicial;
+      const inv = productoInicial as any;
       const almacenPrincipal = inv.stock_actual?.[0]?.id_almacen || 1;
+      // Extracción segura de los 6 precios desde cualquier forma (precios_actuales, precios, precioTienda/Distribuidor)
+      const { tienda, distribuidor } = obtenerPreciosEstandarizados(inv);
+      const costoNormal = Number(inv.precios_actuales?.costo_normal ?? inv.precios?.costo_normal ?? inv.costo_normal ?? 0);
+      const costoDist = Number(inv.precios_actuales?.costo_distribuidor ?? inv.precios?.costo_distribuidor ?? inv.costo_distribuidor ?? 0);
       return {
         codigo: inv.codigo || "",
         id_categoria: inv.id_categoria || 1,
@@ -122,14 +127,14 @@ export function ProductoModal({
         stock_minimo: inv.stock_minimo || 10,
         descripcion: inv.descripcion || "",
         colores_surtido: inv.colores_surtido || ["Estándar"],
-        precio_tienda_unidad: Number(inv.precios_actuales?.precio_unidad_normal) || undefined,
-        precio_tienda_docena: Number(inv.precios_actuales?.precio_docena_normal) || undefined,
-        precio_tienda_caja: Number(inv.precios_actuales?.precio_mayor_normal) || undefined,
-        precio_distribuidor_unidad: Number(inv.precios_actuales?.precio_unidad_dist) || undefined,
-        precio_distribuidor_docena: Number(inv.precios_actuales?.precio_docena_dist) || undefined,
-        precio_distribuidor_caja: Number(inv.precios_actuales?.precio_mayor_dist) || undefined,
-        costo_normal: Number(inv.precios_actuales?.costo_normal) || 0,
-        costo_distribuidor: Number(inv.precios_actuales?.costo_distribuidor) || 0,
+        precio_tienda_unidad: Number(tienda.unidad) || undefined,
+        precio_tienda_docena: Number(tienda.docena) || undefined,
+        precio_tienda_caja: Number(tienda.mayor) || undefined,
+        precio_distribuidor_unidad: Number(distribuidor.unidad) || undefined,
+        precio_distribuidor_docena: Number(distribuidor.docena) || undefined,
+        precio_distribuidor_caja: Number(distribuidor.mayor) || undefined,
+        costo_normal: costoNormal || 0,
+        costo_distribuidor: costoDist || 0,
       } as any;
     })(),
   });
@@ -334,6 +339,7 @@ export function ProductoModal({
                 {...register("codigo")}
                 disabled={isEditing}
                 variant="modal"
+                onChange={(e) => setValue("codigo", e.target.value.toUpperCase(), { shouldValidate: true })}
               />
             </div>
           </div>

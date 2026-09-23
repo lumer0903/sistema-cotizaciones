@@ -227,10 +227,10 @@ export class DashboardService {
           },
           _sum: { total: true },
         }),
-        this.prisma.venta.aggregate({
+        this.prisma.cotizacion.aggregate({
           where: {
-            estado: { in: ['emitida', 'parcial', 'pagada'] },
-            fecha_emision: { gte: date, lt: nextMonth },
+            estado: { in: [EstadoCotizacion.aprobada, EstadoCotizacion.parcialmente_pagada] },
+            created_at: { gte: date, lt: nextMonth },
           },
           _sum: { total: true },
         }),

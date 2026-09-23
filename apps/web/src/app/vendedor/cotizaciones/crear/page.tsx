@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Plus, Search, X, FileText, ArrowLeft, Save, Send, MessageSquare, Loader2, Zap, TrendingUp, Scale } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
@@ -6,9 +6,9 @@ import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { toast } from 'sonner';
+import { showToast } from '@/lib/toast';
 import { RecomendacionesPanel } from '@/features/cotizaciones/components/RecomendacionesPanel';
-import { obtenerRecomendacionesItem } from '@/features/cotizaciones/api/cotizacionApi';
+import { formatCode } from '@/lib/formatters';
 
 interface Producto {
   id_producto: number;
@@ -71,15 +71,14 @@ export default function VendedorCotizacionCrearPage() {
 
   const [detalles, setDetalles] = useState<DetalleItem[]>([]);
 
-  // Estados para Recomendaciones IA
-  const [isRecomendacionesOpen, setIsRecomendacionesOpen] = useState(false);
-  const [productoParaRecomendaciones, setProductoParaRecomendaciones] = useState<{ id: number; codigo: string; descripcion: string } | null>(null);
-  const [itemExistenteIndex, setItemExistenteIndex] = useState<number | null>(null);
+  // Índice del detalle seleccionado para ver recomendaciones IA (solo vía botón de ACCIONES)
+  const [selectedDetalleIndex, setSelectedDetalleIndex] = useState<number | null>(null);
+  // Cada clic en el botón de ACCIONES lo incrementa para forzar recarga (reintento)
+  const [refreshKeyRecs, setRefreshKeyRecs] = useState(0);
 
-  const handleAbrirRecomendaciones = useCallback((index: number, item: DetalleItem) => {
-    setItemExistenteIndex(index);
-    setProductoParaRecomendaciones({ id: item.id_producto, codigo: item.codigo, descripcion: item.descripcion });
-    setIsRecomendacionesOpen(true);
+  const handleAbrirRecomendaciones = useCallback((index: number) => {
+    setSelectedDetalleIndex(index);
+    setRefreshKeyRecs((k) => k + 1);
   }, []);
 
   const handleAgregarRecomendacion = useCallback((item: any, tipo: 'similar' | 'upsell' | 'equilibrio') => {
@@ -113,10 +112,9 @@ export default function VendedorCotizacionCrearPage() {
         },
       ]);
     }
-    toast.success(`Recomendación (${tipo.toUpperCase()}) agregada`);
-    setIsRecomendacionesOpen(false);
-    setProductoParaRecomendaciones(null);
-    setItemExistenteIndex(null);
+    showToast.success(`Recomendación (${tipo.toUpperCase()}) agregada`);
+    // El detalle agregado/actualizado queda como base activa del panel
+    setSelectedDetalleIndex(existingIndex >= 0 ? existingIndex : detalles.length);
   }, [detalles, formData.tipo_venta]);
 
   const handleReemplazarRecomendacion = useCallback((itemExistenteId: string, nuevoItem: any, tipo: 'similar' | 'upsell' | 'equilibrio') => {
@@ -132,10 +130,9 @@ export default function VendedorCotizacionCrearPage() {
       subtotal: newDetalles[index].cantidad * precio,
     };
     setDetalles(newDetalles);
-    toast.success(`Reemplazado por recomendación (${tipo.toUpperCase()})`);
-    setIsRecomendacionesOpen(false);
-    setProductoParaRecomendaciones(null);
-    setItemExistenteIndex(null);
+    showToast.success(`Reemplazado por recomendación (${tipo.toUpperCase()})`);
+    // Mantener el detalle reemplazado como base activa del panel
+    setSelectedDetalleIndex(index);
   }, [detalles]);
 
   useEffect(() => {
@@ -210,6 +207,8 @@ export default function VendedorCotizacionCrearPage() {
   const actualizarCantidad = (index: number, cantidad: number) => {
     if (cantidad <= 0) {
       setDetalles(detalles.filter((_, i) => i !== index));
+      if (selectedDetalleIndex === index) setSelectedDetalleIndex(null);
+      else if (selectedDetalleIndex !== null && selectedDetalleIndex > index) setSelectedDetalleIndex(selectedDetalleIndex - 1);
       return;
     }
     const precio = detalles[index].precio_unitario;
@@ -220,21 +219,25 @@ export default function VendedorCotizacionCrearPage() {
 
   const eliminarItem = (index: number) => {
     setDetalles(detalles.filter((_, i) => i !== index));
+    if (selectedDetalleIndex === index) setSelectedDetalleIndex(null);
+    else if (selectedDetalleIndex !== null && selectedDetalleIndex > index) setSelectedDetalleIndex(selectedDetalleIndex - 1);
   };
 
   const subtotal = detalles.reduce((sum, d) => sum + d.subtotal, 0);
   const descuentoGlobal = 0;
   const subtotalConDescuento = subtotal - descuentoGlobal;
-  const igv = subtotalConDescuento * 0.18;
-  const total = subtotalConDescuento + igv + (formData.incluye_carreta ? formData.costo_carreta : 0);
+  // IGV DESACTIVADO: los precios ya incluyen IGV.
+  // Para reactivar en una próxima actualización: habilitar cálculo de IGV 18% aquí
+  // y alinear con backend (CotizacionesService) + PDF.
+  const total = subtotalConDescuento + (formData.incluye_carreta ? formData.costo_carreta : 0);
 
   const handleSubmit = async (estado: 'borrador' | 'enviada') => {
     if (!formData.id_cliente) {
-      alert('Seleccione un cliente');
+      showToast.warning('Seleccione un cliente');
       return;
     }
     if (detalles.length === 0) {
-      alert('Agregue al menos un producto');
+      showToast.warning('Agregue al menos un producto');
       return;
     }
 
@@ -261,9 +264,10 @@ export default function VendedorCotizacionCrearPage() {
           })),
         }),
       });
+      showToast.success('Cotización creada exitosamente');
       router.push('/vendedor/cotizaciones');
     } catch (error: any) {
-      alert(error.message || 'Error al crear cotización');
+      showToast.error(error.message || 'Error al crear cotización');
     } finally {
       setLoading(false);
     }
@@ -412,10 +416,10 @@ export default function VendedorCotizacionCrearPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {detalles.map((item, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
+                      <tr key={index} className={selectedDetalleIndex === index ? 'bg-amber-50 hover:bg-amber-50' : 'hover:bg-gray-50'}>
                         <td className="px-4 py-3">
                           <p className="font-medium text-gray-900">{item.descripcion}</p>
-                          <p className="text-xs text-gray-500">{item.codigo}</p>
+                          <p className="text-xs text-gray-500 uppercase">{formatCode(item.codigo)}</p>
                         </td>
                         <td className="px-4 py-3 text-center text-sm text-gray-600 capitalize">{item.tipo_venta}</td>
                         <td className="px-4 py-3 text-center">
@@ -448,8 +452,13 @@ export default function VendedorCotizacionCrearPage() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <button
-                            onClick={() => handleAbrirRecomendaciones(index, item)}
-                            className="text-amber-500 hover:text-amber-700 p-1 mr-1"
+                            type="button"
+                            onClick={() => handleAbrirRecomendaciones(index)}
+                            aria-label={`Ver recomendaciones de ${item.codigo}`}
+                            className={`p-1 mr-1 rounded transition-colors ${selectedDetalleIndex === index
+                              ? 'text-amber-700 bg-amber-100'
+                              : 'text-amber-500 hover:text-amber-700'
+                              }`}
                             title="Ver recomendaciones IA"
                           >
                             <MessageSquare className="h-4 w-4" />
@@ -484,10 +493,7 @@ export default function VendedorCotizacionCrearPage() {
                   <span className="font-medium text-gray-900">S/ {formData.costo_carreta.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
                 </div>
               )}
-              <div className="flex justify-between text-gray-600">
-                <span>IGV (18%)</span>
-                <span className="font-medium text-gray-900">S/ {igv.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
-              </div>
+              {/* IGV DESACTIVADO: precios ya incluyen IGV. Reactivar fila al habilitar IGV. */}
               <div className="border-t border-gray-200 pt-3 flex justify-between text-lg">
                 <span className="font-semibold text-gray-900">Total</span>
                 <span className="font-bold text-green-700">S/ {total.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
@@ -512,6 +518,18 @@ export default function VendedorCotizacionCrearPage() {
               </button>
             </div>
           </div>
+
+          {/* Recomendaciones IA */}
+          <RecomendacionesPanel
+            cartItems={detalles.map((d, i) => ({ id: String(i), id_producto: d.id_producto, codigo: d.codigo, descripcion: d.descripcion }))}
+            selectedItemId={selectedDetalleIndex !== null ? String(selectedDetalleIndex) : null}
+            tipoPrecioCliente={formData.tipo_precio === 'distribuidor' ? 'DISTRIBUIDOR' : 'TIENDA'}
+            idCliente={formData.id_cliente ? Number(formData.id_cliente) : undefined}
+            itemExistenteId={selectedDetalleIndex !== null ? String(selectedDetalleIndex) : null}
+            refreshKey={refreshKeyRecs}
+            onAgregar={handleAgregarRecomendacion}
+            onReemplazar={handleReemplazarRecomendacion}
+          />
 
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h3 className="font-semibold text-gray-900 mb-3">Observaciones</h3>
@@ -542,7 +560,7 @@ export default function VendedorCotizacionCrearPage() {
                   type="text"
                   placeholder="Buscar por código o descripción..."
                   value={searchProducto}
-                  onChange={(e) => setSearchProducto(e.target.value)}
+                  onChange={(e) => setSearchProducto(e.target.value.toUpperCase())}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
@@ -577,17 +595,6 @@ export default function VendedorCotizacionCrearPage() {
         </div>
       )}
 
-      {/* Modal de Recomendaciones IA */}
-      <RecomendacionesPanel
-        isOpen={isRecomendacionesOpen}
-        onClose={() => { setIsRecomendacionesOpen(false); setProductoParaRecomendaciones(null); setItemExistenteIndex(null); }}
-        productoBase={productoParaRecomendaciones}
-        tipoPrecioCliente={formData.tipo_precio === 'distribuidor' ? 'DISTRIBUIDOR' : 'TIENDA'}
-        idCliente={formData.id_cliente ? Number(formData.id_cliente) : undefined}
-        onAgregar={handleAgregarRecomendacion}
-        onReemplazar={handleReemplazarRecomendacion}
-        itemExistenteId={itemExistenteIndex !== null ? String(itemExistenteIndex) : null}
-      />
     </>
   );
 }

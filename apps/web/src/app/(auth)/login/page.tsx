@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/authProvider';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { showToast } from '@/lib/toast';
 
 const loginSchema = z.object({
   email: z.string().email('Correo inválido'),
@@ -40,10 +41,13 @@ function LoginForm() {
 
     try {
       await login(data.email.trim().toLowerCase(), data.password);
+      showToast.success('Inicio de sesión exitoso');
       router.push(redirectTo);
     } catch (err: any) {
       const errorMessage = err?.response?.data?.message || err?.message || 'Error al iniciar sesión';
-      setError(Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage);
+      const msg = Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage;
+      setError(msg);
+      showToast.error(msg);
     } finally {
       setLoading(false);
     }

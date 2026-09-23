@@ -10,8 +10,8 @@ export default function VendedorRootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ProtectedRoute permission="ventas" roles={['vendedor']} fallback={null}>
-      <VendedorLayout title="Punto de Venta">{children}</VendedorLayout>
+    <ProtectedRoute permission="cotizaciones" roles={['vendedor']} fallback={null}>
+      <VendedorLayout title="Cotizaciones">{children}</VendedorLayout>
     </ProtectedRoute>
   );
 }
