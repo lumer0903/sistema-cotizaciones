@@ -103,7 +103,7 @@ export function InventarioTable({
                 <TableCell className="text-sm">
                   {formatText(ubicacion)}
                 </TableCell>
-                <TableCell className="text-center font-bold text-emerald-600 text-sm">
+                <TableCell className="text-center font-bold text-estado-aprobado-text text-sm">
                   {stockVal}
                 </TableCell>
                 <TableCell className="text-center">
@@ -111,7 +111,7 @@ export function InventarioTable({
                     <button
                       type="button"
                       onClick={() => handleVerDetalle(prod)}
-                      className="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                      className="p-1.5 text-brand-primary hover:text-brand-hover hover:bg-brand-soft rounded-lg transition-colors"
                       title="Ver detalle"
                     >
                       <Eye className="w-4 h-4" />
@@ -119,7 +119,7 @@ export function InventarioTable({
                     <button
                       type="button"
                       onClick={() => onEditar(prod)}
-                      className="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                      className="p-1.5 text-brand-primary hover:text-brand-hover hover:bg-brand-soft rounded-lg transition-colors"
                       title="Editar"
                     >
                       <Pencil className="w-4 h-4" />
@@ -127,7 +127,7 @@ export function InventarioTable({
                     <button
                       type="button"
                       onClick={() => onEliminar(id)}
-                      className="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                      className="p-1.5 text-brand-primary hover:text-brand-hover hover:bg-brand-soft rounded-lg transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 className="w-4 h-4" />

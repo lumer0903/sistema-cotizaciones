@@ -16,7 +16,7 @@ import {
     TableHead,
     TableCell,
 } from '@/components/ui';
-import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
+import { ProductoInventario, Almacen } from '@goldcontinent/shared/types/inventario';
 import { inventarioApi, KardexResponse } from '../api/inventario.api';
 import { apiClient } from '@/lib/apiClient';
 import { getImageUrl, handleImageError } from '@/lib/imageUtils';
@@ -26,9 +26,10 @@ interface KardexModalProps {
     open: boolean;
     onClose: () => void;
     producto: ProductoInventario | null;
+    almacenes?: Almacen[];
 }
 
-export function KardexModal({ open, onClose, producto }: KardexModalProps) {
+export function KardexModal({ open, onClose, producto, almacenes: almacenesProp = [] }: KardexModalProps) {
     const [movimientos, setMovimientos] = useState<KardexResponse[]>([]);
     const [loading, setLoading] = useState(false);
     const [total, setTotal] = useState(0);
@@ -51,6 +52,13 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
 
     useEffect(() => {
         setSelectedProducto(producto);
+        setFiltroTipo('TODOS');
+        setFechaInicio('');
+        setFechaFin('');
+        setFiltroAlmacen('');
+        setPage(1);
+        setMovimientos([]);
+        setTotal(0);
         if (producto) {
             setSearchQuery(formatCode(producto.codigo));
         } else {
@@ -146,15 +154,9 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
 
     useEffect(() => {
         if (open && selectedProducto) {
-            fetchKardex(1);
-        }
-    }, [open, selectedProducto, fetchKardex]);
-
-    useEffect(() => {
-        if (selectedProducto) {
             fetchKardex(page);
         }
-    }, [page, fetchKardex]);
+    }, [open, selectedProducto, fetchKardex, page]);
 
     const renderBadgeTipo = (tipo: string) => {
         switch (tipo) {
@@ -262,7 +264,7 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
                     <Select
                         label="Tipo Movimiento"
                         value={filtroTipo}
-                        onChange={(e) => { setFiltroTipo(String(e.target.value)); fetchKardex(1); }}
+                        onChange={(e) => { setFiltroTipo(String(e.target.value)); setPage(1); }}
                         disabled={!selectedProducto}
                         options={[
                             { label: 'Todos', value: 'TODOS' },
@@ -277,7 +279,7 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
                         label="Inicio"
                         type="date"
                         value={fechaInicio}
-                        onChange={(e) => { setFechaInicio(e.target.value); fetchKardex(1); }}
+                        onChange={(e) => { setFechaInicio(e.target.value); setPage(1); }}
                         disabled={!selectedProducto}
                         icon={<Calendar className="w-4 h-4 text-brand-options" />}
                         variant="modal"
@@ -286,7 +288,7 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
                         label="Hasta"
                         type="date"
                         value={fechaFin}
-                        onChange={(e) => { setFechaFin(e.target.value); fetchKardex(1); }}
+                        onChange={(e) => { setFechaFin(e.target.value); setPage(1); }}
                         disabled={!selectedProducto}
                         icon={<Calendar className="w-4 h-4 text-brand-options" />}
                         variant="modal"
@@ -294,14 +296,19 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
                     <Select
                         label="Ubicación"
                         value={filtroAlmacen}
-                        onChange={(e) => { setFiltroAlmacen(String(e.target.value)); fetchKardex(1); }}
+                        onChange={(e) => { setFiltroAlmacen(String(e.target.value)); setPage(1); }}
                         disabled={!selectedProducto}
                         options={[
                             { label: 'Todos los almacenes', value: '' },
-                            ...(selectedProducto?.stock_actual?.map((s) => ({
-                                label: `${s.almacen?.codigo} - ${formatText(s.almacen?.nombre || '')}`,
-                                value: String(s.id_almacen),
-                            })) || []),
+                            ...(selectedProducto?.stock_actual?.length
+                                ? selectedProducto.stock_actual.map((s) => ({
+                                    label: `${s.almacen?.codigo} - ${formatText(s.almacen?.nombre || '')}`,
+                                    value: String(s.id_almacen),
+                                }))
+                                : almacenesProp.map((a) => ({
+                                    label: `${a.codigo || a.id_almacen} - ${formatText(a.nombre)}`,
+                                    value: String(a.id_almacen),
+                                }))),
                         ]}
                         variant="modal"
                     />
@@ -309,7 +316,7 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
 
                 {/* ENCABEZADO RESUMEN DEL PRODUCTO */}
                 {selectedProducto && (
-                    <div className="bg-brand-selection/40 border border-yellow-600/40 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 animate-in fade-in duration-200">
+                    <div className="bg-brand-selection/40 border border-brand-primary/40 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 animate-in fade-in duration-200">
                         <div className="flex items-center gap-3">
                             <div className="w-14 h-14 shrink-0 bg-stone-100 rounded-lg border border-stone-200 flex items-center justify-center overflow-hidden">
                                 {selectedProducto.foto_url ? (
@@ -324,7 +331,7 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
                                 )}
                             </div>
                             <div>
-                                <h4 className="font-bold text-yellow-500 text-xl text-outline">
+                                <h4 className="font-bold text-brand-primary text-xl text-outline">
                                     {formatText(selectedProducto.codigo)}
                                 </h4>
                                 <h4 className="font-medium text-brand-text text-gray-700 text-sm">
@@ -332,10 +339,10 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
                                 </h4>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 border-t md:border-t-0 md:border-l border-yellow-600/40 pt-2 md:pt-0 md:pl-4">
+                        <div className="flex items-center gap-3 border-t md:border-t-0 md:border-l border-brand-primary/40 pt-2 md:pt-0 md:pl-4">
                             <div className="text-center">
                                 <span className="block text-[10px] font-bold text-gray-700 uppercase">Stock Actual</span>
-                                <span className="text-lg font-bold text-emerald-600 text-outline">
+                                <span className="text-lg font-bold text-estado-aprobado-text text-outline">
                                     {selectedProducto.stock_total ?? selectedProducto.stock_actual?.[0]?.cantidad ?? 0} u.
                                 </span>
                             </div>
@@ -380,12 +387,12 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
                                     <TableRow key={mov.id_movimiento}>
                                         <TableCell className="font-mono text-xs">{new Date(mov.fecha).toLocaleString('es-PE')}</TableCell>
                                         <TableCell>{renderBadgeTipo(mov.tipo)}</TableCell>
-                                        <TableCell className="text-xs text-brand-options">{mov.usuario || 'Sistema'}</TableCell>
+                                        <TableCell className="text-xs text-brand-options">{mov.almacen || '—'}</TableCell>
                                         <TableCell className="font-medium text-xs">{renderOrigen(mov.origen, mov.tipo, mov.referencia)}</TableCell>
-                                        <TableCell className={`text-right font-bold ${mov.tipo === 'entrada' ? 'text-emerald-600' :
-                                                mov.tipo === 'salida' ? 'text-rose-600' :
-                                                    mov.tipo === 'ajuste' ? 'text-amber-600' :
-                                                        'text-blue-600'
+                                        <TableCell className={`text-right font-bold ${mov.tipo === 'entrada' ? 'text-estado-aprobado-text' :
+                                                mov.tipo === 'salida' ? 'text-danger' :
+                                                    mov.tipo === 'ajuste' ? 'text-brand-primary' :
+                                                        'text-estado-enviado'
                                             }`}>
                                             {mov.tipo === 'entrada' ? `+${mov.cantidad}` : mov.tipo === 'salida' ? `-${mov.cantidad}` : mov.cantidad}
                                         </TableCell>
@@ -408,7 +415,7 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => fetchKardex(page - 1)}
+                                        onClick={() => setPage(page - 1)}
                                         disabled={page <= 1 || loading}
                                     >
                                         <ChevronLeft className="w-4 h-4" />
@@ -429,7 +436,7 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
                                                 key={pageNum}
                                                 variant={page === pageNum ? 'primary' : 'outline'}
                                                 size="sm"
-                                                onClick={() => fetchKardex(pageNum)}
+                                                onClick={() => setPage(pageNum)}
                                                 className="w-8 h-8 px-0"
                                             >
                                                 {pageNum}
@@ -439,7 +446,7 @@ export function KardexModal({ open, onClose, producto }: KardexModalProps) {
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => fetchKardex(page + 1)}
+                                        onClick={() => setPage(page + 1)}
                                         disabled={page >= totalPages || loading}
                                     >
                                         <ChevronRight className="w-4 h-4" />

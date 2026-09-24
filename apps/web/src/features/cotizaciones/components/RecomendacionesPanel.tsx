@@ -39,9 +39,9 @@ interface RecomendacionesPanelProps {
 }
 
 export const TIPO_CONFIG = {
-    similar: { label: 'SIMILAR', icon: Zap, color: 'bg-blue-100 text-blue-700 border-blue-300', desc: 'Productos parecidos al seleccionado' },
-    upsell: { label: 'UPSELL', icon: TrendingUp, color: 'bg-amber-100 text-amber-700 border-amber-300', desc: 'Alternativas de mayor valor/margen' },
-    equilibrio: { label: 'EQUILIBRIO', icon: Scale, color: 'bg-emerald-100 text-emerald-700 border-emerald-300', desc: 'Mejor relación precio-calidad' },
+    similar: { label: 'SIMILAR', icon: Zap, color: 'bg-estado-enviado-soft text-estado-enviado border-estado-enviado/40', desc: 'Productos parecidos al seleccionado' },
+    upsell: { label: 'UPSELL', icon: TrendingUp, color: 'bg-brand-soft text-brand-subtitle border border-brand-primary/40', desc: 'Alternativas de mayor valor/margen' },
+    equilibrio: { label: 'EQUILIBRIO', icon: Scale, color: 'bg-estado-aprobado-soft text-estado-aprobado-text border-estado-aprobado/40', desc: 'Mejor relación precio-calidad' },
 } as const;
 
 export function normalizeRecomendaciones(raw: any): RecomendarItemResponse {
@@ -313,8 +313,8 @@ export function RecomendacionCard({ item, config, onAgregar, onReemplazar, showR
 
             <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-brand-options mb-2">
                 {item.categoria && <span className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-600">{item.categoria}</span>}
-                <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded">Stock: {item.stock}</span>
-                <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded">S/ {Number(item.precio ?? 0).toFixed(2)}</span>
+                <span className="px-1.5 py-0.5 bg-brand-soft text-brand-subtitle border border-brand-primary/40 rounded">Stock: {item.stock}</span>
+                <span className="px-1.5 py-0.5 bg-estado-aprobado-soft text-estado-aprobado-text border border-estado-aprobado/30 rounded">S/ {Number(item.precio ?? 0).toFixed(2)}</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-brand-options mb-3">
@@ -323,9 +323,9 @@ export function RecomendacionCard({ item, config, onAgregar, onReemplazar, showR
             </div>
 
             <div className="flex items-center justify-between text-[10px] text-brand-options mb-2">
-                <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded">Similitud: {(item.similarityScore * 100).toFixed(0)}%</span>
+                <span className="px-1.5 py-0.5 bg-estado-enviado-soft text-estado-enviado border border-estado-enviado/30 rounded">Similitud: {(item.similarityScore * 100).toFixed(0)}%</span>
                 {item.margen !== undefined && (
-                    <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded">Margen: {item.margen.toFixed(1)}%</span>
+                    <span className="px-1.5 py-0.5 bg-estado-aprobado-soft text-estado-aprobado-text border border-estado-aprobado/30 rounded">Margen: {item.margen.toFixed(1)}%</span>
                 )}
             </div>
 

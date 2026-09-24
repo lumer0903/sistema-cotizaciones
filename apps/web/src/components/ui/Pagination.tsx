@@ -28,18 +28,19 @@ export const Pagination: React.FC<PaginationProps> = ({
     const startItem = totalItems === 0 ? 0 : (currentPage - 1) * limit + 1;
     const endItem = Math.min(currentPage * limit, totalItems);
 
-    const limitOptions = [
-        { label: '8', value: 8 },
-        { label: '16', value: 16 },
-        { label: '24', value: 24 },
-    ];
+    const limitOptions = [8, 16, 24, 32, 48, 64].map((n) => ({
+        label: String(n),
+        value: n,
+    }));
+
+    const displayLimit = limitOptions.some((o) => o.value === limit) ? limit : 8;
 
     return (
         <div className="px-5 py-3 bg-gray-50/80 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 whitespace-nowrap">
                 <span>Mostrar</span>
                 <Select
-                    value={limit}
+                    value={displayLimit}
                     onChange={(e) => onLimitChange(Number(e.target.value))}
                     options={limitOptions}
                     sizeVariant="sm"

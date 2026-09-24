@@ -57,6 +57,7 @@ export interface KardexResponse {
   costo_unitario: number | null;
   referencia: string | null;
   observaciones: string | null;
+  almacen: string | null;
   usuario: string | null;
 }
 
@@ -416,6 +417,7 @@ export class InventarioService {
           tipo_referencia: true,
           observaciones: true,
           created_at: true,
+          almacen: { select: { codigo: true, nombre: true } },
           usuario: { select: { nombre: true } },
         },
         skip,
@@ -436,6 +438,7 @@ export class InventarioService {
       costo_unitario: m.costo_unitario?.toNumber() ?? null,
       referencia: m.tipo_referencia && m.id_referencia ? `${m.tipo_referencia}:${m.id_referencia}` : null,
       observaciones: m.observaciones,
+      almacen: m.almacen ? `${m.almacen.codigo} - ${m.almacen.nombre}` : null,
       usuario: m.usuario?.nombre ?? null,
     }));
 

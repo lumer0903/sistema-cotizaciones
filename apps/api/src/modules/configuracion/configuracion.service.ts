@@ -15,11 +15,11 @@ export class ConfiguracionService {
     return c?.valor ?? null;
   }
 
-  async set(clave: string, valor: string): Promise<void> {
+  async set(clave: string, valor: string, descripcion?: string): Promise<void> {
     await this.prisma.configuracion.upsert({
       where: { clave },
-      create: { clave, valor },
-      update: { valor },
+      create: { clave, valor, descripcion },
+      update: { valor, ...(descripcion !== undefined ? { descripcion } : {}) },
     });
   }
 }

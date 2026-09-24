@@ -25,10 +25,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         ref
     ) => {
         const isModal = variant === 'modal';
-        const borderColor = isModal ? '#8E8E8E' : '#F8B602';
-        const focusColor = isModal ? '#C9A962' : '#F8B602';
-        const textColor = '#414141';
-        const labelIconColor = isModal ? '#8E8E8E' : '#F8B602';
+        const borderColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-primary)';
+        const focusColor = isModal ? 'var(--color-brand-modalFocus)' : 'var(--color-brand-primary)';
+        const textColor = 'var(--color-brand-subtitle)';
+        const labelIconColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-primary)';
 
         // Altura y padding dinámicos según el tamaño
         const heightClass = sizeVariant === 'sm' ? 'h-8 text-xs' : 'h-10 text-xs sm:text-sm';
@@ -71,7 +71,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                         onFocus={(e) => {
                             if (!error) {
                                 e.currentTarget.style.borderColor = focusColor;
-                                e.currentTarget.style.boxShadow = `0 0 0 2px ${focusColor}33`;
+                                e.currentTarget.style.boxShadow = `0 0 0 2px color-mix(in srgb, ${focusColor} 20%, transparent)`;
                             }
                         }}
                         onBlur={(e) => {

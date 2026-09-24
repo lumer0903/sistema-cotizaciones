@@ -15,7 +15,7 @@ import {
     LogOut,
     ChevronDown,
 } from 'lucide-react';
-import { showToast } from '@/lib/toast';
+import { useAuth } from '@/lib/authProvider';
 
 interface MenuItem {
     name: string;
@@ -45,6 +45,7 @@ const menuItems: MenuItem[] = [
 
 export function Sidebar() {
     const pathname = usePathname();
+    const { logout } = useAuth();
     const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
 
     useEffect(() => {
@@ -162,10 +163,13 @@ export function Sidebar() {
             <div className="w-full p-3.5 border-t border-zinc-200/80">
                 <button
                     type="button"
-                    onClick={() => showToast.info('Cerrando sesión...')}
-                    className="w-full h-11 px-4 py-2 rounded-xl inline-flex items-center gap-3 text-xs sm:text-sm text-zinc-500 font-semibold hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100 transition-all duration-200 focus:outline-none"
+                    onClick={async () => {
+                        await logout();
+                        window.location.href = '/login';
+                    }}
+                    className="w-full h-11 px-4 py-2 rounded-xl inline-flex items-center gap-3 text-xs sm:text-sm text-zinc-500 font-semibold hover:bg-estado-rechazado-soft hover:text-danger active:bg-estado-rechazado-soft/80 transition-all duration-200 focus:outline-none"
                 >
-                    <LogOut className="w-4.5 h-4.5 text-zinc-400 transition-colors group-hover:text-rose-500" />
+                    <LogOut className="w-4.5 h-4.5 text-zinc-400 transition-colors group-hover:text-danger" />
                     <span>Cerrar sesión</span>
                 </button>
             </div>

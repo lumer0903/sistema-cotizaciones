@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { CuentaPorCobrar } from '@/types/cobranza';
 import { Select } from '@/components/ui/Select';
 import { Badge } from '@/components/ui/Badge';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
 
 const ESTADO_CUENTA_OPTIONS = [
   { label: 'Todos los estados', value: '' },
@@ -101,8 +102,8 @@ export default function AdminCobranzaPage() {
               <p className="text-sm font-medium text-gray-500">Por Cobrar</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">S/ {money(totalPendiente || kpiSaldo)}</p>
             </div>
-            <div className="p-3 rounded-xl bg-blue-100">
-              <DollarSign className="h-6 w-6 text-blue-700" />
+            <div className="p-3 rounded-xl bg-estado-enviado-soft">
+              <DollarSign className="h-6 w-6 text-estado-enviado" />
             </div>
           </div>
         </div>
@@ -110,10 +111,10 @@ export default function AdminCobranzaPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Pagado (página)</p>
-              <p className="text-2xl font-bold text-green-700 mt-1">S/ {money(montoPagado)}</p>
+              <p className="text-2xl font-bold text-estado-aprobado-text mt-1">S/ {money(montoPagado)}</p>
             </div>
-            <div className="p-3 rounded-xl bg-green-100">
-              <DollarSign className="h-6 w-6 text-green-700" />
+            <div className="p-3 rounded-xl bg-estado-aprobado-soft">
+              <DollarSign className="h-6 w-6 text-estado-aprobado-text" />
             </div>
           </div>
         </div>
@@ -123,7 +124,7 @@ export default function AdminCobranzaPage() {
               <p className="text-sm font-medium text-gray-500">Vencidas</p>
               <p className="text-2xl font-bold text-red-600 mt-1">{kpiVencidas}</p>
             </div>
-            <div className="p-3 rounded-xl bg-red-100">
+            <div className="p-3 rounded-xl bg-estado-rechazado-soft">
               <Clock className="h-6 w-6 text-red-700" />
             </div>
           </div>
@@ -132,10 +133,10 @@ export default function AdminCobranzaPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Por Vencer</p>
-              <p className="text-2xl font-bold text-orange-600 mt-1">{cuentasPorVencer}</p>
+              <p className="text-2xl font-bold text-brand-primary mt-1">{cuentasPorVencer}</p>
             </div>
-            <div className="p-3 rounded-xl bg-orange-100">
-              <AlertTriangle className="h-6 w-6 text-orange-700" />
+            <div className="p-3 rounded-xl bg-brand-soft">
+              <AlertTriangle className="h-6 w-6 text-brand-primary" />
             </div>
           </div>
         </div>
@@ -153,7 +154,7 @@ export default function AdminCobranzaPage() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent text-sm"
             />
           </div>
           <Select
@@ -187,67 +188,67 @@ export default function AdminCobranzaPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Documento</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cliente</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fecha</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Vence</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Pagado</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Saldo</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Atraso</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
+            <div className="px-4 pt-4">
+              <Table className="border-0 shadow-none">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Documento</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Vence</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-right">Pagado</TableHead>
+                    <TableHead className="text-right">Saldo</TableHead>
+                    <TableHead>Atraso</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {cuentas.map((cuenta) => (
-                    <tr key={cuenta.id_cotizacion} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
+                    <TableRow key={cuenta.id_cotizacion}>
+                      <TableCell>
                         <span className="text-sm font-medium text-gray-900">{cuenta.numero}</span>
                         <p className="text-xs text-gray-400">{cuenta.estado_cotizacion?.toUpperCase()}</p>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-900">
                         {cuenta.cliente?.nombre || 'Sin cliente'}
                         {cuenta.cliente?.ruc_dni && (
                           <p className="text-xs text-gray-400">{cuenta.cliente.ruc_dni}</p>
                         )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">{formatDate(cuenta.created_at)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500">{formatDate(cuenta.fecha_vencimiento)}</td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-500">{formatDate(cuenta.created_at)}</TableCell>
+                      <TableCell className="text-sm text-gray-500">{formatDate(cuenta.fecha_vencimiento)}</TableCell>
+                      <TableCell>
                         <Badge variant={ESTADO_BADGE[cuenta.estado_cobranza] || 'neutral'}>
                           {ESTADO_LABELS[cuenta.estado_cobranza] || cuenta.estado_cobranza}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-900">S/ {money(cuenta.total)}</td>
-                      <td className="px-4 py-3 text-right text-sm text-green-700">S/ {money(cuenta.pagado)}</td>
-                      <td className="px-4 py-3 text-right text-sm font-semibold text-orange-700">S/ {money(cuenta.saldo)}</td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="text-right text-sm text-gray-900">S/ {money(cuenta.total)}</TableCell>
+                      <TableCell className="text-right text-sm text-estado-aprobado-text">S/ {money(cuenta.pagado)}</TableCell>
+                      <TableCell className="text-right text-sm font-semibold text-brand-primary">S/ {money(cuenta.saldo)}</TableCell>
+                      <TableCell>
                         {cuenta.dias_atraso > 0 ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-estado-rechazado-soft text-danger">
                             <Clock className="h-3 w-3 mr-1" />
                             {cuenta.dias_atraso} días
                           </span>
                         ) : (
-                          <span className="text-sm text-green-700">Al día</span>
+                          <span className="text-sm text-estado-aprobado-text">Al día</span>
                         )}
-                      </td>
-                      <td className="px-4 py-3 text-right">
+                      </TableCell>
+                      <TableCell className="text-right">
                         <Link
                           href={`/admin/cobranza/${cuenta.id_cotizacion}`}
-                          className="text-sm text-primary-700 hover:text-primary-900 font-medium"
+                          className="text-sm text-brand-primary hover:text-brand-hover font-medium"
                         >
                           Gestionar
                         </Link>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
 
             {totalPages > 1 && (

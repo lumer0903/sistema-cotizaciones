@@ -72,7 +72,7 @@ export function ClienteAutocomplete({ value, onChange, onSelectCliente }: Client
                   onSelectCliente(c);
                   setOpen(false);
                 }}
-                className="w-full text-left p-3 hover:bg-amber-50/60 transition-colors"
+                className="w-full text-left p-3 hover:bg-brand-soft/60 transition-colors"
               >
                 <p className="text-xs font-bold text-zinc-700">{c.nombre}</p>
                 <p className="text-[10px] text-zinc-400 mt-0.5">

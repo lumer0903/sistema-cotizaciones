@@ -81,10 +81,10 @@ export function Tooltip({ content, children, position = 'top', delay = 200 }: To
       <div
         className="absolute w-0 h-0 border-5 border-transparent"
         style={{
-          ...(position === 'top' && { bottom: '-10px', left: '50%', marginLeft: '-5px', borderTopColor: '#414141' }),
-          ...(position === 'bottom' && { top: '-10px', left: '50%', marginLeft: '-5px', borderBottomColor: '#414141' }),
-          ...(position === 'left' && { right: '-10px', top: '50%', marginTop: '-5px', borderLeftColor: '#414141' }),
-          ...(position === 'right' && { left: '-10px', top: '50%', marginTop: '-5px', borderRightColor: '#414141' }),
+          ...(position === 'top' && { bottom: '-10px', left: '50%', marginLeft: '-5px', borderTopColor: 'var(--color-brand-subtitle)' }),
+          ...(position === 'bottom' && { top: '-10px', left: '50%', marginLeft: '-5px', borderBottomColor: 'var(--color-brand-subtitle)' }),
+          ...(position === 'left' && { right: '-10px', top: '50%', marginTop: '-5px', borderLeftColor: 'var(--color-brand-subtitle)' }),
+          ...(position === 'right' && { left: '-10px', top: '50%', marginTop: '-5px', borderRightColor: 'var(--color-brand-subtitle)' }),
         }}
       />
     </div>,

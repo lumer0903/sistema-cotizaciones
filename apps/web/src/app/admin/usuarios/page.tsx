@@ -1,20 +1,13 @@
 'use client';
 
-import { Users, Plus, Search, MoreVertical } from 'lucide-react';
+import { Plus, Search, MoreVertical } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
-import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
 import { Rol } from '@goldcontinent/shared/auth';
-import { Usuario as UsuarioType, RolUsuario } from '@/types/usuario';
-import Link from 'next/link';
+import { getUsuarios, toggleUsuarioActivo, UsuarioLista } from '@/features/usuarios/api/usuariosApi';
+import { showToast } from '@/lib/toast';
 
-interface Usuario {
-  id_usuario: number;
-  nombre: string;
-  email: string;
-  rol: Rol;
-  activo: boolean;
-}
+type Usuario = UsuarioLista;
 
 const ROLE_LABELS: Record<Rol, string> = {
   admin: 'Administrador',
@@ -23,9 +16,9 @@ const ROLE_LABELS: Record<Rol, string> = {
 };
 
 const ROLE_COLORS: Record<Rol, string> = {
-  admin: 'bg-purple-100 text-purple-700',
-  gerente: 'bg-blue-100 text-blue-700',
-  vendedor: 'bg-green-100 text-green-700',
+  admin: 'bg-brand-soft text-brand-subtitle border border-brand-primary/40',
+  gerente: 'bg-estado-enviado-soft text-tienda border border-tienda/40',
+  vendedor: 'bg-estado-aprobado-soft text-estado-aprobado-text border border-estado-aprobado/40',
 };
 
 export default function UsuariosPage() {
@@ -37,12 +30,10 @@ export default function UsuariosPage() {
   useEffect(() => {
     const fetchUsuarios = async () => {
       try {
-        const data = await apiClient('/usuarios');
-        if (data.success) {
-          setUsuarios(data.data);
-        }
+        const data = await getUsuarios();
+        setUsuarios(data);
       } catch (error) {
-        console.error('Error fetching usuarios:', error);
+        showToast.error(error instanceof Error ? error.message : 'No se pudieron cargar los usuarios');
       } finally {
         setLoading(false);
       }
@@ -53,13 +44,10 @@ export default function UsuariosPage() {
 
   const toggleActivo = async (user: Usuario) => {
     try {
-      await apiClient(`/usuarios/${user.id_usuario}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ activo: !user.activo }),
-      });
+      await toggleUsuarioActivo(user.id_usuario, !user.activo);
       setUsuarios(usuarios.map(u => u.id_usuario === user.id_usuario ? { ...u, activo: !u.activo } : u));
     } catch (error) {
-      console.error('Error updating user:', error);
+      showToast.error(error instanceof Error ? error.message : 'No se pudo actualizar el usuario');
     }
   };
 
@@ -75,7 +63,7 @@ export default function UsuariosPage() {
           <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
           <p className="text-gray-500">Administra los usuarios del sistema</p>
         </div>
-        <button className="px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors flex items-center gap-2">
+        <button className="px-4 py-2 bg-brand-primary text-white rounded-lg hover:bg-brand-hover transition-colors flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Nuevo Usuario
         </button>
@@ -90,7 +78,7 @@ export default function UsuariosPage() {
               placeholder="Buscar usuarios..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent text-sm"
             />
           </div>
         </div>
@@ -111,7 +99,7 @@ export default function UsuariosPage() {
               filteredUsuarios.map((user) => (
                 <div key={user.id_usuario} className="p-4 flex items-center justify-between hover:bg-gray-50">
                   <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold">
+                    <div className="h-10 w-10 rounded-full bg-brand-soft flex items-center justify-center text-brand-primary font-bold">
                       {user.nombre.charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -123,7 +111,7 @@ export default function UsuariosPage() {
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[user.rol]}`}>
                       {ROLE_LABELS[user.rol]}
                     </span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.activo ? 'bg-estado-aprobado-soft text-estado-aprobado-text' : 'bg-estado-rechazado-soft text-estado-rechazado-text'}`}>
                       {user.activo ? 'Activo' : 'Inactivo'}
                     </span>
                     <button

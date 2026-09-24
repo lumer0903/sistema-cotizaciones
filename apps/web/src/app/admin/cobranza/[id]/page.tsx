@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
 import {
   getCobranzaDetalle,
   registrarPagoCotizacion,
@@ -198,13 +199,13 @@ export default function CobranzaDetallePage() {
           <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
             <DollarSign className="h-4 w-4" /> Pagado
           </div>
-          <p className="text-2xl font-bold text-green-700">S/ {money(pagado)}</p>
+          <p className="text-2xl font-bold text-estado-aprobado-text">S/ {money(pagado)}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
             <Clock className="h-4 w-4" /> Saldo
           </div>
-          <p className={`text-2xl font-bold ${saldoCero ? 'text-green-700' : 'text-orange-600'}`}>
+          <p className={`text-2xl font-bold ${saldoCero ? 'text-estado-aprobado-text' : 'text-brand-primary'}`}>
             S/ {money(saldo)}
           </p>
         </div>
@@ -280,42 +281,42 @@ export default function CobranzaDetallePage() {
         </form>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <div>
+        <div className="px-6 py-4 border border-gray-100 rounded-t-xl border-b-0 bg-white flex items-center justify-between">
           <div className="flex items-center gap-2 text-zinc-700 font-bold text-sm uppercase tracking-wide">
             <FileText className="h-4 w-4" /> Historial de pagos
           </div>
           <span className="text-sm text-gray-500">{pagos.length} pago(s)</span>
         </div>
         {pagos.length === 0 ? (
-          <div className="p-8 text-center text-gray-400 text-sm">Sin pagos registrados</div>
+          <div className="p-8 text-center text-gray-400 text-sm border border-gray-100 rounded-b-xl bg-white">Sin pagos registrados</div>
         ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Fecha</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Monto</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Método</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Referencia</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Usuario</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+          <Table className="rounded-t-none border-t-0">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Fecha</TableHead>
+                <TableHead className="text-right">Monto</TableHead>
+                <TableHead>Método</TableHead>
+                <TableHead>Referencia</TableHead>
+                <TableHead>Usuario</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {pagos.map((p) => (
-                <tr key={p.id_pago} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-600">{formatDateTime(p.created_at)}</td>
-                  <td className="px-4 py-3 text-sm text-right font-semibold text-green-700">
+                <TableRow key={p.id_pago}>
+                  <TableCell className="text-sm text-gray-600">{formatDateTime(p.created_at)}</TableCell>
+                  <TableCell className="text-sm text-right font-semibold text-estado-aprobado-text">
                     S/ {money(p.monto)}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700 capitalize">
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-700 capitalize">
                     {(p.metodo_pago || '').replace(/_/g, ' ')}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{p.referencia || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{p.usuario?.nombre || '—'}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-500">{p.referencia || '—'}</TableCell>
+                  <TableCell className="text-sm text-gray-700">{p.usuario?.nombre || '—'}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
       </div>
     </div>

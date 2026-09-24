@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
 import { showToast } from '@/lib/toast';
 import {
   cambiarEstadoCotizacion,
@@ -286,37 +287,37 @@ export default function CotizacionDetallePage() {
         <h2 className="text-base font-bold text-zinc-800">Detalle ({itemsCount} items)</h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          <div className="lg:col-span-2 border border-zinc-200 rounded-xl overflow-hidden">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-zinc-50 border-b border-zinc-200 text-[10px] text-zinc-500 font-bold uppercase">
-                <tr>
-                  <th className="py-2.5 px-3">Código</th>
-                  <th className="py-2.5 px-3">Descripción</th>
-                  <th className="py-2.5 px-3 text-right">Precio</th>
-                  <th className="py-2.5 px-3 text-center">Cant</th>
-                  <th className="py-2.5 px-3 text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 font-medium text-zinc-700">
+          <div className="lg:col-span-2">
+            <Table className="text-xs">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Descripción</TableHead>
+                  <TableHead className="text-right">Precio</TableHead>
+                  <TableHead className="text-center">Cant</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="font-medium text-zinc-700">
                 {items.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-6 text-center text-zinc-400">
+                  <TableRow>
+                    <TableCell colSpan={5} className="py-6 text-center text-zinc-400">
                       Sin items en el detalle
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   items.map((it, idx) => (
-                    <tr key={idx}>
-                      <td className="py-2.5 px-3 font-bold">{it.codigo}</td>
-                      <td className="py-2.5 px-3 uppercase text-[11px]">{it.descripcion}</td>
-                      <td className="py-2.5 px-3 text-right">S/ {money(it.precio)}</td>
-                      <td className="py-2.5 px-3 text-center">{it.cantidad}</td>
-                      <td className="py-2.5 px-3 text-right font-bold">S/ {money(it.total)}</td>
-                    </tr>
+                    <TableRow key={idx}>
+                      <TableCell className="font-bold">{it.codigo}</TableCell>
+                      <TableCell className="uppercase text-[11px]">{it.descripcion}</TableCell>
+                      <TableCell className="text-right">S/ {money(it.precio)}</TableCell>
+                      <TableCell className="text-center">{it.cantidad}</TableCell>
+                      <TableCell className="text-right font-bold">S/ {money(it.total)}</TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
 
           <div className="space-y-2 text-xs text-right font-medium text-zinc-600 pl-4">

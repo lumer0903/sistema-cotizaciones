@@ -25,29 +25,29 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       'inline-flex items-center justify-center font-black font-sans rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
 
     const variantStyles = {
-      // 1. "Agregar Producto" (Amarillo sólido)
+      // 1. "Agregar Producto" (Amarillo marca)
       primary:
-        'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500 outline outline-1 outline-offset-[-1px] outline-yellow-500 shadow-sm',
+        'bg-brand-primary text-white hover:bg-brand-hover focus:ring-brand-primary outline outline-1 outline-offset-[-1px] outline-brand-primary shadow-sm',
 
       // 2. "Continuar" (Gris neutro)
       secondary:
-        'bg-neutral-400 text-white hover:bg-neutral-500 focus:ring-neutral-400 outline outline-1 outline-offset-[-1px] outline-neutral-400 shadow-sm',
+        'bg-brand-options text-white hover:bg-brand-options/80 focus:ring-brand-options outline outline-1 outline-offset-[-1px] outline-brand-options shadow-sm',
 
       // 3. "AGREGAR" (Borde gris sin fondo)
       outline:
-        'bg-transparent text-neutral-400 hover:bg-neutral-100 outline outline-1 outline-offset-[-1px] outline-neutral-400 focus:ring-neutral-400',
+        'bg-transparent text-brand-options hover:bg-brand-soft outline outline-1 outline-offset-[-1px] outline-brand-options focus:ring-brand-options',
 
       // 4. "REEMPLAZAR" (Borde y texto amarillo con fondo translúcido)
       yellowOutline:
-        'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 outline outline-1 outline-offset-[-1px] outline-yellow-500 focus:ring-yellow-500',
+        'bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 outline outline-1 outline-offset-[-1px] outline-brand-primary focus:ring-brand-primary',
 
       // 5. "Cancelar" (Sin fondo ni bordes)
       ghost:
-        'bg-transparent text-neutral-400 hover:bg-neutral-100 focus:ring-neutral-300',
+        'bg-transparent text-brand-options hover:bg-brand-soft focus:ring-brand-options/50',
 
-      // 6. Alerta/Peligro
+      // 6. Alerta/Peligro (solo destructivo)
       danger:
-        'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 outline outline-1 outline-offset-[-1px] outline-red-600 shadow-sm',
+        'bg-danger text-white hover:bg-danger-hover focus:ring-danger outline outline-1 outline-offset-[-1px] outline-danger shadow-sm',
     };
 
     const sizeStyles = {

@@ -45,10 +45,10 @@ export default function DashboardPage() {
   }, []);
 
   const statCards = [
-    { label: 'Productos', value: stats?.totalProductos || 0, icon: Package, color: 'bg-blue-500', href: '/admin/productos' },
-    { label: 'Cotizaciones', value: stats?.totalCotizaciones || 0, icon: FileText, color: 'bg-green-500', href: '/admin/cotizaciones' },
-    { label: 'Aprobadas', value: stats?.cotizacionesAprobadas || 0, icon: DollarSign, color: 'bg-purple-500', href: '/admin/cotizaciones' },
-    { label: 'Por Cobrar', value: stats?.montoPendiente ? `S/ ${stats.montoPendiente.toLocaleString()}` : 'S/ 0', icon: TrendingUp, color: 'bg-orange-500', href: '/admin/cobranza' },
+    { label: 'Productos', value: stats?.totalProductos || 0, icon: Package, color: 'bg-estado-enviado', href: '/admin/productos' },
+    { label: 'Cotizaciones', value: stats?.totalCotizaciones || 0, icon: FileText, color: 'bg-brand-primary', href: '/admin/cotizaciones' },
+    { label: 'Aprobadas', value: stats?.cotizacionesAprobadas || 0, icon: DollarSign, color: 'bg-estado-aprobado', href: '/admin/cotizaciones' },
+    { label: 'Por Cobrar', value: stats?.montoPendiente ? `S/ ${stats.montoPendiente.toLocaleString()}` : 'S/ 0', icon: TrendingUp, color: 'bg-distribuidor', href: '/admin/cobranza' },
   ];
 
   return (
@@ -84,17 +84,17 @@ export default function DashboardPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Accesos rápidos</h2>
             <div className="grid gap-4 md:grid-cols-3">
               <Link href="/admin/productos" className="p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                <Package className="h-8 w-8 text-primary-700 mb-2" />
+                <Package className="h-8 w-8 text-brand-primary mb-2" />
                 <p className="font-medium text-gray-900">Gestionar Productos</p>
                 <p className="text-sm text-gray-500 mt-1">Inventario, precios, importación</p>
               </Link>
               <Link href="/admin/cotizaciones/crear?nueva=1" className="p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                <FileText className="h-8 w-8 text-green-700 mb-2" />
+                <FileText className="h-8 w-8 text-brand-primary mb-2" />
                 <p className="font-medium text-gray-900">Nueva Cotización</p>
                 <p className="text-sm text-gray-500 mt-1">Crear cotización para cliente</p>
               </Link>
               <Link href="/admin/cobranza" className="p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                <DollarSign className="h-8 w-8 text-orange-700 mb-2" />
+                <DollarSign className="h-8 w-8 text-brand-primary mb-2" />
                 <p className="font-medium text-gray-900">Cobranza</p>
                 <p className="text-sm text-gray-500 mt-1">Registrar pagos de cotizaciones</p>
               </Link>

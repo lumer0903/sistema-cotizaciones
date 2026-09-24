@@ -499,7 +499,7 @@ export default function CrearCotizacionPage() {
                         <div
                           key={prod.id || prod.codigo || index}
                           onClick={() => handleSeleccionarProducto(prod)}
-                          className="p-3 hover:bg-amber-50/60 cursor-pointer transition-colors flex items-center justify-between gap-3"
+                          className="p-3 hover:bg-brand-soft/60 cursor-pointer transition-colors flex items-center justify-between gap-3"
                         >
                           <div className="flex items-center gap-3">
                             <span className="font-bold text-xs bg-stone-100 px-2 py-1 rounded text-zinc-700 border border-stone-200 uppercase">
@@ -561,7 +561,7 @@ export default function CrearCotizacionPage() {
                   {items.map((item) => (
                     <TableRow
                       key={item.id}
-                      className={selectedItemId === item.id ? 'bg-amber-50/60' : ''}
+                      className={selectedItemId === item.id ? 'bg-brand-soft/60' : ''}
                     >
                       <TableCell className="font-bold text-zinc-800">{item.codigo}</TableCell>
                       <TableCell className="text-zinc-600">S/ {item.precioUnitario.toFixed(2)}</TableCell>
@@ -631,9 +631,9 @@ export default function CrearCotizacionPage() {
                 id="carreta"
                 checked={incluyeCarreta}
                 onChange={(e) => setIncluyeCarreta(e.target.checked)}
-                className="accent-emerald-600 size-4 cursor-pointer rounded"
+                className="accent-brand-primary size-4 cursor-pointer rounded"
               />
-              <label htmlFor="carreta" className="text-xs text-emerald-600 font-semibold cursor-pointer">
+              <label htmlFor="carreta" className="text-xs text-brand-primary font-semibold cursor-pointer">
                 Carreta
               </label>
             </div>

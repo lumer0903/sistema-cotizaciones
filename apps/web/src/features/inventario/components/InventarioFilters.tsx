@@ -24,6 +24,7 @@ interface InventarioFiltersProps {
   onAlertas?: () => void;
   onRefresh?: () => void;
   loading?: boolean;
+  metaLoading?: boolean;
   alertasCount?: number;
 }
 
@@ -43,8 +44,10 @@ export function InventarioFilters({
   onAlertas,
   onRefresh,
   loading = false,
+  metaLoading = false,
   alertasCount = 0,
 }: InventarioFiltersProps) {
+  const metaDisabled = loading || metaLoading;
   const categoriaOptions = categorias.map((cat) => ({
     label: cat.nombre_categoria,
     value: cat.id_categoria.toString(),
@@ -77,7 +80,7 @@ export function InventarioFilters({
             value={selectedCategoria}
             onChange={(e) => onCategoriaChange(String(e.target.value))}
             options={[{ label: 'Seleccionar', value: '' }, ...categoriaOptions]}
-            disabled={loading}
+            disabled={metaDisabled}
           />
         </div>
 
@@ -88,7 +91,7 @@ export function InventarioFilters({
             value={selectedUbicacion}
             onChange={(e) => onUbicacionChange(String(e.target.value))}
             options={[{ label: 'Seleccionar', value: '' }, ...almacenOptions]}
-            disabled={loading}
+            disabled={metaDisabled}
           />
         </div>
 
@@ -157,7 +160,7 @@ export function InventarioFilters({
               <Bell className="w-4 h-4" />
               <span className="hidden sm:inline">Alertas</span>
               {alertasCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-danger text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
                   {alertasCount > 9 ? '9+' : alertasCount}
                 </span>
               )}

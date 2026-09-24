@@ -49,6 +49,7 @@ export interface KardexResponse {
   costo_unitario: number | null;
   referencia: string | null;
   observaciones: string | null;
+  almacen: string | null;
   usuario: string | null;
 }
 

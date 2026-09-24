@@ -410,7 +410,7 @@ export default function ResumenCotizacionPage() {
           variant="primary"
           onClick={handleExportarClick}
           disabled={exportando || guardando}
-          className="px-5 rounded-xl font-medium bg-amber-400 hover:bg-amber-500 text-zinc-900 shadow-sm"
+          className="px-5 rounded-xl font-medium bg-brand-primary hover:bg-brand-hover text-white shadow-sm"
         >
           {exportando || guardando ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4 mr-1.5" />}
           {exportando ? 'Generando...' : 'Exportar PDF'}

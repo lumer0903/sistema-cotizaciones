@@ -10,7 +10,7 @@ export interface TableProps extends React.TableHTMLAttributes<HTMLTableElement> 
 
 export const Table = React.forwardRef<HTMLTableElement, TableProps>(
     ({ children, className = '', ...props }, ref) => (
-        <div className="w-full overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="w-full rounded-xl border border-gray-100 shadow-sm overflow-x-auto bg-white">
             <table
                 ref={ref}
                 className={`w-full text-left text-sm text-brand-subtitle ${className}`}
@@ -33,7 +33,7 @@ export const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeader
     ({ children, className = '', ...props }, ref) => (
         <thead
             ref={ref}
-            className={`bg-gray-50/80 border-b border-gray-200 text-xs font-bold text-brand-subtitle uppercase tracking-wider ${className}`}
+            className={`bg-gray-50/80 border-b border-gray-200 uppercase tracking-wider ${className}`}
             {...props}
         >
             {children}
@@ -72,7 +72,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
         <tr
             ref={ref}
             onClick={onClick}
-            className={`transition-colors hover:bg-brand-selection/40 ${onClick ? 'cursor-pointer' : ''
+            className={`transition-colors hover:bg-brand-soft ${onClick ? 'cursor-pointer' : ''
                 } ${className}`}
             {...props}
         >
@@ -90,7 +90,7 @@ export interface TableHeadProps extends React.ThHTMLAttributes<HTMLTableCellElem
 
 export const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
     ({ children, className = '', ...props }, ref) => (
-        <th ref={ref} className={`px-4 py-3.5 font-bold ${className}`} {...props}>
+        <th ref={ref} className={`py-3.5 px-4 text-xs font-semibold text-gray-600 align-middle ${className}`} {...props}>
             {children}
         </th>
     )
@@ -105,7 +105,7 @@ export interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElem
 
 export const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
     ({ children, className = '', ...props }, ref) => (
-        <td ref={ref} className={`px-4 py-3 align-middle ${className}`} {...props}>
+        <td ref={ref} className={`py-3 px-4 align-middle ${className}`} {...props}>
             {children}
         </td>
     )

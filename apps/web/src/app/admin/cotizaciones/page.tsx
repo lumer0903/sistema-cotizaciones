@@ -35,7 +35,7 @@ export default function MisCotizacionesPage() {
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit, setLimit] = useState(20);
+  const [limit, setLimit] = useState(8);
 
   const fetchData = useCallback(async () => {
     try {
@@ -74,14 +74,14 @@ export default function MisCotizacionesPage() {
   return (
     <div className="min-h-screen bg-stone-50 max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 py-3 font-['DM_Sans']">
       {/* Barra de Filtros */}
-      <div className="w-full bg-white rounded-2xl shadow-sm border-l-4 border-amber-400 p-6 mb-8 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6">
+      <div className="w-full bg-white rounded-2xl shadow-sm border-l-4 border-brand-primary p-4 mb-8 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6">
         {/* BUSCAR */}
         <div className="flex-1 flex flex-col gap-1.5">
-          <label className="text-xs font-black tracking-wider text-amber-400 uppercase">
+          <label className="text-xs font-black tracking-wider text-brand-primary uppercase">
             BUSCAR
           </label>
           <div className="relative flex items-center">
-            <Search className="w-5 h-5 text-amber-400 absolute left-3.5 pointer-events-none" />
+            <Search className="w-5 h-5 text-brand-primary absolute left-3.5 pointer-events-none" />
             <input
               type="text"
               value={buscar}
@@ -89,14 +89,14 @@ export default function MisCotizacionesPage() {
                 setBuscar(e.target.value);
               }}
               placeholder="Buscar por código o cliente"
-              className="w-full h-10 pl-11 pr-4 rounded-xl border border-amber-300 focus:border-amber-400 focus:ring-2 focus:ring-amber-200 outline-none text-neutral-700 text-sm placeholder:text-neutral-400 transition-all"
+              className="w-full h-10 pl-11 pr-4 rounded-xl border border-brand-primary focus:border-brand-hover focus:ring-2 focus:ring-brand-soft outline-none text-brand-subtitle text-sm placeholder:text-brand-options transition-all"
             />
           </div>
         </div>
 
         {/* FECHA */}
         <div className="w-full md:w-56 flex flex-col gap-1.5">
-          <label className="text-xs font-black tracking-wider text-amber-400 uppercase">
+          <label className="text-xs font-black tracking-wider text-brand-primary uppercase">
             FECHA
           </label>
           <input
@@ -105,13 +105,13 @@ export default function MisCotizacionesPage() {
             onChange={(e) => {
               setFecha(e.target.value);
             }}
-            className="w-full h-10 px-3.5 rounded-xl border border-amber-300 focus:border-amber-400 focus:ring-2 focus:ring-amber-200 outline-none text-neutral-700 text-sm bg-white cursor-pointer transition-all"
+            className="w-full h-10 px-3.5 rounded-xl border border-brand-primary focus:border-brand-hover focus:ring-2 focus:ring-brand-soft outline-none text-brand-subtitle text-sm bg-white cursor-pointer transition-all"
           />
         </div>
 
         {/* ESTADO */}
         <div className="w-full md:w-56 flex flex-col gap-1.5">
-          <label className="text-xs font-black tracking-wider text-amber-400 uppercase">
+          <label className="text-xs font-black tracking-wider text-brand-primary uppercase">
             ESTADO
           </label>
           <Select

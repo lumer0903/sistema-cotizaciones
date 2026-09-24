@@ -1,10 +1,11 @@
 'use client';
 
-import { Settings, User, Bell, Shield, Database, Palette, Key, Globe, Mail, Truck, CreditCard, Save, FileText } from 'lucide-react';
+import { Settings, Bell, Database, CreditCard, Save, FileText } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
 import { useEffect, useState } from 'react';
-import { Configuracion as ConfigType } from '@/types/configuracion';
 import { Select } from '@/components/ui/Select';
+import { showToast } from '@/lib/toast';
+import { getConfiguracion, saveAllConfiguracion } from '@/features/configuracion/api/configApi';
 
 const MONEDA_OPTIONS = [
   { label: 'PEN - Soles', value: 'PEN' },
@@ -79,9 +80,37 @@ export default function ConfiguracionPage() {
   });
 
   useEffect(() => {
-    // Simular carga de configuración
+    let cancelled = false;
     setLoading(true);
-    setTimeout(() => setLoading(false), 500);
+    getConfiguracion()
+      .then((data) => {
+        if (cancelled) return;
+        setConfig((prev) => {
+          const next = { ...prev };
+          (Object.keys(prev) as Array<keyof Configuracion>).forEach((key) => {
+            const raw = data[key as string];
+            if (raw === undefined) return;
+            const current = prev[key];
+            if (typeof current === 'boolean') {
+              (next as any)[key] = raw === 'true';
+            } else if (typeof current === 'number') {
+              (next as any)[key] = Number(raw);
+            } else {
+              (next as any)[key] = raw;
+            }
+          });
+          return next;
+        });
+      })
+      .catch(() => {
+        if (!cancelled) showToast.info('Usando valores por defecto de configuración');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleChange = <K extends keyof Configuracion>(key: K, value: Configuracion[K]) => {
@@ -91,10 +120,20 @@ export default function ConfiguracionPage() {
 
   const handleSave = async () => {
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setLoading(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    try {
+      const entries = (Object.keys(config) as Array<keyof Configuracion>).map((key) => ({
+        clave: key as string,
+        valor: String(config[key]),
+      }));
+      await saveAllConfiguracion(entries);
+      setSaved(true);
+      showToast.success('Configuración guardada');
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      showToast.error(error instanceof Error ? error.message : 'No se pudo guardar la configuración');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const tabs = [
@@ -109,7 +148,7 @@ export default function ConfiguracionPage() {
     <>
       <div className="flex items-center gap-3">
           {saved && (
-            <span className="px-3 py-1 text-sm font-medium bg-green-100 text-green-700 rounded-full flex items-center gap-1">
+            <span className="px-3 py-1 text-sm font-medium bg-estado-aprobado-soft text-estado-aprobado-text rounded-full flex items-center gap-1">
               <CheckCircle className="h-4 w-4" />
               Guardado
             </span>
@@ -117,7 +156,7 @@ export default function ConfiguracionPage() {
           <button
             onClick={handleSave}
             disabled={loading}
-            className="px-4 py-2 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-800 disabled:opacity-50 transition-colors"
+            className="px-4 py-2 bg-brand-primary text-white font-medium rounded-lg hover:bg-brand-hover disabled:opacity-50 transition-colors"
           >
             <Save className="h-4 w-4 inline mr-2" />
             {loading ? 'Guardando...' : 'Guardar Cambios'}
@@ -133,7 +172,7 @@ export default function ConfiguracionPage() {
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
                 className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
                   activeTab === tab.id
-                    ? 'border-primary-700 text-primary-700'
+                    ? 'border-brand-primary text-brand-primary'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -161,7 +200,7 @@ export default function ConfiguracionPage() {
                     type="text"
                     value={config.empresa_nombre}
                     onChange={(e) => handleChange('empresa_nombre', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -170,7 +209,7 @@ export default function ConfiguracionPage() {
                     type="text"
                     value={config.empresa_ruc}
                     onChange={(e) => handleChange('empresa_ruc', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                     maxLength={11}
                   />
                 </div>
@@ -180,7 +219,7 @@ export default function ConfiguracionPage() {
                     type="text"
                     value={config.empresa_direccion}
                     onChange={(e) => handleChange('empresa_direccion', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -189,7 +228,7 @@ export default function ConfiguracionPage() {
                     type="tel"
                     value={config.empresa_telefono}
                     onChange={(e) => handleChange('empresa_telefono', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -198,7 +237,7 @@ export default function ConfiguracionPage() {
                     type="email"
                     value={config.empresa_email}
                     onChange={(e) => handleChange('empresa_email', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                   />
                 </div>
               </div>
@@ -224,7 +263,7 @@ export default function ConfiguracionPage() {
                     type="number"
                     value={config.igv_porcentaje}
                     onChange={(e) => handleChange('igv_porcentaje', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                     min="0"
                     max="100"
                     step="0.1"
@@ -236,7 +275,7 @@ export default function ConfiguracionPage() {
                     type="text"
                     value={config.serie_boleta}
                     onChange={(e) => handleChange('serie_boleta', e.target.value.toUpperCase())}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                     maxLength={4}
                   />
                 </div>
@@ -246,7 +285,7 @@ export default function ConfiguracionPage() {
                     type="text"
                     value={config.serie_factura}
                     onChange={(e) => handleChange('serie_factura', e.target.value.toUpperCase())}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                     maxLength={4}
                   />
                 </div>
@@ -256,7 +295,7 @@ export default function ConfiguracionPage() {
                     type="number"
                     value={config.correlativo_boleta}
                     onChange={(e) => handleChange('correlativo_boleta', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                     min="1"
                   />
                 </div>
@@ -266,7 +305,7 @@ export default function ConfiguracionPage() {
                     type="number"
                     value={config.correlativo_factura}
                     onChange={(e) => handleChange('correlativo_factura', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                     min="1"
                   />
                 </div>
@@ -284,7 +323,7 @@ export default function ConfiguracionPage() {
                       type="checkbox"
                       checked={config.incluir_carreta_default}
                       onChange={(e) => handleChange('incluir_carreta_default', e.target.checked)}
-                      className="h-4 w-4 text-primary-700 border-gray-300 rounded focus:ring-primary-500"
+                      className="h-4 w-4 text-brand-primary border-gray-300 rounded focus:ring-brand-primary"
                     />
                     <span className="text-sm text-gray-700">Incluir carreta por defecto</span>
                   </label>
@@ -295,7 +334,7 @@ export default function ConfiguracionPage() {
                     type="number"
                     value={config.costo_carreta_default}
                     onChange={(e) => handleChange('costo_carreta_default', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                     min="0"
                     step="0.01"
                   />
@@ -306,7 +345,7 @@ export default function ConfiguracionPage() {
                     type="number"
                     value={config.dias_vencimiento_default}
                     onChange={(e) => handleChange('dias_vencimiento_default', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                     min="1"
                     max="360"
                   />
@@ -317,7 +356,7 @@ export default function ConfiguracionPage() {
                     type="text"
                     value={config.limite_credito_default}
                     onChange={(e) => handleChange('limite_credito_default', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -326,7 +365,7 @@ export default function ConfiguracionPage() {
                     type="number"
                     value={config.tasa_mora_default}
                     onChange={(e) => handleChange('tasa_mora_default', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                     min="0"
                     max="100"
                     step="0.1"
@@ -357,7 +396,7 @@ export default function ConfiguracionPage() {
                         onChange={(e) => handleChange(key as keyof Configuracion, e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-700"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
                     </label>
                   </div>
                 ))}
@@ -393,7 +432,7 @@ export default function ConfiguracionPage() {
                       type="checkbox"
                       checked={config.backup_automatico}
                       onChange={(e) => handleChange('backup_automatico', e.target.checked)}
-                      className="h-4 w-4 text-primary-700 border-gray-300 rounded focus:ring-primary-500"
+                      className="h-4 w-4 text-brand-primary border-gray-300 rounded focus:ring-brand-primary"
                     />
                     <span className="text-sm text-gray-700">Backup automático diario</span>
                   </label>
@@ -402,12 +441,12 @@ export default function ConfiguracionPage() {
 
               <div className="border-t border-gray-200 pt-6 mt-6">
                 <h3 className="text-md font-semibold text-gray-900 mb-3">Zona de Peligro</h3>
-                <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-estado-rechazado-soft border border-estado-rechazado/30 rounded-lg">
                   <div>
                     <p className="font-medium text-red-800">Restablecer Configuración</p>
                     <p className="text-sm text-red-600">Volver a los valores por defecto del sistema</p>
                   </div>
-                  <button className="px-4 py-2 border border-red-300 text-red-700 font-medium rounded-lg hover:bg-red-100 transition-colors">
+                  <button className="px-4 py-2 border border-estado-rechazado/40 text-danger font-medium rounded-lg hover:bg-estado-rechazado/10 transition-colors">
                     Restablecer
                   </button>
                 </div>

@@ -1,6 +1,9 @@
 import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { Rol } from '@goldcontinent/shared/constants/enums';
 import { AlmacenesService } from './almacenes.service';
 import { CreateAlmacenDto } from './dto/create-almacen.dto';
 import { UpdateAlmacenDto } from './dto/update-almacen.dto';
@@ -8,7 +11,8 @@ import type { AlmacenResponse, PaginatedAlmacenesResponse } from './almacenes.se
 
 @ApiTags('Almacenes')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Rol.admin, Rol.gerente)
 @Controller('almacenes')
 export class AlmacenesController {
   constructor(private readonly almacenesService: AlmacenesService) {}

@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { showToast } from '@/lib/toast';
 import { RecomendacionesPanel } from '@/features/cotizaciones/components/RecomendacionesPanel';
 import { formatCode } from '@/lib/formatters';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
 
 interface Producto {
   id_producto: number;
@@ -280,7 +281,7 @@ export default function VendedorCotizacionCrearPage() {
           <h1 className="text-2xl font-bold text-gray-900">Nueva Cotización</h1>
           <p className="text-gray-500">Complete los datos y agregue productos</p>
         </div>
-        <Link href="/vendedor/cotizaciones" className="text-sm text-green-700 hover:text-green-900 flex items-center gap-1">
+        <Link href="/vendedor/cotizaciones" className="text-sm text-brand-primary hover:text-brand-hover flex items-center gap-1">
           <ArrowLeft className="h-4 w-4" />
           Volver
         </Link>
@@ -296,7 +297,7 @@ export default function VendedorCotizacionCrearPage() {
                 <select
                   value={formData.id_cliente}
                   onChange={(e) => setFormData({ ...formData, id_cliente: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                 >
                   <option value="">Seleccionar cliente</option>
                   {clientes.map((c) => (
@@ -312,7 +313,7 @@ export default function VendedorCotizacionCrearPage() {
                 <select
                   value={formData.tipo_precio}
                   onChange={(e) => setFormData({ ...formData, tipo_precio: e.target.value as TipoPrecio })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                 >
                   <option value="normal">Normal</option>
                   <option value="distribuidor">Distribuidor</option>
@@ -324,7 +325,7 @@ export default function VendedorCotizacionCrearPage() {
                 <select
                   value={formData.tipo_venta}
                   onChange={(e) => setFormData({ ...formData, tipo_venta: e.target.value as TipoVenta })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                 >
                   <option value="unidad">Unidad</option>
                   <option value="docena">Docena</option>
@@ -337,7 +338,7 @@ export default function VendedorCotizacionCrearPage() {
                 <select
                   value={formData.tipo_pago}
                   onChange={(e) => setFormData({ ...formData, tipo_pago: e.target.value as TipoPago })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                 >
                   <option value="contado">Contado</option>
                   <option value="credito">Crédito</option>
@@ -351,7 +352,7 @@ export default function VendedorCotizacionCrearPage() {
                     type="number"
                     value={formData.dias_plazo}
                     onChange={(e) => setFormData({ ...formData, dias_plazo: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                     min="1"
                     max="360"
                   />
@@ -364,7 +365,7 @@ export default function VendedorCotizacionCrearPage() {
                   type="date"
                   value={formData.fecha_vencimiento}
                   onChange={(e) => setFormData({ ...formData, fecha_vencimiento: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                 />
               </div>
             </div>
@@ -375,7 +376,7 @@ export default function VendedorCotizacionCrearPage() {
                   type="checkbox"
                   checked={formData.incluye_carreta}
                   onChange={(e) => setFormData({ ...formData, incluye_carreta: e.target.checked })}
-                  className="h-4 w-4 text-green-700 border-gray-300 rounded focus:ring-green-500"
+                  className="h-4 w-4 text-brand-primary border-gray-300 rounded focus:ring-brand-primary"
                 />
                 <span className="text-sm text-gray-700">Incluye carreta (S/ {formData.costo_carreta})</span>
               </label>
@@ -387,7 +388,7 @@ export default function VendedorCotizacionCrearPage() {
               <h2 className="text-lg font-semibold text-gray-900">Productos</h2>
               <button
                 onClick={() => setShowProductModal(true)}
-                className="inline-flex items-center gap-2 px-3 py-2 bg-green-700 text-white text-sm font-medium rounded-lg hover:bg-green-800 transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2 bg-brand-primary text-white text-sm font-medium rounded-lg hover:bg-brand-hover transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 Agregar
@@ -401,80 +402,81 @@ export default function VendedorCotizacionCrearPage() {
                 <p className="text-sm text-gray-400 mt-1">Haga clic en "Agregar" para buscar productos</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Producto</th>
-                      <th className="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Tipo</th>
-                      <th className="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Cant.</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">P. Unit.</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Desc.</th>
-                      <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Subtotal</th>
-                      <th className="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {detalles.map((item, index) => (
-                      <tr key={index} className={selectedDetalleIndex === index ? 'bg-amber-50 hover:bg-amber-50' : 'hover:bg-gray-50'}>
-                        <td className="px-4 py-3">
-                          <p className="font-medium text-gray-900">{item.descripcion}</p>
-                          <p className="text-xs text-gray-500 uppercase">{formatCode(item.codigo)}</p>
-                        </td>
-                        <td className="px-4 py-3 text-center text-sm text-gray-600 capitalize">{item.tipo_venta}</td>
-                        <td className="px-4 py-3 text-center">
-                          <input
-                            type="number"
-                            value={item.cantidad}
-                            onChange={(e) => actualizarCantidad(index, Number(e.target.value))}
-                            min="1"
-                            className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-right text-sm text-gray-900">
-                          S/ {item.precio_unitario.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <input
-                            type="number"
-                            value={item.descuento_item}
-                            onChange={(e) => {
-                              const newDetalles = [...detalles];
-                              newDetalles[index] = { ...newDetalles[index], descuento_item: Number(e.target.value) || 0 };
-                              setDetalles(newDetalles);
-                            }}
-                            min="0"
-                            className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-right font-medium text-gray-900">
-                          S/ {item.subtotal.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleAbrirRecomendaciones(index)}
-                            aria-label={`Ver recomendaciones de ${item.codigo}`}
-                            className={`p-1 mr-1 rounded transition-colors ${selectedDetalleIndex === index
-                              ? 'text-amber-700 bg-amber-100'
-                              : 'text-amber-500 hover:text-amber-700'
-                              }`}
-                            title="Ver recomendaciones IA"
-                          >
-                            <MessageSquare className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => eliminarItem(index)}
-                            className="text-red-600 hover:text-red-800 p-1"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Producto</TableHead>
+                    <TableHead className="text-center">Tipo</TableHead>
+                    <TableHead className="text-center">Cant.</TableHead>
+                    <TableHead className="text-right">P. Unit.</TableHead>
+                    <TableHead className="text-right">Desc.</TableHead>
+                    <TableHead className="text-right">Subtotal</TableHead>
+                    <TableHead className="text-center"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {detalles.map((item, index) => (
+                    <TableRow
+                      key={index}
+                      className={selectedDetalleIndex === index ? 'bg-brand-soft hover:bg-brand-soft' : ''}
+                    >
+                      <TableCell>
+                        <p className="font-medium text-gray-900">{item.descripcion}</p>
+                        <p className="text-xs text-gray-500 uppercase">{formatCode(item.codigo)}</p>
+                      </TableCell>
+                      <TableCell className="text-center text-sm text-gray-600 capitalize">{item.tipo_venta}</TableCell>
+                      <TableCell className="text-center">
+                        <input
+                          type="number"
+                          value={item.cantidad}
+                          onChange={(e) => actualizarCantidad(index, Number(e.target.value))}
+                          min="1"
+                          className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
+                        />
+                      </TableCell>
+                      <TableCell className="text-right text-sm text-gray-900">
+                        S/ {item.precio_unitario.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <input
+                          type="number"
+                          value={item.descuento_item}
+                          onChange={(e) => {
+                            const newDetalles = [...detalles];
+                            newDetalles[index] = { ...newDetalles[index], descuento_item: Number(e.target.value) || 0 };
+                            setDetalles(newDetalles);
+                          }}
+                          min="0"
+                          className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
+                        />
+                      </TableCell>
+                      <TableCell className="text-right font-medium text-gray-900">
+                        S/ {item.subtotal.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleAbrirRecomendaciones(index)}
+                          aria-label={`Ver recomendaciones de ${item.codigo}`}
+                          className={`p-1 mr-1 rounded transition-colors ${selectedDetalleIndex === index
+                            ? 'text-brand-primary bg-brand-soft'
+                            : 'text-brand-options hover:text-brand-primary'
+                            }`}
+                          title="Ver recomendaciones IA"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => eliminarItem(index)}
+                          className="text-danger hover:text-danger-hover p-1"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </div>
         </div>
@@ -496,7 +498,7 @@ export default function VendedorCotizacionCrearPage() {
               {/* IGV DESACTIVADO: precios ya incluyen IGV. Reactivar fila al habilitar IGV. */}
               <div className="border-t border-gray-200 pt-3 flex justify-between text-lg">
                 <span className="font-semibold text-gray-900">Total</span>
-                <span className="font-bold text-green-700">S/ {total.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+                <span className="font-bold text-brand-primary">S/ {total.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
             <div className="mt-6 space-y-3">
@@ -511,7 +513,7 @@ export default function VendedorCotizacionCrearPage() {
               <button
                 onClick={() => handleSubmit('enviada')}
                 disabled={loading || detalles.length === 0 || !formData.id_cliente}
-                className="w-full px-4 py-2.5 bg-green-700 text-white font-medium rounded-lg hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full px-4 py-2.5 bg-brand-primary text-white font-medium rounded-lg hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Send className="h-4 w-4 inline mr-2" />
                 Enviar Cotización
@@ -537,7 +539,7 @@ export default function VendedorCotizacionCrearPage() {
               value={formData.observaciones}
               onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent text-sm resize-none"
               placeholder="Observaciones adicionales para el cliente..."
             />
           </div>
@@ -561,7 +563,7 @@ export default function VendedorCotizacionCrearPage() {
                   placeholder="Buscar por código o descripción..."
                   value={searchProducto}
                   onChange={(e) => setSearchProducto(e.target.value.toUpperCase())}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
                 />
               </div>
             </div>
@@ -579,11 +581,11 @@ export default function VendedorCotizacionCrearPage() {
                         setSelectedProducto(p);
                         agregarProducto(p);
                       }}
-                      className="p-3 border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left"
+                      className="p-3 border border-gray-200 rounded-lg hover:border-brand-primary hover:bg-brand-soft transition-colors text-left"
                     >
                       <p className="font-medium text-gray-900">{p.descripcion}</p>
                       <p className="text-sm text-gray-500">{p.codigo}</p>
-                      <p className="text-sm text-green-700 font-medium mt-1">
+                      <p className="text-sm text-brand-primary font-medium mt-1">
                         S/ {Number(getPrecio(p)).toLocaleString('es-PE', { minimumFractionDigits: 2 })} / {formData.tipo_venta}
                       </p>
                     </button>

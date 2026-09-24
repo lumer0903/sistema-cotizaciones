@@ -1,26 +1,114 @@
 @import "tailwindcss";
 
-:root {
-  --color-primary-50: #fdf2f2;
-  --color-primary-100: #fce4e4;
-  --color-primary-200: #f8c9c9;
-  --color-primary-300: #f1a1a1;
-  --color-primary-400: #e76d6d;
-  --color-primary-500: #dc3d3d;
-  --color-primary-600: #c42a2a;
-  --color-primary-700: #a81f1f;
-  --color-primary-800: #8c1d1d;
-  --color-primary-900: #751c1c;
-  --color-primary-950: #3f0a0a;
-}
+/*
+  ============================================================
+  PALETA GLOBAL — Fuente única de verdad
+  Cambia un hex aquí y cambia en todo el sistema.
+  ============================================================
+  Brand:      #F8B602   (principal)
+  Soft:       #FFF2D6   (selección / highlight)
+  Subtítulo:  #414141
+  Neutro:     #8E8E8E
+  Tienda:     #1F41AF
+  Distribuidor: #9D3A19
+  Estados:    Borrador / Aprobado / Rechazado / Enviado
+  Danger:     #7B1C1C   (solo acciones destructivas)
+*/
 
-* {
-  box-sizing: border-box;
+:root {
+  /* Brand */
+  --brand-primary: #f8b602;
+  --brand-hover: #e0a300;
+  --brand-soft: #fff2d6;
+  --brand-subtitle: #414141;
+  --brand-options: #8e8e8e;
+  --brand-modal-focus: #c9a962;
+  --brand-background: #f9fafb;
+
+  /* Tipos de cliente */
+  --tienda: #1f41af;
+  --tienda-soft: #e8edfa;
+  --tienda-hover: #18368f;
+  --distribuidor: #9d3a19;
+  --distribuidor-soft: #f7ebe6;
+  --distribuidor-hover: #7d2e14;
+
+  /* Estados de cotización */
+  --estado-borrador: #e4e4e4;
+  --estado-borrador-text: #414141;
+  --estado-aprobado: #0dc300;
+  --estado-aprobado-text: #049600;
+  --estado-aprobado-soft: #e6f9e6;
+  --estado-rechazado: #7b1c1c;
+  --estado-rechazado-text: #7b1c1c;
+  --estado-rechazado-soft: #f5e8e8;
+  --estado-enviado: #1f41af;
+  --estado-enviado-text: #1f41af;
+  --estado-enviado-soft: #e8edfa;
+
+  /* Danger (solo destructivo) */
+  --danger: #7b1c1c;
+  --danger-hover: #5f1515;
 }
 
 @theme {
   --font-sans: var(--font-dm-sans), 'DM Sans', sans-serif;
   --font-mono: var(--font-dm-sans), 'DM Sans', sans-serif;
+
+  /* ── Brand ── */
+  --color-brand: #f8b602;
+  --color-brand-primary: #f8b602;
+  --color-brand-hover: #e0a300;
+  --color-brand-soft: #fff2d6;
+  --color-brand-selection: #fff2d6;
+  --color-brand-subtitle: #414141;
+  --color-brand-options: #8e8e8e;
+  --color-brand-modalFocus: #c9a962;
+  --color-brand-background: #f9fafb;
+
+  /* ── Primary (amarillo marca; reemplaza el rojo legacy) ── */
+  --color-primary-50: #fff9e6;
+  --color-primary-100: #fff2d6;
+  --color-primary-200: #fee7a8;
+  --color-primary-300: #fddba0;
+  --color-primary-400: #fcbc4a;
+  --color-primary-500: #f8b602;
+  --color-primary-600: #e0a300;
+  --color-primary-700: #c79200;
+  --color-primary-800: #a37600;
+  --color-primary-900: #7d5b00;
+  --color-primary-950: #4a3600;
+
+  /* ── Danger (solo acciones destructivas) ── */
+  --color-danger: #7b1c1c;
+  --color-danger-hover: #5f1515;
+
+  /* ── Tienda ── */
+  --color-tienda: #1f41af;
+  --color-tienda-soft: #e8edfa;
+  --color-tienda-hover: #18368f;
+
+  /* ── Distribuidor ── */
+  --color-distribuidor: #9d3a19;
+  --color-distribuidor-soft: #f7ebe6;
+  --color-distribuidor-hover: #7d2e14;
+
+  /* ── Estados ── */
+  --color-estado-borrador: #e4e4e4;
+  --color-estado-borrador-text: #414141;
+  --color-estado-aprobado: #0dc300;
+  --color-estado-aprobado-text: #049600;
+  --color-estado-aprobado-soft: #e6f9e6;
+  --color-estado-rechazado: #7b1c1c;
+  --color-estado-rechazado-text: #7b1c1c;
+  --color-estado-rechazado-soft: #f5e8e8;
+  --color-estado-enviado: #1f41af;
+  --color-estado-enviado-text: #1f41af;
+  --color-estado-enviado-soft: #e8edfa;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
@@ -41,7 +129,7 @@ code, kbd, samp, pre {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }

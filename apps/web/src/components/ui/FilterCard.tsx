@@ -15,8 +15,8 @@ export const FilterCard: React.FC<FilterCardProps> = ({ children, className = ''
         bg-white 
         rounded-2xl 
         border border-zinc-200/80 
-        border-l-4 border-l-yellow-500
-        p-6 
+        border-l-4 border-l-brand-primary
+        p-4 
         shadow-sm shadow-zinc-100/50 
         transition-all duration-200 
         ${className}

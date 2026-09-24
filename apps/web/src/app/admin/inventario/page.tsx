@@ -9,7 +9,7 @@ import { ProductoModal } from '@/features/inventario/components/ProductoModal';
 import { MovimientoModal } from '@/features/inventario/components/MovimientoModal';
 import { TransferenciaModal } from '@/features/inventario/components/TransferenciaModal';
 import { KardexModal } from '@/features/inventario/components/KardexModal';
-import { Pagination } from '@/components/ui';
+import { Pagination, ConfirmModal } from '@/components/ui';
 import { Categoria, Almacen, ProductoInventario } from '@goldcontinent/shared/types/inventario';
 
 interface ProductoAPI {
@@ -31,6 +31,7 @@ interface ProductoAPI {
   stock_tacna: number;
   foto_url: string | null;
   activo: boolean;
+  unidades_por_caja?: number;
   stock_actual: Array<{
     id_almacen: number;
     cantidad: number;
@@ -78,7 +79,7 @@ const mapToProductoInventario = (p: ProductoAPI): ProductoInventario => ({
     },
   })) || [],
   precios_actuales: (p as any).precios_actuales ?? (p as any).precios ?? null,
-  unidades_por_caja: 1,
+  unidades_por_caja: p.unidades_por_caja ?? 1,
   created_at: new Date(),
   updated_at: new Date(),
   deleted_at: null,
@@ -89,14 +90,17 @@ export default function InventarioPage() {
   const [selectedCategoria, setSelectedCategoria] = useState('');
   const [selectedUbicacion, setSelectedUbicacion] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(8);
 
   const [productos, setProductos] = useState<ProductoInventario[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [almacenes, setAlmacenes] = useState<Almacen[]>([]);
   const [loading, setLoading] = useState(true);
+  const [metaLoading, setMetaLoading] = useState(true);
   const [errorConexion, setErrorConexion] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modoModal, setModoModal] = useState<'crear' | 'editar'>('crear');
@@ -119,6 +123,8 @@ export default function InventarioPage() {
       setAlmacenes(Array.isArray(resAlm?.data) ? resAlm.data : []);
     } catch (e) {
       console.error('Error cargando metadatos:', e);
+    } finally {
+      setMetaLoading(false);
     }
   }, []);
 
@@ -150,12 +156,25 @@ export default function InventarioPage() {
     }
   }, [searchValue, selectedCategoria, selectedUbicacion, currentPage, limit]);
 
-  const handleEliminar = useCallback(async (id: number) => {
-    if (confirm('¿Eliminar producto?')) {
-      await apiClient(`/productos/${id}`, { method: 'DELETE' });
+  const handleEliminar = useCallback((id: number) => {
+    setConfirmDeleteId(id);
+  }, []);
+
+  const confirmarEliminar = useCallback(async () => {
+    if (confirmDeleteId == null) return;
+    setDeleting(true);
+    try {
+      await apiClient(`/productos/${confirmDeleteId}`, { method: 'DELETE' });
+      showToast.success('Producto eliminado correctamente');
+      setConfirmDeleteId(null);
       fetchProductos();
+    } catch (err) {
+      console.error('Error eliminando producto:', err);
+      showToast.error('Error al eliminar el producto');
+    } finally {
+      setDeleting(false);
     }
-  }, [fetchProductos]);
+  }, [confirmDeleteId, fetchProductos]);
 
   const handleAbrirMovimiento = useCallback((productoId?: number) => {
     setProductoParaMovimiento(productoId ?? null);
@@ -202,10 +221,11 @@ export default function InventarioPage() {
         onKardex={() => handleAbrirKardex()}
         onRefresh={fetchProductos}
         loading={loading}
+        metaLoading={metaLoading}
       />
 
       {errorConexion && (
-        <div className="w-full bg-red-50 border border-red-200 text-red-600 p-3.5 rounded-xl text-xs font-semibold flex items-center justify-between">
+        <div className="w-full bg-estado-rechazado-soft border border-estado-rechazado/30 text-danger p-3.5 rounded-xl text-xs font-semibold flex items-center justify-between">
           <span> Sin conexión con el servidor backend en puerto 3001. Verifica que la API esté encendida.</span>
           <button
             type="button"
@@ -252,6 +272,8 @@ export default function InventarioPage() {
         onSuccess={() => { fetchProductos(); showToast.success('Producto guardado correctamente'); }}
         modo={modoModal}
         productoInicial={productoSeleccionado ?? undefined}
+        categorias={categorias}
+        almacenes={almacenes}
       />
 
       <MovimientoModal
@@ -259,6 +281,7 @@ export default function InventarioPage() {
         onClose={() => { setIsMovimientoOpen(false); setProductoParaMovimiento(null); }}
         onSuccess={() => { fetchProductos(); showToast.success('Movimiento registrado correctamente'); }}
         productoPreseleccionado={productoParaMovimiento}
+        almacenes={almacenes}
       />
 
       <TransferenciaModal
@@ -266,12 +289,24 @@ export default function InventarioPage() {
         onClose={() => { setIsTransferenciaOpen(false); setProductoParaTransferencia(null); }}
         onSuccess={() => { fetchProductos(); showToast.success('Transferencia realizada correctamente'); }}
         productoPreseleccionado={productoParaTransferencia}
+        almacenes={almacenes}
       />
 
       <KardexModal
         open={isKardexOpen}
         onClose={() => { setIsKardexOpen(false); setProductoParaKardex(null); }}
         producto={productoParaKardex}
+        almacenes={almacenes}
+      />
+
+      <ConfirmModal
+        open={confirmDeleteId != null}
+        onClose={() => { if (!deleting) setConfirmDeleteId(null); }}
+        onConfirm={confirmarEliminar}
+        title="Eliminar producto"
+        message="¿Eliminar producto? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        loading={deleting}
       />
     </div>
   );

@@ -24,16 +24,17 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     ref
   ) => {
     const isModal = variant === 'modal';
-    const borderColor = isModal ? '#8E8E8E' : '#F8B602';
-    const focusColor = isModal ? '#C9A962' : '#F8B602';
-    const textColor = '#414141';
-    const labelColor = isModal ? '#8E8E8E' : '#F8B602';
-    const iconColor = isModal ? '#8E8E8E' : '#F8B602';
+    const borderColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-primary)';
+    const focusColor = isModal ? 'var(--color-brand-modalFocus)' : 'var(--color-brand-primary)';
+    const textColor = 'var(--color-brand-subtitle)';
+    const labelColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-primary)';
+    const iconColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-primary)';
 
     const baseStyles =
       'w-full bg-white border rounded-xl outline-none transition-colors placeholder:text-zinc-400 disabled:bg-gray-50 disabled:cursor-not-allowed';
-    const focusStyles = `focus:border-${isModal ? '[#C9A962]' : 'brand-primary'} focus:ring-2 focus:ring-${isModal ? '[#C9A962]33' : 'brand-primary/20'}`;
-    const errorStyles = error ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : `border-[${borderColor}] ${focusStyles}`;
+    const errorStyles = error
+      ? 'border-red-300 focus:border-red-500 focus:ring-red-200 focus:ring-2'
+      : 'focus:ring-2';
     const paddingStyles = icon ? 'pl-11 pr-4' : 'px-4';
     const sizeStyles = 'h-24 py-3 text-sm';
 
@@ -63,7 +64,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             onFocus={(e) => {
               if (!error) {
                 e.currentTarget.style.borderColor = focusColor;
-                e.currentTarget.style.boxShadow = `0 0 0 2px ${focusColor}33`;
+                e.currentTarget.style.boxShadow = `0 0 0 2px color-mix(in srgb, ${focusColor} 20%, transparent)`;
               }
             }}
             onBlur={(e) => {

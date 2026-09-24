@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/apiClient';
 import { Producto } from '@/types';
 import {
     FiltrosInventario,
@@ -74,6 +74,7 @@ export interface KardexResponse {
     costo_unitario: number | null;
     referencia: string | null;
     observaciones: string | null;
+    almacen: string | null;
     usuario: string | null;
 }
 

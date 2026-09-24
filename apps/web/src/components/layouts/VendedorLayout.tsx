@@ -85,11 +85,11 @@ export function VendedorLayout({ title, children }: { title: string; children: R
         <div className="flex flex-col flex-1 overflow-y-auto">
           <div className="flex h-16 items-center justify-between px-6 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="h-7 w-7 rounded-md bg-green-700 flex items-center justify-center text-white font-bold text-sm">G</div>
+              <div className="h-7 w-7 rounded-md bg-brand-primary flex items-center justify-center text-white font-bold text-sm">G</div>
               <span className="font-semibold text-sm tracking-tight text-gray-900">Gold Continent</span>
             </div>
             <button
-              className="p-1 rounded-md text-gray-400 hover:text-green-700 hover:bg-green-50 md:hidden"
+              className="p-1 rounded-md text-gray-400 hover:text-brand-primary hover:bg-brand-soft md:hidden"
               onClick={() => setSidebarOpen(false)}
               aria-label="Cerrar menú"
             >
@@ -111,8 +111,8 @@ export function VendedorLayout({ title, children }: { title: string; children: R
                     className={`
                       flex items-center justify-between rounded-xl px-4 py-3 text-base font-semibold transition-all duration-150
                       ${isItemActive
-                        ? 'bg-green-700 text-white shadow-lg'
-                        : 'text-gray-700 hover:bg-gray-100 hover:text-green-700'}
+                        ? 'bg-brand-primary text-white shadow-lg'
+                        : 'text-gray-700 hover:bg-gray-100 hover:text-brand-primary'}
                     `}
                   >
                     <div className="flex items-center gap-3">
@@ -131,7 +131,7 @@ export function VendedorLayout({ title, children }: { title: string; children: R
                   </Link>
 
                   {hasChildren && isExpanded && (
-                    <div className="ml-4 pl-3 border-l-2 border-green-200 py-2 space-y-1">
+                    <div className="ml-4 pl-3 border-l-2 border-brand-primary/30 py-2 space-y-1">
                       {item.children!.map((child) => (
                         <Link
                           key={child.href}
@@ -140,8 +140,8 @@ export function VendedorLayout({ title, children }: { title: string; children: R
                           className={`
                             flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors
                             ${pathname === child.href
-                              ? 'text-green-700 font-semibold bg-green-50'
-                              : 'text-gray-600 hover:text-green-700 hover:bg-gray-50'}
+                              ? 'text-brand-primary font-semibold bg-brand-soft'
+                              : 'text-gray-600 hover:text-brand-primary hover:bg-gray-50'}
                           `}
                         >
                           <Plus className="h-4 w-4" />
@@ -159,7 +159,7 @@ export function VendedorLayout({ title, children }: { title: string; children: R
         <div className="p-4 border-t border-gray-200 bg-gray-50">
           <button
             type="button"
-            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 hover:bg-red-50 hover:text-red-650 transition-all duration-150"
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 hover:bg-estado-rechazado-soft hover:text-danger transition-all duration-150"
             onClick={logout}
           >
             <LogOut className="h-4 w-4" />
@@ -172,7 +172,7 @@ export function VendedorLayout({ title, children }: { title: string; children: R
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-gray-200 bg-white/80 backdrop-blur-md px-4 md:px-6">
           <div className="flex items-center gap-3">
             <button
-              className="p-1 rounded-md text-gray-500 hover:text-green-700 hover:bg-green-50 md:hidden"
+              className="p-1 rounded-md text-gray-500 hover:text-brand-primary hover:bg-brand-soft md:hidden"
               onClick={() => setSidebarOpen(true)}
               aria-label="Abrir menú"
             >
@@ -184,11 +184,11 @@ export function VendedorLayout({ title, children }: { title: string; children: R
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex flex-col items-end">
               <span className="text-xs font-semibold text-gray-900">{usuario?.nombre || 'Vendedor'}</span>
-              <span className="text-[10px] font-semibold tracking-wider text-green-700 uppercase">
+              <span className="text-[10px] font-semibold tracking-wider text-brand-primary uppercase">
                 {usuario?.rol ? ROLE_NAMES[usuario.rol] : 'Vendedor'}
               </span>
             </div>
-            <div className="h-8 w-8 rounded-full bg-green-700 text-white flex items-center justify-center text-[11px] font-bold shadow-xs hover:bg-green-800 transition-colors select-none">
+            <div className="h-8 w-8 rounded-full bg-brand-primary text-white flex items-center justify-center text-[11px] font-bold shadow-xs hover:bg-brand-hover transition-colors select-none">
               {userInitials}
             </div>
           </div>

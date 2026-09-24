@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CloudUpload, Trash2 } from "lucide-react";
 import { z } from "zod";
 import { CrearProductoSchema } from "@goldcontinent/shared/schemas/productos";
-import { ColorConfigModal, ColorItem } from "@/features/inventario/components/ColorConfigModal";
+import { ColorConfigModal, ColorItem, resolveColorHex } from "@/features/inventario/components/ColorConfigModal";
 import { apiClient, uploadFile } from "@/lib/apiClient";
 import { getImageUrl, handleImageError } from "@/lib/imageUtils";
 import {
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui";
 import { ProductoInventario } from "@goldcontinent/shared/types/inventario";
 import { toast } from "sonner";
+import { showToast } from "@/lib/toast";
 import { obtenerPreciosEstandarizados } from "@/lib/formatters";
 
 
@@ -46,6 +47,8 @@ interface ProductoModalProps {
   modo: "crear" | "editar";
   productoInicial?: ProductoInventario;
   onGuardar?: (datos: ProductoInventario) => void;
+  categorias?: Categoria[];
+  almacenes?: Almacen[];
 }
 
 type ProductoFormData = z.infer<typeof CrearProductoSchema>;
@@ -57,6 +60,8 @@ export function ProductoModal({
   modo,
   productoInicial,
   onGuardar,
+  categorias: categoriasProp,
+  almacenes: almacenesProp,
 }: ProductoModalProps) {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [almacenes, setAlmacenes] = useState<Almacen[]>([]);
@@ -93,7 +98,7 @@ export function ProductoModal({
       stock_principal: 0,
       stock_minimo: 10,
       descripcion: "",
-      colores_surtido: ["Estándar"],
+      colores_surtido: [],
       precio_tienda_unidad: undefined,
       precio_tienda_docena: undefined,
       precio_tienda_caja: undefined,
@@ -126,7 +131,7 @@ export function ProductoModal({
         stock_principal: inv.stock_principal || 0,
         stock_minimo: inv.stock_minimo || 10,
         descripcion: inv.descripcion || "",
-        colores_surtido: inv.colores_surtido || ["Estándar"],
+        colores_surtido: inv.colores_surtido || [],
         precio_tienda_unidad: Number(tienda.unidad) || undefined,
         precio_tienda_docena: Number(tienda.docena) || undefined,
         precio_tienda_caja: Number(tienda.mayor) || undefined,
@@ -150,22 +155,25 @@ export function ProductoModal({
   const unidadesPorCaja = watch("unidades_por_caja");
 
   useEffect(() => {
-    const partes = [
-      composicion,
-      tipoFlor ? `DE ${tipoFlor}` : null,
-      material,
-      presentacion,
-      numeroCabezas ? `DE ${numeroCabezas} CABEZAS` : null,
-      tamano,
-      unidadesPorCaja && Number(unidadesPorCaja) > 1 ? `(CAJA X ${unidadesPorCaja} UNID)` : null,
-    ].filter(Boolean);
+    if (!isEditing) {
+      const partes = [
+        composicion,
+        tipoFlor ? `DE ${tipoFlor}` : null,
+        material,
+        presentacion,
+        numeroCabezas ? `DE ${numeroCabezas} CABEZAS` : null,
+        tamano,
+        unidadesPorCaja && Number(unidadesPorCaja) > 1 ? `(CAJA X ${unidadesPorCaja} UNID)` : null,
+      ].filter(Boolean);
 
-    const descripcionGenerada = partes.join(" ").toUpperCase().replace(/\s+/g, " ").trim();
+      const descripcionGenerada = partes.join(" ").toUpperCase().replace(/\s+/g, " ").trim();
 
-    if (descripcionGenerada) {
-      setValue("descripcion", descripcionGenerada, { shouldValidate: true });
+      if (descripcionGenerada) {
+        setValue("descripcion", descripcionGenerada, { shouldValidate: true });
+      }
     }
   }, [
+    isEditing,
     tipoFlor,
     composicion,
     material,
@@ -177,24 +185,41 @@ export function ProductoModal({
   ]);
 
   useEffect(() => {
-    if (open) {
-      const fetchFilters = async () => {
-        try {
-          const [catRes, almRes] = await Promise.all([
-            apiClient("/categorias?limit=100"),
-            apiClient("/almacenes?activo=true&limit=100"),
-          ]);
-          setCategorias(catRes.data || []);
-          setAlmacenes(almRes.data || []);
-        } catch (error) {
-          console.error("Error fetching filters:", error);
-        } finally {
-          setLoadingFilters(false);
-        }
-      };
-      fetchFilters();
+    if (!open) return;
+    setLoadingFilters(true);
+
+    const catsProp = categoriasProp?.length ? categoriasProp : null;
+    const almsProp = almacenesProp?.length ? almacenesProp : null;
+    if (catsProp) setCategorias(catsProp);
+    if (almsProp) setAlmacenes(almsProp);
+
+    if (catsProp && almsProp) {
+      setLoadingFilters(false);
+      return;
     }
-  }, [open]);
+
+    let cancelled = false;
+    const fetchFilters = async () => {
+      try {
+        const [catRes, almRes] = await Promise.all([
+          catsProp ? Promise.resolve(null) : apiClient("/categorias?limit=100"),
+          almsProp ? Promise.resolve(null) : apiClient("/almacenes?activo=true&limit=100"),
+        ]);
+        if (cancelled) return;
+        if (!catsProp) setCategorias(catRes?.data || []);
+        if (!almsProp) setAlmacenes(almRes?.data || []);
+      } catch (error) {
+        console.error("Error fetching filters:", error);
+        if (!cancelled) {
+          showToast.error("No se pudieron cargar categorías y ubicaciones");
+        }
+      } finally {
+        if (!cancelled) setLoadingFilters(false);
+      }
+    };
+    fetchFilters();
+    return () => { cancelled = true; };
+  }, [open, categoriasProp, almacenesProp]);
 
   useEffect(() => {
     if (isEditing && productoInicial?.foto_url) {
@@ -204,22 +229,29 @@ export function ProductoModal({
 
   const initialColorsForModal: ColorItem[] = (coloresSurtidos as string[]).map((name) => ({
     name,
-    hex: "#6b7280",
+    hex: resolveColorHex(name),
   }));
 
   const coloresSurtidosParaGuardar = coloresSurtidos as string[];
 
-  const handleClose = () => {
+  const resetForm = () => {
     reset();
     setImageFile(null);
     setImagePreview(null);
+  };
+
+  const handleClose = () => {
     onClose();
+  };
+
+  const handleLimpiar = () => {
+    resetForm();
   };
 
   const handleFormSubmit: SubmitHandler<ProductoFormData> = async (data) => {
     const coloresArray = Array.isArray(data.colores_surtido)
       ? data.colores_surtido
-      : ["Estándar"];
+      : [];
 
     let fotoUrlToSend = isEditing ? productoInicial?.foto_url || null : null;
 
@@ -302,7 +334,8 @@ export function ProductoModal({
         const productoGuardado: any = { ...payload, id_producto: isEditing ? productoInicial?.id_producto : undefined };
         onGuardar(productoGuardado);
       }
-      handleClose();
+      resetForm();
+      onClose();
     } catch (error: any) {
       console.error("Error guardando producto:", error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Error al guardar el producto';
@@ -311,7 +344,10 @@ export function ProductoModal({
   };
 
   const cleanNumberInputProps = (fieldName: any) => {
-    const reg = register(fieldName, { valueAsNumber: true });
+    const reg = register(fieldName, {
+      valueAsNumber: true,
+      setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+    });
     return {
       ...reg,
       onFocus: (e: React.FocusEvent<HTMLInputElement>) => {
@@ -350,7 +386,9 @@ export function ProductoModal({
               <Select
                 label="CATEGORÍA"
                 error={errors.id_categoria?.message as string}
-                {...register("id_categoria")}
+                {...register("id_categoria", {
+                  setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                })}
                 disabled={loadingFilters}
                 variant="modal"
               >
@@ -395,7 +433,9 @@ export function ProductoModal({
                 min="1"
                 placeholder="18"
                 error={errors.numero_cabezas?.message as string}
-                {...register("numero_cabezas", { valueAsNumber: true })}
+                {...register("numero_cabezas", {
+                  setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                })}
                 variant="modal"
               />
             </div>
@@ -414,7 +454,9 @@ export function ProductoModal({
               <Select
                 label="UBICACIÓN"
                 error={errors.id_almacen?.message as string}
-                {...register("id_almacen", { valueAsNumber: true })}
+                {...register("id_almacen", {
+                  setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                })}
                 disabled={loadingFilters}
                 variant="modal"
               >
@@ -431,7 +473,9 @@ export function ProductoModal({
                 min="1"
                 placeholder="12"
                 error={errors.unidades_por_caja?.message as string}
-                {...register("unidades_por_caja", { valueAsNumber: true })}
+                {...register("unidades_por_caja", {
+                  setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                })}
                 variant="modal"
               />
               <Input
@@ -440,7 +484,9 @@ export function ProductoModal({
                 min="0"
                 placeholder="10"
                 error={errors.stock_principal?.message as string}
-                {...register("stock_principal", { valueAsNumber: true })}
+                {...register("stock_principal", {
+                  setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                })}
                 variant="modal"
               />
               <Input
@@ -449,7 +495,9 @@ export function ProductoModal({
                 min="0"
                 placeholder="10"
                 error={errors.stock_minimo?.message as string}
-                {...register("stock_minimo", { valueAsNumber: true })}
+                {...register("stock_minimo", {
+                  setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                })}
                 variant="modal"
               />
               <div className="flex flex-col space-y-1">
@@ -457,9 +505,8 @@ export function ProductoModal({
                   COLORES SURTIDOS
                 </label>
                 <Button
-                  type="button"
+                  variant='secondary'
                   onClick={() => setIsColorModalOpen(true)}
-                  className="w-full h-[42px] text-sm font-semibold rounded-lg border border-gray-400/80 bg-white hover:bg-amber-100 text-gray-800 transition-colors"
                 >
                   Configurar {coloresSurtidosParaGuardar.length > 0 && `(${coloresSurtidosParaGuardar.length})`}
                 </Button>
@@ -491,13 +538,13 @@ export function ProductoModal({
           <Table className="text-center text-xs">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="text-center text-amber-500 py-3">
+                <TableHead className="text-center text-brand-primary py-3">
                   UNIDAD DE MEDIDA
                 </TableHead>
-                <TableHead className="text-center text-blue-700 py-3 bg-blue-50/20">
+                <TableHead className="text-center text-estado-enviado py-3 bg-estado-enviado-soft/20">
                   PRECIO TIENDA (S/)
                 </TableHead>
-                <TableHead className="text-center text-amber-800 py-3 bg-amber-50/20">
+                <TableHead className="text-center text-brand-primary py-3 bg-brand-soft/20">
                   DISTRIBUIDOR (S/)
                 </TableHead>
               </TableRow>
@@ -505,31 +552,31 @@ export function ProductoModal({
             <TableBody>
               {/* UNIDAD */}
               <TableRow className="hover:bg-transparent">
-                <TableCell className="font-bold text-amber-500 py-2.5 text-center">
+                <TableCell className="font-bold text-brand-primary py-2.5 text-center">
                   UNIDAD
                 </TableCell>
-                <TableCell className="p-1 bg-blue-50/40">
-                  <div className="flex items-center justify-center gap-1 font-medium text-blue-900">
-                    <span className="text-blue-600 font-semibold select-none">S/</span>
+                <TableCell className="p-1 bg-estado-enviado-soft/40">
+                  <div className="flex items-center justify-center gap-1 font-medium text-estado-enviado-text">
+                    <span className="text-estado-enviado font-semibold select-none">S/</span>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
                       placeholder="0.00"
-                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-blue-400 px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-estado-enviado/50 px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       {...cleanNumberInputProps("precio_tienda_unidad")}
                     />
                   </div>
                 </TableCell>
-                <TableCell className="p-1 bg-amber-50/40">
-                  <div className="flex items-center justify-center gap-1 font-medium text-amber-900">
-                    <span className="text-amber-600 font-semibold select-none">S/</span>
+                <TableCell className="p-1 bg-brand-soft/40">
+                  <div className="flex items-center justify-center gap-1 font-medium text-brand-subtitle">
+                    <span className="text-brand-primary font-semibold select-none">S/</span>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
                       placeholder="0.00"
-                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-amber-400 px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-brand-primary px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       {...cleanNumberInputProps("precio_distribuidor_unidad")}
                     />
                   </div>
@@ -538,31 +585,31 @@ export function ProductoModal({
 
               {/* DOCENA */}
               <TableRow className="hover:bg-transparent">
-                <TableCell className="font-bold text-amber-500 py-2.5 text-center">
+                <TableCell className="font-bold text-brand-primary py-2.5 text-center">
                   DOCENA
                 </TableCell>
-                <TableCell className="p-1 bg-blue-50/40">
-                  <div className="flex items-center justify-center gap-1 font-medium text-blue-900">
-                    <span className="text-blue-600 font-semibold select-none">S/</span>
+                <TableCell className="p-1 bg-estado-enviado-soft/40">
+                  <div className="flex items-center justify-center gap-1 font-medium text-estado-enviado-text">
+                    <span className="text-estado-enviado font-semibold select-none">S/</span>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
                       placeholder="0.00"
-                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-blue-400 px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-estado-enviado/50 px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       {...cleanNumberInputProps("precio_tienda_docena")}
                     />
                   </div>
                 </TableCell>
-                <TableCell className="p-1 bg-amber-50/40">
-                  <div className="flex items-center justify-center gap-1 font-medium text-amber-900">
-                    <span className="text-amber-600 font-semibold select-none">S/</span>
+                <TableCell className="p-1 bg-brand-soft/40">
+                  <div className="flex items-center justify-center gap-1 font-medium text-brand-subtitle">
+                    <span className="text-brand-primary font-semibold select-none">S/</span>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
                       placeholder="0.00"
-                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-amber-400 px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-brand-primary px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       {...cleanNumberInputProps("precio_distribuidor_docena")}
                     />
                   </div>
@@ -571,31 +618,31 @@ export function ProductoModal({
 
               {/* CAJA */}
               <TableRow className="hover:bg-transparent">
-                <TableCell className="font-bold text-amber-500 py-2.5 text-center">
+                <TableCell className="font-bold text-brand-primary py-2.5 text-center">
                   CAJA
                 </TableCell>
-                <TableCell className="p-1 bg-blue-50/40">
-                  <div className="flex items-center justify-center gap-1 font-medium text-blue-900">
-                    <span className="text-blue-600 font-semibold select-none">S/</span>
+                <TableCell className="p-1 bg-estado-enviado-soft/40">
+                  <div className="flex items-center justify-center gap-1 font-medium text-estado-enviado-text">
+                    <span className="text-estado-enviado font-semibold select-none">S/</span>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
                       placeholder="0.00"
-                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-blue-400 px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-estado-enviado/50 px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       {...cleanNumberInputProps("precio_tienda_caja")}
                     />
                   </div>
                 </TableCell>
-                <TableCell className="p-1 bg-amber-50/40">
-                  <div className="flex items-center justify-center gap-1 font-medium text-amber-900">
-                    <span className="text-amber-600 font-semibold select-none">S/</span>
+                <TableCell className="p-1 bg-brand-soft/40">
+                  <div className="flex items-center justify-center gap-1 font-medium text-brand-subtitle">
+                    <span className="text-brand-primary font-semibold select-none">S/</span>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
                       placeholder="0.00"
-                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-amber-400 px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-brand-primary px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       {...cleanNumberInputProps("precio_distribuidor_caja")}
                     />
                   </div>
@@ -638,7 +685,7 @@ export function ProductoModal({
                 {/* Recuadro con el Nombre de la Imagen */}
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 h-10 px-3.5 py-2.5 rounded-lg border border-amber-400 flex justify-start items-center gap-2.5 bg-white cursor-pointer hover:border-amber-500 transition-colors overflow-hidden"
+                  className="flex-1 h-10 px-3.5 py-2.5 rounded-lg border border-brand-primary flex justify-start items-center gap-2.5 bg-white cursor-pointer hover:border-brand-hover transition-colors overflow-hidden"
                 >
                   <span className="text-gray-600 text-xs font-medium truncate">
                     {imageFile?.name || productoInicial?.foto_url?.split("/").pop() || "imagen.png"}
@@ -653,7 +700,7 @@ export function ProductoModal({
                     setImagePreview(null);
                     if (fileInputRef.current) fileInputRef.current.value = "";
                   }}
-                  className="size-10 rounded-lg flex justify-center items-center shrink-0 hover:bg-red-50 hover:border-red-200 group transition-colors"
+                  className="size-10 rounded-lg flex justify-center items-center shrink-0 hover:bg-estado-rechazado-soft hover:border-estado-rechazado/30 group transition-colors"
                   title="Eliminar imagen"
                 >
                   <Trash2 className="w-5 h-5 text-red-800 group-hover:text-red-600 transition-colors" />
@@ -673,7 +720,7 @@ export function ProductoModal({
                     setImagePreview(URL.createObjectURL(file));
                   }
                 }}
-                className="w-full h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center gap-2 text-gray-500 hover:border-amber-500 hover:text-amber-600 cursor-pointer transition-colors"
+                className="w-full h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center gap-2 text-gray-500 hover:border-brand-hover hover:text-brand-hover cursor-pointer transition-colors"
               >
                 <CloudUpload className="w-5 h-5" />
                 <span className="text-xs font-medium">
@@ -685,6 +732,9 @@ export function ProductoModal({
 
           {/* BOTONES DE ACCIÓN */}
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <Button type="button" variant="ghost" onClick={handleLimpiar} disabled={isSubmitting}>
+              Limpiar
+            </Button>
             <Button type="button" variant="ghost" onClick={handleClose} disabled={isSubmitting}>
               Cancelar
             </Button>

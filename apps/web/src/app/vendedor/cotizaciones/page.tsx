@@ -1,11 +1,12 @@
 'use client';
 
-import { FileText, Plus, Search, Filter, ChevronDown, Calendar, Eye, Edit, Trash2, Send, Download } from 'lucide-react';
+import { FileText, Plus, Search, Filter, ChevronDown, Eye, Edit, Trash2, Send, Download } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState, useMemo } from 'react';
 import { EstadoCotizacion } from '@goldcontinent/shared/constants/enums';
 import Link from 'next/link';
+import { Badge, ESTADO_BADGE } from '@/components/ui';
 
 interface Cotizacion {
   id_cotizacion: number;
@@ -23,14 +24,6 @@ const ESTADO_LABELS: Record<EstadoCotizacion, string> = {
   parcialmente_pagada: 'Parcialmente Pagada',
   aprobada: 'Aprobada',
   rechazada: 'Rechazada',
-};
-
-const ESTADO_COLORS: Record<EstadoCotizacion, string> = {
-  borrador: 'bg-gray-100 text-gray-700',
-  enviada: 'bg-blue-100 text-blue-700',
-  parcialmente_pagada: 'bg-orange-100 text-orange-700',
-  aprobada: 'bg-green-100 text-green-700',
-  rechazada: 'bg-red-100 text-red-700',
 };
 
 export default function CotizacionesPage() {
@@ -114,7 +107,7 @@ export default function CotizacionesPage() {
         </div>
         <Link
           href="/vendedor/cotizaciones/crear"
-          className="px-4 py-2 bg-green-700 text-white rounded-xl hover:bg-green-800 transition-colors flex items-center gap-2"
+          className="px-4 py-2 bg-brand-primary text-white rounded-xl hover:bg-brand-hover transition-colors flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
           Nueva Cotización
@@ -133,7 +126,7 @@ export default function CotizacionesPage() {
                 setSearch(e.target.value.toUpperCase());
                 setCurrentPage(1);
               }}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
             />
           </div>
           <div className="w-full sm:w-48">
@@ -145,7 +138,7 @@ export default function CotizacionesPage() {
                 setFecha(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
             />
           </div>
           <div className="relative">
@@ -156,7 +149,7 @@ export default function CotizacionesPage() {
                 setEstadoFilter(e.target.value as EstadoCotizacion | 'todos');
                 setCurrentPage(1);
               }}
-              className="pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm appearance-none"
+              className="pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm appearance-none"
             >
               <option value="todos">Todos los estados</option>
               <option value="borrador">Borrador</option>
@@ -192,20 +185,20 @@ export default function CotizacionesPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 flex-wrap">
                       <span className="font-semibold text-gray-900">{cot.numero}</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${ESTADO_COLORS[cot.estado]}`}>
+                      <Badge variant={ESTADO_BADGE[cot.estado] || 'borrador'}>
                         {ESTADO_LABELS[cot.estado]}
-                      </span>
+                      </Badge>
                       <span className="text-sm text-gray-500">
                         {new Date(cot.created_at).toLocaleDateString('es-PE')}
                       </span>
                     </div>
                     <p className="text-gray-900 font-medium mt-1 truncate sm:max-w-md">{cot.cliente_nombre || 'Cliente no especificado'}</p>
-                    <p className="text-lg font-bold text-green-700 mt-1">S/ ${cot.total.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-brand-primary mt-1">S/ ${cot.total.toLocaleString()}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/vendedor/cotizaciones/${cot.id_cotizacion}`}
-                      className="p-2 text-gray-500 hover:text-green-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="p-2 text-gray-500 hover:text-brand-primary hover:bg-gray-100 rounded-lg transition-colors"
                       title="Ver detalle"
                     >
                       <Eye className="h-4 w-4" />
@@ -214,13 +207,13 @@ export default function CotizacionesPage() {
                       <>
                         <Link
                           href={`/vendedor/cotizaciones/${cot.id_cotizacion}/editar`}
-                          className="p-2 text-gray-500 hover:text-green-700 hover:bg-gray-100 rounded-lg transition-colors"
+                          className="p-2 text-gray-500 hover:text-brand-primary hover:bg-gray-100 rounded-lg transition-colors"
                           title="Editar"
                         >
                           <Edit className="h-4 w-4" />
                         </Link>
                         <button
-                          className="p-2 text-gray-500 hover:text-red-700 hover:bg-gray-100 rounded-lg transition-colors"
+                          className="p-2 text-gray-500 hover:text-danger hover:bg-gray-100 rounded-lg transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -228,11 +221,11 @@ export default function CotizacionesPage() {
                       </>
                     )}
                     {cot.estado === 'enviada' && (
-                      <button className="p-2 text-gray-500 hover:text-blue-700 hover:bg-gray-100 rounded-lg transition-colors" title="Reenviar">
+                      <button className="p-2 text-gray-500 hover:text-tienda hover:bg-gray-100 rounded-lg transition-colors" title="Reenviar">
                         <Send className="h-4 w-4" />
                       </button>
                     )}
-                    <button className="p-2 text-gray-500 hover:text-green-700 hover:bg-gray-100 rounded-lg transition-colors" title="Descargar PDF">
+                    <button className="p-2 text-gray-500 hover:text-brand-primary hover:bg-gray-100 rounded-lg transition-colors" title="Descargar PDF">
                       <Download className="h-4 w-4" />
                     </button>
                   </div>
@@ -253,7 +246,7 @@ export default function CotizacionesPage() {
                       key={page}
                       onClick={() => setCurrentPage(page)}
                       className={`w-8 h-8 rounded-lg font-medium text-sm transition-colors ${currentPage === page
-                          ? 'bg-green-700 text-white shadow-sm'
+                          ? 'bg-brand-primary text-white shadow-sm'
                           : 'text-gray-600 hover:bg-gray-100'
                         }`}
                     >

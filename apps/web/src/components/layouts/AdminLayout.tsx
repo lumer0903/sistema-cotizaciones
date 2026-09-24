@@ -57,7 +57,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         {/* NAVBAR DINÁMICO */}
         <header className="w-full h-16 px-8 bg-white border-b border-gray-200 flex items-center justify-between sticky top-0 z-30">
           {/* TÍTULO QUE CAMBIA SEGÚN EL MÓDULO */}
-          <h1 className="text-xl font-black text-yellow-500 tracking-wider uppercase">
+          <h1 className="text-xl font-black text-brand-primary tracking-wider uppercase">
             {currentTitle}
           </h1>
 
@@ -78,7 +78,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             >
               <Bell className="w-5 h-5 stroke-[2]" />
               {alertasCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-danger text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                   {alertasCount > 9 ? '9+' : alertasCount}
                 </span>
               )}
@@ -95,7 +95,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* CONTENIDO INTERNO */}
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
           {children}
         </main>
       </div>

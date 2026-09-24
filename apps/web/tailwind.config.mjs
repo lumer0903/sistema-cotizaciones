@@ -5,18 +5,8 @@ export default {
     ],
     theme: {
         extend: {
-            colors: {
-                brand: {
-                    DEFAULT: '#F8B602',       // Color Principal (botones primarios, acentos fuertes)
-                    primary: '#F8B602',
-                    hover: '#E0A300',         // Hover botones
-                    selection: '#FEF3D6',     // Fondo selección / items activos
-                    subtitle: '#414141',      // Texto principal / Subtítulos
-                    options: '#8E8E8E',       // Bordes / Opciones inactivas
-                    modalFocus: '#C9A962',    // Focus rings en modales (ámbar suave)
-                    background: '#F9FAFB',    // Fondo global
-                },
-            },
+            // Los colores viven en src/styles/tailwind.css (@theme) — fuente única.
+            // Este archivo solo mantiene fontFamily por compatibilidad.
             fontFamily: {
                 sans: ['var(--font-dm-sans)', 'DM Sans', 'sans-serif'],
             },

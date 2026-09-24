@@ -10,6 +10,7 @@ import { Modal, Input, Select, Button } from '@/components/ui';
 import { inventarioApi } from '../api/inventario.api';
 import { OrigenMovimiento } from '@goldcontinent/shared/constants/enums';
 import { formatCode, formatText } from '@/lib/formatters';
+import { showToast } from '@/lib/toast';
 
 const MovimientoSchema = z.object({
     id_producto: z.number().min(1, 'Seleccione un producto'),
@@ -41,12 +42,13 @@ interface MovimientoModalProps {
     onClose: () => void;
     onSuccess?: () => void;
     productoPreseleccionado?: number | null;
+    almacenes?: AlmacenSimple[];
 }
 
 const TIPO_OPTIONS = [
-    { label: 'Entrada (+)', value: 'entrada' as const, icon: ArrowDownLeft, color: 'text-emerald-600' },
-    { label: 'Salida (-)', value: 'salida' as const, icon: ArrowUpRight, color: 'text-rose-600' },
-    { label: 'Ajuste', value: 'ajuste' as const, icon: Minus, color: 'text-amber-600' },
+    { label: 'Entrada (+)', value: 'entrada' as const, icon: ArrowDownLeft, color: 'text-estado-aprobado-text' },
+    { label: 'Salida (-)', value: 'salida' as const, icon: ArrowUpRight, color: 'text-danger' },
+    { label: 'Ajuste', value: 'ajuste' as const, icon: Minus, color: 'text-brand-primary' },
 ];
 
 const ORIGEN_OPTIONS: { label: string; value: OrigenMovimiento; allowedTipos: ('entrada' | 'salida' | 'ajuste')[] }[] = [
@@ -59,7 +61,7 @@ const ORIGEN_OPTIONS: { label: string; value: OrigenMovimiento; allowedTipos: ('
     { label: 'Cotización Aprobada', value: 'cotizacion_aprobada', allowedTipos: ['salida'] },
 ];
 
-export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccionado }: MovimientoModalProps) {
+export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccionado, almacenes: almacenesProp }: MovimientoModalProps) {
     const [productos, setProductos] = useState<ProductoSimple[]>([]);
     const [almacenes, setAlmacenes] = useState<AlmacenSimple[]>([]);
     const [loadingFilters, setLoadingFilters] = useState(true);
@@ -95,14 +97,41 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
     const idProducto = watch('id_producto');
     const idAlmacen = watch('id_almacen');
 
+    const resetForm = () => {
+        reset();
+        setSelectedProducto(null);
+        setSearchQuery('');
+        setStockDisponible(null);
+        setShowSuggestions(false);
+    };
+
+    const lastPreseleccion = useRef<number | null | undefined>(undefined);
+
+    useEffect(() => {
+        if (!open) {
+            lastPreseleccion.current = productoPreseleccionado;
+            return;
+        }
+        if (lastPreseleccion.current !== productoPreseleccionado) {
+            const isFirstOpen = lastPreseleccion.current === undefined;
+            if (!isFirstOpen || productoPreseleccionado) {
+                resetForm();
+            }
+            lastPreseleccion.current = productoPreseleccionado;
+        }
+    }, [open, productoPreseleccionado]);
+
     useEffect(() => {
         if (open) {
             const fetchFilters = async () => {
                 try {
                     setLoadingFilters(true);
+                    const almsProp = almacenesProp?.length ? almacenesProp : null;
                     const [prodRes, almRes] = await Promise.all([
                         apiClient('/productos?limit=500&include=stock'),
-                        apiClient('/almacenes?activo=true&limit=100'),
+                        almsProp
+                            ? Promise.resolve({ data: almsProp })
+                            : apiClient('/almacenes?activo=true&limit=100'),
                     ]);
                     const prods = (prodRes.data || prodRes.items || []).map((p: any) => ({
                         id_producto: p.id_producto,
@@ -123,16 +152,17 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                     }
                 } catch (error) {
                     console.error('Error fetching filters:', error);
+                    showToast.error('No se pudieron cargar productos o almacenes');
                 } finally {
                     setLoadingFilters(false);
                 }
             };
             fetchFilters();
         }
-    }, [open, productoPreseleccionado, setValue]);
+    }, [open, productoPreseleccionado, setValue, almacenesProp]);
 
     useEffect(() => {
-        if (idProducto && idAlmacen && tipo === 'salida') {
+        if (Number.isFinite(idProducto) && Number.isFinite(idAlmacen) && idProducto && idAlmacen && tipo === 'salida') {
             const prod = productos.find((p) => p.id_producto === idProducto);
             const alm = almacenes.find((a) => a.id_almacen === idAlmacen);
             if (prod && alm) {
@@ -187,23 +217,23 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
     }, [tipo]);
 
     const handleClose = () => {
-        reset();
-        setSelectedProducto(null);
-        setSearchQuery('');
-        setStockDisponible(null);
-        setShowSuggestions(false);
         onClose();
+    };
+
+    const handleLimpiar = () => {
+        resetForm();
     };
 
     const onSubmit = async (data: MovimientoFormInput) => {
         setIsSubmitting(true);
         try {
             await inventarioApi.crearMovimiento(data);
+            resetForm();
             if (onSuccess) onSuccess();
-            handleClose();
+            onClose();
         } catch (error: any) {
             console.error('Error creating movimiento:', error);
-            throw error;
+            showToast.error(error?.response?.data?.message || error?.message || 'Error al registrar el movimiento');
         } finally {
             setIsSubmitting(false);
         }
@@ -273,7 +303,9 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                         label="ALMACÉN"
                         error={errors.id_almacen?.message}
                         disabled={loadingFilters}
-                        {...register('id_almacen', { valueAsNumber: true })}
+                        {...register('id_almacen', {
+                            setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                        })}
                         variant="modal"
                     >
                         <option value="">Seleccionar</option>
@@ -310,7 +342,7 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                         })}
                     </div>
                     {errors.tipo && (
-                        <p className="mt-1.5 text-xs text-rose-600">{errors.tipo.message}</p>
+                        <p className="mt-1.5 text-xs text-danger">{errors.tipo.message}</p>
                     )}
                 </div>
 
@@ -334,7 +366,9 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                         min="1"
                         placeholder="Ej: 100"
                         error={errors.cantidad?.message}
-                        {...register('cantidad', { valueAsNumber: true })}
+                        {...register('cantidad', {
+                            setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                        })}
                         variant="modal"
                     />
 
@@ -345,15 +379,17 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                         min="0"
                         placeholder="Ej: 15.50"
                         error={errors.costo_unitario?.message}
-                        {...register('costo_unitario', { valueAsNumber: true })}
+                        {...register('costo_unitario', {
+                            setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                        })}
                         variant="modal"
                     />
                 </div>
 
                 {tipo === 'salida' && stockDisponible !== null && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                        <div className="text-xs text-blue-800">
+                    <div className="bg-estado-enviado-soft border border-estado-enviado/30 rounded-xl px-3 py-2 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-estado-enviado flex-shrink-0" />
+                        <div className="text-xs text-estado-enviado-text">
                             <span className="font-semibold">Stock disponible en almacén: </span>
                             {stockDisponible} unidades
                             {selectedProducto && ` (${formatCode(selectedProducto.codigo)} - ${formatText(selectedProducto.descripcion)})`}
@@ -371,6 +407,9 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                 />
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <Button type="button" variant="ghost" onClick={handleLimpiar} disabled={isSubmitting}>
+                        Limpiar
+                    </Button>
                     <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
                         Cancelar
                     </Button>

@@ -16,24 +16,68 @@ interface ColorConfigModalProps {
   initialColors: ColorItem[];
 }
 
-const COLOR_MAP: Record<string, string> = {
+export const COLOR_MAP: Record<string, string> = {
   rojo: '#ef4444',
+  rosado: '#ec4899',
+  rosa: '#ec4899',
+  'rosa pastel': '#f9a8d4',
   azul: '#3b82f6',
   verde: '#22c55e',
+  'verde oliva': '#808000',
+  'verde eucalipto': '#2e8b57',
   amarillo: '#eab308',
+  'amarillo intenso': '#facc15',
   naranja: '#f97316',
   morado: '#a855f7',
-  rosa: '#ec4899',
+  fucsia: '#ff00ff',
+  fuscia: '#ff00ff',
+  fuchsia: '#ff00ff',
+  magenta: '#ff00ff',
   blanco: '#ffffff',
+  marfil: '#fffff0',
   negro: '#000000',
   gris: '#6b7280',
   celeste: '#0ea5e9',
+  coral: '#ff7f50',
   marron: '#8b4513',
   dorado: '#f59e0b',
   plata: '#9ca3af',
   vino: '#7f1d1d',
   lila: '#d8b4e2',
+  menta: '#98ff98',
+  durazno: '#ffcba4',
+  turquesa: '#40e0d0',
+  burdeos: '#800020',
+  lavanda: '#e6e6fa',
+  beige: '#f5f5dc',
+  crema: '#fffdd0',
+  durazno_claro: '#ffdab9',
 };
+
+const COLOR_ALIASES: Array<{ keys: string[]; hex: string }> = [
+  { keys: ['fucsia', 'fuscia', 'fuchsia', 'magenta'], hex: '#ff00ff' },
+  { keys: ['rosado', 'rosa', 'pink'], hex: '#ec4899' },
+  { keys: ['marfil', 'ivory', 'crema', 'cream'], hex: '#fffff0' },
+  { keys: ['verde oliva', 'oliva', 'olive'], hex: '#808000' },
+  { keys: ['eucalipto', 'eucalyptus'], hex: '#2e8b57' },
+  { keys: ['amarillo intenso', 'amarillo brillante'], hex: '#facc15' },
+  { keys: ['burdeos', 'burdeos oscuro'], hex: '#800020' },
+  { keys: ['celeste', 'cielo', 'sky'], hex: '#0ea5e9' },
+  { keys: ['dorado', 'oro', 'gold'], hex: '#f59e0b' },
+  { keys: ['plata', 'silver'], hex: '#9ca3af' },
+];
+
+export function resolveColorHex(name: string): string {
+  const normalized = name.toLowerCase().trim().replace(/\s+/g, ' ');
+  if (COLOR_MAP[normalized]) return COLOR_MAP[normalized];
+  for (const alias of COLOR_ALIASES) {
+    if (alias.keys.some((k) => normalized.includes(k))) return alias.hex;
+  }
+  for (const [key, hex] of Object.entries(COLOR_MAP)) {
+    if (normalized.includes(key) || key.includes(normalized)) return hex;
+  }
+  return '#6b7280';
+}
 
 export function ColorConfigModal({ open, onClose, onSave, initialColors }: ColorConfigModalProps) {
   const [colors, setColors] = useState<ColorItem[]>(initialColors);
@@ -44,15 +88,22 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
   const [importText, setImportText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const canSave = colors.length > 0;
+
   const handleNameChange = (val: string) => {
     setNewName(val);
-    const mappedHex = COLOR_MAP[val.toLowerCase().trim()];
-    if (mappedHex) setNewHex(mappedHex);
+    const mappedHex = resolveColorHex(val);
+    if (mappedHex && mappedHex !== '#6b7280') setNewHex(mappedHex);
   };
 
   useEffect(() => {
     setColors(initialColors);
-  }, [initialColors]);
+    setIsAdding(false);
+    setIsImporting(false);
+    setNewName('');
+    setNewHex('#ef4444');
+    setImportText('');
+  }, [initialColors, open]);
 
   const addColor = () => {
     const trimmed = newName.trim();
@@ -70,7 +121,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
       const name = line.trim();
       if (name && !colors.some((c) => c.name.toLowerCase() === name.toLowerCase()) &&
         !newColors.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
-        const hex = COLOR_MAP[name.toLowerCase()] || '#6b7280';
+        const hex = resolveColorHex(name);
         newColors.push({ name, hex });
       }
     }
@@ -109,7 +160,10 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
                 key={`${color.name}-${color.hex}`}
                 className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-brand-options/30 rounded-lg text-sm text-brand-subtitle shadow-sm"
               >
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color.hex }} />
+                <span
+                  className="w-2.5 h-2.5 rounded-full border border-gray-300"
+                  style={{ backgroundColor: color.hex || resolveColorHex(color.name) }}
+                />
                 <span>{color.name}</span>
                 <button
                   onClick={() => removeColor(color.name)}
@@ -191,7 +245,11 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button variant="primary" onClick={handleSave}>
+          <Button
+            variant={canSave ? 'primary' : 'secondary'}
+            onClick={handleSave}
+            disabled={!canSave}
+          >
             Guardar
           </Button>
         </div>

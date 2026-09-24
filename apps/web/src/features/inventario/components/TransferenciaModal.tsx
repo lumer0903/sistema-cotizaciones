@@ -9,6 +9,7 @@ import { apiClient } from '@/lib/apiClient';
 import { Modal, Input, Select, Button } from '@/components/ui';
 import { inventarioApi } from '../api/inventario.api';
 import { formatCode } from '@/lib/formatters';
+import { showToast } from '@/lib/toast';
 
 const TransferenciaSchema = z.object({
     id_producto: z.number().min(1, 'Seleccione un producto'),
@@ -45,9 +46,10 @@ interface TransferenciaModalProps {
     onClose: () => void;
     onSuccess?: () => void;
     productoPreseleccionado?: number | null;
+    almacenes?: AlmacenSimple[];
 }
 
-export function TransferenciaModal({ open, onClose, onSuccess, productoPreseleccionado }: TransferenciaModalProps) {
+export function TransferenciaModal({ open, onClose, onSuccess, productoPreseleccionado, almacenes: almacenesProp }: TransferenciaModalProps) {
     const [productos, setProductos] = useState<ProductoSimple[]>([]);
     const [almacenes, setAlmacenes] = useState<AlmacenSimple[]>([]);
     const [loadingFilters, setLoadingFilters] = useState(true);
@@ -79,14 +81,41 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
     const idProducto = watch('id_producto');
     const idAlmacenOrigen = watch('id_almacen_origen');
 
+    const resetForm = () => {
+        reset();
+        setSelectedProducto(null);
+        setSearchQuery('');
+        setStockOrigen(null);
+        setShowSuggestions(false);
+    };
+
+    const lastPreseleccion = useRef<number | null | undefined>(undefined);
+
+    useEffect(() => {
+        if (!open) {
+            lastPreseleccion.current = productoPreseleccionado;
+            return;
+        }
+        if (lastPreseleccion.current !== productoPreseleccionado) {
+            const isFirstOpen = lastPreseleccion.current === undefined;
+            if (!isFirstOpen || productoPreseleccionado) {
+                resetForm();
+            }
+            lastPreseleccion.current = productoPreseleccionado;
+        }
+    }, [open, productoPreseleccionado]);
+
     useEffect(() => {
         if (open) {
             const fetchFilters = async () => {
                 try {
                     setLoadingFilters(true);
+                    const almsProp = almacenesProp?.length ? almacenesProp : null;
                     const [prodRes, almRes] = await Promise.all([
                         apiClient('/productos?limit=500&include=stock'),
-                        apiClient('/almacenes?activo=true&limit=100'),
+                        almsProp
+                            ? Promise.resolve({ data: almsProp })
+                            : apiClient('/almacenes?activo=true&limit=100'),
                     ]);
                     const prods = (prodRes.data || prodRes.items || []).map((p: any) => ({
                         id_producto: p.id_producto,
@@ -107,16 +136,17 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                     }
                 } catch (error) {
                     console.error('Error fetching filters:', error);
+                    showToast.error('No se pudieron cargar productos o almacenes');
                 } finally {
                     setLoadingFilters(false);
                 }
             };
             fetchFilters();
         }
-    }, [open, productoPreseleccionado, setValue]);
+    }, [open, productoPreseleccionado, setValue, almacenesProp]);
 
     useEffect(() => {
-        if (idProducto && idAlmacenOrigen) {
+        if (Number.isFinite(idProducto) && Number.isFinite(idAlmacenOrigen) && idProducto && idAlmacenOrigen) {
             const prod = productos.find((p) => p.id_producto === idProducto);
             if (prod) {
                 const stock = prod.stock_actual.find((s) => s.id_almacen === idAlmacenOrigen);
@@ -163,23 +193,23 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
     }, [almacenes, idAlmacenOrigen]);
 
     const handleClose = () => {
-        reset();
-        setSelectedProducto(null);
-        setSearchQuery('');
-        setStockOrigen(null);
-        setShowSuggestions(false);
         onClose();
+    };
+
+    const handleLimpiar = () => {
+        resetForm();
     };
 
     const onSubmit = async (data: TransferenciaFormInput) => {
         setIsSubmitting(true);
         try {
             await inventarioApi.crearTransferencia(data);
+            resetForm();
             if (onSuccess) onSuccess();
-            handleClose();
+            onClose();
         } catch (error: any) {
             console.error('Error creating transferencia:', error);
-            throw error;
+            showToast.error(error?.response?.data?.message || error?.message || 'Error al realizar la transferencia');
         } finally {
             setIsSubmitting(false);
         }
@@ -254,7 +284,9 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                         label="ALMACÉN ORIGEN"
                         error={errors.id_almacen_origen?.message}
                         disabled={loadingFilters}
-                        {...register('id_almacen_origen', { valueAsNumber: true })}
+                        {...register('id_almacen_origen', {
+                            setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                        })}
                         variant="modal"
                     >
                         <option value="">Seleccionar</option>
@@ -271,7 +303,9 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                         min="1"
                         placeholder="Ej: 50"
                         error={errors.cantidad?.message}
-                        {...register('cantidad', { valueAsNumber: true })}
+                        {...register('cantidad', {
+                            setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                        })}
                         variant="modal"
                     />
 
@@ -279,7 +313,9 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                         label="ALMACÉN DESTINO"
                         error={errors.id_almacen_destino?.message}
                         disabled={loadingFilters}
-                        {...register('id_almacen_destino', { valueAsNumber: true })}
+                        {...register('id_almacen_destino', {
+                            setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                        })}
                         variant="modal"
                     >
                         <option value="">Seleccionar</option>
@@ -299,14 +335,14 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                             <span className="block text-[11px] font-bold text-brand-subtitle uppercase tracking-wider mb-1.5">
                                 STOCK EN ORIGEN
                             </span>
-                            <div className="bg-blue-50 border border-blue-200 rounded-xl px-3 h-[46px] flex items-center justify-between">
-                                <span className="text-m text-blue-900 font-bold">DISPONIBLE</span>
-                                <span className="font-bold text-blue-900 text-base">{stockOrigen} UNIDADES</span>
+                            <div className="bg-estado-enviado-soft border border-estado-enviado/30 rounded-xl px-3 h-[46px] flex items-center justify-between">
+                                <span className="text-m text-estado-enviado-text font-bold">DISPONIBLE</span>
+                                <span className="font-bold text-estado-enviado-text text-base">{stockOrigen} UNIDADES</span>
                             </div>
                         </div>
                     )}
 
-                    {idAlmacenOrigen && idProducto && stockOrigen !== null && (stockOrigen === 0 || Number(watch('cantidad') || 0) > stockOrigen) && (
+                    {Number.isFinite(idAlmacenOrigen) && Number.isFinite(idProducto) && stockOrigen !== null && (stockOrigen === 0 || Number(watch('cantidad') || 0) > stockOrigen) && (
                         <p className="animate-in fade-in slide-in-from-top-1 duration-200 text-xs font-medium text-red-600 mt-1.5">
                             * {stockOrigen === 0
                                 ? "El almacén de origen no cuenta con stock disponible."
@@ -324,7 +360,16 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                     variant="modal"
                 />
 
+                {almacenes.length > 0 && almacenes.length < 2 && (
+                    <p className="text-xs font-medium text-danger">
+                        Se necesitan al menos 2 almacenes activos para realizar transferencias.
+                    </p>
+                )}
+
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <Button type="button" variant="ghost" onClick={handleLimpiar} disabled={isSubmitting}>
+                        Limpiar
+                    </Button>
                     <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
                         Cancelar
                     </Button>

@@ -50,11 +50,11 @@ export const Modal = ({
             }}
         >
             <div
-                className={`w-full ${maxWidthClasses[maxWidth]} bg-white rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]`}
+                className={`w-full ${maxWidthClasses[maxWidth]} bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {(title || headerExtra) && (
-                    <div className="flex items-center justify-between px-6 py-2 border-b border-gray-100 flex-shrink-0">
+                    <div className="flex items-center justify-between px-6 py-2 border-b border-gray-100 flex-shrink-0 rounded-t-xl bg-white">
                         <div className="flex items-center gap-2">
                             {title && (
                                 <h3 className="text-base font-bold text-brand-subtitle">
@@ -72,7 +72,7 @@ export const Modal = ({
                         </button>
                     </div>
                 )}
-                <div className="p-6 overflow-y-auto flex-1">{children}</div>
+                <div className="p-6 overflow-y-auto flex-1 rounded-b-xl">{children}</div>
             </div>
         </div>
     );

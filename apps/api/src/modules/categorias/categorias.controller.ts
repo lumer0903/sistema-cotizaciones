@@ -1,6 +1,9 @@
 import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiProperty } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { Rol } from '@goldcontinent/shared/constants/enums';
 import { CategoriasService, PaginatedCategoriasResponse, CategoriaResponse } from './categorias.service';
 import { IsString, MaxLength } from 'class-validator';
 
@@ -18,7 +21,8 @@ class UpdateCategoriaDto {
 
 @ApiTags('Categorias')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Rol.admin, Rol.gerente)
 @Controller('categorias')
 export class CategoriasController {
   constructor(private readonly categoriasService: CategoriasService) {}

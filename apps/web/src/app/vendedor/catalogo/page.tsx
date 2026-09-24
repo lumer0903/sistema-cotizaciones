@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
 import { formatCode } from '@/lib/formatters';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
 
 interface Producto {
   id_producto: number;
@@ -28,7 +29,7 @@ function renderGridView(productos: Producto[]) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {productos.map((producto) => (
-        <div key={producto.id_producto} className="bg-white rounded-xl border border-gray-200 p-4 hover:border-green-300 hover:shadow-md transition-all">
+        <div key={producto.id_producto} className="bg-white rounded-xl border border-gray-200 p-4 hover:border-brand-primary hover:shadow-md transition-all">
           <div className="h-32 bg-gray-50 rounded-lg flex items-center justify-center mb-3">
             <Package className="h-16 w-16 text-gray-300" />
           </div>
@@ -41,7 +42,7 @@ function renderGridView(productos: Producto[]) {
           <p className="font-medium text-gray-900 text-sm line-clamp-2">{producto.descripcion}</p>
           <div className="mt-3 flex items-center justify-between">
             <div>
-              <p className="text-lg font-bold text-green-700">S/ ${producto.precio_unidad_normal.toFixed(2)}</p>
+              <p className="text-lg font-bold text-brand-primary">S/ ${producto.precio_unidad_normal.toFixed(2)}</p>
               <p className="text-xs text-gray-500">Docena: S/ ${producto.precio_docena_normal.toFixed(2)}</p>
             </div>
             <div className="flex items-center gap-1 text-sm text-gray-500">
@@ -60,34 +61,32 @@ function renderGridView(productos: Producto[]) {
 
 function renderListView(productos: Producto[]) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr className="text-left text-sm text-gray-500">
-            <th className="p-3">Código</th>
-            <th className="p-3">Producto</th>
-            <th className="p-3">Categoría</th>
-            <th className="p-3">Stock</th>
-            <th className="p-3">Precio Unit.</th>
-            <th className="p-3">Precio Docena</th>
-            <th className="p-3">Precio Mayor</th>
-            <th className="p-3 w-24"></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {productos.length === 0 ? (
-            <tr>
-              <td colSpan={8} className="p-12 text-center text-gray-500">
-                <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>No se encontraron productos</p>
-              </td>
-            </tr>
-          ) : (
-            renderTableRows({ productos })
-          )}
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Código</TableHead>
+          <TableHead>Producto</TableHead>
+          <TableHead>Categoría</TableHead>
+          <TableHead>Stock</TableHead>
+          <TableHead>Precio Unit.</TableHead>
+          <TableHead>Precio Docena</TableHead>
+          <TableHead>Precio Mayor</TableHead>
+          <TableHead className="w-24"></TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {productos.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={8} className="p-12 text-center text-gray-500">
+              <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p>No se encontraron productos</p>
+            </TableCell>
+          </TableRow>
+        ) : (
+          renderTableRows({ productos })
+        )}
+      </TableBody>
+    </Table>
   );
 }
 
@@ -95,25 +94,25 @@ function renderTableRows({ productos }: { productos: Producto[] }) {
   return (
     <>
       {productos.map((producto) => (
-        <tr key={producto.id_producto} className="hover:bg-gray-50">
-          <td className="p-3 text-sm text-gray-900 uppercase">{formatCode(producto.codigo)}</td>
-          <td className="p-3 text-sm font-medium text-gray-900">{producto.descripcion}</td>
-          <td className="p-3 text-sm text-gray-500">{producto.nombre_categoria || '-'}</td>
-          <td className="p-3 text-sm text-gray-500">
+        <TableRow key={producto.id_producto}>
+          <TableCell className="text-sm text-gray-900 uppercase">{formatCode(producto.codigo)}</TableCell>
+          <TableCell className="text-sm font-medium text-gray-900">{producto.descripcion}</TableCell>
+          <TableCell className="text-sm text-gray-500">{producto.nombre_categoria || '-'}</TableCell>
+          <TableCell className="text-sm text-gray-500">
             {producto.stock_total}
             {producto.stock_total <= producto.stock_minimo && (
               <span className="ml-2 text-red-500 text-xs font-medium">⚠ Stock bajo</span>
             )}
-          </td>
-          <td className="p-3 font-semibold text-green-700">S/ ${producto.precio_unidad_normal.toFixed(2)}</td>
-          <td className="p-3 text-sm text-gray-600">S/ ${producto.precio_docena_normal.toFixed(2)}</td>
-          <td className="p-3 text-sm text-gray-600">S/ ${producto.precio_mayor_normal.toFixed(2)}</td>
-          <td className="p-3">
-            <button className="p-2 text-gray-400 hover:text-green-700 hover:bg-gray-100 rounded-lg transition-colors" title="Ver detalle">
+          </TableCell>
+          <TableCell className="font-semibold text-brand-primary">S/ ${producto.precio_unidad_normal.toFixed(2)}</TableCell>
+          <TableCell className="text-sm text-gray-600">S/ ${producto.precio_docena_normal.toFixed(2)}</TableCell>
+          <TableCell className="text-sm text-gray-600">S/ ${producto.precio_mayor_normal.toFixed(2)}</TableCell>
+          <TableCell>
+            <button className="p-2 text-gray-400 hover:text-brand-primary hover:bg-brand-soft rounded-lg transition-colors" title="Ver detalle">
               <Eye className="h-4 w-4" />
             </button>
-          </td>
-        </tr>
+          </TableCell>
+        </TableRow>
       ))}
     </>
   );
@@ -199,7 +198,7 @@ export default function CatalogoPage() {
               placeholder="Buscar por código, descripción..."
               value={search}
               onChange={(e) => setSearch(e.target.value.toUpperCase())}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
             />
           </div>
           <div className="relative">
@@ -207,7 +206,7 @@ export default function CatalogoPage() {
             <select
               value={categoriaFilter}
               onChange={(e) => setCategoriaFilter(e.target.value === 'todos' ? 'todos' : Number(e.target.value))}
-              className="pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm appearance-none"
+              className="pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm appearance-none"
             >
               <option value="todos">Todas las categorías</option>
               {categorias.map((cat) => (

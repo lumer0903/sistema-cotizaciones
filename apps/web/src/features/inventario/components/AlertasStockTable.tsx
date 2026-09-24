@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { inventarioApi, AlertaStockResponse } from '../api/inventario.api';
-import { Modal, Button, Badge, Select, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
+import { Modal, Button, Badge, Select, ConfirmModal, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
 import { formatCode, formatText } from '@/lib/formatters';
 
 interface AlertasStockTableProps {
@@ -18,6 +18,7 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
     const [loading, setLoading] = useState(true);
     const [estadoFiltro, setEstadoFiltro] = useState<'activa' | 'resuelta' | 'todas'>('activa');
     const [reconociendoId, setReconociendoId] = useState<number | null>(null);
+    const [confirmReconocerId, setConfirmReconocerId] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState<'inventario' | 'cobranzas'>('inventario');
 
     const fetchAlertas = useCallback(async () => {
@@ -40,10 +41,15 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
     }, [open, activeTab, fetchAlertas]);
 
     const handleReconocer = async (idAlerta: number) => {
-        if (!confirm('¿Marcar esta alerta como reconocida/resuelta?')) return;
-        setReconociendoId(idAlerta);
+        setConfirmReconocerId(idAlerta);
+    };
+
+    const confirmarReconocer = async () => {
+        if (confirmReconocerId == null) return;
+        setReconociendoId(confirmReconocerId);
         try {
-            await inventarioApi.reconocerAlerta(idAlerta);
+            await inventarioApi.reconocerAlerta(confirmReconocerId);
+            setConfirmReconocerId(null);
             await fetchAlertas();
             if (onSuccess) onSuccess();
         } catch (error) {
@@ -74,6 +80,7 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
     if (!open) return null;
 
     return (
+        <>
         <Modal open={open} onClose={onClose} title="Centro de Notificaciones" maxWidth="xl">
             <div className="flex border-b border-gray-200 mb-4">
                 <button
@@ -155,7 +162,7 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
                                         <TableCell className="text-xs text-brand-options">
                                             {alerta.almacen?.codigo} - {formatText(alerta.almacen?.nombre || '')}
                                         </TableCell>
-                                        <TableCell className="text-center font-bold text-rose-600">
+                                        <TableCell className="text-center font-bold text-danger">
                                             {alerta.stock_actual} u.
                                         </TableCell>
                                         <TableCell className="text-center font-bold text-brand-options">
@@ -187,7 +194,7 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
                                                 </Button>
                                             )}
                                             {alerta.estado === 'resuelta' && alerta.reconocida_at && (
-                                                <span className="text-xs text-emerald-600 font-medium">
+                                                <span className="text-xs text-estado-aprobado-text font-medium">
                                                     {new Date(alerta.reconocida_at).toLocaleString('es-PE')}
                                                 </span>
                                             )}
@@ -206,5 +213,16 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
                 </div>
             )}
         </Modal>
+
+        <ConfirmModal
+            open={confirmReconocerId != null}
+            onClose={() => { if (!reconociendoId) setConfirmReconocerId(null); }}
+            onConfirm={confirmarReconocer}
+            title="Reconocer alerta"
+            message="¿Marcar esta alerta como reconocida/resuelta?"
+            confirmLabel="Reconocer"
+            loading={reconociendoId != null}
+        />
+        </>
     );
 }

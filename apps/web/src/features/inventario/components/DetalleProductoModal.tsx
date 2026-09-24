@@ -71,8 +71,8 @@ export function DetalleProductoModal({
 
                             <div
                                 className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold shrink-0 ${stockVal <= (prod.stock_minimo || 0)
-                                    ? 'bg-orange-100 text-orange-600'
-                                    : 'bg-green-100 text-green-700'
+                                    ? 'bg-distribuidor-soft text-distribuidor'
+                                    : 'bg-estado-aprobado-soft text-estado-aprobado-text'
                                     }`}
                             >
                                 <Box className="w-4 h-4" /> {stockVal} u.
@@ -116,29 +116,29 @@ export function DetalleProductoModal({
                         <div className="flex flex-col gap-2">
                             {/* BLOQUE PRECIO DISTRIBUIDOR */}
                             {(tipoPrecio === '' || tipoPrecio === 'distribuidor') && (
-                                <div className="w-full p-1 bg-orange-50/60 border border-orange-200/80 rounded-2xl flex flex-col items-center gap-1.5">
-                                    <span className="text-orange-700 text-[8px] font-black tracking-wider uppercase">
+                                <div className="w-full p-1 bg-distribuidor-soft/60 border border-distribuidor/40 rounded-2xl flex flex-col items-center gap-1.5">
+                                    <span className="text-distribuidor text-[8px] font-black tracking-wider uppercase">
                                         Precio Distribuidor
                                     </span>
 
                                     <div className="w-full grid grid-cols-3 text-center gap-1">
                                         <div className="flex flex-col items-center">
                                             <span className="text-gray-400 text-[8px] font-bold uppercase">Unidad</span>
-                                            <span className="text-orange-950 text-xs font-bold font-mono mt-0.5">
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5">
                                                 {formatPrice(distribuidor.unidad)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
                                             <span className="text-gray-400 text-[8px] font-bold uppercase">Docena</span>
-                                            <span className="text-orange-950 text-xs font-bold font-mono mt-0.5">
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5">
                                                 {formatPrice(distribuidor.docena)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
                                             <span className="text-gray-400 text-[8px] font-bold uppercase">Caja / Mayor</span>
-                                            <span className="text-orange-950 text-xs font-bold font-mono mt-0.5">
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5">
                                                 {formatPrice(distribuidor.mayor)}
                                             </span>
                                         </div>
@@ -148,29 +148,29 @@ export function DetalleProductoModal({
 
                             {/* BLOQUE PRECIO TIENDA */}
                             {(tipoPrecio === '' || tipoPrecio === 'tienda') && (
-                                <div className="w-full p-1 bg-blue-50/60 border border-blue-200/80 rounded-2xl flex flex-col items-center gap-1.5">
-                                    <span className="text-blue-700 text-[8px] font-black tracking-wider uppercase">
+                                <div className="w-full p-1 bg-estado-enviado-soft/60 border border-estado-enviado/30 rounded-2xl flex flex-col items-center gap-1.5">
+                                    <span className="text-estado-enviado text-[8px] font-black tracking-wider uppercase">
                                         Precio Tienda
                                     </span>
 
                                     <div className="w-full grid grid-cols-3 text-center gap-1">
                                         <div className="flex flex-col items-center">
                                             <span className="text-gray-400 text-[8px] font-bold uppercase">Unidad</span>
-                                            <span className="text-blue-950 text-xs font-bold font-mono mt-0.5">
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5">
                                                 {formatPrice(tienda.unidad)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
                                             <span className="text-gray-400 text-[8px] font-bold uppercase">Docena</span>
-                                            <span className="text-blue-950 text-xs font-bold font-mono mt-0.5">
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5">
                                                 {formatPrice(tienda.docena)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
                                             <span className="text-gray-400 text-[8px] font-bold uppercase">Caja / Mayor</span>
-                                            <span className="text-blue-950 text-xs font-bold font-mono mt-0.5">
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5">
                                                 {formatPrice(tienda.mayor)}
                                             </span>
                                         </div>

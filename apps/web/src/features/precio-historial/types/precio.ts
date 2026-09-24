@@ -9,6 +9,7 @@ export interface ProductoConsulta {
     codigo: string;
     descripcion: string;
     stock: number;
+    stockMinimo?: number;
     imagenUrl?: string;
     precioDistribuidor: EscalaPrecio;
     precioTienda: EscalaPrecio;

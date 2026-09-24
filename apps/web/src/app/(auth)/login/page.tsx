@@ -80,7 +80,7 @@ function LoginForm() {
           <form className="w-full flex flex-col mt-10 sm:mt-12" onSubmit={handleSubmit(onSubmit)}>
             {/* MENSAJE DE ERROR */}
             {error && (
-              <div className="mb-6 flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-3 rounded-lg shadow-sm" role="alert">
+              <div className="mb-6 flex items-center gap-2 text-sm text-danger bg-estado-rechazado-soft border border-estado-rechazado/30 px-4 py-3 rounded-lg shadow-sm" role="alert">
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <span>{error}</span>
               </div>

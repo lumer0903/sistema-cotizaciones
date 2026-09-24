@@ -185,12 +185,12 @@ export default function AgregarProductoModal({
                                 <Archive className="size-3 text-zinc-500" />
                                 {estanteDisplay}
                             </span>
-                            <span className="inline-flex items-center gap-1 bg-red-50 text-red-500 font-bold px-2 py-0.5 rounded-md">
+                            <span className="inline-flex items-center gap-1 bg-estado-rechazado-soft text-danger font-bold px-2 py-0.5 rounded-md">
                                 <Package className="size-3" />
                                 {stockAlertaDisplay}
                             </span>
-                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 font-bold px-2 py-0.5 rounded-md">
-                                <span className="size-1.5 rounded-full bg-emerald-500" />
+                            <span className="inline-flex items-center gap-1 bg-estado-aprobado-soft text-estado-aprobado-text font-bold px-2 py-0.5 rounded-md">
+                                <span className="size-1.5 rounded-full bg-estado-aprobado" />
                                 {stockTotalDisplay}
                             </span>
                         </div>
@@ -246,7 +246,7 @@ export default function AgregarProductoModal({
                                         ...(producto.coloresDisponibles?.map((c) => ({ label: c.nombre, value: c.nombre })) ||
                                             producto.colores_surtido?.map((c) => ({ label: c, value: c })) || []),
                                     ]}
-                                    className="w-full h-11 rounded-xl border-amber-400 focus:ring-amber-400"
+                                    className="w-full h-11 rounded-xl border-brand-primary focus:ring-brand-primary"
                                 />
                             </div>
                             <div>
@@ -258,7 +258,7 @@ export default function AgregarProductoModal({
                                     readOnly
                                     value={`${stockColorSeleccionado} un.`}
                                     className={`w-full h-11 border rounded-xl px-3 text-xs font-semibold focus:outline-none ${sinStock
-                                        ? 'border-red-300 bg-red-50 text-red-600'
+                                        ? 'border-estado-rechazado/40 bg-estado-rechazado-soft text-danger'
                                         : 'border-zinc-200 bg-zinc-50 text-zinc-700'
                                         }`}
                                 />
@@ -289,7 +289,7 @@ export default function AgregarProductoModal({
                                 { label: 'Docena', value: 'DOCENA' },
                                 { label: 'Por Mayor', value: 'MAYOR' },
                             ]}
-                            className="w-full h-11 rounded-xl border-amber-400 focus:ring-amber-400"
+                            className="w-full h-11 rounded-xl border-brand-primary focus:ring-brand-primary"
                         />
                     </div>
                     <div>
@@ -301,7 +301,7 @@ export default function AgregarProductoModal({
                             min="1"
                             value={cantidad}
                             onChange={(e) => setCantidad(Math.max(1, Number(e.target.value)))}
-                            className="w-full h-11 border border-zinc-200 rounded-xl px-3 text-xs font-semibold text-zinc-800 focus:outline-none focus:border-amber-400"
+                            className="w-full h-11 border border-zinc-200 rounded-xl px-3 text-xs font-semibold text-zinc-800 focus:outline-none focus:border-brand-primary"
                         />
                     </div>
                 </div>
@@ -321,7 +321,7 @@ export default function AgregarProductoModal({
                                 step="0.01"
                                 value={precioInput}
                                 onChange={(e) => setPrecioInput(e.target.value)}
-                                className="w-full h-11 border border-zinc-200 rounded-xl pl-9 pr-3 text-xs text-zinc-800 font-semibold focus:outline-none focus:border-amber-400"
+                                className="w-full h-11 border border-zinc-200 rounded-xl pl-9 pr-3 text-xs text-zinc-800 font-semibold focus:outline-none focus:border-brand-primary"
                             />
                         </div>
                     </div>
@@ -392,7 +392,7 @@ export default function AgregarProductoModal({
                         onClick={handleGuardar}
                         className={`px-8 py-2.5 text-sm font-bold rounded-xl shadow-none transition-colors ${sinStock
                             ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
-                            : 'bg-amber-400 hover:bg-amber-500 text-amber-950'
+                            : 'bg-brand-primary hover:bg-brand-hover text-white'
                             }`}
                     >
                         Guardar

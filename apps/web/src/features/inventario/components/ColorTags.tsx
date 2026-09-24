@@ -1,6 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
+import { resolveColorHex } from './ColorConfigModal';
 
 interface ColorTagsProps {
   colors: string[] | null | undefined;
@@ -50,6 +51,14 @@ export function ColorTags({
           key={color}
           className={`inline-flex items-center ${sizeClasses[size]} bg-brand-selection text-brand-subtitle border border-brand-primary/40 rounded-full font-medium`}
         >
+          <span
+            className="rounded-full border border-gray-200 shrink-0"
+            style={{
+              backgroundColor: resolveColorHex(color),
+              width: size === 'sm' ? 8 : 10,
+              height: size === 'sm' ? 8 : 10,
+            }}
+          />
           {color}
           {interactive && onRemove && (
             <button
