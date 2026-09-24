@@ -3,9 +3,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { Sidebar } from '@/components/ui/Sidebar';
-import { Settings, Bell } from 'lucide-react';
+import { Settings, Bell, User } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 import { AlertasStockTable } from '@/features/inventario/components/AlertasStockTable';
+import { PerfilModal } from '@/features/usuarios/components/PerfilModal';
+import { Avatar } from '@/components/ui/Avatar';
+import { useAuth } from '@/lib/authProvider';
 
 const ROUTE_TITLES: Record<string, string> = {
   '/admin/dashboard': 'DASHBOARD',
@@ -21,8 +24,10 @@ const ROUTE_TITLES: Record<string, string> = {
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { usuario } = useAuth();
   const [isAlertasOpen, setIsAlertasOpen] = useState(false);
   const [alertasCount, setAlertasCount] = useState(0);
+  const [isPerfilOpen, setIsPerfilOpen] = useState(false);
 
   const fetchAlertasCount = useCallback(async () => {
     try {
@@ -62,13 +67,13 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </h1>
 
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                alt="Perfil"
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <Avatar
+              src={usuario?.avatar_url}
+              nombre={usuario?.nombre}
+              size="md"
+              onClick={() => setIsPerfilOpen(true)}
+              title="Mi perfil"
+            />
 
             <button
               type="button"
@@ -105,6 +110,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         onClose={() => setIsAlertasOpen(false)}
         onSuccess={() => fetchAlertasCount()}
       />
+
+      <PerfilModal open={isPerfilOpen} onClose={() => setIsPerfilOpen(false)} />
     </div>
   );
 }

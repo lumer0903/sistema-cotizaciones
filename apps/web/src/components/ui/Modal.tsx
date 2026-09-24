@@ -50,7 +50,7 @@ export const Modal = ({
             }}
         >
             <div
-                className={`w-full ${maxWidthClasses[maxWidth]} bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]`}
+                className={`w-full ${maxWidthClasses[maxWidth]} bg-white rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {(title || headerExtra) && (

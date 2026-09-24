@@ -14,7 +14,7 @@
 - **Catálogo de productos** con 6 precios por artículo (normal/distribuidor × unidad/docena/mayor) e historial de cambios de precio.
 - **Cobranza** sobre cotizaciones aprobadas con abonos y estados (pendiente/parcial/pagada).
 - **Dashboard** con KPIs de conversión, efectividad de IA y alertas.
-- **Roles:** `admin`, `gerente`, `vendedor` con panel separado (`/admin/*` y `/vendedor/*`).
+- **Roles:** catálogo dinámico en BD (seed: `admin`, `gerente`, `vendedor`) con JWT en string código; panel separado (`/admin/*` y `/vendedor/*`).
 
 ---
 
@@ -96,7 +96,7 @@ pnpm dev:web        # http://localhost:3000
 
 | Documento | Contenido |
 |-----------|-----------|
-| **[ENDPOINTS.md](./ENDPOINTS.md)** | Los 56 endpoints: método, ruta, auth, query/body, config global del API |
+| **[ENDPOINTS.md](./ENDPOINTS.md)** | Los 70 endpoints: método, ruta, auth, query/body, config global del API |
 | **[MODULOS.md](./MODULOS.md)** | Qué hace cada módulo backend y feature frontend |
 | **[ARQUITECTURA.md](./ARQUITECTURA.md)** | Monorepo, patrón híbrido DDD/plano, flujo de auth, protección de rutas, diagramas |
 | **[TECNOLOGIA.md](./TECNOLOGIA.md)** | Stack, dependencias, env vars, scripts, docker, gaps conocidos |
@@ -142,13 +142,13 @@ pnpm docker:logs      # logs del compose
 **Módulos frontend al 100% (sin cambios salvo bugs):**
 - **Inventario** — CRUD, movimientos, transferencias, kardex, alertas, Ficha Técnica con chips de color reales (`resolveColorHex`), `ColorConfigModal` con lista vacía en producto nuevo y botón Guardar dinámico.
 - **Precios / Historial** — consulta con precios reales del backend, `HistorialPrecioModal` con `Table*` unificado.
+- **Usuarios** — crear (nombre/correo/contraseña), editar todo + cambiar contraseña, activar/desactivar con confirmación. **Sin eliminación.** Tabs **Usuarios | Roles y Permisos**: roles dinámicos en BD, matriz por rol (admin bloqueada a Edición), sub-pestañas administrativo/operativo, `FilterCard` de búsqueda y dropdown en portal. **Foto de perfil** (`avatar_url` data URL): `Avatar` en navbars y tabla; `PerfilModal` (solo foto editable; nombre/correo solo lectura). Admin edita foto de usuarios en `UsuarioModal`.
 
 **Globales ya unificados:** `Table.tsx` (todas las tablas del sistema), `Pagination` (opciones `[8,16,24,32,48,64]`, default `8`), `Select` (portal + flatten de options).
 
 El resto del sistema está operativo en auth, productos, cotizaciones, cobranza y dashboard, con deudas documentadas en **TECNOLOGIA.md** y **ARQUITECTURA.md**:
 
-- Sin `RolesGuard` en el backend (roles solo en frontend).
 - `helmet`, rate-limit, ESLint y tests: instalados/configurados pero sin implementar.
-- Módulos sin uso: `configuracion` (sin controller), Redis/BullMQ (sin colas), cron (sin jobs).
+- Módulos sin uso: `configuracion` (parcial), Redis/BullMQ (sin colas), cron (sin jobs).
 - Código legado: controller auth Express huérfano, `registrarPago` duplicado, tablas de ventas legacy en BD.
 - KPIs/campos muertos: `fecha_vencimiento`, `tiempo_fin` (leídos, nunca escritos).

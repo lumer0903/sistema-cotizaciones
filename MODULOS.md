@@ -7,16 +7,26 @@
 ## Backend (NestJS)
 
 ### auth
-Autenticación JWT con access token (15 min) y refresh token (7 días) en cookies httpOnly + Bearer. Login, refresh con rotación y hash bcrypt en BD, logout, perfil y cambio de contraseña. Exporta `JwtAuthGuard` usado por todos los demás controllers.
+Autenticación JWT con access token (15 min) y refresh token (7 días) en cookies httpOnly + Bearer. Login, refresh con rotación y hash bcrypt en BD, logout, perfil, cambio de contraseña, nombre/email (`PATCH /auth/profile`) y foto de perfil (`PATCH|DELETE /auth/avatar`). Exporta `JwtAuthGuard` usado por todos los demás controllers.
 
 - **Arquitectura:** hexagonal parcial (`domain/`, `application/`, `adapters/`, `infrastructure/`) — pero el login real llama a la función plana de `auth.service.ts`; el `LoginUseCase` está inyectado sin usarse (deuda de migración).
 - **Código muerto:** `auth.controller.ts` (handlers Express sin registrar).
 
 ### usuarios
-CRUD de usuarios del equipo con roles (`admin`, `gerente`, `vendedor`), activar/desactivar y soft delete.
+✅ **Frontend al 100%.** CRUD de usuarios del equipo: nombre, correo, contraseña, **rol dinámico** (código string en JWT; catálogo en tabla `roles`), **foto de perfil** (`avatar_url`), activar/desactivar. **No se eliminan** (sin endpoint DELETE; solo desactivar).
 
-- DTOs inline en el controller; `findAll` **no filtra** `deleted_at` (inconsistencia con clientes/productos).
-- Sin control de roles server-side.
+- Backend: `POST` crea; `PATCH /:id` edita datos (+password opcional + `avatar_url` data URL o `null`); `PATCH /:id/activo` estado; `GET|PUT /:id/permisos` overrides (inerte en UI actual).
+- Guardrails: no desactivar la propia cuenta; no desactivar el único admin activo; `findAll`/login filtran `deleted_at`; `rol` validado contra tabla `roles`.
+- `auth/me` y login devuelven `avatar_url` + `permisos` (overrides); el FE (`usePermissions`/`puede`) los aplica sobre la matriz del rol (BD o defaults). Foto de perfil: `PATCH/DELETE /auth/avatar` + `PerfilModal` en el navbar (**solo foto editable**; nombre/correo solo lectura).
+- UI: tabs **[Usuarios] | [Roles y Permisos]**; lista con `FilterCard`+`Input` lupa; dropdown acciones en portal (solo Editar + estado); `UsuarioModal` (crear/editar/cambiar contraseña/foto); `ConfirmModal`.
+
+### roles
+✅ **Frontend al 100%.** Módulo Nest `roles` + vista `RolesYPermisosView`.
+
+- Endpoints: CRUD roles + `GET|PUT /:id/permisos`. Roles sistema (`admin`/`gerente`/`vendedor`) no se borran.
+- Matriz admin **bloqueada** (siempre `edicion` en los 12 módulos por seguridad).
+- Sub-pestañas de módulos: **Sistema administrativo** (dashboard, usuarios, reportes, configuracion, cobranza, importacion) / **Sistema operativo** (productos, consulta_precios, cotizaciones, recomendaciones, pdf, ventas).
+- UI: lista izquierda + “Agregar Rol” `bg-brand-primary`; matriz derecha con checkboxes por nivel (amarillo `#F8B602`) y “Guardar Cambios”.
 
 ### clientes
 Maestro de clientes con datos comerciales: tipo de precio (`normal`/`distribuidor`) y condiciones de crédito (`diasCreditoDefecto`, `diasGracia`, `limiteCredito`, `tasaMora`).
@@ -119,7 +129,7 @@ Feature principal: listar con filtros, crear/editar borradores (store Zustand pe
 
 ### Features activas
 
-`configuracion` (api de config), `usuarios` (api de usuarios), `cotizaciones`, `inventario`, `precio-historial`.
+`configuracion` (api de config), `usuarios` (api de usuarios + roles), `cotizaciones`, `inventario`, `precio-historial`.
 
 ### Features eliminadas / sin scaffold
 

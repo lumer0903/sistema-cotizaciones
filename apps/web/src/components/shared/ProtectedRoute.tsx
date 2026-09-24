@@ -4,13 +4,13 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useAuth } from '@/lib/authProvider';
 import { usePermissions } from '@/hooks/usePermissions';
-import { PermisoModulo, NivelPermiso, Rol } from '@goldcontinent/shared/auth';
+import { PermisoModulo, NivelPermiso } from '@goldcontinent/shared/auth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   permission?: PermisoModulo;
   required?: NivelPermiso;
-  roles?: Rol[];
+  roles?: string[];
   fallback?: React.ReactNode;
 }
 

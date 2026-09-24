@@ -1,6 +1,6 @@
 # Endpoints — Gold Continent API
 
-> **Base URL:** `http://localhost:3001` · **Prefijo global:** `/api` · **Total:** 56 endpoints en 13 controllers
+> **Base URL:** `http://localhost:3001` · **Prefijo global:** `/api` · **Total:** 70 endpoints en 15 controllers
 > **Documentación interactiva (Scalar):** `GET http://localhost:3001/reference`
 > **Autenticación:** JWT en cookie httpOnly (`accessToken`) o header `Authorization: Bearer <token>`
 
@@ -11,6 +11,7 @@ Todos los controllers aplican `JwtAuthGuard` a nivel de clase salvo los endpoint
 | Endpoint | Roles permitidos |
 |----------|------------------|
 | `/api/usuarios` (todos) | `admin` |
+| `/api/roles` (todos) | `admin` |
 | `/api/configuracion` PUT | `admin` |
 | `/api/categorias` (todos) | `admin`, `gerente` |
 | `/api/almacenes` (todos) | `admin`, `gerente` |
@@ -25,8 +26,11 @@ Todos los controllers aplican `JwtAuthGuard` a nivel de clase salvo los endpoint
 | POST | `/api/auth/login` | Público | Login con `{email, password}`. Setea cookies httpOnly `accessToken` (15 min) y `refreshToken` (7 días). Devuelve `usuario` + `access_token` |
 | POST | `/api/auth/refresh` | Público | Renueva tokens desde cookie `refreshToken` (o body). Rota ambos tokens |
 | POST | `/api/auth/logout` | JWT | Invalida `refresh_token_hash` y limpia cookies |
-| GET | `/api/auth/me` | JWT | Perfil del usuario autenticado |
+| GET | `/api/auth/me` | JWT | Perfil del usuario autenticado (incluye `avatar_url` y `permisos` overrides) |
 | PATCH | `/api/auth/password` | JWT | Cambia contraseña: `{currentPassword, newPassword}` (6–50 chars) |
+| PATCH | `/api/auth/profile` | JWT | Actualiza nombre y/o email del usuario actual: `{nombre?, email?}` |
+| PATCH | `/api/auth/avatar` | JWT | Actualiza foto de perfil: `{avatar_url}` data URL PNG/JPEG/WebP, máx ~512 KB |
+| DELETE | `/api/auth/avatar` | JWT | Elimina foto de perfil |
 
 ---
 
@@ -34,11 +38,31 @@ Todos los controllers aplican `JwtAuthGuard` a nivel de clase salvo los endpoint
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| GET | `/api/usuarios` | JWT | Lista paginada. Query: `page`, `limit` (def. 50), `search` (nombre/email) |
+| GET | `/api/usuarios` | JWT | Lista paginada. Query: `page`, `limit` (def. 50), `search` (nombre/email). Excluye `deleted_at` |
 | GET | `/api/usuarios/:id` | JWT | Detalle de usuario |
-| POST | `/api/usuarios` | JWT | Crea: `{nombre, email, password, rol?}` — rol default `vendedor` |
-| PATCH | `/api/usuarios/:id` | JWT | Activa/desactiva: `{activo}` |
-| DELETE | `/api/usuarios/:id` | JWT | Soft delete (`deleted_at`) |
+| GET | `/api/usuarios/:id/permisos` | JWT | Overrides de permisos del usuario (mapa módulo→nivel) |
+| PUT | `/api/usuarios/:id/permisos` | JWT | Reemplaza overrides: `{permisos: {modulo: nivel, ...}}` |
+| POST | `/api/usuarios` | JWT | Crea: `{nombre, email, password, rol?}` — `rol` = código dinámico (default `vendedor`); debe existir en `/roles` |
+| PATCH | `/api/usuarios/:id` | JWT | Edita datos: `{nombre?, email?, password?, rol?, avatar_url?, activo?}` — `avatar_url` data URL o `null` para quitar |
+| PATCH | `/api/usuarios/:id/activo` | JWT | Activa/desactiva: `{activo}` — no desactivar self ni el único admin |
+
+**No existe DELETE** — los usuarios no se eliminan (solo se desactivan).
+
+---
+
+## Roles — `/api/roles`
+
+Catálogo dinámico de roles (`admin`/`gerente`/`vendedor` son de sistema, seed) + matriz de permisos por rol.
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/api/roles` | JWT | Lista roles (nombre, código, es_sistema, activo, total_usuarios, total_permisos) |
+| GET | `/api/roles/:id` | JWT | Detalle de rol |
+| GET | `/api/roles/:id/permisos` | JWT | Matriz 12 módulos → nivel. Admin: siempre `edicion` en todo |
+| PUT | `/api/roles/:id/permisos` | JWT | Reemplaza matriz completa `{permisos: {...12 módulos}}`. Admin bloqueado (400) |
+| POST | `/api/roles` | JWT | Crea rol custom: `{nombre, codigo}` (slug minúsculas/números/_). Copia defaults vendedor |
+| PATCH | `/api/roles/:id` | JWT | Actualiza `{nombre?, activo?, orden?}`. No desactivar admin sistema |
+| DELETE | `/api/roles/:id` | JWT | Elimina solo roles no-sistema sin usuarios (400 en caso contrario) |
 
 ---
 
@@ -193,4 +217,3 @@ Todos los controllers aplican `JwtAuthGuard` a nivel de clase salvo los endpoint
 - `modules/auth/auth.controller.ts` (funciones Express) está **huérfano**; el registrado es `adapters/auth.controller.ts`.
 - `CotizacionesController` y `RecomendacionesController` comparten prefijo `cotizaciones` sin colisión de rutas.
 - Endpoints de cotizaciones usan `@Body() body: any` → sin validación de DTO.
-- No hay `RolesGuard`: cualquier rol autenticado accede a todo.

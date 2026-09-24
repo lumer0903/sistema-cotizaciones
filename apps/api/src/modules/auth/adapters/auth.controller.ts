@@ -1,10 +1,37 @@
-import { Controller, Post, Body, Get, UseGuards, Req, Res, UnauthorizedException, Patch } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Post, Body, Get, UseGuards, Req, Res, UnauthorizedException, Patch, Delete } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LoginUseCase } from '../application/login.use-case';
 import { LoginDto } from '../application/login.dto';
 import { ChangePasswordDto } from '../application/change-password.dto';
 import { JwtAuthGuard } from '../infrastructure/jwt-auth.guard';
-import { refreshAccessToken, login as loginService, obtenerSesion, logout, changePassword } from '../auth.service';
+import { refreshAccessToken, login as loginService, obtenerSesion, logout, changePassword, updateAvatar, removeAvatar, updateProfile } from '../auth.service';
+import { IsString, IsNotEmpty, MaxLength, IsOptional, IsEmail, MinLength } from 'class-validator';
+
+class UpdateAvatarDto {
+  @ApiProperty({
+    description: 'Data URL de la imagen (PNG, JPEG o WebP), máx 512 KB',
+    example: 'data:image/jpeg;base64,/9j/4AAQSkZJRg...',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(700000)
+  avatar_url!: string;
+}
+
+class UpdateProfileDto {
+  @ApiPropertyOptional({ example: 'Juan Pérez', maxLength: 100 })
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  nombre?: string;
+
+  @ApiPropertyOptional({ example: 'juan@ejemplo.com', maxLength: 255 })
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(255)
+  email?: string;
+}
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -126,6 +153,45 @@ export class AuthController {
     return {
       success: true,
       message: 'Contraseña actualizada correctamente',
+    };
+  }
+
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Update current user name and/or email' })
+  @ApiBearerAuth()
+  async updateProfile(@Req() req: any, @Body() body: UpdateProfileDto) {
+    const usuario = await updateProfile(req.user.id_usuario, body);
+    return {
+      success: true,
+      message: 'Perfil actualizado correctamente',
+      data: { usuario },
+    };
+  }
+
+  @Patch('avatar')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Update current user profile photo (data URL)' })
+  @ApiBearerAuth()
+  async updateAvatar(@Req() req: any, @Body() body: UpdateAvatarDto) {
+    const usuario = await updateAvatar(req.user.id_usuario, body.avatar_url);
+    return {
+      success: true,
+      message: 'Foto de perfil actualizada correctamente',
+      data: { usuario },
+    };
+  }
+
+  @Delete('avatar')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Remove current user profile photo' })
+  @ApiBearerAuth()
+  async deleteAvatar(@Req() req: any) {
+    const usuario = await removeAvatar(req.user.id_usuario);
+    return {
+      success: true,
+      message: 'Foto de perfil eliminada',
+      data: { usuario },
     };
   }
 }

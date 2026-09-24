@@ -18,7 +18,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
 import { usePermissions } from '@/hooks/usePermissions';
-import { PermisoModulo, Rol } from '@goldcontinent/shared/auth';
+import { PermisoModulo } from '@goldcontinent/shared/auth';
+import { PerfilModal } from '@/features/usuarios/components/PerfilModal';
+import { Avatar } from '@/components/ui/Avatar';
 
 const VENDEDOR_NAV_ITEMS: {
   href: string;
@@ -40,7 +42,7 @@ const VENDEDOR_NAV_ITEMS: {
   },
 ];
 
-const ROLE_NAMES: Record<Rol, string> = {
+const ROLE_NAMES: Record<string, string> = {
   admin: 'Administrador',
   gerente: 'Gerente',
   vendedor: 'Vendedor',
@@ -49,6 +51,7 @@ const ROLE_NAMES: Record<Rol, string> = {
 export function VendedorLayout({ title, children }: { title: string; children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
+  const [isPerfilOpen, setIsPerfilOpen] = useState(false);
   const pathname = usePathname();
   const { usuario, logout } = useAuth();
   const { can } = usePermissions();
@@ -188,9 +191,14 @@ export function VendedorLayout({ title, children }: { title: string; children: R
                 {usuario?.rol ? ROLE_NAMES[usuario.rol] : 'Vendedor'}
               </span>
             </div>
-            <div className="h-8 w-8 rounded-full bg-brand-primary text-white flex items-center justify-center text-[11px] font-bold shadow-xs hover:bg-brand-hover transition-colors select-none">
-              {userInitials}
-            </div>
+            <Avatar
+              src={usuario?.avatar_url}
+              nombre={usuario?.nombre || userInitials}
+              size="sm"
+              onClick={() => setIsPerfilOpen(true)}
+              title="Mi perfil"
+              className="bg-brand-primary text-white border-transparent"
+            />
           </div>
         </header>
 
@@ -198,6 +206,8 @@ export function VendedorLayout({ title, children }: { title: string; children: R
           {children}
         </main>
       </div>
+
+      <PerfilModal open={isPerfilOpen} onClose={() => setIsPerfilOpen(false)} />
     </div>
   );
 }

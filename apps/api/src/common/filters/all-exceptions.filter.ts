@@ -1,5 +1,6 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { AppError } from '../middleware/errorHandler';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -8,15 +9,19 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    let status: number;
+    let exceptionResponse: unknown;
 
-    const exceptionResponse =
-      exception instanceof HttpException
-        ? exception.getResponse()
-        : 'Internal server error';
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      exceptionResponse = exception.getResponse();
+    } else if (exception instanceof AppError) {
+      status = exception.status;
+      exceptionResponse = exception.message;
+    } else {
+      status = HttpStatus.INTERNAL_SERVER_ERROR;
+      exceptionResponse = 'Internal server error';
+    }
 
     let message: string;
     let errors: Record<string, string[]> | undefined;
@@ -30,6 +35,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
         errors = resp.errors as Record<string, string[]>;
       }
     } else {
+      message = 'Internal server error';
+    }
+
+    if (status >= 500 && process.env.NODE_ENV === 'production') {
       message = 'Internal server error';
     }
 

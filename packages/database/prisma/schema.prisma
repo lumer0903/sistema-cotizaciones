@@ -16,7 +16,8 @@ model Usuario {
   email             String                 @unique
   password_hash     String
   refresh_token_hash String?               @map("refresh_token_hash")
-  rol               Rol                    @default(vendedor)
+  rol               String                 @default("vendedor")
+  avatar_url        String?                @map("avatar_url")
   activo            Boolean                @default(true)
   created_at        DateTime               @default(now())
   updated_at        DateTime               @updatedAt
@@ -27,10 +28,44 @@ model Usuario {
   pagos             VentaPago[]            @relation("PagoUsuario")
   cotizacionPagos   CotizacionPago[]       @relation("CotizacionPagoUsuario")
   ventas            Venta[]                @relation("VentaUsuario")
+  permisos          UsuarioPermiso[]
 
   @@index([nombre(ops: raw("gin_trgm_ops"))], type: Gin)
   @@index([email])
   @@map("usuarios")
+}
+
+model UsuarioPermiso {
+  id_usuario Int
+  modulo     PermisoModulo
+  nivel      NivelPermiso
+  usuario    Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@id([id_usuario, modulo])
+  @@map("usuario_permisos")
+}
+
+model Rol {
+  id_rol     Int           @id @default(autoincrement())
+  nombre     String        @unique
+  codigo     String        @unique
+  es_sistema Boolean       @default(false)
+  orden      Int           @default(0)
+  activo     Boolean       @default(true)
+  created_at DateTime      @default(now())
+  permisos   RolPermiso[]
+
+  @@map("roles")
+}
+
+model RolPermiso {
+  id_rol  Int
+  modulo  PermisoModulo
+  nivel   NivelPermiso
+  rol     Rol @relation(fields: [id_rol], references: [id_rol], onDelete: Cascade)
+
+  @@id([id_rol, modulo])
+  @@map("rol_permisos")
 }
 
 model Categoria {
@@ -374,10 +409,25 @@ model alertas_stock {
   @@index([estado])
 }
 
-enum Rol {
-  admin
-  gerente
-  vendedor
+enum PermisoModulo {
+  dashboard
+  productos
+  importacion
+  consulta_precios
+  cotizaciones
+  recomendaciones
+  pdf
+  usuarios
+  cobranza
+  ventas
+  reportes
+  configuracion
+}
+
+enum NivelPermiso {
+  sin_acceso
+  lectura
+  edicion
 }
 
 enum EstadoCotizacion {

@@ -1,10 +1,12 @@
-export type RolUsuario = 'ADMIN' | 'VENDEDOR' | 'ALMACENERO';
+export type RolUsuario = string;
 
 export interface Usuario {
   id_usuario: number;
   nombre: string;
   email: string;
   rol: RolUsuario;
+  avatar_url?: string | null;
   activo: boolean;
-  ultimo_acceso?: string;
+  created_at?: string;
+  updated_at?: string;
 }

@@ -51,19 +51,80 @@ const LEVELS: Record<NivelPermiso, number> = {
   edicion: 2,
 };
 
-export function permisosPorRol(rol: Rol): Record<PermisoModulo, NivelPermiso> {
-  return DEFAULT_ROLE_PERMISSIONS[rol] || DEFAULT_ROLE_PERMISSIONS.vendedor;
+export type MapaPermisos = Record<PermisoModulo, NivelPermiso>;
+export type OverridesPermisos = Partial<MapaPermisos>;
+
+export type GrupoModulo = 'administrativo' | 'operativo';
+
+export const GRUPOS_MODULOS: Record<GrupoModulo, readonly PermisoModulo[]> = {
+  administrativo: ['dashboard', 'usuarios', 'reportes', 'configuracion', 'cobranza', 'importacion'],
+  operativo: ['productos', 'consulta_precios', 'cotizaciones', 'recomendaciones', 'pdf', 'ventas'],
+} as const;
+
+export const GRUPO_LABELS: Record<GrupoModulo, string> = {
+  administrativo: 'Sistema administrativo',
+  operativo: 'Sistema operativo',
+};
+
+export function permisosPorRol(rol: string): MapaPermisos {
+  const defaults = DEFAULT_ROLE_PERMISSIONS[rol as Rol];
+  return defaults || DEFAULT_ROLE_PERMISSIONS.vendedor;
 }
 
-export function puede(usuario: { rol: Rol } | null, modulo: PermisoModulo, requerido: NivelPermiso = 'lectura'): boolean {
+/** Matriz completa en edición forzada (rol admin / superadmin). */
+export function esMatrizBloqueada(codigo: string): boolean {
+  return codigo === 'admin' || codigo === 'superadmin';
+}
+
+export function matrizSiempreEdicion(): MapaPermisos {
+  const mapa = {} as MapaPermisos;
+  for (const modulo of Object.values(PermisoModulo)) {
+    mapa[modulo] = 'edicion';
+  }
+  return mapa;
+}
+
+/** Efectivos = defaults del rol + overrides personalizados del usuario. */
+export function permisosEfectivos(rol: string, overrides?: OverridesPermisos | null): MapaPermisos {
+  const base = { ...permisosPorRol(rol) };
+  if (!overrides) return base;
+  for (const modulo of Object.values(PermisoModulo)) {
+    const nivel = overrides[modulo];
+    if (nivel) base[modulo] = nivel;
+  }
+  return base;
+}
+
+export function tieneOverrides(overrides?: OverridesPermisos | null): boolean {
+  if (!overrides) return false;
+  return Object.values(PermisoModulo).some((m) => overrides[m] != null);
+}
+
+/** Overrides que difieren de los defaults del rol (para persistir solo lo personalizado). */
+export function overridesDiferentes(rol: string, efectivos: MapaPermisos): OverridesPermisos {
+  const defaults = permisosPorRol(rol);
+  const overrides: OverridesPermisos = {};
+  for (const modulo of Object.values(PermisoModulo)) {
+    if (efectivos[modulo] !== defaults[modulo]) {
+      overrides[modulo] = efectivos[modulo];
+    }
+  }
+  return overrides;
+}
+
+export function puede(
+  usuario: { rol: string; permisos?: OverridesPermisos | null } | null,
+  modulo: PermisoModulo,
+  requerido: NivelPermiso = 'lectura',
+): boolean {
   if (!usuario) return false;
-  const permisos = permisosPorRol(usuario.rol);
-  const actual = permisos[modulo] || 'sin_acceso';
+  const overrides = usuario.permisos?.[modulo];
+  const actual = overrides ?? permisosPorRol(usuario.rol)[modulo] ?? 'sin_acceso';
   return (LEVELS[actual] || 0) >= (LEVELS[requerido] || 1);
 }
 
-export function soloRoles(...rolesPermitidos: Rol[]) {
-  return (usuario: { rol: Rol } | null): boolean => {
+export function soloRoles(...rolesPermitidos: string[]) {
+  return (usuario: { rol: string } | null): boolean => {
     if (!usuario) return false;
     return rolesPermitidos.includes(usuario.rol);
   };
@@ -76,6 +137,8 @@ export const soloVendedor = soloRoles(Rol.vendedor);
 export interface UsuarioAutenticado {
   id_usuario: number;
   email: string;
-  rol: Rol;
+  rol: string;
   nombre: string;
+  avatar_url?: string | null;
+  permisos?: OverridesPermisos | null;
 }

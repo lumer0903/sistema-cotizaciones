@@ -10,6 +10,7 @@ export * from './FilterCard';
 export * from './Pagination';
 export * from './Textarea';
 export * from './Sidebar';
+export * from './Avatar';
 
 import type { BadgeVariant } from './Badge';
 

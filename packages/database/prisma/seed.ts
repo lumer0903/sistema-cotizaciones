@@ -1,4 +1,4 @@
-import { PrismaClient, Rol } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -35,6 +35,79 @@ function generar6Precios(esFlor: boolean) {
 
 async function main() {
   console.log(' Iniciando seed enriquecido...');
+
+  // 0. Roles sistema + matrices de permisos (defaults de shared)
+  const rolesData = [
+    { codigo: 'admin', nombre: 'Administrador', es_sistema: true, orden: 0 },
+    { codigo: 'gerente', nombre: 'Gerente', es_sistema: true, orden: 1 },
+    { codigo: 'vendedor', nombre: 'Vendedor', es_sistema: true, orden: 2 },
+  ];
+
+  const defaultPermisos: Record<string, Record<string, string>> = {
+    admin: {
+      dashboard: 'edicion',
+      productos: 'edicion',
+      importacion: 'edicion',
+      consulta_precios: 'edicion',
+      cotizaciones: 'edicion',
+      recomendaciones: 'edicion',
+      pdf: 'edicion',
+      usuarios: 'edicion',
+      cobranza: 'edicion',
+      ventas: 'edicion',
+      reportes: 'edicion',
+      configuracion: 'edicion',
+    },
+    gerente: {
+      dashboard: 'edicion',
+      productos: 'edicion',
+      importacion: 'edicion',
+      consulta_precios: 'edicion',
+      cotizaciones: 'edicion',
+      recomendaciones: 'edicion',
+      pdf: 'edicion',
+      usuarios: 'edicion',
+      cobranza: 'edicion',
+      ventas: 'edicion',
+      reportes: 'edicion',
+      configuracion: 'lectura',
+    },
+    vendedor: {
+      dashboard: 'lectura',
+      productos: 'lectura',
+      importacion: 'sin_acceso',
+      consulta_precios: 'lectura',
+      cotizaciones: 'edicion',
+      recomendaciones: 'edicion',
+      pdf: 'edicion',
+      usuarios: 'sin_acceso',
+      cobranza: 'sin_acceso',
+      ventas: 'edicion',
+      reportes: 'lectura',
+      configuracion: 'sin_acceso',
+    },
+  };
+
+  for (const r of rolesData) {
+    const rol = await prisma.rol.upsert({
+      where: { codigo: r.codigo },
+      update: { nombre: r.nombre, es_sistema: r.es_sistema, orden: r.orden },
+      create: r,
+    });
+
+    const existing = await prisma.rolPermiso.count({ where: { id_rol: rol.id_rol } });
+    if (existing === 0) {
+      const permisos = defaultPermisos[r.codigo];
+      await prisma.rolPermiso.createMany({
+        data: Object.entries(permisos).map(([modulo, nivel]) => ({
+          id_rol: rol.id_rol,
+          modulo: modulo as any,
+          nivel: nivel as any,
+        })),
+      });
+    }
+  }
+  console.log(' Roles sistema y matrices de permisos verificados/creados');
 
   // 1. Almacenes con Ubicaciones por Estante
   const almacenesData = [
@@ -259,7 +332,7 @@ async function main() {
         nombre: 'Administrador Sistema',
         email: 'admin@goldcontinent.com',
         password_hash: '$2b$10$EpRvmMG5bWg71f2N.uBf9.k9YkK5Kx/dG1e.7xG.L9k9',
-        rol: Rol.admin,
+        rol: 'admin',
         activo: true,
       },
     });

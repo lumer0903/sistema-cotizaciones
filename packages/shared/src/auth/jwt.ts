@@ -1,10 +1,9 @@
 import { UsuarioAutenticado } from './rbac';
-import { Rol } from '../constants/enums';
 
 export interface JWTPayload {
   id_usuario: number;
   email: string;
-  rol: Rol;
+  rol: string;
 }
 
 export interface TokenPair {

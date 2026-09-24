@@ -18,6 +18,7 @@ import { InventarioModule } from './modules/inventario/inventario.module';
 import { RecomendacionesModule } from './modules/cotizaciones/recomendaciones/recomendaciones.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ConfiguracionModule } from './modules/configuracion/configuracion.module';
+import { RolesModule } from './modules/roles/roles.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ConfiguracionModule } from './modules/configuracion/configuracion.modul
     AiModule,
     ProductosModule,
     UsuariosModule,
+    RolesModule,
     CobranzaModule,
     ClientesModule,
     CategoriasModule,

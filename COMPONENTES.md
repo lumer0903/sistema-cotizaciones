@@ -48,6 +48,7 @@ Helpers: `ESTADO_BADGE`, `TIPO_CLIENTE_BADGE` exportados desde `@/components/ui`
 | `FilterCard` | Contenedor de filtros (`border-l-brand-primary`) |
 | `Pagination` | Opciones `[8, 16, 24, 32, 48, 64]`, default `8` (normaliza a `8` si el `limit` no matchea), línea `Mostrar [Select] registros por página`, botón de página activo `bg-brand-primary` |
 | `Tooltip` | Tooltip vía `createPortal`, posiciones `top/bottom/left/right`, con delay |
+| `Avatar` | Foto de usuario redonda: `src` (data URL o http) o iniciales de `nombre`; tamaños `xs–xl`; fallback si falla la imagen; `onClick` para abrir perfil |
 | `Sidebar` | Sidebar admin; **logout real** vía `useAuth().logout()` (accent danger) |
 | `index.ts` | Barrel + `ESTADO_BADGE` + `TIPO_CLIENTE_BADGE` |
 
@@ -67,8 +68,8 @@ Helpers: `ESTADO_BADGE`, `TIPO_CLIENTE_BADGE` exportados desde `@/components/ui`
 
 | Componente | Propósito |
 |------------|-----------|
-| `AdminLayout` | Shell admin: `Sidebar`, navbar con título por ruta, campana de alertas de stock (polling 60 s → `/inventario/alertas`), `AlertasStockTable`, acceso a configuración |
-| `VendedorLayout` | Shell vendedor: sidebar responsive con overlay mobile, nav filtrada por permisos (`Catálogo`, `Mis Cotizaciones`), header con nombre/rol/iniciales, logout |
+| `AdminLayout` | Shell admin: `Sidebar`, navbar con título por ruta, `Avatar` de perfil (click → `PerfilModal`), campana de alertas de stock (polling 60 s → `/inventario/alertas`), `AlertasStockTable`, acceso a configuración |
+| `VendedorLayout` | Shell vendedor: sidebar responsive con overlay mobile, nav filtrada por permisos (`Catálogo`, `Mis Cotizaciones`), header con nombre/rol, `Avatar` o iniciales (click → `PerfilModal`), logout |
 
 ---
 
@@ -101,7 +102,7 @@ app/
 │   │   ├── page.tsx            # Listado (filtros, pagos)
 │   │   └── [id]/page.tsx       # Detalle cobranza
 │   ├── reportes/page.tsx       # Reportes reales: KPIs, estados, cotizado vs vendido, alertas (GET /dashboard/detalle)
-│   ├── usuarios/page.tsx       # Gestión usuarios (feature usuarios/api)
+│   ├── usuarios/page.tsx       # Tabs Usuarios | Roles y Permisos
 │   └── configuracion/page.tsx  # Tabs con carga/guardado real vía /api/configuracion
 │
 └── vendedor/                   # Protegido: roles [vendedor] + permission cotizaciones
@@ -152,7 +153,7 @@ No existe `app/page.tsx` — el middleware redirige `/`.
 | Feature | Contenido |
 |---------|-----------|
 | `configuracion/` | `api/configApi.ts` — GET/PUT `/api/configuracion` |
-| `usuarios/` | `api/usuariosApi.ts` — listado, crear, toggle activo, delete |
+| `usuarios/` | **✅ 100%** — `api/usuariosApi.ts` + `api/rolesApi.ts`; tabs Usuarios/Roles; components (`UsuarioModal`, `RolesYPermisosView`, `PerfilModal` solo foto editable; `PermisosModal` legacy sin uso en menú) |
 
 ### Placeholders eliminados
 
@@ -164,7 +165,7 @@ No existe `app/page.tsx` — el middleware redirige `/`.
 
 | Archivo | Propósito |
 |---------|-----------|
-| `hooks/usePermissions.ts` | `can(modulo, nivel)`, `isAdmin/isGerente/isVendedor`, `usuario` — usa RBAC de `@goldcontinent/shared` |
+| `hooks/usePermissions.ts` | `can(modulo, nivel)`, `isAdmin/isGerente/isVendedor`, `usuario` — RBAC de `@goldcontinent/shared` (defaults de rol + overrides de `/usuarios/:id/permisos` cuando existan) |
 | `lib/authProvider.tsx` | Contexto de sesión: mount → `GET /auth/me` si hay cookie `userRole`; `login`, `logout`, `refresh` |
 | `lib/apiClient.ts` | **Cliente API único**: token cookie/localStorage, refresh en 401 + reintento, redirect a login si falla; `uploadFile()` |
 | `lib/toast.ts` | Wrapper sonner: `success/error/info/warning/promise` |
@@ -173,7 +174,9 @@ No existe `app/page.tsx` — el middleware redirige `/`.
 
 ---
 
-## RBAC del frontend (matriz resumida)
+## RBAC del frontend (matriz resumida + matriz por rol)
+
+Defaults por rol en `DEFAULT_ROLE_PERMISSIONS`; la matriz real se persiste en BD (`rol_permisos`) y se edita en la pestaña **Roles y Permisos**. Overrides por usuario (`usuario_permisos`) siguen en API pero **sin UI** (retirada del menú de usuario).
 
 | Módulo | admin | gerente | vendedor |
 |--------|-------|---------|----------|
@@ -183,6 +186,8 @@ No existe `app/page.tsx` — el middleware redirige `/`.
 | configuracion | edicion | **lectura** | sin_acceso |
 
 \* gerente: todo `edicion` salvo `configuracion: lectura`.
+
+**Grupos de módulos (sub-pestañas):** administrativo = dashboard, usuarios, reportes, configuracion, cobranza, importacion · operativo = productos, consulta_precios, cotizaciones, recomendaciones, pdf, ventas.
 
 ---
 

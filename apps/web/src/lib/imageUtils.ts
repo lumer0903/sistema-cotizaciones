@@ -13,17 +13,14 @@ export function getImageUrl(
 ): string {
   const defaultPlaceholder = size === '115' ? PLACEHOLDER_115 : PLACEHOLDER_150;
 
-  // Si no hay URL, devolver el placeholder según el tamaño requerido
   if (!url || url.trim() === '') {
     return defaultPlaceholder;
   }
 
-  // URLs absolutas (http/https) o cadenas Data URL en Base64
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
     return url;
   }
 
-  // Rutas relativas enviadas por el backend (ej. /images/placeholder-xxx.png)
   const cleanBase = API_BASE.replace(/\/+$/, '');
   const cleanPath = url.startsWith('/') ? url : `/${url}`;
 
@@ -37,6 +34,34 @@ export function handleImageError(
   e: React.SyntheticEvent<HTMLImageElement, Event>,
   size: '150' | '115' | string = '150'
 ) {
-  e.currentTarget.onerror = null; // Previene bucles infinitos de reintento
+  e.currentTarget.onerror = null;
   e.currentTarget.src = size === '115' ? PLACEHOLDER_115 : PLACEHOLDER_150;
+}
+
+const MAX_SIDE = 512;
+const JPEG_QUALITY = 0.85;
+
+export async function fileToDataUrl(file: File, maxSide = MAX_SIDE): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const width = Math.max(1, Math.round(bitmap.width * scale));
+  const height = Math.max(1, Math.round(bitmap.height * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('No se pudo procesar la imagen');
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+  return canvas.toDataURL('image/jpeg', JPEG_QUALITY);
+}
+
+export function isImageFile(file: File): boolean {
+  return file.type.startsWith('image/');
+}
+
+export function validateAvatarFile(file: File): string | null {
+  if (!isImageFile(file)) return 'Selecciona una imagen válida (PNG, JPEG o WebP)';
+  if (file.size > 2 * 1024 * 1024) return 'La imagen no debe superar 2 MB';
+  return null;
 }

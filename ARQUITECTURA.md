@@ -125,6 +125,12 @@ POST /api/auth/refresh → verifica firma + type=refresh + bcrypt hash
                         → rota ambos tokens → re-setea cookies
 
 POST /api/auth/logout  → limpia refresh_token_hash + cookies
+
+GET  /api/auth/me      → usuario (nombre, email, rol, avatar_url, permisos)
+PATCH /api/auth/password → cambia contraseña (bcrypt)
+PATCH /api/auth/profile  → actualiza nombre y/o email
+PATCH /api/auth/avatar   → setea foto (data URL base64, máx ~512 KB)
+DELETE /api/auth/avatar  → elimina foto
 ```
 
 - Secrets con fallbacks inseguros (`'dev-secret-change-in-production'`).
@@ -132,11 +138,11 @@ POST /api/auth/logout  → limpia refresh_token_hash + cookies
 
 ### Roles
 
-Enum real: **`admin` | `gerente` | `vendedor`** (`packages/shared/src/constants/enums.ts`).
+Catálogo dinámico en BD (`model Rol` + `model RolPermiso`); `Usuario.rol` es **string código** (JWT/`@Roles` siguen igual). Defaults seed: **`admin` | `gerente` | `vendedor`** (`es_sistema: true`). Matriz admin siempre `edicion` (bloqueada en UI y API).
 
-- RBAC completo definido en `packages/shared/src/auth/rbac.ts` (`puede()`, niveles `sin_acceso < lectura < edicion`).
-- **Backend:** `RolesGuard` **por controller** (`@UseGuards(JwtAuthGuard, RolesGuard)`) + decorador `@Roles(...)` en endpoints sensibles (usuarios, categorías, almacenes, dashboard, PUT configuración). Sin `@Roles` → solo `JwtAuthGuard`. No está como `APP_GUARD` global (ese orden rompería `user` antes del JWT).
-- **Frontend:** `usePermissions()` + `ProtectedRoute` en layouts + `middleware.ts` estricto (rutas `/admin` y `/vendedor` exigen sesión y cookie `userRole`).
+- RBAC en `packages/shared/src/auth/rbac.ts` (`puede()`, niveles `sin_acceso < lectura < edicion`, `GRUPOS_MODULOS` administrativo/operativo, `esMatrizBloqueada`).
+- **Backend:** módulo `roles` (CRUD + permisos) con `@Roles('admin')`; `RolesGuard` **por controller** + `@Roles(...)` en endpoints sensibles (usuarios, roles, categorías, almacenes, dashboard, PUT configuración). Sin `@Roles` → solo `JwtAuthGuard`. No está como `APP_GUARD` global (ese orden rompería `user` antes del JWT).
+- **Frontend:** `usePermissions()` + `ProtectedRoute` en layouts + `middleware.ts` estricto (rutas `/admin` y `/vendedor` exigen sesión y cookie `userRole`); pestaña Roles y Permisos en `/admin/usuarios`.
 
 ---
 
