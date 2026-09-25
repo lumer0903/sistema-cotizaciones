@@ -40,7 +40,9 @@ export class CotizacionesService {
             (acc: number, item: any) => acc + Number(item.cantidad) * Number(item.precio_unitario),
             0,
         );
-        const total = subtotal + Number(costo_carreta);
+        // Coherente con actualizar: si no se incluye carreta, no suma ni almacena costo
+        const carreta = incluye_carreta ? Number(costo_carreta) : 0;
+        const total = subtotal + carreta;
 
         const numero = data.numero || await this.generarNumeroSecuencial();
 
@@ -55,7 +57,7 @@ export class CotizacionesService {
                         tipo_precio: tipo_precio as any,
                         observaciones,
                         incluye_carreta: Boolean(incluye_carreta),
-                        costo_carreta: Number(costo_carreta),
+                        costo_carreta: carreta,
                         subtotal,
                         total,
                         detalle: {
