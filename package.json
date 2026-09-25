@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "dev": "turbo run dev --parallel",
+    "dev": "turbo run dev",
     "dev:api": "turbo run dev --filter=@goldcontinent/api",
     "dev:web": "turbo run dev --filter=@goldcontinent/web",
     "dev:ai": "turbo run dev --filter=@goldcontinent/ai-service",
