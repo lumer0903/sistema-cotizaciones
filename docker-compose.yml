@@ -56,7 +56,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
       JWT_EXPIRES_IN: 8h
       CLIENT_URL: http://localhost:3000
-      IA_URL: http://ai-service:8000
+      AI_SERVICE_URL: http://ai-service:8000
       PORT: 3001
     ports:
       - "3001:3001"
@@ -76,7 +76,6 @@ services:
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:3001
-      NEXT_PUBLIC_IA_URL: http://localhost:8000
     ports:
       - "3000:3000"
     depends_on:

@@ -6,7 +6,6 @@
     "dev": "turbo run dev",
     "dev:api": "turbo run dev --filter=@goldcontinent/api",
     "dev:web": "turbo run dev --filter=@goldcontinent/web",
-    "dev:ai": "turbo run dev --filter=@goldcontinent/ai-service",
     "build": "turbo run build",
     "build:api": "turbo run build --filter=@goldcontinent/api",
     "build:web": "turbo run build --filter=@goldcontinent/web",
