@@ -124,8 +124,8 @@ No existe `app/page.tsx` — el middleware redirige `/`.
 
 | Pieza | Contenido |
 |-------|-----------|
-| `api/cotizacionApi.ts` | 415 líneas: CRUD cotizaciones, estados, PDF, clientes, próximo número, cobranza (listado/detalle/pagos), recomendaciones IA |
-| `components/` | `CotizacionesTable` (usa `Table*`), `AgregarProductoModal`, `ClienteAutocomplete`, `RecomendacionesPanel`, `ResumenCotizacionCard` (card Resumen estilo Figma — subtotales, toggle Carreta verde, botón Continuar; usada en admin crear/editar), `index` (`CardRecomendacion` eliminado — sin uso) |
+| `api/cotizacionApi.ts` | 422 líneas: CRUD cotizaciones, filtros (`buscar`/`fecha`/`estado`), estados (máquina de transiciones), PDF, clientes, próximo número, cobranza (listado/detalle/pagos), recomendaciones IA |
+| `components/` | `CotizacionesTable` (usa `Table*`), `CotizacionesFormulario` (crear/editar, base-path admin/vendedor), `CotizacionesEditarLoader` (carga+hidratación de edición), `AgregarProductoModal`, `ClienteAutocomplete` (debounce 300 ms + teclado), `RecomendacionesPanel`, `ResumenCotizacionCard` (card Resumen estilo Figma — subtotales, toggle Carreta verde, botón Continuar; usada en admin crear/editar), `index` (`CardRecomendacion` eliminado — sin uso) |
 | `store/useCrearCotizacionStore.ts` | Zustand + `persist` (`crear-cotizacion-draft`): cliente, items, tipo precio, carreta, `editandoId`, acciones del carrito |
 | `types/cotizacion.ts` | Tipos de la feature |
 

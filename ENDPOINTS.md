@@ -134,13 +134,13 @@ Catálogo dinámico de roles (`admin`/`gerente`/`vendedor` son de sistema, seed)
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| POST | `/api/cotizaciones` | JWT | Crea con detalle: `{id_cliente, tipo_precio?, observaciones?, incluye_carreta?, costo_carreta?, detalle[], numero?}` — estado inicial `borrador` |
-| GET | `/api/cotizaciones` | JWT | Lista paginada. Query: `page`, `limit` (def. 10), `estado`, `id_cliente` |
+| POST | `/api/cotizaciones` | JWT | Crea con detalle: `{id_cliente, tipo_precio?, observaciones?, incluye_carreta?, costo_carreta?, detalle[], numero?}` — estado inicial `borrador` · valida cada línea (`id_producto>0`, `cantidad>0`, `precio_unitario>=0`) · `incluye_carreta:false` ignora `costo_carreta` |
+| GET | `/api/cotizaciones` | JWT | Lista paginada. Query: `page`, `limit` (def. 10, máx. 1000), `estado`, `id_cliente`, `buscar` (número o cliente, case-insensitive), `fecha` (`YYYY-MM-DD`, día local) |
 | GET | `/api/cotizaciones/proximo-numero` | JWT | Siguiente correlativo `COT-001` |
 | GET | `/api/cotizaciones/:id` | JWT | Detalle con líneas, cliente, usuario y pagos |
 | GET | `/api/cotizaciones/:id/export-pdf` | JWT | Exporta PDF (Puppeteer/Chromium, HTML→A4) como attachment · misma vista que la preview del OJO |
-| PATCH | `/api/cotizaciones/:id` | JWT | Actualiza solo si estado = `borrador` |
-| PATCH | `/api/cotizaciones/:id/estado` | JWT | Cambia estado: `borrador`, `enviada`, `aprobada`, `parcialmente_pagada`, `rechazada` |
+| PATCH | `/api/cotizaciones/:id` | JWT | Actualiza solo si estado = `borrador` · si envía `detalle`, valida líneas y recalcula `subtotal`/`total` · `incluye_carreta:true` sin `costo_carreta` conserva el actual |
+| PATCH | `/api/cotizaciones/:id/estado` | JWT | Cambia estado con **máquina de transiciones** (400 en saltos inválidos): `borrador→enviada`; `enviada→{borrador, aprobada, parcialmente_pagada, rechazada}`; `parcialmente_pagada→{aprobada, rechazada}`; `aprobada` terminal; `rechazada→borrador`. Pagos cambian estado por su vía (`registrarPago`) |
 | POST | `/api/cotizaciones/:id/pagos` | JWT | Registra abono: `{monto, metodo_pago, referencia?}` — valida saldo |
 | POST | `/api/cotizaciones/recomendar-item` | JWT | Recomendaciones IA por ítem: `{id_producto_base, id_cliente?, id_almacen?, tipo_precio?}` → Similar/Upsell/Equilibrio |
 
@@ -216,4 +216,4 @@ Catálogo dinámico de roles (`admin`/`gerente`/`vendedor` son de sistema, seed)
 
 - `modules/auth/auth.controller.ts` (funciones Express) está **huérfano**; el registrado es `adapters/auth.controller.ts`.
 - `CotizacionesController` y `RecomendacionesController` comparten prefijo `cotizaciones` sin colisión de rutas.
-- Endpoints de cotizaciones usan `@Body() body: any` → sin validación de DTO.
+- Endpoints de cotizaciones usan `@Body() body: any` (sin DTOs), pero el service valida imperativamente: detalle (producto/cantidad/precio), catálogo y máquina de estados, y carreta.

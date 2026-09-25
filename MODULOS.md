@@ -41,11 +41,12 @@ Catálogo de flores/artículos de floristería con precios duales (normal/distri
 - Umbral "bajo stock" hardcodeado a `<= 20` (ignora `stock_minimo` del producto).
 
 ### cotizaciones
-**Núcleo del negocio.** Ciclo de vida: `borrador → enviada → aprobada / parcialmente_pagada / rechazada`. Numeración correlativa `COT-001`, detalle de ítems, carreta (envío), pagos/abonos y exportación PDF (**Puppeteer/Chromium**: HTML → A4; preview del OJO = mismo archivo descargado).
+**Núcleo del negocio.** Ciclo de vida con **máquina de transiciones validada en backend** (400 en saltos): `borrador → enviada → aprobada / parcialmente_pagada / rechazada` (`aprobada` terminal; `rechazada → borrador` reabre; los pagos cambian estado por su vía en `registrarPago`). Numeración correlativa `COT-001`, detalle de ítems, carreta (envío), pagos/abonos y exportación PDF (**Puppeteer/Chromium**: HTML → A4; preview del OJO = mismo archivo descargado).
 
-- Sin DTOs (`body: any`) → sin validación.
+- Sin DTOs (`body: any`), pero validación imperativa en el service: detalle (`id_producto>0`, `cantidad>0`, `precio>=0`), catálogo/máquina de estados y coherencia de carreta.
+- **41 tests unitarios** (`cotizaciones.service.test.ts`, vitest): máquina de transiciones, validación de detalle, carreta y guardrails de pagos.
 - `registrarPago` está **duplicado** en `cobranza.service.ts`.
-- `cambiarEstado` no valida máquina de transiciones ni escribe `tiempo_fin`.
+- `cambiarEstado` no escribe `tiempo_fin` (KPI tiempo muerto sigue en 0).
 - `fecha_vencimiento` nunca se escribe → cobranza no puede marcar "vencida".
 - Submódulo `recomendaciones/` anidado (importado 2 veces en `app.module`).
 
@@ -109,9 +110,9 @@ Scaffold DDD vacío (domain/application/adapters/infrastructure con `.gitkeep`).
 `api/login.ts` — llamada a `POST /auth/login`. El login real de la UI usa `AuthProvider` (`lib/authProvider`).
 
 ### cotizaciones
-Feature principal: listar con filtros, crear/editar borradores (store Zustand persist), cambiar estado, detalle, export PDF, autocomplete de cliente, creación rápida de clientes y **panel de recomendaciones IA** (Similar/Upsell/Equilibrio). También integra la API de cobranza (listado, detalle, pagos).
+Feature principal: listar con filtros server-side (`buscar`/`fecha`/`estado`, con debounce), crear/editar con **formulario unificado** (`CotizacionesFormulario` + `CotizacionesEditarLoader`), store Zustand persist con dedup de clientes, cambiar estado **con máquina + `ConfirmModal` en sensibles** (aprobar/rechazar/parcial) en el detalle, detalle, export PDF, autocomplete de cliente con debounce/teclado, creación rápida de clientes y **panel de recomendaciones IA** (Similar/Upsell/Equilibrio). También integra la API de cobranza (listado, detalle, pagos).
 
-- Components: `CotizacionesTable`, `AgregarProductoModal`, `ClienteAutocomplete`, `RecomendacionesPanel`.
+- Components: `CotizacionesTable`, `CotizacionesFormulario`, `CotizacionesEditarLoader`, `AgregarProductoModal`, `ClienteAutocomplete`, `RecomendacionesPanel`, `ResumenCotizacionCard`.
 
 ### inventario
 ✅ **Frontend al 100%.** CRUD productos (RHF+zod), movimientos, transferencias entre almacenes, kardex + export CSV, stock/alertas, configuración de colores por producto.
