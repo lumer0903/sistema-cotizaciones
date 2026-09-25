@@ -1,48 +1,32 @@
 'use client';
 
-import { FileText, Plus, Search, Filter, ChevronDown, Eye, Edit, Send, Download } from 'lucide-react';
+import { FileText, Plus, Search, Filter, ChevronDown, Eye, Edit, Download } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
-import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState, useMemo } from 'react';
-import { EstadoCotizacion } from '@goldcontinent/shared/constants/enums';
 import Link from 'next/link';
 import { Badge, ESTADO_BADGE } from '@/components/ui';
-import { exportarPdfCotizacion } from '@/features/cotizaciones/api/cotizacionApi';
+import {
+  exportarPdfCotizacion,
+  getCotizaciones,
+} from '@/features/cotizaciones/api/cotizacionApi';
+import { CotizacionItem, EstadoCotizacion } from '@/features/cotizaciones/types/cotizacion';
 import { showToast } from '@/lib/toast';
-
-interface Cotizacion {
-  id_cotizacion: number;
-  numero: string;
-  cliente_nombre: string;
-  total: number;
-  estado: EstadoCotizacion;
-  created_at: string;
-  tiempo_inicio: string;
-}
-
-const ESTADO_LABELS: Record<EstadoCotizacion, string> = {
-  borrador: 'Borrador',
-  enviada: 'Enviado',
-  parcialmente_pagada: 'PARCIAL',
-  aprobada: 'Aprobada',
-  rechazada: 'Rechazada',
-};
 
 export default function CotizacionesPage() {
   const { usuario } = useAuth();
-  const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);
+  const [cotizaciones, setCotizaciones] = useState<CotizacionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [fecha, setFecha] = useState('');
-  const [estadoFilter, setEstadoFilter] = useState<EstadoCotizacion | 'todos'>('todos');
+  const [estadoFilter, setEstadoFilter] = useState<EstadoCotizacion | 'TODOS'>('TODOS');
   const [currentPage, setCurrentPage] = useState(1);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const itemsPerPage = 20;
 
-  const handleDescargarPdf = async (cot: Cotizacion) => {
+  const handleDescargarPdf = async (cot: CotizacionItem) => {
     setDownloadingId(cot.id_cotizacion);
     try {
-      await exportarPdfCotizacion(cot.id_cotizacion, `${cot.numero}.pdf`);
+      await exportarPdfCotizacion(cot.id_cotizacion, `${cot.codigo}.pdf`);
       showToast.success('PDF descargado');
     } catch (e: any) {
       showToast.error(e?.message || 'No se pudo descargar el PDF');
@@ -51,60 +35,47 @@ export default function CotizacionesPage() {
     }
   };
 
-  // Obtener dataset filtrado (sin paginado de servidor, con filtros al API)
+  // Obtener dataset filtrado (filtros reales en API; sin fallback silencioso)
   useEffect(() => {
+    let cancelado = false;
     const fetchCotizaciones = async () => {
       try {
         setLoading(true);
-        let url = '/cotizaciones?limit=1000';
-        if (search.trim()) {
-          url += `&buscar=${encodeURIComponent(search.trim())}`;
-        }
-        if (fecha) {
-          url += `&fecha=${fecha}`;
-        }
-        if (estadoFilter !== 'todos') {
-          url += `&estado=${estadoFilter}`;
-        }
-        const data = await apiClient(url);
-        if (data.success) {
-          setCotizaciones(data.data);
-        }
+        const res = await getCotizaciones({
+          buscar: search,
+          fecha,
+          estado: estadoFilter,
+          limit: 1000,
+        });
+        if (!cancelado) setCotizaciones(res.data);
       } catch (error) {
         console.error('Error fetching cotizaciones:', error);
-        // Fallback: intentar sin parámetros
-        try {
-          const fallbackData = await apiClient('/cotizaciones');
-          if (fallbackData.success) {
-            setCotizaciones(fallbackData.data);
-          }
-        } catch (fallbackError) {
-          console.error('Fallback también falló:', fallbackError);
-        }
+        if (!cancelado) showToast.error('No se pudieron cargar las cotizaciones');
       } finally {
-        setLoading(false);
+        if (!cancelado) setLoading(false);
       }
     };
 
     fetchCotizaciones();
+    return () => {
+      cancelado = true;
+    };
   }, [search, fecha, estadoFilter]);
 
-  // Filtrado reactivo en cliente como fallback
+  // Filtrado reactivo en cliente (refuerza los filtros del servidor)
   const filteredCotizaciones = useMemo(() => {
     return cotizaciones.filter((c) => {
       const matchBuscar =
         !search.trim() ||
-        c.numero.toUpperCase().includes(search.toUpperCase()) ||
-        c.cliente_nombre?.toUpperCase().includes(search.toUpperCase());
-
-      const matchFecha = !fecha || c.created_at.includes(fecha);
+        c.codigo.toUpperCase().includes(search.toUpperCase()) ||
+        c.cliente?.toUpperCase().includes(search.toUpperCase());
 
       const matchEstado =
-        estadoFilter === 'todos' || c.estado === estadoFilter;
+        estadoFilter === 'TODOS' || c.estado === estadoFilter;
 
-      return matchBuscar && matchFecha && matchEstado;
+      return matchBuscar && matchEstado;
     });
-  }, [cotizaciones, search, fecha, estadoFilter]);
+  }, [cotizaciones, search, estadoFilter]);
 
   // Paginación local
   const totalPages = Math.ceil(filteredCotizaciones.length / itemsPerPage) || 1;
@@ -161,17 +132,17 @@ export default function CotizacionesPage() {
             <select
               value={estadoFilter}
               onChange={(e) => {
-                setEstadoFilter(e.target.value as EstadoCotizacion | 'todos');
+                setEstadoFilter(e.target.value as EstadoCotizacion | 'TODOS');
                 setCurrentPage(1);
               }}
               className="pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm appearance-none"
             >
-              <option value="todos">Todos los estados</option>
-              <option value="borrador">Borrador</option>
-              <option value="enviada">Enviada</option>
-              <option value="parcialmente_pagada">Parcialmente Pagada</option>
-              <option value="aprobada">Aprobada</option>
-              <option value="rechazada">Rechazada</option>
+              <option value="TODOS">Todos los estados</option>
+              <option value="BORRADOR">Borrador</option>
+              <option value="ENVIADO">Enviado</option>
+              <option value="PARCIALMENTE_PAGADA">Parcialmente Pagada</option>
+              <option value="APROBADO">Aprobado</option>
+              <option value="RECHAZADO">Rechazado</option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
           </div>
@@ -199,15 +170,13 @@ export default function CotizacionesPage() {
                 <div key={cot.id_cotizacion} className="p-4 hover:bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <span className="font-semibold text-gray-900">{cot.numero}</span>
+                      <span className="font-semibold text-gray-900">{cot.codigo}</span>
                       <Badge variant={ESTADO_BADGE[cot.estado] || 'borrador'} size="estado">
-                        {ESTADO_LABELS[cot.estado]}
+                        {cot.estado === 'PARCIALMENTE_PAGADA' ? 'PARCIAL' : cot.estado}
                       </Badge>
-                      <span className="text-sm text-gray-500">
-                        {new Date(cot.created_at).toLocaleDateString('es-PE')}
-                      </span>
+                      <span className="text-sm text-gray-500">{cot.fecha}</span>
                     </div>
-                    <p className="text-gray-900 font-medium mt-1 truncate sm:max-w-md">{cot.cliente_nombre || 'Cliente no especificado'}</p>
+                    <p className="text-gray-900 font-medium mt-1 truncate sm:max-w-md">{cot.cliente || 'Cliente no especificado'}</p>
                     <p className="text-lg font-bold text-brand-primary mt-1">S/ ${cot.total.toLocaleString()}</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -218,21 +187,16 @@ export default function CotizacionesPage() {
                     >
                       <Eye className="h-4 w-4" />
                     </Link>
-                    {cot.estado === 'borrador' && (
+                    {cot.estado === 'BORRADOR' && (
                       <>
                         <Link
-                          href={`/admin/cotizaciones/editar/${cot.id_cotizacion}`}
+                          href={`/vendedor/cotizaciones/editar/${cot.id_cotizacion}`}
                           className="p-2 text-gray-500 hover:text-brand-primary hover:bg-gray-100 rounded-lg transition-colors"
                           title="Editar"
                         >
                           <Edit className="h-4 w-4" />
                         </Link>
                       </>
-                    )}
-                    {cot.estado === 'enviada' && (
-                      <button className="p-2 text-gray-500 hover:text-tienda hover:bg-gray-100 rounded-lg transition-colors" title="Reenviar">
-                        <Send className="h-4 w-4" />
-                      </button>
                     )}
                     <button
                       type="button"

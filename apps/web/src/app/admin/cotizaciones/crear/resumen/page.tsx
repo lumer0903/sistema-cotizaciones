@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { ArrowLeft, FileText, Download, Save, Loader2 } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import {
@@ -30,6 +30,8 @@ import { formatCode } from '@/lib/formatters';
 
 export default function ResumenCotizacionPage() {
   const router = useRouter();
+  const pathname = usePathname() || '';
+  const base = pathname.startsWith('/vendedor') ? '/vendedor/cotizaciones' : '/admin/cotizaciones';
   const {
     numeroCotizacion,
     cliente,
@@ -231,7 +233,7 @@ export default function ResumenCotizacionPage() {
       exported = await executeExport(idCotizacionGuardada);
     }
     if (exported) {
-      router.push('/admin/cotizaciones');
+      router.push(base);
     }
   };
 
@@ -246,7 +248,7 @@ export default function ResumenCotizacionPage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => router.push('/admin/cotizaciones/crear')}
+          onClick={() => router.push(`${base}/crear`)}
         >
           <ArrowLeft className="size-4" /> Volver a crear
         </Button>

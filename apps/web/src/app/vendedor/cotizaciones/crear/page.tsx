@@ -58,13 +58,24 @@ interface DetalleItem {
   tipo_venta: 'unidad' | 'docena' | 'mayor';
   cantidad: number;
   precio_unitario: number;
-  descuento_item: number;
   subtotal: number;
 }
 
 type TipoVenta = 'unidad' | 'docena' | 'mayor';
 type TipoPrecio = 'normal' | 'distribuidor';
 type TipoPago = 'contado' | 'credito';
+
+const FORM_DATA_INICIAL = {
+  id_cliente: '',
+  tipo_precio: 'normal' as TipoPrecio,
+  tipo_venta: 'unidad' as TipoVenta,
+  tipo_pago: 'contado' as TipoPago,
+  dias_plazo: '',
+  observaciones: '',
+  incluye_carreta: true,
+  costo_carreta: 15,
+  fecha_vencimiento: '',
+};
 
 export default function VendedorCotizacionCrearPage() {
   const { usuario } = useAuth();
@@ -82,17 +93,7 @@ export default function VendedorCotizacionCrearPage() {
 
   const [formData, setFormData] = useState(() => {
     if (typeof window === 'undefined') {
-      return {
-        id_cliente: '',
-        tipo_precio: 'normal' as TipoPrecio,
-        tipo_venta: 'unidad' as TipoVenta,
-        tipo_pago: 'contado' as TipoPago,
-        dias_plazo: '',
-        observaciones: '',
-        incluye_carreta: true,
-        costo_carreta: 15,
-        fecha_vencimiento: '',
-      };
+      return { ...FORM_DATA_INICIAL };
     }
     try {
       const raw = localStorage.getItem(VENDEDOR_DRAFT_KEY);
@@ -103,17 +104,7 @@ export default function VendedorCotizacionCrearPage() {
     } catch {
       /* draft corrupto */
     }
-    return {
-      id_cliente: '',
-      tipo_precio: 'normal' as TipoPrecio,
-      tipo_venta: 'unidad' as TipoVenta,
-      tipo_pago: 'contado' as TipoPago,
-      dias_plazo: '',
-      observaciones: '',
-      incluye_carreta: true,
-      costo_carreta: 15,
-      fecha_vencimiento: '',
-    };
+    return { ...FORM_DATA_INICIAL };
   });
 
   const [detalles, setDetalles] = useState<DetalleItem[]>(() => {
@@ -181,7 +172,6 @@ export default function VendedorCotizacionCrearPage() {
           tipo_venta: formData.tipo_venta,
           cantidad: 1,
           precio_unitario: precio,
-          descuento_item: 0,
           subtotal: precio,
         },
       ]);
@@ -269,7 +259,6 @@ export default function VendedorCotizacionCrearPage() {
           tipo_venta: formData.tipo_venta,
           cantidad: 1,
           precio_unitario: precio,
-          descuento_item: 0,
           subtotal: precio,
         },
       ]);
@@ -339,7 +328,7 @@ export default function VendedorCotizacionCrearPage() {
     const t = window.setTimeout(async () => {
       setAutosaving(true);
       try {
-        const id = await autosaveCotizacion({
+        const res = await autosaveCotizacion({
           cliente: { ...clienteSnap, nombre: clienteSnap.nombre.trim() },
           items,
           tipoPrecioCliente: formData.tipo_precio === 'distribuidor' ? 'DISTRIBUIDOR' : 'TIENDA',
@@ -350,8 +339,8 @@ export default function VendedorCotizacionCrearPage() {
           tipoPago: formData.tipo_pago,
           fechaVencimiento: formData.fecha_vencimiento,
         });
-        if (id != null && id !== idCotizacionGuardada) {
-          setIdCotizacionGuardada(id);
+        if (res != null && res.idCotizacion !== idCotizacionGuardada) {
+          setIdCotizacionGuardada(res.idCotizacion);
         }
       } catch (e) {
         console.warn('[autosave vendedor] No se pudo guardar:', e);
@@ -370,6 +359,10 @@ export default function VendedorCotizacionCrearPage() {
       /* ignore */
     }
     setIdCotizacionGuardada(null);
+    // Vaciar también el estado: si no, el efecto de persistencia reescribe el
+    // borrador recién borrado y "resucita" en la próxima visita.
+    setFormData({ ...FORM_DATA_INICIAL });
+    setDetalles([]);
   };
 
   const handleSubmit = async (estado: 'borrador' | 'enviada') => {
@@ -397,7 +390,7 @@ export default function VendedorCotizacionCrearPage() {
         precio_unitario: d.precio_unitario,
       }));
 
-      const id = await autosaveCotizacion({
+      const res = await autosaveCotizacion({
         cliente: clienteSnap,
         items,
         tipoPrecioCliente: formData.tipo_precio === 'distribuidor' ? 'DISTRIBUIDOR' : 'TIENDA',
@@ -407,9 +400,9 @@ export default function VendedorCotizacionCrearPage() {
         idCotizacionGuardada,
       });
 
-      if (id != null && estado === 'enviada') {
+      if (res != null && estado === 'enviada') {
         const { cambiarEstadoCotizacion } = await import('@/features/cotizaciones/api/cotizacionApi');
-        await cambiarEstadoCotizacion(id, 'enviada');
+        await cambiarEstadoCotizacion(res.idCotizacion, 'enviada');
       }
 
       limpiarDraft();
@@ -542,7 +535,6 @@ export default function VendedorCotizacionCrearPage() {
                     <TableHead className="text-center">Tipo</TableHead>
                     <TableHead className="text-center">Cant.</TableHead>
                     <TableHead className="text-right">P. Unit.</TableHead>
-                    <TableHead className="text-right">Desc.</TableHead>
                     <TableHead className="text-right">Subtotal</TableHead>
                     <TableHead className="text-center"></TableHead>
                   </TableRow>
@@ -572,22 +564,6 @@ export default function VendedorCotizacionCrearPage() {
                       </TableCell>
                       <TableCell className="text-right text-sm text-gray-900">
                         S/ {item.precio_unitario.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="w-20 mx-auto">
-                          <Input
-                            type="number"
-                            min={0}
-                            sizeVariant="sm"
-                            value={item.descuento_item}
-                            onChange={(e) => {
-                              const newDetalles = [...detalles];
-                              newDetalles[index] = { ...newDetalles[index], descuento_item: Number(e.target.value) || 0 };
-                              setDetalles(newDetalles);
-                            }}
-                            className="text-center"
-                          />
-                        </div>
                       </TableCell>
                       <TableCell className="text-right font-medium text-gray-900">
                         S/ {item.subtotal.toLocaleString('es-PE', { minimumFractionDigits: 2 })}

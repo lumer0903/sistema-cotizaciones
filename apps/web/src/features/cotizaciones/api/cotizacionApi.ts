@@ -137,11 +137,8 @@ export async function getCotizaciones(
         const data = await apiClient(endpoint);
         return normalize(data);
     } catch (error) {
-        console.warn(`[cotizacionApi] Error al consultar ${endpoint}.`, error);
-        if (queryString) {
-            const fallbackData = await apiClient('/cotizaciones');
-            return normalize(fallbackData);
-        }
+        // Sin fallback silencioso: el caller muestra el error y no filtra en falso
+        console.error(`[cotizacionApi] Error al consultar ${endpoint}.`, error);
         throw error;
     }
 }
@@ -168,14 +165,10 @@ export async function obtenerProductosImportados(): Promise<ProductoBase[]> {
 }
 
 export async function getProximoNumeroCotizacion(): Promise<string> {
-    try {
-        const res = await apiClient('/cotizaciones/proximo-numero') as any;
-        const numero = res?.numero || res?.data?.numero;
-        if (typeof numero === 'string' && numero.trim()) return numero.trim();
-    } catch (e) {
-        console.warn('[cotizacionApi] No se pudo obtener próximo número:', e);
-    }
-    return 'COT-001';
+    const res = await apiClient('/cotizaciones/proximo-numero') as any;
+    const numero = res?.numero || res?.data?.numero;
+    if (typeof numero === 'string' && numero.trim()) return numero.trim();
+    throw new Error('La API no devolvió el próximo número de cotización');
 }
 
 export interface ClienteApi {

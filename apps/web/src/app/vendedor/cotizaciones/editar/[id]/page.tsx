@@ -1,7 +1,7 @@
-﻿'use client';
+'use client';
 
 import { CotizacionEditarLoader } from '@/features/cotizaciones/components/CotizacionEditarLoader';
 
-export default function EditarCotizacionPage() {
+export default function EditarCotizacionVendedorPage() {
   return <CotizacionEditarLoader />;
 }

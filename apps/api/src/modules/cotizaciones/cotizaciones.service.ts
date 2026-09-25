@@ -84,13 +84,43 @@ export class CotizacionesService {
     }
 
     async listar(query: any) {
-        const page = Number(query.page) || 1;
-        const limit = Number(query.limit) || 10;
+        const page = Math.max(Number(query.page) || 1, 1);
+        const limit = Math.min(Math.max(Number(query.limit) || 10, 1), 1000);
         const skip = (page - 1) * limit;
 
+        const ESTADOS_VALIDOS = [
+            'borrador',
+            'enviada',
+            'parcialmente_pagada',
+            'aprobada',
+            'rechazada',
+        ];
+
         const where: any = {};
-        if (query.estado) where.estado = query.estado;
+        if (query.estado) {
+            const estado = String(query.estado).trim().toLowerCase();
+            if (ESTADOS_VALIDOS.includes(estado)) where.estado = estado;
+        }
         if (query.id_cliente) where.id_cliente = Number(query.id_cliente);
+
+        // Búsqueda por número de cotización o por cliente (nombre o documento)
+        const buscar = String(query.buscar ?? '').trim().slice(0, 100);
+        if (buscar) {
+            where.OR = [
+                { numero: { contains: buscar, mode: 'insensitive' } },
+                { cliente: { nombre: { contains: buscar, mode: 'insensitive' } } },
+                { cliente: { ruc_dni: { contains: buscar, mode: 'insensitive' } } },
+            ];
+        }
+
+        // Filtro por día (YYYY-MM-DD) en horario local del servidor
+        const fecha = String(query.fecha ?? '').trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+            where.created_at = {
+                gte: new Date(`${fecha}T00:00:00`),
+                lte: new Date(`${fecha}T23:59:59.999`),
+            };
+        }
 
         const [total, data] = await Promise.all([
             this.prisma.cotizacion.count({ where }),

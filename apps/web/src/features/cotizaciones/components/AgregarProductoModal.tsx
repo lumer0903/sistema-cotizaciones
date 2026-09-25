@@ -209,7 +209,7 @@ export default function AgregarProductoModal({
                                 type="checkbox"
                                 checked={tipoColor === 'SURTIDO'}
                                 onChange={() => setTipoColor('SURTIDO')}
-                                className="size-4 rounded accent-amber-500 cursor-pointer"
+                                className="size-4 rounded accent-brand-primary cursor-pointer"
                             />
                             Surtido
                         </label>
@@ -218,7 +218,7 @@ export default function AgregarProductoModal({
                                 type="checkbox"
                                 checked={tipoColor === 'ESPECIFICO'}
                                 onChange={() => setTipoColor('ESPECIFICO')}
-                                className="size-4 rounded accent-amber-500 cursor-pointer"
+                                className="size-4 rounded accent-brand-primary cursor-pointer"
                             />
                             Color específico
                         </label>
@@ -303,9 +303,9 @@ export default function AgregarProductoModal({
 
                 {/* Escala de Precios Dinámica (Distribuidor vs. Tienda) */}
                 <div
-                    className={`w-full rounded-2xl border p-3.5 transition-colors ${esTienda
-                            ? 'bg-[#EFF6FF] border-[#BFDBFE] text-[#1D4ED8]'
-                            : 'bg-[#FAF3F0] border-[#E8D8CE] text-[#A13A17]'
+                    className={`w-full rounded-2xl border p-3 transition-colors ${esTienda
+                        ? 'bg-[#EFF6FF] border-[#BFDBFE] text-[#1D4ED8]'
+                        : 'bg-[#FAF3F0] border-[#E8D8CE] text-[#A13A17]'
                         }`}
                 >
                     <span className="text-center text-[11px] font-extrabold uppercase tracking-wide block mb-2">
@@ -354,8 +354,8 @@ export default function AgregarProductoModal({
                         disabled={sinStock}
                         onClick={handleGuardar}
                         className={`px-8 py-2.5 text-sm font-bold rounded-xl shadow-none transition-colors ${sinStock
-                                ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
-                                : 'bg-brand-primary hover:bg-brand-hover text-white'
+                            ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
+                            : 'bg-brand-primary hover:bg-brand-hover text-white'
                             }`}
                     >
                         Guardar

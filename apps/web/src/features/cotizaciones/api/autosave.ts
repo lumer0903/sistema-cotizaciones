@@ -1,5 +1,6 @@
 import {
   crearCliente,
+  buscarClientes,
   crearCotizacion,
   actualizarCotizacion,
   type CrearCotizacionPayload,
@@ -69,8 +70,17 @@ async function ensureCliente(
     });
     return cliente.id_cliente;
   }
+  // Evitar duplicados: si ya existe un cliente con el mismo nombre exacto, reutilizarlo
+  const nombreBuscado = cliente.nombre.trim();
+  const existentes = await buscarClientes(nombreBuscado, 10);
+  const exacto = existentes.find(
+    (c) => String(c.nombre || '').trim().toLowerCase() === nombreBuscado.toLowerCase()
+  );
+  if (exacto) {
+    return Number(exacto.id_cliente);
+  }
   const nuevo = await crearCliente({
-    nombre: cliente.nombre.trim(),
+    nombre: nombreBuscado,
     telefono: cliente.telefono || undefined,
     email: cliente.email || undefined,
     ruc_dni: cliente.ruc_dni || undefined,
@@ -92,10 +102,15 @@ function construirDetalle(items: AutosaveItem[]) {
     }));
 }
 
-/** Guarda borrador en servidor. Devuelve id de cotización o null si no hay datos suficientes. */
+export interface AutosaveResultado {
+  idCotizacion: number;
+  idCliente: number;
+}
+
+/** Guarda borrador en servidor. Devuelve ids de cotización y cliente, o null si no hay datos suficientes. */
 export async function autosaveCotizacion(
   params: AutosaveParams
-): Promise<number | null> {
+): Promise<AutosaveResultado | null> {
   const { cliente, items } = params;
   if (!puedeAutosave(cliente, items)) return null;
 
@@ -119,7 +134,7 @@ export async function autosaveCotizacion(
   if (params.idCotizacionGuardada != null) {
     const payload: ActualizarCotizacionPayload = base;
     await actualizarCotizacion(params.idCotizacionGuardada, payload);
-    return params.idCotizacionGuardada;
+    return { idCotizacion: params.idCotizacionGuardada, idCliente };
   }
 
   try {
@@ -128,13 +143,13 @@ export async function autosaveCotizacion(
       ...(params.numero ? { numero: params.numero } : {}),
     });
     const id = Number(cot?.id_cotizacion ?? cot?.id ?? 0);
-    return id > 0 ? id : null;
+    return id > 0 ? { idCotizacion: id, idCliente } : null;
   } catch (err: any) {
     const msg = String(err?.message || '').toLowerCase();
     if (msg.includes('correlativo') || msg.includes('duplicate') || msg.includes('unique')) {
       const cot = await crearCotizacion(base as CrearCotizacionPayload);
       const id = Number(cot?.id_cotizacion ?? cot?.id ?? 0);
-      return id > 0 ? id : null;
+      return id > 0 ? { idCotizacion: id, idCliente } : null;
     }
     throw err;
   }
