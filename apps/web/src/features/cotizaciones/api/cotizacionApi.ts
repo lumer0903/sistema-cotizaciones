@@ -323,7 +323,10 @@ export async function getCotizacionDetalle(id: string | number): Promise<Cotizac
 /** Descarga el PDF como Blob (para preview o descarga) */
 export async function getCotizacionPdfBlob(id: number | string): Promise<Blob> {
   const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('access_token')?.trim() || localStorage.getItem('token') || null
+      : null;
   const res = await fetch(`${base}/api/cotizaciones/${id}/export-pdf`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     credentials: 'include',

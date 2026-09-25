@@ -23,6 +23,15 @@ export class CotizacionesService {
             throw new BadRequestException('La cotización debe incluir al menos un producto en el detalle');
         }
 
+        const detalleInvalido = !detalle.every((it: any) =>
+            Number(it.id_producto) > 0 && Number(it.cantidad) > 0 && Number(it.precio_unitario) >= 0,
+        );
+        if (detalleInvalido) {
+            throw new BadRequestException(
+                'Cada línea del detalle requiere un producto válido, cantidad mayor a 0 y precio_unitario mayor o igual a 0',
+            );
+        }
+
         // Asegurar que el idUsuario sea válido o nulo si falla la extracción del JWT
         const userIdParsed = Number(idUsuario);
         const id_usuario = !isNaN(userIdParsed) && userIdParsed > 0 ? userIdParsed : null;
@@ -239,6 +248,17 @@ export class CotizacionesService {
             throw new BadRequestException('La cotización debe incluir al menos un producto en el detalle');
         }
 
+        if (Array.isArray(detalle)) {
+            const detalleInvalido = !detalle.every((it: any) =>
+                Number(it.id_producto) > 0 && Number(it.cantidad) > 0 && Number(it.precio_unitario) >= 0,
+            );
+            if (detalleInvalido) {
+                throw new BadRequestException(
+                    'Cada línea del detalle requiere un producto válido, cantidad mayor a 0 y precio_unitario mayor o igual a 0',
+                );
+            }
+        }
+
         const lineas = Array.isArray(detalle) ? detalle : null;
         const subtotal = lineas
             ? lineas.reduce(
@@ -246,9 +266,15 @@ export class CotizacionesService {
                 0,
             )
             : Number(actual.subtotal);
-        const carreta = incluye_carreta !== undefined
-            ? Number(costo_carreta ?? 0)
-            : Number(actual.costo_carreta);
+        let carreta: number;
+        if (incluye_carreta !== undefined) {
+            // Si se indica incluir pero no llega costo, conservar el actual (antes quedaba en 0)
+            carreta = incluye_carreta
+                ? Number(costo_carreta ?? actual.costo_carreta ?? 0)
+                : 0;
+        } else {
+            carreta = Number(actual.costo_carreta);
+        }
         const total = subtotal + carreta;
 
         try {
@@ -307,7 +333,26 @@ export class CotizacionesService {
             throw new BadRequestException(`Estado inválido: ${estado}`);
         }
 
-        await this.obtenerPorId(id);
+        const cot = await this.obtenerPorId(id);
+        const actual = String((cot as any).estado || 'borrador');
+
+        // Máquina de transiciones: prohíbe saltos arbitrarios (p.ej. borrador → aprobada,
+        // aprobada → enviada). Los pagos (registrarPago) actualizan el estado por su vía.
+        const TRANSICIONES: Record<string, string[]> = {
+            borrador: ['borrador', 'enviada'],
+            enviada: ['enviada', 'borrador', 'aprobada', 'parcialmente_pagada', 'rechazada'],
+            parcialmente_pagada: ['parcialmente_pagada', 'aprobada', 'rechazada'],
+            aprobada: ['aprobada'],
+            rechazada: ['rechazada', 'borrador'],
+        };
+        const validas = TRANSICIONES[actual];
+        if (!validas || !validas.includes(estado)) {
+            throw new BadRequestException(
+                `Transición no permitida: "${actual}" → "${estado}"`,
+            );
+        }
+
+        if (actual === estado) return cot;
 
         return this.prisma.cotizacion.update({
             where: { id_cotizacion: id },

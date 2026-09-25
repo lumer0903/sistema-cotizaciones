@@ -25,6 +25,7 @@ export default function MisCotizacionesPage() {
 
   // Estados de Filtros
   const [buscar, setBuscar] = useState('');
+  const [buscarDebounced, setBuscarDebounced] = useState('');
   const [fecha, setFecha] = useState('');
   const [estadoFilter, setEstadoFilter] = useState<EstadoCotizacion | 'TODOS'>('TODOS');
 
@@ -41,7 +42,7 @@ export default function MisCotizacionesPage() {
     try {
       setLoading(true);
       const res = await getCotizaciones({
-        buscar,
+        buscar: buscarDebounced,
         fecha,
         estado: estadoFilter,
         page: currentPage,
@@ -58,16 +59,22 @@ export default function MisCotizacionesPage() {
     } finally {
       setLoading(false);
     }
-  }, [buscar, fecha, estadoFilter, currentPage, limit]);
+  }, [buscarDebounced, fecha, estadoFilter, currentPage, limit]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
+  // Debounce del buscador (evita una consulta al servidor por tecla)
+  useEffect(() => {
+    const t = window.setTimeout(() => setBuscarDebounced(buscar), 300);
+    return () => window.clearTimeout(t);
+  }, [buscar]);
+
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [buscar, fecha, estadoFilter, limit]);
+  }, [buscarDebounced, fecha, estadoFilter, limit]);
 
   const totalPages = Math.ceil(totalItems / limit) || 1;
 
