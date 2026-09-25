@@ -119,7 +119,7 @@ export default function ReportesPage() {
               const pct = cotizaciones.total > 0 ? Math.round((value / cotizaciones.total) * 100) : 0;
               return (
                 <div key={key} className="flex items-center justify-between gap-3">
-                  <Badge variant={ESTADO_BADGE[key] ?? 'neutral'}>{label}</Badge>
+                  <Badge variant={ESTADO_BADGE[key] ?? 'neutral'} size="estado">{label}</Badge>
                   <div className="flex-1 mx-3">
                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div className="h-full bg-brand-primary rounded-full" style={{ width: `${pct}%` }} />

@@ -86,7 +86,7 @@ export async function getCotizaciones(
         query.append('fecha', params.fecha.trim());
     }
     if (params.estado && params.estado !== 'TODOS' && params.estado.trim() !== '') {
-        query.append('estado', params.estado);
+        query.append('estado', ESTADO_MAP[params.estado] ?? params.estado);
     }
     if (params.page && params.page > 1) {
         query.append('page', params.page.toString());
@@ -327,7 +327,8 @@ export async function getCotizacionDetalle(id: string | number): Promise<Cotizac
     return (res?.data ?? res) as CotizacionDetalle;
 }
 
-export async function exportarPdfCotizacion(id: number | string, filename?: string): Promise<void> {
+/** Descarga el PDF como Blob (para preview o descarga) */
+export async function getCotizacionPdfBlob(id: number | string): Promise<Blob> {
   const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const res = await fetch(`${base}/api/cotizaciones/${id}/export-pdf`, {
@@ -335,7 +336,17 @@ export async function exportarPdfCotizacion(id: number | string, filename?: stri
     credentials: 'include',
   });
   if (!res.ok) throw new Error('No se pudo generar el PDF');
-  const blob = await res.blob();
+  return res.blob();
+}
+
+/** URL de objeto para vista previa del PDF (revocar al cerrar) */
+export async function getCotizacionPdfObjectUrl(id: number | string): Promise<string> {
+  const blob = await getCotizacionPdfBlob(id);
+  return URL.createObjectURL(blob);
+}
+
+export async function exportarPdfCotizacion(id: number | string, filename?: string): Promise<void> {
+  const blob = await getCotizacionPdfBlob(id);
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

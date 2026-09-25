@@ -11,6 +11,7 @@ export * from './Pagination';
 export * from './Textarea';
 export * from './Sidebar';
 export * from './Avatar';
+export * from './NotificacionesDrawer';
 
 import type { BadgeVariant } from './Badge';
 
@@ -30,8 +31,10 @@ export const ESTADO_BADGE: Record<string, BadgeVariant> = {
   rechazado: 'rechazado',
   RECHAZADA: 'rechazado',
   rechazada: 'rechazado',
-  PARCIALMENTE_PAGADA: 'warning',
-  parcialmente_pagada: 'warning',
+  PARCIALMENTE_PAGADA: 'parcial',
+  parcialmente_pagada: 'parcial',
+  PARCIAL: 'parcial',
+  parcial: 'parcial',
 };
 
 /** Mapea tipo de cliente → variante de Badge. */

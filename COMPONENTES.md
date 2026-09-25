@@ -43,7 +43,7 @@ Helpers: `ESTADO_BADGE`, `TIPO_CLIENTE_BADGE` exportados desde `@/components/ui`
 | `Textarea` | Textarea con label/error/icon; tokens (sin hexes) |
 | `Modal` | Modal accesible (`role=dialog`), overlay, cierre por clic fuera, bloquea scroll, `maxWidth sm–xl`, slot `headerExtra` |
 | `ConfirmModal` | Confirmación destructiva sobre `Modal` + `Button danger`; props `message/confirmLabel/loading/onConfirm`; reemplaza `confirm()` nativo |
-| `Badge` | Variantes de estado/tipo: `brand/success/warning/danger/neutral/secondary` + `borrador/aprobado/rechazado/enviado` + `tienda/distribuidor`; tamaños `sm/md` |
+| `Badge` | Variantes de estado/tipo: `brand/success/warning/danger/neutral/secondary` + `borrador/aprobado/rechazado/enviado` + `tienda/distribuidor`; `size="xl"` = pill de estado grande estilo Figma (`h-9`, `bg-neutral-200`, outline zinc-600, `font-bold`) — usado en encabezados de crear/editar cotización |
 | `Table` | Primitivas unificadas: `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`. Wrapper `rounded-xl border border-gray-100 shadow-sm overflow-x-auto bg-white`; `th` `py-3.5 px-4 text-xs font-semibold text-gray-600`; `tr` `hover:bg-brand-soft` (`#FFF2D6`); `td` `py-3 px-4`. **Todas las tablas del sistema** usan este componente |
 | `FilterCard` | Contenedor de filtros (`border-l-brand-primary`) |
 | `Pagination` | Opciones `[8, 16, 24, 32, 48, 64]`, default `8` (normaliza a `8` si el `limit` no matchea), línea `Mostrar [Select] registros por página`, botón de página activo `bg-brand-primary` |
@@ -59,6 +59,7 @@ Helpers: `ESTADO_BADGE`, `TIPO_CLIENTE_BADGE` exportados desde `@/components/ui`
 | Componente | Propósito |
 |------------|-----------|
 | `ProtectedRoute` | Guard client-side: verifica usuario del contexto, `roles[]` y `permission` vía `usePermissions().can`; redirige a `/login` o home del rol; spinner mientras carga |
+| `Breadcrumbs` | Migas de pan globales (admin + vendedor): registro de rutas con patrones `[id]` + matcher por segmentos (fallback humaniza URLs desconocidas). En rutas dinámicas fetchea el `numero` real del registro (`GET /cotizaciones/:id` → `COT-001`; `GET /cobranza/:id`) y lo muestra como última miga. Prop `accent` (`amber` \| `brand`) para el color de la miga actual |
 
 > `SearchFilterBar` eliminado (sin uso).
 
@@ -68,8 +69,8 @@ Helpers: `ESTADO_BADGE`, `TIPO_CLIENTE_BADGE` exportados desde `@/components/ui`
 
 | Componente | Propósito |
 |------------|-----------|
-| `AdminLayout` | Shell admin: `Sidebar`, navbar con título por ruta, `Avatar` de perfil (click → `PerfilModal`), campana de alertas de stock (polling 60 s → `/inventario/alertas`), `AlertasStockTable`, acceso a configuración |
-| `VendedorLayout` | Shell vendedor: sidebar responsive con overlay mobile, nav filtrada por permisos (`Catálogo`, `Mis Cotizaciones`), header con nombre/rol, `Avatar` o iniciales (click → `PerfilModal`), logout |
+| `AdminLayout` | Shell admin: `Sidebar`, navbar con `Breadcrumbs` (resuelto por ruta), `Avatar` de perfil (click → `PerfilModal`), campana de alertas de stock (polling 60 s → `/inventario/alertas`), `AlertasStockTable`, acceso a configuración |
+| `VendedorLayout` | Shell vendedor: sidebar responsive con overlay mobile, nav filtrada por permisos (`Catálogo`, `Mis Cotizaciones`), header con `Breadcrumbs accent="brand"` (reemplaza el `title` fijo), nombre/rol, `Avatar` o iniciales (click → `PerfilModal`), logout |
 
 ---
 
@@ -124,7 +125,7 @@ No existe `app/page.tsx` — el middleware redirige `/`.
 | Pieza | Contenido |
 |-------|-----------|
 | `api/cotizacionApi.ts` | 415 líneas: CRUD cotizaciones, estados, PDF, clientes, próximo número, cobranza (listado/detalle/pagos), recomendaciones IA |
-| `components/` | `CotizacionesTable` (usa `Table*`), `AgregarProductoModal`, `ClienteAutocomplete`, `RecomendacionesPanel`, `index` (`CardRecomendacion` eliminado — sin uso) |
+| `components/` | `CotizacionesTable` (usa `Table*`), `AgregarProductoModal`, `ClienteAutocomplete`, `RecomendacionesPanel`, `ResumenCotizacionCard` (card Resumen estilo Figma — subtotales, toggle Carreta verde, botón Continuar; usada en admin crear/editar), `index` (`CardRecomendacion` eliminado — sin uso) |
 | `store/useCrearCotizacionStore.ts` | Zustand + `persist` (`crear-cotizacion-draft`): cliente, items, tipo precio, carreta, `editandoId`, acciones del carrito |
 | `types/cotizacion.ts` | Tipos de la feature |
 

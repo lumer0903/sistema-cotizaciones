@@ -130,7 +130,7 @@ export default function MisCotizacionesPage() {
         data={cotizaciones}
         loading={loading}
         onEdit={(id) => router.push(`/admin/cotizaciones/editar/${id}`)}
-        onView={(id) => router.push(`/admin/cotizaciones/detalle/${id}`)}
+        onView={(id) => router.push(`/admin/cotizaciones/pdf/${id}`)}
       />
 
       {/* Paginación */}

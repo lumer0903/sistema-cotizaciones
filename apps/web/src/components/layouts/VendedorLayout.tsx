@@ -21,6 +21,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { PermisoModulo } from '@goldcontinent/shared/auth';
 import { PerfilModal } from '@/features/usuarios/components/PerfilModal';
 import { Avatar } from '@/components/ui/Avatar';
+import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 
 const VENDEDOR_NAV_ITEMS: {
   href: string;
@@ -48,7 +49,7 @@ const ROLE_NAMES: Record<string, string> = {
   vendedor: 'Vendedor',
 };
 
-export function VendedorLayout({ title, children }: { title: string; children: React.ReactNode }) {
+export function VendedorLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
   const [isPerfilOpen, setIsPerfilOpen] = useState(false);
@@ -181,7 +182,7 @@ export function VendedorLayout({ title, children }: { title: string; children: R
             >
               <Menu className="h-5 w-5" />
             </button>
-            <h1 className="text-lg font-semibold text-gray-900 tracking-tight">{title}</h1>
+            <Breadcrumbs accent="brand" />
           </div>
 
           <div className="flex items-center gap-3">

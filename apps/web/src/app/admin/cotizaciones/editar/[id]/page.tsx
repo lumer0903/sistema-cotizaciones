@@ -31,6 +31,7 @@ import AgregarProductoModal, { ProductoBase } from '@/features/cotizaciones/comp
 import { RecomendacionesPanel } from '@/features/cotizaciones/components/RecomendacionesPanel';
 import { obtenerProductosImportados, getProximoNumeroCotizacion } from '@/features/cotizaciones/api/cotizacionApi';
 import { ClienteAutocomplete } from '@/features/cotizaciones/components/ClienteAutocomplete';
+import { ResumenCotizacionCard } from '@/features/cotizaciones/components/ResumenCotizacionCard';
 
 /** Borrador vacío para una cotización totalmente nueva (ignora el persistido) */
 const DRAFT_VACIO_NUEVO = {
@@ -345,7 +346,7 @@ export default function CrearCotizacionPage() {
               Limpiar
             </Button>
           )}
-          <Badge variant={editandoId != null ? 'secondary' : 'neutral'}>
+          <Badge size="xl" variant={editandoId != null ? 'secondary' : 'neutral'}>
             {editandoId != null ? 'EDITANDO' : 'BORRADOR'}
           </Badge>
         </div>
@@ -605,72 +606,40 @@ export default function CrearCotizacionPage() {
         {/* Columna Derecha: Resumen y Recomendaciones */}
         <div className="col-span-12 lg:col-span-4 space-y-6">
 
-          {/* Card Resumen */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80 space-y-3">
-            <h3 className="text-lg font-black text-zinc-700 tracking-wide">RESUMEN</h3>
-
-            <div className="space-y-2 text-xs text-zinc-600">
-              <div className="flex justify-between">
-                <span>Subtotal ({items.length} items)</span>
-                <span className="font-semibold text-zinc-800">S/ {subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between border-b border-zinc-100 pb-2">
-                <span>Carreta</span>
-                <span className="font-semibold text-zinc-800">S/ {costoCarreta.toFixed(2)}</span>
-              </div>
-              {/* IGV DESACTIVADO: precios ya incluyen IGV. Reactivar fila al habilitar IGV. */}
-              <div className="flex justify-between text-base font-black pt-1 text-zinc-800">
-                <span>Total</span>
-                <span className="text-brand-primary">S/ {total.toFixed(2)}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 pt-2">
-              <input
-                type="checkbox"
-                id="carreta"
-                checked={incluyeCarreta}
-                onChange={(e) => setIncluyeCarreta(e.target.checked)}
-                className="accent-brand-primary size-4 cursor-pointer rounded"
-              />
-              <label htmlFor="carreta" className="text-xs text-brand-primary font-semibold cursor-pointer">
-                Carreta
-              </label>
-            </div>
-            <p className="text-[10px] text-zinc-400">*Carreta precio aproximado S/15</p>
-
-            <Button
-              variant="primary"
-              disabled={items.length === 0}
-              onClick={() => {
-                if (items.length === 0) {
-                  showToast.error('Agrega al menos un producto al carrito');
-                  return;
-                }
-                useCrearCotizacionStore.getState().hydrateFromCrear({
-                  numeroCotizacion,
-                  cliente: {
-                    id_cliente: idCliente,
-                    nombre,
-                    telefono,
-                    email,
-                    tipoDocumento,
-                    ruc_dni: rucDni,
-                    clienteEditado,
-                  },
-                  fechaVencimiento,
-                  tipoPago,
-                  tipoPrecioCliente,
-                  items,
-                  incluyeCarreta,
-                });
-                router.push('/admin/cotizaciones/crear/resumen');
-              }}
-              className="w-full mt-2 !text-xs !rounded-xl"
-            >
-              Continuar
-            </Button>
-          </div>
+          {/* Card Resumen (diseño Figma) */}
+          <ResumenCotizacionCard
+            itemsCount={items.length}
+            subtotal={subtotal}
+            incluyeCarreta={incluyeCarreta}
+            costoCarreta={costoCarreta}
+            total={total}
+            onToggleCarreta={setIncluyeCarreta}
+            continuarDisabled={items.length === 0}
+            onContinuar={() => {
+              if (items.length === 0) {
+                showToast.error('Agrega al menos un producto al carrito');
+                return;
+              }
+              useCrearCotizacionStore.getState().hydrateFromCrear({
+                numeroCotizacion,
+                cliente: {
+                  id_cliente: idCliente,
+                  nombre,
+                  telefono,
+                  email,
+                  tipoDocumento,
+                  ruc_dni: rucDni,
+                  clienteEditado,
+                },
+                fechaVencimiento,
+                tipoPago,
+                tipoPrecioCliente,
+                items,
+                incluyeCarreta,
+              });
+              router.push('/admin/cotizaciones/crear/resumen');
+            }}
+          />
 
           {/* Panel Recomendaciones IA */}
           <RecomendacionesPanel

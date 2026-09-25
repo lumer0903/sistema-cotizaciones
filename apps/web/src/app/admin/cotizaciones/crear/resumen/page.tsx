@@ -14,6 +14,8 @@ import {
   Button,
   Select,
   Textarea,
+  Badge,
+  ESTADO_BADGE,
 } from '@/components/ui';
 import { useCrearCotizacionStore } from '@/features/cotizaciones/store/useCrearCotizacionStore';
 import {
@@ -139,7 +141,7 @@ export default function ResumenCotizacionPage() {
       if (!silent) {
         showToast.success(
           estadoActual === 'enviada'
-            ? `Cotización ${numeroFinal} guardada como ENVIADA`
+            ? `Cotización ${numeroFinal} guardada como ENVIADO`
             : `Cotización ${numeroFinal} guardada como BORRADOR`
         );
       }
@@ -196,7 +198,7 @@ export default function ResumenCotizacionPage() {
     if (idCotizacionGuardada) {
       try {
         await cambiarEstadoCotizacion(idCotizacionGuardada, nuevoEstado);
-        showToast.success(`Estado actualizado a ${nuevoEstado.toUpperCase()}`);
+        showToast.success(`Estado actualizado a ${nuevoEstado === 'enviada' ? 'ENVIADO' : 'BORRADOR'}`);
       } catch (error: any) {
         showToast.error('Error al actualizar el estado');
         setEstadoActual(estadoActual);
@@ -261,15 +263,21 @@ export default function ResumenCotizacionPage() {
           <span className="text-xl font-bold text-zinc-800 tracking-tight">{numeroCotizacion}</span>
         </div>
 
-        <div className="w-36">
-          <Select
-            value={estadoActual}
-            onChange={(e) => handleCambiarEstadoSelect(e.target.value as 'borrador' | 'enviada')}
-            className="text-xs font-bold uppercase"
-          >
-            <option value="borrador">BORRADOR</option>
-            <option value="enviada">ENVIADA</option>
-          </Select>
+        <div className="flex items-center gap-3">
+          <Badge size="xl" variant={ESTADO_BADGE[estadoActual] ?? 'neutral'}>
+            {estadoActual === 'enviada' ? 'ENVIADO' : 'BORRADOR'}
+          </Badge>
+
+          <div className="w-36">
+            <Select
+              value={estadoActual}
+              onChange={(e) => handleCambiarEstadoSelect(e.target.value as 'borrador' | 'enviada')}
+              className="text-xs font-bold uppercase"
+            >
+              <option value="borrador">BORRADOR</option>
+              <option value="enviada">ENVIADO</option>
+            </Select>
+          </div>
         </div>
       </div>
 

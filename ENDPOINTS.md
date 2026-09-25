@@ -138,7 +138,7 @@ Catálogo dinámico de roles (`admin`/`gerente`/`vendedor` son de sistema, seed)
 | GET | `/api/cotizaciones` | JWT | Lista paginada. Query: `page`, `limit` (def. 10), `estado`, `id_cliente` |
 | GET | `/api/cotizaciones/proximo-numero` | JWT | Siguiente correlativo `COT-001` |
 | GET | `/api/cotizaciones/:id` | JWT | Detalle con líneas, cliente, usuario y pagos |
-| GET | `/api/cotizaciones/:id/export-pdf` | JWT | Exporta PDF (pdfkit, A4) como attachment |
+| GET | `/api/cotizaciones/:id/export-pdf` | JWT | Exporta PDF (Puppeteer/Chromium, HTML→A4) como attachment · misma vista que la preview del OJO |
 | PATCH | `/api/cotizaciones/:id` | JWT | Actualiza solo si estado = `borrador` |
 | PATCH | `/api/cotizaciones/:id/estado` | JWT | Cambia estado: `borrador`, `enviada`, `aprobada`, `parcialmente_pagada`, `rechazada` |
 | POST | `/api/cotizaciones/:id/pagos` | JWT | Registra abono: `{monto, metodo_pago, referencia?}` — valida saldo |

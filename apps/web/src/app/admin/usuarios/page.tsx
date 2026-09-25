@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { Search, Plus, MoreHorizontal, Pencil, Power, PowerOff, Users, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Search, Plus, Pencil, Power, PowerOff, Users, ShieldCheck } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { useAuth } from '@/lib/authProvider';
 import {
@@ -21,20 +20,21 @@ import {
   TableCell,
 } from '@/components/ui/Table';
 import { Pagination } from '@/components/ui/Pagination';
-import { Badge } from '@/components/ui/Badge';
+import { Badge, BadgeVariant } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { FilterCard } from '@/components/ui/FilterCard';
 import { Input } from '@/components/ui/Input';
 import { Avatar } from '@/components/ui/Avatar';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import type { BadgeVariant } from '@/components/ui/Badge';
 
-const ROLE_BADGE: Record<string, BadgeVariant> = {
-  admin: 'brand',
-  gerente: 'secondary',
-  vendedor: 'success',
+// Helper para mapear el rol/código de API a los estilos de cápsula del Badge
+const getRolVariant = (rol: string): BadgeVariant => {
+  const norm = rol.toLowerCase();
+  if (norm.includes('admin')) return 'administrador';
+  if (norm.includes('gerente')) return 'gerente';
+  if (norm.includes('vendedor')) return 'vendedor';
+  return 'neutral';
 };
-
 
 type TabId = 'usuarios' | 'roles';
 
@@ -141,8 +141,6 @@ export default function UsuariosPage() {
     }
   };
 
-
-
   const tabs: { id: TabId; label: string; icon: typeof Users }[] = [
     { id: 'usuarios', label: 'Usuarios', icon: Users },
     { id: 'roles', label: 'Roles y Permisos', icon: ShieldCheck },
@@ -181,8 +179,8 @@ export default function UsuariosPage() {
               type="button"
               onClick={() => setActiveTab(tab.id)}
               className={`px-6 py-3 text-sm border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${activeTab === tab.id
-                ? 'border-[#F8B602] text-brand-primary font-bold'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium'
+                  ? 'border-[#F8B602] text-brand-primary font-bold'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium'
                 }`}
             >
               <tab.icon className="h-4 w-4" />
@@ -237,16 +235,21 @@ export default function UsuariosPage() {
                               </div>
                             </div>
                           </TableCell>
+
+                          {/* COLUMNA ROL CON BADGE ESTILIZADO */}
                           <TableCell>
-                            <Badge variant={ROLE_BADGE[user.rol] ?? 'neutral'} size="sm">
+                            <Badge variant={getRolVariant(roleLabel(user.rol))}>
                               {roleLabel(user.rol)}
                             </Badge>
                           </TableCell>
+
+                          {/* COLUMNA ESTADO CON BADGE ESTILIZADO */}
                           <TableCell>
-                            <Badge variant={user.activo ? 'success' : 'danger'} size="sm">
+                            <Badge variant={user.activo ? 'activo' : 'inactivo'}>
                               {user.activo ? 'Activo' : 'Inactivo'}
                             </Badge>
                           </TableCell>
+
                           <TableCell>
                             <div className="flex items-center justify-end gap-1">
                               <button
@@ -271,10 +274,10 @@ export default function UsuariosPage() {
                                 }
                                 aria-label={user.activo ? 'Desactivar usuario' : 'Activar usuario'}
                                 className={`p-2 rounded-lg transition-colors ${statusDisabled
-                                  ? 'text-gray-300 cursor-not-allowed'
-                                  : user.activo
-                                    ? 'text-danger hover:bg-estado-rechazado-soft'
-                                    : 'text-estado-aprobado-text hover:bg-estado-aprobado-soft'
+                                    ? 'text-gray-300 cursor-not-allowed'
+                                    : user.activo
+                                      ? 'text-danger hover:bg-estado-rechazado-soft'
+                                      : 'text-estado-aprobado-text hover:bg-estado-aprobado-soft'
                                   }`}
                               >
                                 {user.activo ? (
@@ -310,8 +313,6 @@ export default function UsuariosPage() {
           <RolesYPermisosView />
         </div>
       )}
-
-
 
       <UsuarioModal
         open={userModalOpen}

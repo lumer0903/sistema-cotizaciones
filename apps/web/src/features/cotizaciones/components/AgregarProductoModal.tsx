@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, Package, Archive, CheckSquare, Square, AlertTriangle } from 'lucide-react';
+import { Package, Archive } from 'lucide-react';
 import { ProductoCarrito } from '../types/cotizacion';
 import { Select } from '@/components/ui/Select';
+import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { getImageUrl, handleImageError } from '@/lib/imageUtils';
@@ -197,36 +198,30 @@ export default function AgregarProductoModal({
                     </div>
                 </div>
 
-                {/* Tipo de Venta por Color */}
+                {/* Tipo de Venta por Color (Checkbox con accent-amber-500) */}
                 <div className="space-y-2">
                     <label className="block text-xs font-semibold text-zinc-600">
                         Tipo de venta en color
                     </label>
                     <div className="flex items-center gap-6">
-                        <button
-                            type="button"
-                            onClick={() => setTipoColor('SURTIDO')}
-                            className="flex items-center gap-2 text-xs font-medium text-zinc-700 cursor-pointer select-none"
-                        >
-                            {tipoColor === 'SURTIDO' ? (
-                                <CheckSquare className="size-4 text-zinc-700" />
-                            ) : (
-                                <Square className="size-4 text-zinc-300" />
-                            )}
+                        <label className="flex items-center gap-2 text-xs font-medium text-zinc-700 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                checked={tipoColor === 'SURTIDO'}
+                                onChange={() => setTipoColor('SURTIDO')}
+                                className="size-4 rounded accent-amber-500 cursor-pointer"
+                            />
                             Surtido
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setTipoColor('ESPECIFICO')}
-                            className="flex items-center gap-2 text-xs font-medium text-zinc-700 cursor-pointer select-none"
-                        >
-                            {tipoColor === 'ESPECIFICO' ? (
-                                <CheckSquare className="size-4 text-zinc-700" />
-                            ) : (
-                                <Square className="size-4 text-zinc-300" />
-                            )}
+                        </label>
+                        <label className="flex items-center gap-2 text-xs font-medium text-zinc-700 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                checked={tipoColor === 'ESPECIFICO'}
+                                onChange={() => setTipoColor('ESPECIFICO')}
+                                className="size-4 rounded accent-amber-500 cursor-pointer"
+                            />
                             Color específico
-                        </button>
+                        </label>
                     </div>
                 </div>
 
@@ -234,142 +229,110 @@ export default function AgregarProductoModal({
                 {tipoColor === 'ESPECIFICO' && (
                     <div className="space-y-1.5">
                         <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="block text-xs font-semibold text-zinc-600 mb-1">
-                                    Seleccionar color
-                                </label>
-                                <Select
-                                    value={colorSeleccionado}
-                                    onChange={(e) => setColorSeleccionado(String(e.target.value))}
-                                    options={[
-                                        { label: 'Seleccionar', value: '' },
-                                        ...(producto.coloresDisponibles?.map((c) => ({ label: c.nombre, value: c.nombre })) ||
-                                            producto.colores_surtido?.map((c) => ({ label: c, value: c })) || []),
-                                    ]}
-                                    className="w-full h-11 rounded-xl border-brand-primary focus:ring-brand-primary"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold text-zinc-600 mb-1">
-                                    Estado de stock
-                                </label>
-                                <input
-                                    type="text"
-                                    readOnly
-                                    value={`${stockColorSeleccionado} un.`}
-                                    className={`w-full h-11 border rounded-xl px-3 text-xs font-semibold focus:outline-none ${sinStock
-                                        ? 'border-estado-rechazado/40 bg-estado-rechazado-soft text-danger'
-                                        : 'border-zinc-200 bg-zinc-50 text-zinc-700'
-                                        }`}
-                                />
-                            </div>
+                            <Select
+                                label="Seleccionar color"
+                                variant="modal"
+                                value={colorSeleccionado}
+                                onChange={(e) => setColorSeleccionado(String(e.target.value))}
+                                options={[
+                                    { label: 'Seleccionar', value: '' },
+                                    ...(producto.coloresDisponibles?.map((c) => ({ label: c.nombre, value: c.nombre })) ||
+                                        producto.colores_surtido?.map((c) => ({ label: c, value: c })) || []),
+                                ]}
+                                className="w-full h-11 rounded-xl"
+                            />
+                            <Input
+                                label="Estado de stock"
+                                variant="modal"
+                                readOnly
+                                value={`${stockColorSeleccionado} un.`}
+                                error={sinStock ? 'Sin stock disponible para el color seleccionado.' : undefined}
+                                className={`h-11 font-semibold ${!sinStock ? '!bg-zinc-50' : ''}`}
+                            />
                         </div>
-
-                        {sinStock && (
-                            <p className="flex items-center gap-1.5 text-[11px] font-semibold text-red-500 pt-0.5">
-                                <AlertTriangle className="size-3.5 shrink-0" />
-                                Sin stock disponible para el color seleccionado.
-                            </p>
-                        )}
                     </div>
                 )}
 
                 {/* Tipo de Venta y Cantidad */}
                 <div className="grid grid-cols-2 gap-3">
-                    <div>
-                        <label className="block text-xs font-semibold text-zinc-600 mb-1">
-                            Tipo de venta
-                        </label>
-                        <Select
-                            value={tipoVenta}
-                            onChange={(e) => handleTipoVentaChange(String(e.target.value) as any)}
-                            options={[
-                                { label: 'Seleccionar', value: '' },
-                                { label: 'Unidad', value: 'UNIDAD' },
-                                { label: 'Docena', value: 'DOCENA' },
-                                { label: 'Por Mayor', value: 'MAYOR' },
-                            ]}
-                            className="w-full h-11 rounded-xl border-brand-primary focus:ring-brand-primary"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-semibold text-zinc-600 mb-1">
-                            Cantidad
-                        </label>
-                        <input
-                            type="number"
-                            min="1"
-                            value={cantidad}
-                            onChange={(e) => setCantidad(Math.max(1, Number(e.target.value)))}
-                            className="w-full h-11 border border-zinc-200 rounded-xl px-3 text-xs font-semibold text-zinc-800 focus:outline-none focus:border-brand-primary"
-                        />
-                    </div>
+                    <Select
+                        label="Tipo de venta"
+                        variant="modal"
+                        value={tipoVenta}
+                        onChange={(e) => handleTipoVentaChange(String(e.target.value) as any)}
+                        options={[
+                            { label: 'Seleccionar', value: '' },
+                            { label: 'Unidad', value: 'UNIDAD' },
+                            { label: 'Docena', value: 'DOCENA' },
+                            { label: 'Por Mayor', value: 'MAYOR' },
+                        ]}
+                        className="w-full h-11 rounded-xl"
+                    />
+                    <Input
+                        label="Cantidad"
+                        variant="modal"
+                        type="number"
+                        min={1}
+                        value={cantidad}
+                        onChange={(e) => setCantidad(Math.max(1, Number(e.target.value)))}
+                        className="h-11 font-semibold"
+                    />
                 </div>
 
                 {/* Precio y Subtotal */}
                 <div className="grid grid-cols-2 gap-3">
-                    <div>
-                        <label className="block text-xs font-semibold text-zinc-600 mb-1">
-                            Precio
-                        </label>
-                        <div className="relative flex items-center">
-                            <span className="absolute left-3.5 text-xs font-semibold text-zinc-400">
-                                S/
-                            </span>
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={precioInput}
-                                onChange={(e) => setPrecioInput(e.target.value)}
-                                className="w-full h-11 border border-zinc-200 rounded-xl pl-9 pr-3 text-xs text-zinc-800 font-semibold focus:outline-none focus:border-brand-primary"
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-xs font-semibold text-zinc-600 mb-1">
-                            Subtotal
-                        </label>
-                        <div className="relative flex items-center">
-                            <span className="absolute left-3.5 text-xs font-semibold text-zinc-400">
-                                S/
-                            </span>
-                            <input
-                                type="text"
-                                readOnly
-                                value={subtotal.toFixed(2)}
-                                className="w-full h-11 border border-zinc-100 bg-zinc-50/80 rounded-xl pl-9 pr-3 text-xs text-zinc-800 font-bold focus:outline-none"
-                            />
-                        </div>
-                    </div>
+                    <Input
+                        label="Precio"
+                        variant="modal"
+                        type="number"
+                        step="0.01"
+                        icon={<span className="text-[11px] font-semibold">S/</span>}
+                        value={precioInput}
+                        onChange={(e) => setPrecioInput(e.target.value)}
+                        className="h-11 font-semibold"
+                    />
+                    <Input
+                        label="Subtotal"
+                        variant="modal"
+                        readOnly
+                        icon={<span className="text-[11px] font-semibold">S/</span>}
+                        value={subtotal.toFixed(2)}
+                        className="h-11 !bg-zinc-50 font-bold"
+                    />
                 </div>
 
-                {/* Escala de Precios */}
-                <div className="border border-zinc-200 rounded-2xl p-3 text-center bg-white">
-                    <span className="text-[11px] font-extrabold text-zinc-800 tracking-wide uppercase block mb-2">
+                {/* Escala de Precios Dinámica (Distribuidor vs. Tienda) */}
+                <div
+                    className={`w-full rounded-2xl border p-3.5 transition-colors ${esTienda
+                            ? 'bg-[#EFF6FF] border-[#BFDBFE] text-[#1D4ED8]'
+                            : 'bg-[#FAF3F0] border-[#E8D8CE] text-[#A13A17]'
+                        }`}
+                >
+                    <span className="text-center text-[11px] font-extrabold uppercase tracking-wide block mb-2">
                         {tituloEscala}
                     </span>
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                        <div>
-                            <span className="block text-[10px] font-bold text-zinc-500 uppercase">
+                    <div className="grid grid-cols-3 divide-x divide-current/20 text-center">
+                        <div className="px-2">
+                            <span className="block text-[10px] font-bold uppercase opacity-75">
                                 UNIDAD
                             </span>
-                            <span className="text-xs font-extrabold text-zinc-800">
+                            <span className="text-xs font-extrabold mt-0.5 block">
                                 S/ {Number(preciosDisplay.unidad || 0).toFixed(2)}
                             </span>
                         </div>
-                        <div className="border-x border-zinc-200">
-                            <span className="block text-[10px] font-bold text-zinc-500 uppercase">
+                        <div className="px-2">
+                            <span className="block text-[10px] font-bold uppercase opacity-75">
                                 DOCENA
                             </span>
-                            <span className="text-xs font-extrabold text-zinc-800">
+                            <span className="text-xs font-extrabold mt-0.5 block">
                                 S/ {Number(preciosDisplay.docena || 0).toFixed(2)}
                             </span>
                         </div>
-                        <div>
-                            <span className="block text-[10px] font-bold text-zinc-500 uppercase">
+                        <div className="px-2">
+                            <span className="block text-[10px] font-bold uppercase opacity-75">
                                 MAYOR
                             </span>
-                            <span className="text-xs font-extrabold text-zinc-800">
+                            <span className="text-xs font-extrabold mt-0.5 block">
                                 S/ {Number(preciosDisplay.mayor || 0).toFixed(2)}
                             </span>
                         </div>
@@ -391,8 +354,8 @@ export default function AgregarProductoModal({
                         disabled={sinStock}
                         onClick={handleGuardar}
                         className={`px-8 py-2.5 text-sm font-bold rounded-xl shadow-none transition-colors ${sinStock
-                            ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
-                            : 'bg-brand-primary hover:bg-brand-hover text-white'
+                                ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
+                                : 'bg-brand-primary hover:bg-brand-hover text-white'
                             }`}
                     >
                         Guardar

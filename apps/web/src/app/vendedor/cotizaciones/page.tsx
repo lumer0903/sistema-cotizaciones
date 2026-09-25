@@ -1,12 +1,14 @@
 'use client';
 
-import { FileText, Plus, Search, Filter, ChevronDown, Eye, Edit, Trash2, Send, Download } from 'lucide-react';
+import { FileText, Plus, Search, Filter, ChevronDown, Eye, Edit, Send, Download } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState, useMemo } from 'react';
 import { EstadoCotizacion } from '@goldcontinent/shared/constants/enums';
 import Link from 'next/link';
 import { Badge, ESTADO_BADGE } from '@/components/ui';
+import { exportarPdfCotizacion } from '@/features/cotizaciones/api/cotizacionApi';
+import { showToast } from '@/lib/toast';
 
 interface Cotizacion {
   id_cotizacion: number;
@@ -20,8 +22,8 @@ interface Cotizacion {
 
 const ESTADO_LABELS: Record<EstadoCotizacion, string> = {
   borrador: 'Borrador',
-  enviada: 'Enviada',
-  parcialmente_pagada: 'Parcialmente Pagada',
+  enviada: 'Enviado',
+  parcialmente_pagada: 'PARCIAL',
   aprobada: 'Aprobada',
   rechazada: 'Rechazada',
 };
@@ -34,7 +36,20 @@ export default function CotizacionesPage() {
   const [fecha, setFecha] = useState('');
   const [estadoFilter, setEstadoFilter] = useState<EstadoCotizacion | 'todos'>('todos');
   const [currentPage, setCurrentPage] = useState(1);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const itemsPerPage = 20;
+
+  const handleDescargarPdf = async (cot: Cotizacion) => {
+    setDownloadingId(cot.id_cotizacion);
+    try {
+      await exportarPdfCotizacion(cot.id_cotizacion, `${cot.numero}.pdf`);
+      showToast.success('PDF descargado');
+    } catch (e: any) {
+      showToast.error(e?.message || 'No se pudo descargar el PDF');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   // Obtener dataset filtrado (sin paginado de servidor, con filtros al API)
   useEffect(() => {
@@ -185,7 +200,7 @@ export default function CotizacionesPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 flex-wrap">
                       <span className="font-semibold text-gray-900">{cot.numero}</span>
-                      <Badge variant={ESTADO_BADGE[cot.estado] || 'borrador'}>
+                      <Badge variant={ESTADO_BADGE[cot.estado] || 'borrador'} size="estado">
                         {ESTADO_LABELS[cot.estado]}
                       </Badge>
                       <span className="text-sm text-gray-500">
@@ -197,27 +212,21 @@ export default function CotizacionesPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Link
-                      href={`/vendedor/cotizaciones/${cot.id_cotizacion}`}
+                      href={`/vendedor/cotizaciones/pdf/${cot.id_cotizacion}`}
                       className="p-2 text-gray-500 hover:text-brand-primary hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Ver detalle"
+                      title="Ver documento (PDF)"
                     >
                       <Eye className="h-4 w-4" />
                     </Link>
                     {cot.estado === 'borrador' && (
                       <>
                         <Link
-                          href={`/vendedor/cotizaciones/${cot.id_cotizacion}/editar`}
+                          href={`/admin/cotizaciones/editar/${cot.id_cotizacion}`}
                           className="p-2 text-gray-500 hover:text-brand-primary hover:bg-gray-100 rounded-lg transition-colors"
                           title="Editar"
                         >
                           <Edit className="h-4 w-4" />
                         </Link>
-                        <button
-                          className="p-2 text-gray-500 hover:text-danger hover:bg-gray-100 rounded-lg transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
                       </>
                     )}
                     {cot.estado === 'enviada' && (
@@ -225,7 +234,13 @@ export default function CotizacionesPage() {
                         <Send className="h-4 w-4" />
                       </button>
                     )}
-                    <button className="p-2 text-gray-500 hover:text-brand-primary hover:bg-gray-100 rounded-lg transition-colors" title="Descargar PDF">
+                    <button
+                      type="button"
+                      onClick={() => void handleDescargarPdf(cot)}
+                      disabled={downloadingId === cot.id_cotizacion}
+                      className="p-2 text-gray-500 hover:text-brand-primary hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                      title="Descargar PDF"
+                    >
                       <Download className="h-4 w-4" />
                     </button>
                   </div>

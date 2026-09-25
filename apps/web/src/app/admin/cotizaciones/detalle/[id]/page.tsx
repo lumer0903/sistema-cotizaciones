@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Badge, ESTADO_BADGE } from '@/components/ui';
 import { showToast } from '@/lib/toast';
 import {
   cambiarEstadoCotizacion,
@@ -14,8 +14,8 @@ import {
 
 const ESTADO_DISPLAY: Record<string, string> = {
   borrador: 'BORRADOR',
-  enviada: 'ENVIADA',
-  parcialmente_pagada: 'PARCIALMENTE_PAGADA',
+  enviada: 'ENVIADO',
+  parcialmente_pagada: 'PARCIAL',
   aprobada: 'APROBADO',
   rechazada: 'RECHAZADO',
 };
@@ -213,9 +213,17 @@ export default function CotizacionDetallePage() {
     <div className="max-w-6xl mx-auto space-y-6 font-['DM_Sans'] pb-10">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FileText className="size-6 text-zinc-700" />
-          <h1 className="text-xl font-bold text-zinc-800">{numero}</h1>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <FileText className="size-6 text-zinc-700" />
+            <h1 className="text-xl font-bold text-zinc-800">{numero}</h1>
+          </div>
+
+          {estado && (
+            <Badge size="xl" variant={ESTADO_BADGE[estado] ?? 'neutral'}>
+              {ESTADO_DISPLAY[estado] || estado.toUpperCase()}
+            </Badge>
+          )}
         </div>
 
         <div>
@@ -228,7 +236,7 @@ export default function CotizacionDetallePage() {
             {estado === 'borrador' ? (
               <>
                 <option value="borrador">BORRADOR</option>
-                <option value="enviada">ENVIADA</option>
+                <option value="enviada">ENVIADO</option>
               </>
             ) : (
               <option value={estado}>

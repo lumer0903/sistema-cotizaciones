@@ -9,7 +9,26 @@ import Link from 'next/link';
 import { showToast } from '@/lib/toast';
 import { RecomendacionesPanel } from '@/features/cotizaciones/components/RecomendacionesPanel';
 import { formatCode } from '@/lib/formatters';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Input, Select, Textarea } from '@/components/ui';
+import { autosaveCotizacion, puedeAutosave } from '@/features/cotizaciones/api/autosave';
+
+const VENDEDOR_DRAFT_KEY = 'vendedor-cotizacion-draft';
+
+interface VendedorDraft {
+  idCotizacionGuardada: number | null;
+  formData: {
+    id_cliente: string;
+    tipo_precio: TipoPrecio;
+    tipo_venta: TipoVenta;
+    tipo_pago: TipoPago;
+    dias_plazo: string;
+    observaciones: string;
+    incluye_carreta: boolean;
+    costo_carreta: number;
+    fecha_vencimiento: string;
+  };
+  detalles: DetalleItem[];
+}
 
 interface Producto {
   id_producto: number;
@@ -51,6 +70,7 @@ export default function VendedorCotizacionCrearPage() {
   const { usuario } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [autosaving, setAutosaving] = useState(false);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [filteredProductos, setFilteredProductos] = useState<Producto[]>([]);
@@ -58,19 +78,72 @@ export default function VendedorCotizacionCrearPage() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [selectedProducto, setSelectedProducto] = useState<Producto | null>(null);
 
-  const [formData, setFormData] = useState({
-    id_cliente: '',
-    tipo_precio: 'normal' as TipoPrecio,
-    tipo_venta: 'unidad' as TipoVenta,
-    tipo_pago: 'contado' as TipoPago,
-    dias_plazo: '',
-    observaciones: '',
-    incluye_carreta: true,
-    costo_carreta: 15,
-    fecha_vencimiento: '',
+  const [idCotizacionGuardada, setIdCotizacionGuardada] = useState<number | null>(null);
+
+  const [formData, setFormData] = useState(() => {
+    if (typeof window === 'undefined') {
+      return {
+        id_cliente: '',
+        tipo_precio: 'normal' as TipoPrecio,
+        tipo_venta: 'unidad' as TipoVenta,
+        tipo_pago: 'contado' as TipoPago,
+        dias_plazo: '',
+        observaciones: '',
+        incluye_carreta: true,
+        costo_carreta: 15,
+        fecha_vencimiento: '',
+      };
+    }
+    try {
+      const raw = localStorage.getItem(VENDEDOR_DRAFT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as VendedorDraft;
+        if (parsed?.formData) return parsed.formData;
+      }
+    } catch {
+      /* draft corrupto */
+    }
+    return {
+      id_cliente: '',
+      tipo_precio: 'normal' as TipoPrecio,
+      tipo_venta: 'unidad' as TipoVenta,
+      tipo_pago: 'contado' as TipoPago,
+      dias_plazo: '',
+      observaciones: '',
+      incluye_carreta: true,
+      costo_carreta: 15,
+      fecha_vencimiento: '',
+    };
   });
 
-  const [detalles, setDetalles] = useState<DetalleItem[]>([]);
+  const [detalles, setDetalles] = useState<DetalleItem[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem(VENDEDOR_DRAFT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as VendedorDraft;
+        return Array.isArray(parsed?.detalles) ? parsed.detalles : [];
+      }
+    } catch {
+      /* draft corrupto */
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = localStorage.getItem(VENDEDOR_DRAFT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as VendedorDraft;
+        if (parsed?.idCotizacionGuardada != null) {
+          setIdCotizacionGuardada(parsed.idCotizacionGuardada);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   // Índice del detalle seleccionado para ver recomendaciones IA (solo vía botón de ACCIONES)
   const [selectedDetalleIndex, setSelectedDetalleIndex] = useState<number | null>(null);
@@ -232,6 +305,73 @@ export default function VendedorCotizacionCrearPage() {
   // y alinear con backend (CotizacionesService) + PDF.
   const total = subtotalConDescuento + (formData.incluye_carreta ? formData.costo_carreta : 0);
 
+  // Persistir draft local en cada cambio
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const draft: VendedorDraft = {
+        idCotizacionGuardada,
+        formData,
+        detalles,
+      };
+      localStorage.setItem(VENDEDOR_DRAFT_KEY, JSON.stringify(draft));
+    } catch {
+      /* storage lleno */
+    }
+  }, [formData, detalles, idCotizacionGuardada]);
+
+  // Autosave en servidor (debounce) cuando hay cliente + productos
+  useEffect(() => {
+    const clienteSnap = {
+      id_cliente: formData.id_cliente ? Number(formData.id_cliente) : null,
+      nombre: clientes.find((c) => String(c.id_cliente) === String(formData.id_cliente))?.nombre || '',
+      clienteEditado: false,
+    };
+    const items = detalles.map((d) => ({
+      id_producto: d.id_producto,
+      tipo_venta: d.tipo_venta,
+      cantidad: d.cantidad,
+      precio_unitario: d.precio_unitario,
+      observacion: null as string | null,
+    }));
+    if (!puedeAutosave(clienteSnap, items)) return;
+
+    const t = window.setTimeout(async () => {
+      setAutosaving(true);
+      try {
+        const id = await autosaveCotizacion({
+          cliente: { ...clienteSnap, nombre: clienteSnap.nombre.trim() },
+          items,
+          tipoPrecioCliente: formData.tipo_precio === 'distribuidor' ? 'DISTRIBUIDOR' : 'TIENDA',
+          incluyeCarreta: formData.incluye_carreta,
+          costoCarreta: formData.incluye_carreta ? formData.costo_carreta : 0,
+          observaciones: formData.observaciones,
+          idCotizacionGuardada,
+          tipoPago: formData.tipo_pago,
+          fechaVencimiento: formData.fecha_vencimiento,
+        });
+        if (id != null && id !== idCotizacionGuardada) {
+          setIdCotizacionGuardada(id);
+        }
+      } catch (e) {
+        console.warn('[autosave vendedor] No se pudo guardar:', e);
+      } finally {
+        setAutosaving(false);
+      }
+    }, 1800);
+
+    return () => window.clearTimeout(t);
+  }, [formData, detalles, idCotizacionGuardada, clientes]);
+
+  const limpiarDraft = () => {
+    try {
+      localStorage.removeItem(VENDEDOR_DRAFT_KEY);
+    } catch {
+      /* ignore */
+    }
+    setIdCotizacionGuardada(null);
+  };
+
   const handleSubmit = async (estado: 'borrador' | 'enviada') => {
     if (!formData.id_cliente) {
       showToast.warning('Seleccione un cliente');
@@ -244,28 +384,38 @@ export default function VendedorCotizacionCrearPage() {
 
     setLoading(true);
     try {
-      await apiClient('/cotizaciones', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...formData,
-          estado,
-          tipo_precio: formData.tipo_precio,
-          tipo_venta: formData.tipo_venta,
-          tipo_pago: formData.tipo_pago,
-          dias_plazo: formData.tipo_pago === 'credito' ? Number(formData.dias_plazo) : null,
-          incluye_carreta: formData.incluye_carreta,
-          costo_carreta: formData.incluye_carreta ? formData.costo_carreta : 0,
-          detalle: detalles.map((d) => ({
-            id_producto: d.id_producto,
-            tipo_venta: d.tipo_venta,
-            cantidad: d.cantidad,
-            precio_unitario: d.precio_unitario,
-            descuento_item: d.descuento_item,
-            subtotal: d.subtotal,
-          })),
-        }),
+      const clienteSnap = {
+        id_cliente: Number(formData.id_cliente),
+        nombre:
+          clientes.find((c) => String(c.id_cliente) === String(formData.id_cliente))?.nombre || '',
+        clienteEditado: false,
+      };
+      const items = detalles.map((d) => ({
+        id_producto: d.id_producto,
+        tipo_venta: d.tipo_venta,
+        cantidad: d.cantidad,
+        precio_unitario: d.precio_unitario,
+      }));
+
+      const id = await autosaveCotizacion({
+        cliente: clienteSnap,
+        items,
+        tipoPrecioCliente: formData.tipo_precio === 'distribuidor' ? 'DISTRIBUIDOR' : 'TIENDA',
+        incluyeCarreta: formData.incluye_carreta,
+        costoCarreta: formData.incluye_carreta ? formData.costo_carreta : 0,
+        observaciones: formData.observaciones,
+        idCotizacionGuardada,
       });
-      showToast.success('Cotización creada exitosamente');
+
+      if (id != null && estado === 'enviada') {
+        const { cambiarEstadoCotizacion } = await import('@/features/cotizaciones/api/cotizacionApi');
+        await cambiarEstadoCotizacion(id, 'enviada');
+      }
+
+      limpiarDraft();
+      showToast.success(
+        estado === 'enviada' ? 'Cotización enviada exitosamente' : 'Cotización creada exitosamente'
+      );
       router.push('/vendedor/cotizaciones');
     } catch (error: any) {
       showToast.error(error.message || 'Error al crear cotización');
@@ -292,82 +442,65 @@ export default function VendedorCotizacionCrearPage() {
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Información General</h2>
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
-                <select
-                  value={formData.id_cliente}
-                  onChange={(e) => setFormData({ ...formData, id_cliente: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
-                >
-                  <option value="">Seleccionar cliente</option>
-                  {clientes.map((c) => (
-                    <option key={c.id_cliente} value={c.id_cliente}>
-                      {c.nombre} {c.ruc_dni ? `(${c.ruc_dni})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                label="Cliente *"
+                placeholder="Seleccionar cliente"
+                value={formData.id_cliente}
+                onChange={(e) => setFormData({ ...formData, id_cliente: String(e.target.value) })}
+                options={clientes.map((c) => ({
+                  label: `${c.nombre}${c.ruc_dni ? ` (${c.ruc_dni})` : ''}`,
+                  value: c.id_cliente,
+                }))}
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Precio *</label>
-                <select
-                  value={formData.tipo_precio}
-                  onChange={(e) => setFormData({ ...formData, tipo_precio: e.target.value as TipoPrecio })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
-                >
-                  <option value="normal">Normal</option>
-                  <option value="distribuidor">Distribuidor</option>
-                </select>
-              </div>
+              <Select
+                label="Tipo de Precio *"
+                value={formData.tipo_precio}
+                onChange={(e) => setFormData({ ...formData, tipo_precio: e.target.value as TipoPrecio })}
+                options={[
+                  { label: 'Normal', value: 'normal' },
+                  { label: 'Distribuidor', value: 'distribuidor' },
+                ]}
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Venta *</label>
-                <select
-                  value={formData.tipo_venta}
-                  onChange={(e) => setFormData({ ...formData, tipo_venta: e.target.value as TipoVenta })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
-                >
-                  <option value="unidad">Unidad</option>
-                  <option value="docena">Docena</option>
-                  <option value="mayor">Mayor</option>
-                </select>
-              </div>
+              <Select
+                label="Tipo de Venta *"
+                value={formData.tipo_venta}
+                onChange={(e) => setFormData({ ...formData, tipo_venta: e.target.value as TipoVenta })}
+                options={[
+                  { label: 'Unidad', value: 'unidad' },
+                  { label: 'Docena', value: 'docena' },
+                  { label: 'Mayor', value: 'mayor' },
+                ]}
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Pago *</label>
-                <select
-                  value={formData.tipo_pago}
-                  onChange={(e) => setFormData({ ...formData, tipo_pago: e.target.value as TipoPago })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
-                >
-                  <option value="contado">Contado</option>
-                  <option value="credito">Crédito</option>
-                </select>
-              </div>
+              <Select
+                label="Tipo de Pago *"
+                value={formData.tipo_pago}
+                onChange={(e) => setFormData({ ...formData, tipo_pago: e.target.value as TipoPago })}
+                options={[
+                  { label: 'Contado', value: 'contado' },
+                  { label: 'Crédito', value: 'credito' },
+                ]}
+              />
 
               {formData.tipo_pago === 'credito' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Días de Plazo</label>
-                  <input
-                    type="number"
-                    value={formData.dias_plazo}
-                    onChange={(e) => setFormData({ ...formData, dias_plazo: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
-                    min="1"
-                    max="360"
-                  />
-                </div>
+                <Input
+                  label="Días de Plazo"
+                  type="number"
+                  min={1}
+                  max={360}
+                  value={formData.dias_plazo}
+                  onChange={(e) => setFormData({ ...formData, dias_plazo: e.target.value })}
+                />
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Vencimiento</label>
-                <input
-                  type="date"
-                  value={formData.fecha_vencimiento}
-                  onChange={(e) => setFormData({ ...formData, fecha_vencimiento: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
-                />
-              </div>
+              <Input
+                label="Fecha Vencimiento"
+                type="date"
+                value={formData.fecha_vencimiento}
+                onChange={(e) => setFormData({ ...formData, fecha_vencimiento: e.target.value })}
+              />
             </div>
 
             <div className="mt-4 flex items-center gap-4">
@@ -426,29 +559,35 @@ export default function VendedorCotizacionCrearPage() {
                       </TableCell>
                       <TableCell className="text-center text-sm text-gray-600 capitalize">{item.tipo_venta}</TableCell>
                       <TableCell className="text-center">
-                        <input
-                          type="number"
-                          value={item.cantidad}
-                          onChange={(e) => actualizarCantidad(index, Number(e.target.value))}
-                          min="1"
-                          className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
-                        />
+                        <div className="w-20 mx-auto">
+                          <Input
+                            type="number"
+                            min={1}
+                            sizeVariant="sm"
+                            value={item.cantidad}
+                            onChange={(e) => actualizarCantidad(index, Number(e.target.value))}
+                            className="text-center"
+                          />
+                        </div>
                       </TableCell>
                       <TableCell className="text-right text-sm text-gray-900">
                         S/ {item.precio_unitario.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
                       </TableCell>
                       <TableCell className="text-center">
-                        <input
-                          type="number"
-                          value={item.descuento_item}
-                          onChange={(e) => {
-                            const newDetalles = [...detalles];
-                            newDetalles[index] = { ...newDetalles[index], descuento_item: Number(e.target.value) || 0 };
-                            setDetalles(newDetalles);
-                          }}
-                          min="0"
-                          className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
-                        />
+                        <div className="w-20 mx-auto">
+                          <Input
+                            type="number"
+                            min={0}
+                            sizeVariant="sm"
+                            value={item.descuento_item}
+                            onChange={(e) => {
+                              const newDetalles = [...detalles];
+                              newDetalles[index] = { ...newDetalles[index], descuento_item: Number(e.target.value) || 0 };
+                              setDetalles(newDetalles);
+                            }}
+                            className="text-center"
+                          />
+                        </div>
                       </TableCell>
                       <TableCell className="text-right font-medium text-gray-900">
                         S/ {item.subtotal.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
@@ -535,11 +674,10 @@ export default function VendedorCotizacionCrearPage() {
 
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h3 className="font-semibold text-gray-900 mb-3">Observaciones</h3>
-            <textarea
+            <Textarea
               value={formData.observaciones}
               onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent text-sm resize-none"
               placeholder="Observaciones adicionales para el cliente..."
             />
           </div>
@@ -556,16 +694,14 @@ export default function VendedorCotizacionCrearPage() {
               </button>
             </div>
             <div className="p-4 border-b border-gray-200">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar por código o descripción..."
-                  value={searchProducto}
-                  onChange={(e) => setSearchProducto(e.target.value.toUpperCase())}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent"
-                />
-              </div>
+              <Input
+                variant="modal"
+                type="text"
+                icon={<Search className="h-4 w-4" />}
+                placeholder="Buscar por código o descripción..."
+                value={searchProducto}
+                onChange={(e) => setSearchProducto(e.target.value.toUpperCase())}
+              />
             </div>
             <div className="flex-1 overflow-y-auto p-4">
               {filteredProductos.length === 0 ? (

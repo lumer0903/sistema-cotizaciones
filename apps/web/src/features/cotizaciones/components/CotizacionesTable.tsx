@@ -68,7 +68,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
 
                             {/* TIPO BADGE */}
                             <TableCell className="w-28 text-center whitespace-nowrap">
-                                <Badge variant={TIPO_CLIENTE_BADGE[String(item.tipo).toLowerCase()] ?? 'brand'} size="sm">
+                                <Badge variant={TIPO_CLIENTE_BADGE[String(item.tipo).toLowerCase()] ?? 'brand'} size="estado">
                                     {item.tipo}
                                 </Badge>
                             </TableCell>
@@ -85,8 +85,8 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
 
                             {/* ESTADO BADGE */}
                             <TableCell className="w-28 text-center whitespace-nowrap">
-                                <Badge variant={ESTADO_BADGE[item.estado] ?? 'neutral'} size="sm">
-                                    {item.estado}
+                                <Badge variant={ESTADO_BADGE[item.estado] ?? 'neutral'} size="estado">
+                                    {item.estado === 'PARCIALMENTE_PAGADA' ? 'PARCIAL' : item.estado}
                                 </Badge>
                             </TableCell>
 

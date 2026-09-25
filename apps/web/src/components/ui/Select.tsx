@@ -44,10 +44,12 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         ref
     ) => {
         const isModal = variant === 'modal';
-        const borderColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-primary)';
-        const focusColor = isModal ? 'var(--color-brand-modalFocus)' : 'var(--color-brand-primary)';
-        const labelIconColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-primary)';
-        const chevronColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-primary)';
+
+        // Colores directos en gris neutro para el variant modal
+        const borderColor = isModal ? '#d4d4d8' : 'var(--color-brand-primary)'; // zinc-300
+        const focusColor = isModal ? '#71717a' : 'var(--color-brand-primary)'; // zinc-500
+        const labelIconColor = isModal ? '#71717a' : 'var(--color-brand-primary)'; // zinc-500
+        const chevronColor = isModal ? '#71717a' : 'var(--color-brand-primary)'; // zinc-500
 
         const [isOpen, setIsOpen] = useState(false);
         const [selectedValue, setSelectedValue] = useState<string | number>(
@@ -58,7 +60,6 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         const menuRef = useRef<HTMLDivElement>(null);
         const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
-        // Extraer opciones si se enviaron como <option> en children (aplana arrays anidados de .map())
         const flattenOptionNodes = (nodes: any): any[] => {
             if (nodes == null || nodes === false || nodes === true) return [];
             if (Array.isArray(nodes)) return nodes.flatMap(flattenOptionNodes);
@@ -92,7 +93,6 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             }
         }, [propValue]);
 
-        // Cerrar al hacer clic fuera del componente (incluye el portal del menú)
         useEffect(() => {
             const handleClickOutside = (e: MouseEvent) => {
                 const target = e.target as Node;
@@ -104,7 +104,6 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             return () => document.removeEventListener('mousedown', handleClickOutside);
         }, []);
 
-        // Posicionar menú (portal) al abrir; recalcular si cambia scroll/resize
         useEffect(() => {
             if (!isOpen) return;
             const updatePos = () => {
@@ -142,7 +141,6 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
 
         return (
             <div className="w-full space-y-1" ref={containerRef}>
-                {/* Native select oculto para compatibilidad con React Hook Form */}
                 <select
                     ref={ref}
                     name={name}
@@ -161,7 +159,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
 
                 {label && (
                     <label
-                        className="block text-[10px] sm:text-xs font-black uppercase tracking-wider"
+                        className="block text-[10px] sm:text-xs font-black uppercase tracking-wider transition-colors"
                         style={{ color: labelIconColor }}
                     >
                         {label}
@@ -169,19 +167,22 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 )}
 
                 <div className="relative">
-                    {/* Botón activador del desplegable */}
                     <button
                         type="button"
                         ref={triggerRef}
                         disabled={disabled}
                         onClick={() => !disabled && setIsOpen((prev) => !prev)}
-                        className={`w-full ${heightClass} flex items-center justify-between rounded-xl border bg-white font-medium transition-all text-left disabled:bg-gray-100 disabled:cursor-not-allowed pr-8 ${icon ? 'pl-9' : 'px-3'
-                            } ${error ? 'border-red-500 focus:ring-2 focus:ring-red-200' : ''
-                            } ${className}`}
+                        className={`
+              w-full ${heightClass} flex items-center justify-between rounded-2xl border bg-white 
+              font-medium transition-all text-left disabled:bg-gray-100 disabled:cursor-not-allowed pr-8 
+              ${icon ? 'pl-9' : 'px-3.5'} 
+              ${error ? '!border-red-500 focus:ring-2 focus:ring-red-200' : ''} 
+              ${className}
+            `.trim()}
                         style={{
                             borderColor: error ? undefined : isOpen ? focusColor : borderColor,
                             boxShadow: isOpen && !error ? `0 0 0 2px color-mix(in srgb, ${focusColor} 20%, transparent)` : 'none',
-                            color: 'var(--color-brand-subtitle)',
+                            color: '#3f3f46',
                         }}
                     >
                         {icon && (
@@ -193,18 +194,16 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                             </div>
                         )}
 
-                        <span className={`block truncate ${!selectedOption?.value ? 'text-gray-400' : ''}`}>
+                        <span className={`block truncate ${!selectedOption?.value ? 'text-zinc-400' : ''}`}>
                             {selectedOption ? selectedOption.label : placeholder}
                         </span>
 
                         <ChevronDown
-                            className={`absolute right-2.5 size-4 transition-transform duration-200 pointer-events-none ${isOpen ? 'rotate-180' : ''
-                                }`}
+                            className={`absolute right-2.5 size-4 transition-transform duration-200 pointer-events-none ${isOpen ? 'rotate-180' : ''}`}
                             style={{ color: chevronColor }}
                         />
                     </button>
 
-                    {/* Menú Flotante Personalizado (portal para no recortarlo en modales) */}
                     {isOpen && menuPos && typeof document !== 'undefined' &&
                         createPortal(
                             <div
@@ -225,8 +224,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                                                     e.stopPropagation();
                                                     handleSelect(opt.value);
                                                 }}
-                                                className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors flex items-center justify-between hover:bg-stone-50 ${isSelected ? 'bg-stone-50 text-stone-900 font-bold' : 'text-stone-700'
-                                                    }`}
+                                                className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors flex items-center justify-between hover:bg-stone-50 ${isSelected ? 'bg-stone-50 text-stone-900 font-bold' : 'text-stone-700'}`}
                                             >
                                                 <span className="truncate">{opt.label}</span>
                                                 {isSelected && <Check className="w-3.5 h-3.5 text-stone-600 shrink-0 ml-2" />}

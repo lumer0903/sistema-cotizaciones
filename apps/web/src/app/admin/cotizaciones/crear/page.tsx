@@ -30,9 +30,10 @@ import { ProductoCarrito } from '@/features/cotizaciones/types/cotizacion';
 import AgregarProductoModal, { ProductoBase } from '@/features/cotizaciones/components/AgregarProductoModal';
 import { RecomendacionesPanel } from '@/features/cotizaciones/components/RecomendacionesPanel';
 import { obtenerProductosImportados, getProximoNumeroCotizacion } from '@/features/cotizaciones/api/cotizacionApi';
-import { ClienteAutocomplete } from '@/features/cotizaciones/components/ClienteAutocomplete';
+import { autosaveCotizacion, puedeAutosave } from '@/features/cotizaciones/api/autosave';
+import { ClienteAutocomplete, Cliente } from '@/features/cotizaciones/components/ClienteAutocomplete';
 
-/** Borrador vacío para una cotización totalmente nueva (ignora el persistido) */
+/** Borrador vacío para una cotización totalmente nueva */
 const DRAFT_VACIO_NUEVO = {
   numeroCotizacion: 'COT-001',
   cliente: {
@@ -55,20 +56,19 @@ const DRAFT_VACIO_NUEVO = {
 export default function CrearCotizacionPage() {
   const router = useRouter();
   const editandoId = useCrearCotizacionStore((s) => s.editandoId);
-  // Entrada explícita como NUEVA (?nueva=1): ignorar el borrador persistido y empezar vacío.
-  // (lectura directa de window para no requerir Suspense con useSearchParams)
+
   const esNueva =
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('nueva') === '1';
-  // Borrador persistido (sobrevive a Volver y a recargar la página) — salvo entrada como nueva
+
   const draftInicial = useMemo(
     () =>
       esNueva
         ? { ...DRAFT_VACIO_NUEVO, cliente: { ...DRAFT_VACIO_NUEVO.cliente }, items: [] as ProductoCarrito[] }
         : useCrearCotizacionStore.getState(),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [esNueva],
   );
+
   const tieneBorradorPrevio =
     draftInicial.items.length > 0 ||
     draftInicial.idCotizacionGuardada != null ||
@@ -98,7 +98,7 @@ export default function CrearCotizacionPage() {
     return 'CE';
   };
 
-  const handleSelectClienteExistente = (c: { id_cliente: number; nombre: string; telefono?: string | null; email?: string | null; ruc_dni?: string | null } | null) => {
+  const handleSelectClienteExistente = (c: Cliente | null) => {
     if (!c) {
       setIdCliente(null);
       setClienteEditado(false);
@@ -117,32 +117,28 @@ export default function CrearCotizacionPage() {
   const docSoloNumeros = tipoDocumento !== 'CE';
   const docLabel = tipoDocumento === 'DNI' ? 'N° DNI' : tipoDocumento === 'RUC' ? 'N° RUC' : 'N° Carnet Extranjería';
 
-  // Estados del Buscador y Productos de API
+  // Buscador y Catálogo
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [productosApi, setProductosApi] = useState<ProductoBase[]>([]);
   const [isLoadingProductos, setIsLoadingProductos] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Estados para el Modal Agregar Producto
+  // Modal Agregar Producto
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [productoParaModal, setProductoParaModal] = useState<ProductoBase | null>(null);
 
-  // Producto del carrito seleccionado para ver recomendaciones IA (solo vía botón de ACCIONES)
-  // refreshKeyRecs: cada clic en el botón de ACCIONES lo incrementa para forzar recarga
+  // Recomendaciones IA
   const [refreshKeyRecs, setRefreshKeyRecs] = useState(0);
-  // Generador de IDs únicos de carrito (evita colisiones de Date.now en clics rápidos/dobles)
+
   const cartSeqRef = useRef(0);
   const nextCartId = () => {
     cartSeqRef.current += 1;
     return `cart-${Date.now()}-${cartSeqRef.current}-${Math.floor(Math.random() * 1e6)}`;
   };
 
-  // Número secuencial COT-001 (se conserva el del borrador; solo se pide uno nuevo si no hay borrador)
   const [numeroCotizacion, setNumeroCotizacion] = useState(draftInicial.numeroCotizacion);
 
-  // Entrada como NUEVA: descartar borrador/edición previa del store y limpiar la URL
-  // (quitar ?nueva=1 para que un F5 posterior retome el borrador en curso en vez de borrarlo)
   useEffect(() => {
     if (!esNueva) return;
     useCrearCotizacionStore.getState().reset();
@@ -161,8 +157,7 @@ export default function CrearCotizacionPage() {
     setTipoPago('');
     setSearchQuery('');
     router.replace('/admin/cotizaciones/crear');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [esNueva]);
+  }, [esNueva, router]);
 
   useEffect(() => {
     if (tieneBorradorPrevio) return;
@@ -172,10 +167,8 @@ export default function CrearCotizacionPage() {
         useCrearCotizacionStore.getState().setNumero(n);
       })
       .catch(() => { });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tieneBorradorPrevio]);
 
-  // Persistir el borrador ante cualquier cambio (Volver / recargar no pierden la información)
   useEffect(() => {
     useCrearCotizacionStore.getState().saveDraft({
       numeroCotizacion,
@@ -188,7 +181,40 @@ export default function CrearCotizacionPage() {
     });
   }, [numeroCotizacion, idCliente, nombre, telefono, email, tipoDocumento, rucDni, clienteEditado, fechaVencimiento, tipoPago, tipoPrecioCliente, items, incluyeCarreta]);
 
-  // Empezar una cotización nueva desde cero
+  useEffect(() => {
+    const clienteSnap = { id_cliente: idCliente, nombre, telefono, email, tipoDocumento, ruc_dni: rucDni, clienteEditado };
+    if (!puedeAutosave(clienteSnap, items)) return;
+
+    const t = window.setTimeout(async () => {
+      try {
+        const store = useCrearCotizacionStore.getState();
+        const idExistente =
+          store.idCotizacionGuardada != null && store.numeroGuardado === numeroCotizacion
+            ? store.idCotizacionGuardada
+            : null;
+
+        const id = await autosaveCotizacion({
+          cliente: clienteSnap,
+          items,
+          tipoPrecioCliente,
+          incluyeCarreta,
+          costoCarreta: incluyeCarreta ? 15 : 0,
+          numero: idExistente == null ? numeroCotizacion : undefined,
+          idCotizacionGuardada: idExistente,
+          tipoPago,
+          fechaVencimiento,
+        });
+        if (id != null) {
+          useCrearCotizacionStore.getState().setCotizacionGuardada(id, numeroCotizacion);
+        }
+      } catch (e) {
+        console.warn('[autosave] No se pudo guardar el borrador en el servidor:', e);
+      }
+    }, 1800);
+
+    return () => window.clearTimeout(t);
+  }, [numeroCotizacion, idCliente, nombre, telefono, email, tipoDocumento, rucDni, clienteEditado, fechaVencimiento, tipoPago, tipoPrecioCliente, items, incluyeCarreta]);
+
   const handleLimpiar = () => {
     useCrearCotizacionStore.getState().reset();
     setItems([]);
@@ -209,7 +235,6 @@ export default function CrearCotizacionPage() {
     showToast.success('Borrador limpio: nueva cotización');
   };
 
-  // Cargar productos desde la API al montar
   const fetchProductos = useCallback(async () => {
     try {
       setIsLoadingProductos(true);
@@ -227,7 +252,6 @@ export default function CrearCotizacionPage() {
     fetchProductos();
   }, [fetchProductos]);
 
-  // Filtrar productos en tiempo real (Límite máximo: 3 resultados)
   const resultadosBusqueda = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const query = searchQuery.toLowerCase();
@@ -240,7 +264,6 @@ export default function CrearCotizacionPage() {
       .slice(0, 3);
   }, [searchQuery, productosApi]);
 
-  // Selección de producto para modal
   const handleSeleccionarProducto = (producto: ProductoBase) => {
     setProductoParaModal(producto);
     setIsModalOpen(true);
@@ -248,26 +271,27 @@ export default function CrearCotizacionPage() {
     setSearchQuery('');
   };
 
-  // Agregar item al carrito (solo agrega, no dispara recomendaciones)
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setProductoParaModal(null);
+  };
+
   const handleAgregarProducto = (nuevoItem: ProductoCarrito) => {
     const id = nextCartId();
     setItems((prev) => [...prev, { ...nuevoItem, id }]);
+    handleCloseModal();
   };
 
-  // Eliminar item del carrito
   const handleEliminarItem = (id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
     if (selectedItemId === id) setSelectedItemId(null);
   };
 
-  // Seleccionar producto para ver sus recomendaciones en el panel lateral (siempre activo).
-  // Siempre fuerza recarga, incluso si ya estaba seleccionado (reintento).
   const handleAbrirRecomendaciones = (itemId: string) => {
     setSelectedItemId(itemId);
     setRefreshKeyRecs((k) => k + 1);
   };
 
-  // Manejar agregar recomendación al carrito
   const handleAgregarRecomendacion = (item: any, tipo: 'similar' | 'upsell' | 'equilibrio') => {
     const nuevoItem: ProductoCarrito = {
       id: nextCartId(),
@@ -285,11 +309,9 @@ export default function CrearCotizacionPage() {
       ubicacion: item.ubicacion,
     };
     setItems((prev) => [...prev, nuevoItem]);
-    // El nuevo item queda como base activa del panel
     setSelectedItemId(nuevoItem.id);
   };
 
-  // Manejar reemplazar item por recomendación
   const handleReemplazarRecomendacion = (itemExistenteId: string, nuevoItem: any, tipo: 'similar' | 'upsell' | 'equilibrio') => {
     setItems((prev) =>
       prev.map((item) =>
@@ -310,17 +332,15 @@ export default function CrearCotizacionPage() {
           : item
       )
     );
-    // Mantener el item reemplazado como base activa del panel
     setSelectedItemId(itemExistenteId);
   };
 
-  // Cálculos de montos
   const subtotal = useMemo(() => items.reduce((acc, item) => acc + item.total, 0), [items]);
   const costoCarreta = incluyeCarreta ? 15.00 : 0.00;
-  // IGV DESACTIVADO: los precios ya incluyen IGV.
-  // Para reactivar en una próxima actualización: habilitar cálculo de IGV 18% aquí
-  // y alinear con backend (CotizacionesService) + PDF.
   const total = subtotal + costoCarreta;
+
+  // Helper para manejar valores de Select sea evento u objeto directo
+  const getSelectValue = (e: any) => (e && e.target ? e.target.value : e);
 
   return (
     <div className="p-0 md:p-0 w-full max-w-[1700px] mx-auto space-y-6 font-['DM_Sans']">
@@ -345,7 +365,7 @@ export default function CrearCotizacionPage() {
               Limpiar
             </Button>
           )}
-          <Badge variant={editandoId != null ? 'secondary' : 'neutral'}>
+          <Badge variant={(editandoId != null ? 'secondary' : 'default') as any}>
             {editandoId != null ? 'EDITANDO' : 'BORRADOR'}
           </Badge>
         </div>
@@ -362,6 +382,7 @@ export default function CrearCotizacionPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <ClienteAutocomplete
                 value={nombre}
+                variant="modal"
                 onChange={(v) => {
                   setNombre(v);
                   if (idCliente) setClienteEditado(true);
@@ -370,8 +391,9 @@ export default function CrearCotizacionPage() {
               />
               <Select
                 label="Tipo de precio"
+                variant="modal"
                 value={tipoPrecioCliente}
-                onChange={(e) => setTipoPrecioCliente(e.target.value as 'DISTRIBUIDOR' | 'TIENDA')}
+                onChange={(e) => setTipoPrecioCliente(getSelectValue(e) as 'DISTRIBUIDOR' | 'TIENDA')}
                 options={[
                   { label: 'Distribuidor', value: 'DISTRIBUIDOR' },
                   { label: 'Tienda', value: 'TIENDA' },
@@ -379,6 +401,7 @@ export default function CrearCotizacionPage() {
               />
               <Input
                 label="Teléfono"
+                variant="modal"
                 placeholder="Teléfono de contacto"
                 value={telefono}
                 maxLength={9}
@@ -391,6 +414,7 @@ export default function CrearCotizacionPage() {
 
               <Input
                 label="Email"
+                variant="modal"
                 type="email"
                 placeholder="correo@ejemplo.com"
                 value={email}
@@ -401,11 +425,11 @@ export default function CrearCotizacionPage() {
               />
               <Select
                 label="Tipo de Documento"
+                variant="modal"
                 value={tipoDocumento}
                 onChange={(e) => {
-                  const v = String(e.target.value) as 'DNI' | 'CE' | 'RUC';
+                  const v = String(getSelectValue(e)) as 'DNI' | 'CE' | 'RUC';
                   setTipoDocumento(v);
-                  // Recorta el documento al cambiar de tipo
                   const max = v === 'DNI' ? 8 : v === 'RUC' ? 11 : 12;
                   setRucDni((prev) => (v === 'CE' ? prev.slice(0, max) : prev.replace(/\D/g, '').slice(0, max)));
                   if (idCliente) setClienteEditado(true);
@@ -418,6 +442,7 @@ export default function CrearCotizacionPage() {
               />
               <Input
                 label={docLabel}
+                variant="modal"
                 placeholder={tipoDocumento === 'RUC' ? '11 dígitos' : tipoDocumento === 'DNI' ? '8 dígitos' : 'Documento'}
                 value={rucDni}
                 maxLength={maxDocLength}
@@ -431,14 +456,16 @@ export default function CrearCotizacionPage() {
               />
               <Input
                 label="Fecha de vencimiento"
+                variant="modal"
                 type="date"
                 value={fechaVencimiento}
                 onChange={(e) => setFechaVencimiento(e.target.value)}
               />
               <Select
                 label="Tipo de pago"
+                variant="modal"
                 value={tipoPago}
-                onChange={(e) => setTipoPago(String(e.target.value))}
+                onChange={(e) => setTipoPago(String(getSelectValue(e)))}
                 options={[
                   { label: 'Contado', value: 'CONTADO' },
                   { label: 'Crédito', value: 'CREDITO' },
@@ -451,7 +478,6 @@ export default function CrearCotizacionPage() {
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80 space-y-4">
             <h2 className="text-lg font-bold text-zinc-700">Carrito</h2>
 
-            {/* Input de Buscador */}
             <div className="relative">
               <div className="relative">
                 <Input
@@ -489,7 +515,6 @@ export default function CrearCotizacionPage() {
                 )}
               </div>
 
-              {/* Menú Desplegable con Máximo 3 Resultados */}
               {showDropdown && searchQuery.trim() !== '' && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
@@ -535,7 +560,6 @@ export default function CrearCotizacionPage() {
               )}
             </div>
 
-            {/* Contenido Tabla Global / Estado Vacío */}
             {items.length === 0 ? (
               <div
                 onClick={() => searchInputRef.current?.focus()}
@@ -602,10 +626,8 @@ export default function CrearCotizacionPage() {
           </div>
         </div>
 
-        {/* Columna Derecha: Resumen y Recomendaciones */}
+        {/* Columna Derecha */}
         <div className="col-span-12 lg:col-span-4 space-y-6">
-
-          {/* Card Resumen */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80 space-y-3">
             <h3 className="text-lg font-black text-zinc-700 tracking-wide">RESUMEN</h3>
 
@@ -618,7 +640,6 @@ export default function CrearCotizacionPage() {
                 <span>Carreta</span>
                 <span className="font-semibold text-zinc-800">S/ {costoCarreta.toFixed(2)}</span>
               </div>
-              {/* IGV DESACTIVADO: precios ya incluyen IGV. Reactivar fila al habilitar IGV. */}
               <div className="flex justify-between text-base font-black pt-1 text-zinc-800">
                 <span>Total</span>
                 <span className="text-brand-primary">S/ {total.toFixed(2)}</span>
@@ -631,9 +652,9 @@ export default function CrearCotizacionPage() {
                 id="carreta"
                 checked={incluyeCarreta}
                 onChange={(e) => setIncluyeCarreta(e.target.checked)}
-                className="accent-brand-primary size-4 cursor-pointer rounded"
+                className="accent-green-700 size-4 cursor-pointer rounded"
               />
-              <label htmlFor="carreta" className="text-xs text-brand-primary font-semibold cursor-pointer">
+              <label htmlFor="carreta" className="text-xs text-green-700 font-semibold cursor-pointer select-none">
                 Carreta
               </label>
             </div>
@@ -672,7 +693,6 @@ export default function CrearCotizacionPage() {
             </Button>
           </div>
 
-          {/* Panel Recomendaciones IA */}
           <RecomendacionesPanel
             cartItems={items}
             selectedItemId={selectedItemId}
@@ -683,19 +703,16 @@ export default function CrearCotizacionPage() {
             onAgregar={handleAgregarRecomendacion}
             onReemplazar={handleReemplazarRecomendacion}
           />
-
         </div>
       </div>
 
-      {/* Modal de Agregar Producto */}
       <AgregarProductoModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleCloseModal}
         producto={productoParaModal}
         tipoPrecioCliente={tipoPrecioCliente}
         onAgregar={handleAgregarProducto}
       />
-
     </div>
   );
 }

@@ -41,7 +41,7 @@ Catálogo de flores/artículos de floristería con precios duales (normal/distri
 - Umbral "bajo stock" hardcodeado a `<= 20` (ignora `stock_minimo` del producto).
 
 ### cotizaciones
-**Núcleo del negocio.** Ciclo de vida: `borrador → enviada → aprobada / parcialmente_pagada / rechazada`. Numeración correlativa `COT-001`, detalle de ítems, carreta (envío), pagos/abonos y exportación PDF (pdfkit).
+**Núcleo del negocio.** Ciclo de vida: `borrador → enviada → aprobada / parcialmente_pagada / rechazada`. Numeración correlativa `COT-001`, detalle de ítems, carreta (envío), pagos/abonos y exportación PDF (**Puppeteer/Chromium**: HTML → A4; preview del OJO = mismo archivo descargado).
 
 - Sin DTOs (`body: any`) → sin validación.
 - `registrarPago` está **duplicado** en `cobranza.service.ts`.

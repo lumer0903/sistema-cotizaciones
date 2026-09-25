@@ -7,7 +7,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     error?: string;
     icon?: ReactNode;
     variant?: 'default' | 'modal';
-    sizeVariant?: 'sm' | 'md'; // Prop para controlar el tamaño
+    sizeVariant?: 'sm' | 'md';
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
@@ -25,12 +25,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         ref
     ) => {
         const isModal = variant === 'modal';
-        const borderColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-primary)';
-        const focusColor = isModal ? 'var(--color-brand-modalFocus)' : 'var(--color-brand-primary)';
-        const textColor = 'var(--color-brand-subtitle)';
-        const labelIconColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-primary)';
 
-        // Altura y padding dinámicos según el tamaño
+        // Colores directos para evitar heredar variables doradas/amarillas globales
+        const borderColor = isModal ? '#d4d4d8' : 'var(--color-brand-primary)'; // zinc-300
+        const focusColor = isModal ? '#71717a' : 'var(--color-brand-primary)'; // zinc-500
+        const textColor = '#3f3f46'; // zinc-700
+        const labelIconColor = isModal ? '#71717a' : 'var(--color-brand-primary)'; // zinc-500
+
         const heightClass = sizeVariant === 'sm' ? 'h-8 text-xs' : 'h-10 text-xs sm:text-sm';
 
         return (
@@ -56,14 +57,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                         ref={ref}
                         disabled={disabled}
                         className={`
-              w-full ${heightClass} rounded-xl border bg-white 
+              w-full ${heightClass} rounded-2xl border bg-white 
               font-medium transition-colors 
               placeholder:text-zinc-400 focus:outline-none 
               disabled:bg-gray-100 disabled:cursor-not-allowed
-              ${icon ? 'pl-9 pr-3' : 'px-3'} 
-              ${error ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200' : ''} 
+              ${icon ? 'pl-9 pr-3' : 'px-3.5'} 
+              ${error ? '!border-red-500 focus:!border-red-500 focus:ring-2 focus:ring-red-200' : ''} 
               ${className}
-            `}
+            `.trim()}
                         style={{
                             borderColor: error ? undefined : borderColor,
                             color: textColor,

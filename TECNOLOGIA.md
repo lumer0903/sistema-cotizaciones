@@ -23,7 +23,7 @@
 | Estilos | Tailwind CSS v4 | ^4.3 |
 | Iconos | lucide-react | |
 | Toasts | sonner | |
-| PDF | pdfkit | 0.18 |
+| PDF | Puppeteer (Chromium) | 25.x |
 | Docs API | @nestjs/swagger + **Scalar** (`/reference`) | |
 | Node | ≥ 20 | engines |
 
@@ -41,7 +41,7 @@
 
 ### `apps/api` — `@goldcontinent/api`
 
-**Runtime:** `@nestjs/{common,core,config,platform-express,jwt,passport,axios,bullmq,swagger}`, `@prisma/client`, `prisma`, `bullmq`, `passport` + `passport-jwt`, `bcryptjs`, `jsonwebtoken`, `class-validator`, `class-transformer`, `cookie-parser`, `cors`, `express` 5, `zod`, `pdfkit`, `minio`, `multer`, `pg`, `node-cron`*, `helmet`*, `express-rate-limit`*, `swagger-ui-express`, `@scalar/nestjs-api-reference`, `rxjs`, `reflect-metadata`, `dotenv`, `axios`.
+**Runtime:** `@nestjs/{common,core,config,platform-express,jwt,passport,axios,bullmq,swagger}`, `@prisma/client`, `prisma`, `bullmq`, `passport` + `passport-jwt`, `bcryptjs`, `jsonwebtoken`, `class-validator`, `class-transformer`, `cookie-parser`, `cors`, `express` 5, `zod`, `puppeteer`, `minio`, `multer`, `pg`, `node-cron`*, `helmet`*, `express-rate-limit`*, `swagger-ui-express`, `@scalar/nestjs-api-reference`, `rxjs`, `reflect-metadata`, `dotenv`, `axios`.
 
 \* Instalados pero sin imports en `src/`.
 

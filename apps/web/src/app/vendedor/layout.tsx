@@ -11,7 +11,7 @@ export default function VendedorRootLayout({
 }) {
   return (
     <ProtectedRoute permission="cotizaciones" roles={['vendedor']} fallback={null}>
-      <VendedorLayout title="Cotizaciones">{children}</VendedorLayout>
+      <VendedorLayout>{children}</VendedorLayout>
     </ProtectedRoute>
   );
 }
