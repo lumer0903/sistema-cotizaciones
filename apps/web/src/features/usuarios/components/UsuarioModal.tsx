@@ -100,28 +100,33 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
       });
   }, [open, usuario?.rol]);
 
-  useEffect(() => {
-    if (!open) return;
-    if (usuario) {
-      reset({
-        nombre: usuario.nombre,
-        email: usuario.email,
-        rol: usuario.rol,
-        password: '',
-        passwordConfirm: '',
-      });
-      setAvatarPreview(usuario.avatar_url ?? null);
-    } else {
-      reset({
-        nombre: '',
-        email: '',
-        rol: 'vendedor',
-        password: '',
-        passwordConfirm: '',
-      });
-      setAvatarPreview(null);
+  const [prevOpenForm, setPrevOpenForm] = useState(open);
+  const [prevUsuarioForm, setPrevUsuarioForm] = useState<UsuarioLista | null | undefined>(usuario);
+  if (prevOpenForm !== open || prevUsuarioForm !== usuario) {
+    setPrevOpenForm(open);
+    setPrevUsuarioForm(usuario);
+    if (open) {
+      if (usuario) {
+        reset({
+          nombre: usuario.nombre,
+          email: usuario.email,
+          rol: usuario.rol,
+          password: '',
+          passwordConfirm: '',
+        });
+        setAvatarPreview(usuario.avatar_url ?? null);
+      } else {
+        reset({
+          nombre: '',
+          email: '',
+          rol: 'vendedor',
+          password: '',
+          passwordConfirm: '',
+        });
+        setAvatarPreview(null);
+      }
     }
-  }, [open, usuario, reset]);
+  }
 
   const rolOptions = useMemo(
     () => roles.map((r) => ({ label: r.nombre, value: r.codigo })),

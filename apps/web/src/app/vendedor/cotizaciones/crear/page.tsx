@@ -1,9 +1,8 @@
 ﻿'use client';
 
-import { Plus, Search, X, FileText, ArrowLeft, Save, Send, MessageSquare, Loader2, Zap, TrendingUp, Scale } from 'lucide-react';
-import { useAuth } from '@/lib/authProvider';
+import { Plus, Search, X, FileText, ArrowLeft, Save, Send, MessageSquare } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { showToast } from '@/lib/toast';
@@ -78,18 +77,37 @@ const FORM_DATA_INICIAL = {
 };
 
 export default function VendedorCotizacionCrearPage() {
-  const { usuario } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [autosaving, setAutosaving] = useState(false);
+  const [, setAutosaving] = useState(false);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
-  const [filteredProductos, setFilteredProductos] = useState<Producto[]>([]);
   const [searchProducto, setSearchProducto] = useState('');
+  const filteredProductos = useMemo(
+    () =>
+      productos.filter(
+        (p) =>
+          p.codigo.toLowerCase().includes(searchProducto.toLowerCase()) ||
+          p.descripcion.toLowerCase().includes(searchProducto.toLowerCase())
+      ),
+    [productos, searchProducto]
+  );
   const [showProductModal, setShowProductModal] = useState(false);
-  const [selectedProducto, setSelectedProducto] = useState<Producto | null>(null);
+  const [, setSelectedProducto] = useState<Producto | null>(null);
 
-  const [idCotizacionGuardada, setIdCotizacionGuardada] = useState<number | null>(null);
+  const [idCotizacionGuardada, setIdCotizacionGuardada] = useState<number | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem(VENDEDOR_DRAFT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as VendedorDraft;
+        if (parsed?.idCotizacionGuardada != null) return parsed.idCotizacionGuardada;
+      }
+    } catch {
+      /* draft corrupto */
+    }
+    return null;
+  });
 
   const [formData, setFormData] = useState(() => {
     if (typeof window === 'undefined') {
@@ -120,21 +138,6 @@ export default function VendedorCotizacionCrearPage() {
     }
     return [];
   });
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const raw = localStorage.getItem(VENDEDOR_DRAFT_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as VendedorDraft;
-        if (parsed?.idCotizacionGuardada != null) {
-          setIdCotizacionGuardada(parsed.idCotizacionGuardada);
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-  }, []);
 
   // Índice del detalle seleccionado para ver recomendaciones IA (solo vía botón de ACCIONES)
   const [selectedDetalleIndex, setSelectedDetalleIndex] = useState<number | null>(null);
@@ -208,7 +211,6 @@ export default function VendedorCotizacionCrearPage() {
         ]);
         setClientes(clientesRes.data || []);
         setProductos(productosRes.data || []);
-        setFilteredProductos(productosRes.data || []);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -216,15 +218,6 @@ export default function VendedorCotizacionCrearPage() {
 
     fetchData();
   }, []);
-
-  useEffect(() => {
-    const filtered = productos.filter(
-      (p) =>
-        p.codigo.toLowerCase().includes(searchProducto.toLowerCase()) ||
-        p.descripcion.toLowerCase().includes(searchProducto.toLowerCase())
-    );
-    setFilteredProductos(filtered);
-  }, [searchProducto, productos]);
 
   const getPrecio = (producto: Producto): number => {
     if (!producto.precios_actuales) return 0;

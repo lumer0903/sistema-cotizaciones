@@ -1,7 +1,8 @@
 import React from 'react';
+import Image from 'next/image';
 import { History } from 'lucide-react';
 import { ProductoConsulta } from '../types/precio';
-import { getImageUrl, handleImageError } from '@/lib/imageUtils';
+import { handleImageError } from '@/lib/imageUtils';
 import { formatPrice, formatCode, obtenerPreciosEstandarizados } from '@/lib/formatters';
 
 interface PriceCardProps {
@@ -20,12 +21,14 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
             {/* Imagen & Botón Historial */}
             <div className="w-full h-28 bg-brand-primary/10 rounded-xl relative flex items-center justify-center overflow-hidden">
                 {producto.imagenUrl ? (
-                    <img
-                        src={producto.imagenUrl}
-                        alt={producto.descripcion}
-                        className="w-full h-full object-cover object-center"
-                        onError={(e) => handleImageError(e, '200')}
-                    />
+                        <Image
+                            src={producto.imagenUrl}
+                            alt={producto.descripcion}
+                            width={150}
+                            height={150}
+                            className="w-full h-full object-cover object-center"
+                            onError={(e) => handleImageError(e, '200')}
+                        />
                 ) : (
                     <div className="text-brand-primary/50 font-bold text-xs uppercase tracking-wider">Sin imagen</div>
                 )}

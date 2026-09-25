@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CloudUpload, Trash2 } from "lucide-react";
@@ -674,9 +675,11 @@ export function ProductoModal({
                   onClick={() => fileInputRef.current?.click()}
                   className="size-14 relative rounded-lg border border-neutral-300 overflow-hidden shrink-0 cursor-pointer hover:opacity-80 transition-opacity bg-white"
                 >
-                  <img
+                  <Image
                     src={imagePreview}
                     alt="Preview"
+                    width={150}
+                    height={150}
                     className="w-full h-full object-cover"
                     onError={(e) => handleImageError(e, "150")}
                   />

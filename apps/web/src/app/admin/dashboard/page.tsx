@@ -1,14 +1,12 @@
 'use client';
 
-import { Package, Users, FileText, DollarSign, TrendingUp, BarChart3 } from 'lucide-react';
-import { useAuth } from '@/lib/authProvider';
+import { Package, FileText, DollarSign, TrendingUp } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { DashboardStats } from '@/types';
 
 export default function DashboardPage() {
-  const { usuario } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 

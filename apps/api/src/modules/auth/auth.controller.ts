@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { login, refreshAccessToken, logout, obtenerSesion, changePassword } from './auth.service';
-import { loginSchema, refreshTokenSchema, changePasswordSchema } from '@goldcontinent/shared/schemas/auth';
+import { loginSchema, changePasswordSchema } from '@goldcontinent/shared/schemas/auth';
 import { AppError } from '../../common/middleware/errorHandler';
 
 export async function loginController(req: Request, res: Response, next: NextFunction) {

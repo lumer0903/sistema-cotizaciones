@@ -191,16 +191,20 @@ const SEPARATOR_SIZES = ['w-4 h-4', 'w-3.5 h-3.5', 'w-3 h-3', 'w-3 h-3'];
 export function Breadcrumbs({ accent = 'amber' }: BreadcrumbsProps) {
   const pathname = usePathname();
   const [dynamicLabel, setDynamicLabel] = useState<string | null>(null);
+  const [prevPathname, setPrevPathname] = useState(pathname);
+
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    setDynamicLabel(null);
+  }
 
   useEffect(() => {
     const match = matchRoute(pathname);
     if (!match?.pending) {
-      setDynamicLabel(null);
       return;
     }
 
     let cancelled = false;
-    setDynamicLabel(null);
 
     fetchDynamicLabel(match.pending.resolver, match.pending.id)
       .then((label) => {

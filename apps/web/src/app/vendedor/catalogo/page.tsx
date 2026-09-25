@@ -1,9 +1,8 @@
 'use client';
 
-import { Search, Filter, Grid, List, Package, Tag, ChevronDown, Eye, Plus } from 'lucide-react';
-import { useAuth } from '@/lib/authProvider';
+import { Search, Filter, Grid, List, Package, Tag, ChevronDown, Eye } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { formatCode } from '@/lib/formatters';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
 
@@ -133,10 +132,8 @@ function renderLoadingSkeleton() {
 }
 
 export default function CatalogoPage() {
-  const { usuario } = useAuth();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [filteredProductos, setFilteredProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState<number | 'todos'>('todos');
@@ -151,7 +148,6 @@ export default function CatalogoPage() {
         ]);
         if (prodData.success) {
           setProductos(prodData.data);
-          setFilteredProductos(prodData.data);
         }
         if (catData.success) {
           setCategorias(catData.data);
@@ -166,7 +162,7 @@ export default function CatalogoPage() {
     fetchData();
   }, []);
 
-  useEffect(() => {
+  const filteredProductos = useMemo(() => {
     let filtered = productos;
     if (search) {
       filtered = filtered.filter(p =>
@@ -177,7 +173,7 @@ export default function CatalogoPage() {
     if (categoriaFilter !== 'todos') {
       filtered = filtered.filter(p => p.id_categoria === categoriaFilter);
     }
-    setFilteredProductos(filtered);
+    return filtered;
   }, [search, categoriaFilter, productos]);
 
   return (

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 function initialsOf(nombre?: string | null): string {
   if (!nombre?.trim()) return 'U';
@@ -44,9 +45,11 @@ export function Avatar({ src, nombre, size = 'md', className = '', onClick, titl
       className={`shrink-0 rounded-full overflow-hidden bg-brand-soft border border-gray-200 flex items-center justify-center font-bold text-brand-primary select-none ${SIZE_CLASSES[size]} ${onClick ? 'hover:border-brand-primary transition-colors cursor-pointer' : ''} ${className}`}
     >
       {showImg ? (
-        <img
+        <Image
           src={src as string}
           alt={nombre || 'Avatar'}
+          width={96}
+          height={96}
           className="h-full w-full object-cover"
           onError={() => setFailed(true)}
         />

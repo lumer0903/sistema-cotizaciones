@@ -31,21 +31,29 @@ export function ClienteAutocomplete({
 }: ClienteAutocompleteProps) {
   const [abierta, setAbierta] = useState(false);
   const [resultados, setResultados] = useState<ClienteApi[]>([]);
-  const [cargando, setCargando] = useState(false);
+  const [cargando, setCargando] = useState(() => value.trim() !== '');
   const [activo, setActivo] = useState(-1);
+  const [prevValue, setPrevValue] = useState(value);
   const seqRef = useRef(0);
   const contenedorRef = useRef<HTMLDivElement>(null);
+
+  if (prevValue !== value) {
+    setPrevValue(value);
+    if (value.trim()) {
+      setCargando(true);
+    } else {
+      setResultados([]);
+      setCargando(false);
+    }
+  }
 
   useEffect(() => {
     const q = value.trim();
     if (!q) {
-      setResultados([]);
-      setCargando(false);
       seqRef.current += 1;
       return;
     }
     const seq = ++seqRef.current;
-    setCargando(true);
     const t = window.setTimeout(async () => {
       try {
         const list = await buscarClientes(q, MAX_RESULTADOS);

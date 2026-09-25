@@ -12,12 +12,16 @@ interface TooltipProps {
 
 export function Tooltip({ content, children, position = 'top', delay = 200 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [rect, setRect] = useState<DOMRect | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const childRef = useRef<HTMLElement>(null);
 
   const showTooltip = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setIsVisible(true), delay);
+    timeoutRef.current = setTimeout(() => {
+      if (childRef.current) setRect(childRef.current.getBoundingClientRect());
+      setIsVisible(true);
+    }, delay);
   };
 
   const hideTooltip = () => {
@@ -39,11 +43,10 @@ export function Tooltip({ content, children, position = 'top', delay = 200 }: To
     onBlur: hideTooltip,
   } as Record<string, unknown>);
 
-  if (!isVisible || !childRef.current) {
+  if (!isVisible || !rect) {
     return childWithHandlers;
   }
 
-  const rect = childRef.current.getBoundingClientRect();
   const tooltipWidth = 280;
   const gap = 8;
 

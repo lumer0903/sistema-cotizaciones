@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BarChart3, FileText, Package, TrendingUp, Sparkles, AlertTriangle } from 'lucide-react';
+import { FileText, Package, TrendingUp, Sparkles, AlertTriangle } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 import { Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, FilterCard, ESTADO_BADGE } from '@/components/ui';
 import { showToast } from '@/lib/toast';

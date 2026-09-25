@@ -63,7 +63,7 @@ export class AuthController {
       });
 
       return { success: true, message: 'Token renovado' };
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Token inválido o expirado');
     }
   }

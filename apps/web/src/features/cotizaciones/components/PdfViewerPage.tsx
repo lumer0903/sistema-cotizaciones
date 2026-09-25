@@ -1,16 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft,
-  Download,
   FileText,
-  Loader2,
-  CheckCircle2
+  Loader2
 } from 'lucide-react';
-import { exportarPdfCotizacion, getCotizacionPdfObjectUrl } from '../api/cotizacionApi';
-import { showToast } from '@/lib/toast';
+import { getCotizacionPdfObjectUrl } from '../api/cotizacionApi';
 
 interface PdfViewerPageProps {
   cotizacionId: string | number;
@@ -18,12 +13,10 @@ interface PdfViewerPageProps {
   backHref: string;
 }
 
-export function PdfViewerPage({ cotizacionId, filename, backHref }: PdfViewerPageProps) {
-  const router = useRouter();
+export function PdfViewerPage({ cotizacionId, filename: _filename, backHref: _backHref }: PdfViewerPageProps) {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (cotizacionId == null) return;
@@ -53,18 +46,6 @@ export function PdfViewerPage({ cotizacionId, filename, backHref }: PdfViewerPag
       setObjectUrl(null);
     };
   }, [cotizacionId]);
-
-  const handleDownload = async () => {
-    setDownloading(true);
-    try {
-      await exportarPdfCotizacion(cotizacionId, filename || `COT-${cotizacionId}.pdf`);
-      showToast.success('PDF descargado');
-    } catch (e: any) {
-      showToast.error(e?.message || 'No se pudo descargar el PDF');
-    } finally {
-      setDownloading(false);
-    }
-  };
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] font-['DM_Sans']">

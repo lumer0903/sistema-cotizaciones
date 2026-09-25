@@ -81,13 +81,13 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
     const idProducto = watch('id_producto');
     const idAlmacenOrigen = watch('id_almacen_origen');
 
-    const resetForm = () => {
+    const resetForm = useCallback(() => {
         reset();
         setSelectedProducto(null);
         setSearchQuery('');
         setStockOrigen(null);
         setShowSuggestions(false);
-    };
+    }, [reset]);
 
     const lastPreseleccion = useRef<number | null | undefined>(undefined);
 
@@ -103,7 +103,7 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
             }
             lastPreseleccion.current = productoPreseleccionado;
         }
-    }, [open, productoPreseleccionado]);
+    }, [open, productoPreseleccionado, resetForm]);
 
     useEffect(() => {
         if (open) {

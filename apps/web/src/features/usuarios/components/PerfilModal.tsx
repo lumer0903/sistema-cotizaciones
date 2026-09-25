@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import Image from 'next/image';
 import { Camera } from 'lucide-react';
 import { Modal } from '@/components/ui';
 import { apiClient } from '@/lib/apiClient';
@@ -18,13 +19,13 @@ export function PerfilModal({ open, onClose }: PerfilModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const avatarUrl = usuario?.avatar_url ?? null;
+  const [prevAvatar, setPrevAvatar] = useState<{ open: boolean; url: string | null } | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    setPreview(usuario?.avatar_url ?? null);
-  }, [open, usuario?.avatar_url]);
-
-  const photoDirty = preview !== (usuario?.avatar_url ?? null);
+  if (prevAvatar === null || prevAvatar.open !== open || prevAvatar.url !== avatarUrl) {
+    setPrevAvatar({ open, url: avatarUrl });
+    if (open) setPreview(avatarUrl);
+  }
 
   const handlePick = async (file: File | undefined | null) => {
     if (!file) return;
@@ -58,37 +59,17 @@ export function PerfilModal({ open, onClose }: PerfilModalProps) {
     }
   };
 
-  const handleSave = async () => {
-    if (!photoDirty || saving) return;
-    try {
-      setSaving(true);
-      if (preview) {
-        await apiClient('/auth/avatar', {
-          method: 'PATCH',
-          body: JSON.stringify({ avatar_url: preview }),
-        });
-      } else {
-        await apiClient('/auth/avatar', { method: 'DELETE' });
-      }
-      await refresh();
-      showToast.success('Foto de perfil actualizada');
-      onClose();
-    } catch (error) {
-      showToast.error(error instanceof Error ? error.message : 'No se pudo guardar la foto');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <Modal open={open} onClose={onClose} title="Mi perfil" maxWidth="sm">
       <div className="space-y-6">
         <div className="flex flex-col items-center">
           <div className="relative">
-            <img
-              src={preview || undefined}
-              alt={usuario?.nombre || 'Foto de perfil'}
-              className={`w-24 h-24 rounded-full border-2 border-gray-100 object-cover bg-brand-soft ${preview ? '' : 'hidden'}`}
+            <Image
+                src={preview || 'data:,'}
+                alt={usuario?.nombre || 'Foto de perfil'}
+                width={96}
+                height={96}
+                className={`w-24 h-24 rounded-full border-2 border-gray-100 object-cover bg-brand-soft ${preview ? '' : 'hidden'}`}
             />
             {!preview && (
               <div className="w-24 h-24 rounded-full border-2 border-gray-100 bg-brand-soft flex items-center justify-center text-brand-primary font-bold text-2xl">

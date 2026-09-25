@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { Package, Archive } from 'lucide-react';
 import { ProductoCarrito } from '../types/cotizacion';
 import { Select } from '@/components/ui/Select';
@@ -65,6 +66,11 @@ export default function AgregarProductoModal({
     const [cantidad, setCantidad] = useState<number>(1);
     const [precioInput, setPrecioInput] = useState<string>('0.00');
     const [imgError, setImgError] = useState<boolean>(false);
+    const [prevReset, setPrevReset] = useState<{
+        isOpen: boolean;
+        producto: ProductoBase | null;
+        tipoPrecioCliente: string;
+    } | null>(null);
 
     // Extracción segura de los 6 precios (tienda + distribuidor) desde cualquier forma del producto
     const { tienda, distribuidor } = useMemo(
@@ -76,7 +82,13 @@ export default function AgregarProductoModal({
     const preciosPorCliente = esTienda ? tienda : distribuidor;
 
     // Sincroniza el input de precio al abrir el modal / cambiar producto o tipo de cliente
-    useEffect(() => {
+    if (
+        prevReset === null ||
+        prevReset.isOpen !== isOpen ||
+        prevReset.producto !== producto ||
+        prevReset.tipoPrecioCliente !== tipoPrecioCliente
+    ) {
+        setPrevReset({ isOpen, producto, tipoPrecioCliente });
         if (isOpen && producto) {
             setTipoColor('SURTIDO');
             setColorSeleccionado('');
@@ -86,8 +98,7 @@ export default function AgregarProductoModal({
             setPrecioInput(Number(inicial || 0).toFixed(2));
             setImgError(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen, producto, tipoPrecioCliente]);
+    }
 
     const precioNum = useMemo(() => {
         const val = parseFloat(precioInput);
@@ -99,13 +110,15 @@ export default function AgregarProductoModal({
     // Cálculo y fallback de stocks
     const stockTotalDisplay = producto?.stock_total ?? producto?.stockTotal ?? producto?.stock ?? 0;
 
+    const coloresDisponibles = producto?.coloresDisponibles;
+
     const stockColorSeleccionado = useMemo(() => {
         if (tipoColor === 'SURTIDO') return stockTotalDisplay;
-        if (!colorSeleccionado || !producto?.coloresDisponibles) return stockTotalDisplay;
+        if (!colorSeleccionado || !coloresDisponibles) return stockTotalDisplay;
 
-        const encontrado = producto.coloresDisponibles.find((c) => c.nombre === colorSeleccionado);
+        const encontrado = coloresDisponibles.find((c) => c.nombre === colorSeleccionado);
         return encontrado ? encontrado.stock : 0;
-    }, [tipoColor, colorSeleccionado, producto?.coloresDisponibles, stockTotalDisplay]);
+    }, [tipoColor, colorSeleccionado, coloresDisponibles, stockTotalDisplay]);
 
     // Validación para bloquear o permitir guardar
     const sinStock = tipoColor === 'ESPECIFICO' && colorSeleccionado !== '' && stockColorSeleccionado <= 0;
@@ -159,9 +172,11 @@ export default function AgregarProductoModal({
                 <div className="border border-zinc-200 rounded-2xl p-3.5 flex gap-3.5 bg-white items-center">
                     <div className="size-20 rounded-xl border border-zinc-200 flex items-center justify-center overflow-hidden bg-zinc-50 shrink-0">
                         {imagenSrc && !imgError ? (
-                            <img
+                            <Image
                                 src={getImageUrl(producto.foto_url || producto.imagenUrl)}
                                 alt={producto.descripcion}
+                                width={80}
+                                height={80}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                     handleImageError(e);

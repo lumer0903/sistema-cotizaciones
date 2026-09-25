@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean, MaxLength } from 'class-validator';
+import { IsOptional, IsBoolean } from 'class-validator';
 import { PartialType } from '@nestjs/swagger';
 import { CreateAlmacenDto } from './create-almacen.dto';
 

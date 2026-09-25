@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import { ArrowUpRight, ArrowDownLeft, RefreshCw, Calendar, Download, ChevronLeft, ChevronRight, Image as ImageIcon, Search } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import {
@@ -44,13 +45,14 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
 
     const [selectedProducto, setSelectedProducto] = useState<ProductoInventario | null>(producto);
     const [productos, setProductos] = useState<ProductoInventario[]>([]);
-    const [loadingProductos, setLoadingProductos] = useState(false);
 
     // Estado para el buscador con autocompletado (3 opciones)
     const [searchQuery, setSearchQuery] = useState('');
     const [showSuggestions, setShowSuggestions] = useState(false);
 
-    useEffect(() => {
+    const [prevReset, setPrevReset] = useState({ open, producto });
+    if (prevReset.open !== open || prevReset.producto !== producto) {
+        setPrevReset({ open, producto });
         setSelectedProducto(producto);
         setFiltroTipo('TODOS');
         setFechaInicio('');
@@ -64,22 +66,21 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
         } else {
             setSearchQuery('');
         }
+    }
 
+    useEffect(() => {
         if (open && !producto && productos.length === 0) {
             const fetchProds = async () => {
-                setLoadingProductos(true);
                 try {
                     const res = await apiClient('/productos?limit=500&include=categoria,stock');
                     setProductos(res.data || res.items || []);
                 } catch (e) {
                     console.error('Error fetching productos:', e);
-                } finally {
-                    setLoadingProductos(false);
                 }
             };
-            fetchProds();
+            void fetchProds();
         }
-    }, [open, producto]);
+    }, [open, producto, productos.length]);
 
     // Filtrar máximo 3 sugerencias coincidente al escribir
     const sugerencias = useMemo(() => {
@@ -154,7 +155,10 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
 
     useEffect(() => {
         if (open && selectedProducto) {
-            fetchKardex(page);
+            const run = async () => {
+                await fetchKardex(page);
+            };
+            void run();
         }
     }, [open, selectedProducto, fetchKardex, page]);
 
@@ -320,9 +324,11 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                         <div className="flex items-center gap-3">
                             <div className="w-14 h-14 shrink-0 bg-stone-100 rounded-lg border border-stone-200 flex items-center justify-center overflow-hidden">
                                 {selectedProducto.foto_url ? (
-                                    <img
+                                    <Image
                                         src={getImageUrl(selectedProducto.foto_url, '115')}
                                         alt={selectedProducto.descripcion}
+                                        width={115}
+                                        height={128}
                                         className="w-full h-full object-cover"
                                         onError={(e) => handleImageError(e, '115')}
                                     />

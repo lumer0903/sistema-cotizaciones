@@ -70,6 +70,8 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('nueva') === '1';
 
+  const esCrearNueva = modo === 'crear' && esNueva;
+
   const draftInicial = useMemo(
     () =>
       esNueva
@@ -130,7 +132,7 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [productosApi, setProductosApi] = useState<ProductoBase[]>([]);
-  const [isLoadingProductos, setIsLoadingProductos] = useState(false);
+  const [isLoadingProductos, setIsLoadingProductos] = useState(true);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Modal Agregar Producto
@@ -148,25 +150,33 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
 
   const [numeroCotizacion, setNumeroCotizacion] = useState(draftInicial.numeroCotizacion);
 
+  const [prevEsCrearNueva, setPrevEsCrearNueva] = useState<boolean | null>(null);
+
+  if (prevEsCrearNueva !== esCrearNueva) {
+    setPrevEsCrearNueva(esCrearNueva);
+    if (esCrearNueva) {
+      setItems([]);
+      setSelectedItemId(null);
+      setIncluyeCarreta(false);
+      setTipoPrecioCliente('DISTRIBUIDOR');
+      setNombre('');
+      setTelefono('');
+      setEmail('');
+      setTipoDocumento('DNI');
+      setRucDni('');
+      setIdCliente(null);
+      setClienteEditado(false);
+      setFechaVencimiento('');
+      setTipoPago('');
+      setSearchQuery('');
+    }
+  }
+
   useEffect(() => {
-    if (modo !== 'crear' || !esNueva) return;
+    if (!esCrearNueva) return;
     useCrearCotizacionStore.getState().reset();
-    setItems([]);
-    setSelectedItemId(null);
-    setIncluyeCarreta(false);
-    setTipoPrecioCliente('DISTRIBUIDOR');
-    setNombre('');
-    setTelefono('');
-    setEmail('');
-    setTipoDocumento('DNI');
-    setRucDni('');
-    setIdCliente(null);
-    setClienteEditado(false);
-    setFechaVencimiento('');
-    setTipoPago('');
-    setSearchQuery('');
     router.replace(`${base}/crear`);
-  }, [esNueva, modo, router, base]);
+  }, [esCrearNueva, router, base]);
 
   useEffect(() => {
     if (modo !== 'crear' || tieneBorradorPrevio) return;
@@ -255,7 +265,6 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
 
   const fetchProductos = useCallback(async () => {
     try {
-      setIsLoadingProductos(true);
       const data = await obtenerProductosImportados();
       setProductosApi(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -267,7 +276,10 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
   }, []);
 
   useEffect(() => {
-    fetchProductos();
+    const run = async () => {
+      await fetchProductos();
+    };
+    void run();
   }, [fetchProductos]);
 
   const resultadosBusqueda = useMemo(() => {

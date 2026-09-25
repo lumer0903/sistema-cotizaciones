@@ -2,7 +2,6 @@
 
 import { VendedorLayout } from '@/components/layouts/VendedorLayout';
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute';
-import { PermisoModulo } from '@goldcontinent/shared/auth';
 
 export default function VendedorRootLayout({
   children,

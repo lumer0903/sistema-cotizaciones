@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { prisma } from '../config/prisma';
 
 export class AppError extends Error {
   public readonly status: number;

@@ -9,6 +9,7 @@ const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET || 'change-me-refres
 
 function quitarDatosSensibles(usuario: { password_hash: string; [key: string]: any }) {
   const { password_hash, ...usuarioSeguro } = usuario;
+  void password_hash;
   return usuarioSeguro;
 }
 

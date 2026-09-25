@@ -5,7 +5,6 @@ import { InventarioService } from './inventario.service';
 import { CreateMovimientoDto } from './dto/create-movimiento.dto';
 import type { MovimientoResponse, KardexResponse } from './inventario.service';
 import { TipoMovimientoInventario, OrigenMovimiento } from '@goldcontinent/shared/constants/enums';
-import { TipoMovimiento, OrigenMovimiento as PrismaOrigenMovimiento } from '@prisma/client';
 import type { Response } from 'express';
 
 @ApiTags('Inventario')

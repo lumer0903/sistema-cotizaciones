@@ -16,20 +16,20 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [alertasCount, setAlertasCount] = useState(0);
   const [isPerfilOpen, setIsPerfilOpen] = useState(false);
 
-  const fetchAlertasCount = useCallback(async () => {
-    try {
-      const res = await apiClient('/inventario/alertas?estado=activa');
-      const alertas = res.data || [];
-      setAlertasCount(alertas.length);
-    } catch (e) {
-      console.error('Error cargando contador de alertas:', e);
-      setAlertasCount(0);
-    }
+  const fetchAlertasCount = useCallback(() => {
+    return apiClient('/inventario/alertas?estado=activa')
+      .then((res) => (res.data || []).length)
+      .catch((e) => {
+        console.error('Error cargando contador de alertas:', e);
+        return 0;
+      });
   }, []);
 
   useEffect(() => {
-    fetchAlertasCount();
-    const interval = setInterval(fetchAlertasCount, 60000);
+    fetchAlertasCount().then((count) => setAlertasCount(count));
+    const interval = setInterval(() => {
+      fetchAlertasCount().then((count) => setAlertasCount(count));
+    }, 60000);
     return () => clearInterval(interval);
   }, [fetchAlertasCount]);
 
@@ -89,7 +89,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <NotificacionesDrawer
         open={isAlertasOpen}
         onClose={() => setIsAlertasOpen(false)}
-        onSuccess={() => fetchAlertasCount()}
+        onSuccess={() => fetchAlertasCount().then((count) => setAlertasCount(count))}
       />
 
       <PerfilModal open={isPerfilOpen} onClose={() => setIsPerfilOpen(false)} />

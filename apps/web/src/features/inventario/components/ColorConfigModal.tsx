@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { X, Plus, FileText } from 'lucide-react';
-import { Modal, Button, Textarea, Input } from '@/components/ui';
+import { Modal, Button, Textarea } from '@/components/ui';
 
 export interface ColorItem {
   hex: string;
@@ -88,6 +88,9 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
   const [importText, setImportText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const [prevInitialColors, setPrevInitialColors] = useState(initialColors);
+  const [prevOpen, setPrevOpen] = useState(open);
+
   const canSave = colors.length > 0;
 
   const handleNameChange = (val: string) => {
@@ -96,14 +99,16 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
     if (mappedHex && mappedHex !== '#6b7280') setNewHex(mappedHex);
   };
 
-  useEffect(() => {
+  if (prevInitialColors !== initialColors || prevOpen !== open) {
+    setPrevInitialColors(initialColors);
+    setPrevOpen(open);
     setColors(initialColors);
     setIsAdding(false);
     setIsImporting(false);
     setNewName('');
     setNewHex('#ef4444');
     setImportText('');
-  }, [initialColors, open]);
+  }
 
   const addColor = () => {
     const trimmed = newName.trim();

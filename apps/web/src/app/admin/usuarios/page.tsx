@@ -50,6 +50,8 @@ export default function UsuariosPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(8);
 
+  const [prevFiltros, setPrevFiltros] = useState({ search, limit });
+
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UsuarioLista | null>(null);
   const [statusTarget, setStatusTarget] = useState<UsuarioLista | null>(null);
@@ -89,12 +91,16 @@ export default function UsuariosPage() {
 
   useEffect(() => {
     if (activeTab !== 'usuarios') return;
-    fetchData();
+    const run = async () => {
+      await fetchData();
+    };
+    run();
   }, [activeTab, fetchData]);
 
-  useEffect(() => {
+  if (prevFiltros.search !== search || prevFiltros.limit !== limit) {
+    setPrevFiltros({ search, limit });
     setCurrentPage(1);
-  }, [search, limit]);
+  }
 
   const totalPages = Math.ceil(totalItems / limit) || 1;
 

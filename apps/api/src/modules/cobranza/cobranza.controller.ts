@@ -2,7 +2,7 @@ import { Controller, Get, Post, Param, Query, Body, UseGuards, ParseIntPipe, Req
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
 import { CobranzaService } from './cobranza.service';
-import type { CobranzaItemResponse, CobranzaDetalleResponse, PaginatedCobranzaResponse } from './cobranza.service';
+import type { CobranzaDetalleResponse, PaginatedCobranzaResponse } from './cobranza.service';
 import { EstadoCotizacion, MetodoPago } from '@goldcontinent/shared/constants/enums';
 
 @ApiTags('Cobranza')

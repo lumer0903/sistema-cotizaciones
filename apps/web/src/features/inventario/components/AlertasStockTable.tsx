@@ -36,7 +36,10 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
 
     useEffect(() => {
         if (open && activeTab === 'inventario') {
-            fetchAlertas();
+            const run = async () => {
+                await fetchAlertas();
+            };
+            void run();
         }
     }, [open, activeTab, fetchAlertas]);
 

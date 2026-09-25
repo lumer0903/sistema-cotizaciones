@@ -64,13 +64,15 @@ function NuevoRolModal({ open, onClose, onCreated }: NuevoRolModalProps) {
   const [codigoTocado, setCodigoTocado] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (prevOpen !== open) {
+    setPrevOpen(open);
     if (!open) {
       setNombre('');
       setCodigo('');
       setCodigoTocado(false);
     }
-  }, [open]);
+  }
 
   const codigoFinal = codigoTocado ? codigo : slugify(nombre);
 
@@ -170,7 +172,10 @@ export function RolesYPermisosView() {
   }, []);
 
   useEffect(() => {
-    void fetchRoles();
+    const run = async () => {
+      await fetchRoles();
+    };
+    void run();
   }, [fetchRoles]);
 
   useEffect(() => {

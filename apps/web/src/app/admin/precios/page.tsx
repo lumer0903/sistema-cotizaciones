@@ -19,23 +19,28 @@ export default function ConsultaPrecioPage() {
   const [busqueda, setBusqueda] = useState('');
   const [tipoPrecio, setTipoPrecio] = useState<'distribuidor' | 'tienda' | ''>('');
   const [stockFiltro, setStockFiltro] = useState('');
-  const [vista, setVista] = useState<'grid' | 'list'>('grid');
+  const [vista] = useState<'grid' | 'list'>('grid');
 
   // Paginación con el estado global de limite
   const [paginaActual, setPaginaActual] = useState(1);
   const [limit, setLimit] = useState(8);
 
+  const [prevBusqueda, setPrevBusqueda] = useState(busqueda);
+  const [prevStockFiltro, setPrevStockFiltro] = useState(stockFiltro);
+
   const [productoHistorialId, setProductoHistorialId] = useState<string | null>(null);
   const [historialData, setHistorialData] = useState<HistorialPrecioItem[]>([]);
-  const [loadingHistorial, setLoadingHistorial] = useState(false);
+  const [, setLoadingHistorial] = useState(false);
 
   useEffect(() => {
     getProductosConsulta().then((data) => setProductos(data));
   }, []);
 
-  useEffect(() => {
+  if (prevBusqueda !== busqueda || prevStockFiltro !== stockFiltro) {
+    setPrevBusqueda(busqueda);
+    setPrevStockFiltro(stockFiltro);
     setPaginaActual(1);
-  }, [busqueda, stockFiltro]);
+  }
 
   const handleVerHistorial = async (id: string) => {
     setLoadingHistorial(true);

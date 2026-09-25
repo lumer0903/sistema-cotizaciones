@@ -60,6 +60,9 @@ function clearSessionAndRedirect(): void {
   document.cookie = 'refreshToken=; path=/; max-age=0; SameSite=Lax';
   document.cookie = 'userRole=; path=/; max-age=0';
   const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search);
+  // Recarga completa intencional: al agotarse la sesión se limpia todo el estado
+  // en memoria de la SPA (router.push dejaría montados componentes con datos).
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
   window.location.href = `/login?redirectTo=${redirectUrl}`;
 }
 
@@ -75,7 +78,6 @@ async function parseError(response: Response): Promise<Error> {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function apiClient<T = any>(path: string, options: RequestInit = {}): Promise<T> {
   const url = normalizeUrl(path);
   let response = await fetch(url, {
@@ -114,7 +116,6 @@ export async function apiClient<T = any>(path: string, options: RequestInit = {}
   return response.json() as Promise<T>;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function uploadFile(path: string, formData: FormData): Promise<any> {
   const response = await fetch(normalizeUrl(path), {
     method: 'POST',

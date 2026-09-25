@@ -1,7 +1,6 @@
 'use client';
 
 import { FileText, Plus, Search, Filter, ChevronDown, Eye, Edit, Download } from 'lucide-react';
-import { useAuth } from '@/lib/authProvider';
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Badge, ESTADO_BADGE } from '@/components/ui';
@@ -13,7 +12,6 @@ import { CotizacionItem, EstadoCotizacion } from '@/features/cotizaciones/types/
 import { showToast } from '@/lib/toast';
 
 export default function CotizacionesPage() {
-  const { usuario } = useAuth();
   const [cotizaciones, setCotizaciones] = useState<CotizacionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

@@ -1,7 +1,6 @@
 'use client';
 
 import { Settings, Bell, Database, CreditCard, Save, FileText } from 'lucide-react';
-import { useAuth } from '@/lib/authProvider';
 import { useEffect, useState } from 'react';
 import { Select } from '@/components/ui/Select';
 import { showToast } from '@/lib/toast';
@@ -49,8 +48,7 @@ interface Configuracion {
 }
 
 export default function ConfiguracionPage() {
-  const { usuario } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<'empresa' | 'documentos' | 'comercial' | 'notificaciones' | 'sistema'>('empresa');
 
@@ -81,7 +79,6 @@ export default function ConfiguracionPage() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     getConfiguracion()
       .then((data) => {
         if (cancelled) return;

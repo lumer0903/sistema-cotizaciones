@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, Package, FileText, CreditCard, CalendarClock, Circle, Loader2 } from 'lucide-react';
+import { X, Package, FileText, CreditCard, CalendarClock, Loader2 } from 'lucide-react';
 import { inventarioApi, AlertaStockResponse } from '@/features/inventario/api/inventario.api';
 import { showToast } from '@/lib/toast';
 import { formatCode, formatText } from '@/lib/formatters';
@@ -44,15 +44,18 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('todas');
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(open);
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  const fetchNotifications = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Por ahora obtenemos solo de inventario
-      const res = await inventarioApi.obtenerAlertasStock();
+  if (prevOpen !== open) {
+    setPrevOpen(open);
+    setLoading(open);
+  }
+
+  const fetchNotifications = useCallback(() => {
+    return inventarioApi.obtenerAlertasStock().then((res) => {
       const alertas = res.data || [];
-      
+
       const mapped: NotificationItem[] = alertas.map(a => ({
         id: `stock_${a.id_alerta}`,
         type: 'STOCK_BAJO',
@@ -61,22 +64,28 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
         createdAt: a.created_at,
         data: a,
       }));
-      
+
       // Aquí se sumarían alertas de cotizaciones y cobranzas cuando existan en la API
-      
-      setNotifications(mapped.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    } finally {
-      setLoading(false);
-    }
+
+      return mapped.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    });
+  }, []);
+
+  const onNotificationsLoaded = useCallback((mapped: NotificationItem[]) => {
+    setNotifications(mapped);
+    setLoading(false);
+  }, []);
+
+  const onNotificationsError = useCallback((error: unknown) => {
+    console.error('Error fetching notifications:', error);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
     if (open) {
-      fetchNotifications();
+      fetchNotifications().then(onNotificationsLoaded, onNotificationsError);
     }
-  }, [open, fetchNotifications]);
+  }, [open, fetchNotifications, onNotificationsLoaded, onNotificationsError]);
 
   const handleCardClick = async (item: NotificationItem) => {
     if (!item.isRead) {
@@ -84,8 +93,9 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
         try {
           await inventarioApi.reconocerAlerta((item.data as AlertaStockResponse).id_alerta);
           if (onSuccess) onSuccess();
-          fetchNotifications();
-        } catch (error) {
+          setLoading(true);
+          fetchNotifications().then(onNotificationsLoaded, onNotificationsError);
+        } catch {
           showToast.error('Error al marcar como leída');
         }
       }
@@ -104,8 +114,6 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
     if (activeTab === 'cobranzas') return n.type === 'COBRANZA_PENDIENTE' || n.type === 'PROXIMO_PAGO_PARCIAL';
     return true;
   });
-
-  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const renderIcon = (type: NotificationType) => {
     switch(type) {

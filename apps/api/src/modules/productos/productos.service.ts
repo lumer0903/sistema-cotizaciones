@@ -518,6 +518,7 @@ export class ProductosService {
         id_almacen,
         ...productoData
       } = data;
+      void id_almacen;
 
       if (productoData.codigo) {
         const existe = await this.prisma.producto.findFirst({

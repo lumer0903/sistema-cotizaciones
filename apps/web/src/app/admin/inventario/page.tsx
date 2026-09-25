@@ -113,21 +113,6 @@ export default function InventarioPage() {
   const [isKardexOpen, setIsKardexOpen] = useState(false);
   const [productoParaKardex, setProductoParaKardex] = useState<ProductoInventario | null>(null);
 
-  const fetchMetadata = useCallback(async () => {
-    try {
-      const [resCat, resAlm] = await Promise.all([
-        apiClient('/categorias?limit=100').catch(() => ({ data: [] })),
-        apiClient('/almacenes?activo=true&limit=100').catch(() => ({ data: [] })),
-      ]);
-      setCategorias(Array.isArray(resCat?.data) ? resCat.data : []);
-      setAlmacenes(Array.isArray(resAlm?.data) ? resAlm.data : []);
-    } catch (e) {
-      console.error('Error cargando metadatos:', e);
-    } finally {
-      setMetaLoading(false);
-    }
-  }, []);
-
   const fetchProductos = useCallback(async () => {
     setLoading(true);
     setErrorConexion(false);
@@ -192,8 +177,23 @@ export default function InventarioPage() {
   }, []);
 
   useEffect(() => {
+    const fetchMetadata = async () => {
+      try {
+        const [resCat, resAlm] = await Promise.all([
+          apiClient('/categorias?limit=100').catch(() => ({ data: [] })),
+          apiClient('/almacenes?activo=true&limit=100').catch(() => ({ data: [] })),
+        ]);
+        setCategorias(Array.isArray(resCat?.data) ? resCat.data : []);
+        setAlmacenes(Array.isArray(resAlm?.data) ? resAlm.data : []);
+      } catch (e) {
+        console.error('Error cargando metadatos:', e);
+      } finally {
+        setMetaLoading(false);
+      }
+    };
+
     fetchMetadata();
-  }, [fetchMetadata]);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {

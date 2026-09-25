@@ -1,7 +1,8 @@
 ﻿'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
     LayoutDashboard,
@@ -43,21 +44,23 @@ const menuItems: MenuItem[] = [
     { name: 'Configuración', href: '/admin/configuracion', icon: Settings },
 ];
 
+function findActiveSubmenu(pathname: string): string | null {
+    const activeParent = menuItems.find(
+        (item) => item.subItems && pathname.startsWith(item.href)
+    );
+    return activeParent ? activeParent.name : null;
+}
+
 export function Sidebar() {
     const pathname = usePathname();
     const { logout } = useAuth();
-    const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+    const [openSubmenu, setOpenSubmenu] = useState<string | null>(() => findActiveSubmenu(pathname));
+    const [prevPathname, setPrevPathname] = useState(pathname);
 
-    useEffect(() => {
-        const activeParent = menuItems.find(
-            (item) => item.subItems && pathname.startsWith(item.href)
-        );
-        if (activeParent) {
-            setOpenSubmenu(activeParent.name);
-        } else {
-            setOpenSubmenu(null);
-        }
-    }, [pathname]);
+    if (prevPathname !== pathname) {
+        setPrevPathname(pathname);
+        setOpenSubmenu(findActiveSubmenu(pathname));
+    }
 
     const handleItemClick = (item: MenuItem) => {
         if (item.subItems) {
@@ -73,9 +76,11 @@ export function Sidebar() {
                 {/* LOGO SUPERIOR: Espaciado refinado y texto minimalista */}
                 <div className="w-full pt-8 pb-6 flex justify-center items-center px-4">
                     <Link href="/admin/dashboard" className="text-center group">
-                        <img
+                        <Image
                             src="/logo.png"
                             alt="Import & Export Gold Continent"
+                            width={192}
+                            height={48}
                             className="w-48 h-12 object-contain mx-auto transition-transform duration-200 group-hover:scale-[1.02]"
                             onError={(e) => {
                                 (e.target as HTMLElement).style.display = 'none';
@@ -165,6 +170,9 @@ export function Sidebar() {
                     type="button"
                     onClick={async () => {
                         await logout();
+                        // Recarga completa intencional tras logout: descarta el
+                        // estado de la SPA (datos en memoria de módulos).
+                        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
                         window.location.href = '/login';
                     }}
                     className="w-full h-11 px-4 py-2 rounded-xl inline-flex items-center gap-3 text-xs sm:text-sm text-zinc-500 font-semibold hover:bg-estado-rechazado-soft hover:text-danger active:bg-estado-rechazado-soft/80 transition-all duration-200 focus:outline-none"

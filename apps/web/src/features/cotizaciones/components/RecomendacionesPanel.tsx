@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import {
     Loader2,
     Zap,
@@ -131,7 +132,7 @@ export function useRecomendaciones(
     const seqRef = React.useRef(0);
 
     const fetchRecomendaciones = useCallback(async () => {
-        if (!productoBase || !productoBase.id) {
+        if (!baseId) {
             if (resetWhenEmpty) setRecomendaciones({ similar: [], upsell: [], equilibrio: [] });
             setError('El item no tiene producto válido para recomendar');
             return;
@@ -141,7 +142,7 @@ export function useRecomendaciones(
         setError(null);
         try {
             const request: RecomendarItemRequest = {
-                id_producto_base: productoBase.id,
+                id_producto_base: baseId,
                 id_cliente: idCliente,
                 id_almacen: idAlmacen,
                 tipo_precio: tipoPrecioCliente === 'DISTRIBUIDOR' ? 'distribuidor' : 'normal',
@@ -157,14 +158,30 @@ export function useRecomendaciones(
         } finally {
             if (seqRef.current === seq) setLoading(false);
         }
+        // refreshKey es un nonce del padre: solo aporta identidad al callback
+        // para que el efecto dispare de nuevo el fetch.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [baseId, idCliente, idAlmacen, tipoPrecioCliente, silent, resetWhenEmpty, refreshKey]);
 
-    useEffect(() => {
-        if (enabled && productoBase?.id) {
-            fetchRecomendaciones();
-        } else if (enabled && resetWhenEmpty && !productoBase?.id) {
+    const [prevReset, setPrevReset] = useState({ enabled, baseId, resetWhenEmpty });
+    if (
+        prevReset.enabled !== enabled ||
+        prevReset.baseId !== baseId ||
+        prevReset.resetWhenEmpty !== resetWhenEmpty
+    ) {
+        setPrevReset({ enabled, baseId, resetWhenEmpty });
+        if (enabled && resetWhenEmpty && !baseId) {
             setRecomendaciones({ similar: [], upsell: [], equilibrio: [] });
             setError(null);
+        }
+    }
+
+    useEffect(() => {
+        if (enabled && baseId) {
+            const run = async () => {
+                await fetchRecomendaciones();
+            };
+            void run();
         }
     }, [enabled, baseId, fetchRecomendaciones]);
 
@@ -193,12 +210,15 @@ export function RecomendacionesPanel({
         return cartItems.find((i) => i.id === selectedItemId);
     }, [cartItems, selectedItemId]);
 
+    const idProducto = baseItem?.id_producto;
+    const codigoProducto = baseItem?.codigo ?? '';
+    const descripcionProducto = baseItem?.descripcion ?? '';
     const productoBase = useMemo(
         () =>
-            baseItem && Number(baseItem.id_producto ?? 0) > 0
-                ? { id: Number(baseItem.id_producto), codigo: baseItem.codigo, descripcion: baseItem.descripcion }
+            idProducto != null && Number(idProducto) > 0
+                ? { id: Number(idProducto), codigo: codigoProducto, descripcion: descripcionProducto }
                 : null,
-        [baseItem?.id, baseItem?.id_producto, baseItem?.codigo, baseItem?.descripcion],
+        [idProducto, codigoProducto, descripcionProducto],
     );
 
     const { recomendaciones, loading, error, refetch } = useRecomendaciones(productoBase, {
@@ -381,7 +401,7 @@ export function RecomendacionCardSection({
             <div className="flex gap-2.5 items-start">
                 {/* IMAGEN */}
                 <div className="w-20 h-20 rounded-md border border-amber-400 flex-shrink-0 overflow-hidden bg-gray-50 flex items-center justify-center">
-                    <img src={imagenUrl} alt={item.descripcion} className="w-full h-full object-cover" />
+                    <Image src={imagenUrl} alt={item.descripcion} width={80} height={80} className="w-full h-full object-cover" />
                 </div>
 
                 {/* CONTENIDO */}

@@ -81,13 +81,17 @@ export function CotizacionEditarLoader() {
   const base = pathname.startsWith('/vendedor') ? '/vendedor/cotizaciones' : '/admin/cotizaciones';
   const id = Number(params.id);
   const [estado, setEstado] = useState<EstadoCarga>('cargando');
+  const idInvalido = !Number.isFinite(id) || id <= 0;
+  const [prevIdInvalido, setPrevIdInvalido] = useState<boolean | null>(null);
+
+  if (prevIdInvalido !== idInvalido) {
+    setPrevIdInvalido(idInvalido);
+    if (idInvalido) setEstado('error');
+  }
 
   useEffect(() => {
+    if (!Number.isFinite(id) || id <= 0) return;
     let cancelado = false;
-    if (!Number.isFinite(id) || id <= 0) {
-      setEstado('error');
-      return;
-    }
     (async () => {
       try {
         const cot = await getCotizacionDetalle(id);

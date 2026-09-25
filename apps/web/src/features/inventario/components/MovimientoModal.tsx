@@ -97,13 +97,13 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
     const idProducto = watch('id_producto');
     const idAlmacen = watch('id_almacen');
 
-    const resetForm = () => {
+    const resetForm = useCallback(() => {
         reset();
         setSelectedProducto(null);
         setSearchQuery('');
         setStockDisponible(null);
         setShowSuggestions(false);
-    };
+    }, [reset]);
 
     const lastPreseleccion = useRef<number | null | undefined>(undefined);
 
@@ -119,7 +119,7 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
             }
             lastPreseleccion.current = productoPreseleccionado;
         }
-    }, [open, productoPreseleccionado]);
+    }, [open, productoPreseleccionado, resetForm]);
 
     useEffect(() => {
         if (open) {

@@ -201,7 +201,7 @@ export default function ResumenCotizacionPage() {
       try {
         await cambiarEstadoCotizacion(idCotizacionGuardada, nuevoEstado);
         showToast.success(`Estado actualizado a ${nuevoEstado === 'enviada' ? 'ENVIADO' : 'BORRADOR'}`);
-      } catch (error: any) {
+      } catch {
         showToast.error('Error al actualizar el estado');
         setEstadoActual(estadoActual);
       }

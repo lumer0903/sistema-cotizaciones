@@ -5,7 +5,6 @@ import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 import type { ClienteResponse, PaginatedClientesResponse } from './clientes.service';
-import { TipoPrecio } from '@goldcontinent/shared/constants/enums';
 
 @ApiTags('Clientes')
 @ApiBearerAuth()

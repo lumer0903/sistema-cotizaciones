@@ -106,7 +106,10 @@ export default function CobranzaDetallePage() {
   }, [id]);
 
   useEffect(() => {
-    fetchCuenta();
+    const run = async () => {
+      await fetchCuenta();
+    };
+    run();
   }, [fetchCuenta]);
 
   const handleRegistrarPago = async (e: React.FormEvent) => {

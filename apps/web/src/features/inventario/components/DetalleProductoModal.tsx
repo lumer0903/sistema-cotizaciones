@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { Store, Box, Image as ImageIcon } from 'lucide-react';
 import { Modal, Button } from '@/components/ui';
 import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
@@ -47,9 +48,11 @@ export function DetalleProductoModal({
                     {/* Imagen del producto */}
                     <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 bg-stone-100 rounded-2xl border border-stone-200 flex items-center justify-center overflow-hidden">
                         {imagenUrl ? (
-                            <img
+                            <Image
                                 src={getImageUrl(imagenUrl, '200')}
                                 alt={prod.codigo}
+                                width={150}
+                                height={150}
                                 className="w-full h-full object-cover"
                                 onError={(e) => handleImageError(e, '200')}
                             />

@@ -1,7 +1,7 @@
 ﻿'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { useRouter } from 'next/navigation';
 import { getCotizaciones } from '@/features/cotizaciones/api/cotizacionApi';
@@ -9,7 +9,6 @@ import { CotizacionItem, EstadoCotizacion } from '@/features/cotizaciones/types/
 import { CotizacionesTable } from '@/features/cotizaciones/components/CotizacionesTable';
 import { Select } from '@/components/ui/Select';
 import { Pagination } from '@/components/ui/Pagination';
-import { Button } from '@/components/ui/Button';
 
 const ESTADO_OPTIONS = [
   { label: 'Seleccionar', value: 'TODOS' },
@@ -38,32 +37,34 @@ export default function MisCotizacionesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(8);
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await getCotizaciones({
-        buscar: buscarDebounced,
-        fecha,
-        estado: estadoFilter,
-        page: currentPage,
-        limit,
-      });
-
-      setCotizaciones(res.data);
-      setTotalItems(res.total);
-    } catch (error) {
-      console.error('Error fetching cotizaciones:', error);
-      showToast.error('No se pudieron cargar las cotizaciones');
-      setCotizaciones([]);
-      setTotalItems(0);
-    } finally {
-      setLoading(false);
-    }
-  }, [buscarDebounced, fecha, estadoFilter, currentPage, limit]);
+  const [prevFiltros, setPrevFiltros] = useState({ buscarDebounced, fecha, estadoFilter, limit });
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const res = await getCotizaciones({
+          buscar: buscarDebounced,
+          fecha,
+          estado: estadoFilter,
+          page: currentPage,
+          limit,
+        });
+
+        setCotizaciones(res.data);
+        setTotalItems(res.total);
+      } catch (error) {
+        console.error('Error fetching cotizaciones:', error);
+        showToast.error('No se pudieron cargar las cotizaciones');
+        setCotizaciones([]);
+        setTotalItems(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
-  }, [fetchData]);
+  }, [buscarDebounced, fecha, estadoFilter, currentPage, limit]);
 
   // Debounce del buscador (evita una consulta al servidor por tecla)
   useEffect(() => {
@@ -72,9 +73,15 @@ export default function MisCotizacionesPage() {
   }, [buscar]);
 
   // Reset page when filters change
-  useEffect(() => {
+  if (
+    prevFiltros.buscarDebounced !== buscarDebounced ||
+    prevFiltros.fecha !== fecha ||
+    prevFiltros.estadoFilter !== estadoFilter ||
+    prevFiltros.limit !== limit
+  ) {
+    setPrevFiltros({ buscarDebounced, fecha, estadoFilter, limit });
     setCurrentPage(1);
-  }, [buscarDebounced, fecha, estadoFilter, limit]);
+  }
 
   const totalPages = Math.ceil(totalItems / limit) || 1;
 

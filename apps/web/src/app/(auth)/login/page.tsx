@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
@@ -21,7 +22,7 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, usuario } = useAuth();
+  const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') || '/admin/inventario';
@@ -58,10 +59,12 @@ function LoginForm() {
       <main className="w-full max-w-[1280px] flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 my-auto">
         {/* LOGO PRINCIPAL */}
         <div className="w-full lg:w-[666px] flex justify-center lg:justify-start">
-          <img
+          <Image
             className="w-full lg:h-[500px] object-contain"
             alt="Gold Continent Import & Export"
             src="/LOGO_GRANDE.svg"
+            width={666}
+            height={500}
           />
         </div>
 
@@ -71,10 +74,12 @@ function LoginForm() {
           aria-labelledby="login-heading"
         >
           {/* ISOTIPO SECUNDARIO */}
-          <img
+          <Image
             className="absolute top-8 right-8 w-[120px] h-[120px] object-contain opacity-50"
             alt="Gold Continent Icon"
             src="/MUNDO.svg"
+            width={120}
+            height={120}
           />
 
           <form className="w-full flex flex-col mt-10 sm:mt-12" onSubmit={handleSubmit(onSubmit)}>
@@ -208,14 +213,22 @@ export default function LoginPage() {
       <div className="min-h-screen w-full bg-white flex items-center justify-center p-4 sm:p-6 md:p-8">
         <div className="w-full max-w-[1280px] flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 my-auto">
           <div className="w-full lg:w-[666px] flex justify-center lg:justify-start">
-            <img
+            <Image
               className="w-full lg:h-[500px] object-contain"
               alt="Gold Continent Import & Export"
               src="/LOGO_GRANDE.svg"
+              width={666}
+              height={500}
             />
           </div>
           <section className="relative w-full max-w-[468px] min-h-[558px] bg-white rounded-2xl border border-gray-200 shadow-xl p-6 sm:p-10 flex flex-col justify-center">
-            <img className="absolute top-8 right-8 w-[120px] h-[120px] object-contain opacity-50" alt="Gold Continent Icon" src="/MUNDO.svg" />
+            <Image
+              className="absolute top-8 right-8 w-[120px] h-[120px] object-contain opacity-50"
+              alt="Gold Continent Icon"
+              src="/MUNDO.svg"
+              width={120}
+              height={120}
+            />
             <div className="w-full flex flex-col mt-10 sm:mt-12 animate-pulse space-y-6">
               <div className="h-8 bg-gray-200 rounded w-3/4" />
               <div className="h-4 bg-gray-200 rounded w-1/2" />

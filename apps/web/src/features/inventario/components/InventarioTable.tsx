@@ -1,19 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Eye, Pencil, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Eye, Pencil, Trash2 } from 'lucide-react';
 import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
-import { getImageUrl, handleImageError } from '@/lib/imageUtils';
 import { DetalleProductoModal } from './DetalleProductoModal';
-import { formatCode, formatText, formatPrice } from '@/lib/formatters';
+import { formatCode, formatText } from '@/lib/formatters';
 import { inventarioApi } from '@/features/inventario/api/inventario.api';
-
-type ProductoConImagen = ProductoInventario & {
-  imagen_url?: string;
-  tipo_flor?: string;
-  created_at?: string;
-};
 
 interface InventarioTableProps {
   productos: ProductoInventario[];
@@ -30,9 +23,9 @@ export function InventarioTable({
   loading = false,
   onEditar,
   onEliminar,
-  onMovimiento,
-  onTransferencia,
-  onKardex,
+  onMovimiento: _onMovimiento,
+  onTransferencia: _onTransferencia,
+  onKardex: _onKardex,
 }: InventarioTableProps) {
   const [detalleProducto, setDetalleProducto] = useState<ProductoInventario | null>(null);
 
@@ -84,13 +77,11 @@ export function InventarioTable({
         </TableHeader>
         <TableBody>
           {productos.map((prod) => {
-            const productoExt = prod as ProductoConImagen;
             const id = prod.id_producto;
 
             const stockVal = prod.stock_total ?? prod.stock_actual?.[0]?.cantidad ?? 0;
             const ubicacion = prod.stock_actual?.[0]?.almacen?.nombre || 'ESTANTE B';
             const categoria = prod.categoria?.nombre_categoria || 'ADORNO';
-            const descripcion = prod.descripcion || 'Sin descripción asignada';
 
             return (
               <TableRow key={id}>
