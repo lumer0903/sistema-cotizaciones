@@ -525,7 +525,7 @@ export default function VendedorCotizacionCrearPage() {
               <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
                 <FileText className="h-12 w-12 mx-auto text-gray-300 mb-3" />
                 <p className="text-gray-500">No hay productos agregados</p>
-                <p className="text-sm text-gray-400 mt-1">Haga clic en "Agregar" para buscar productos</p>
+                <p className="text-sm text-gray-400 mt-1">Haga clic en &quot;Agregar&quot; para buscar productos</p>
               </div>
             ) : (
               <Table>

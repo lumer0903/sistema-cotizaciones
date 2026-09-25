@@ -200,7 +200,7 @@ export class CotizacionesService {
             max = total;
             // Verificar que COT-(total+1) no exista (por timestamps no aplica, pero por seguridad)
             let candidato = max + 1;
-            // eslint-disable-next-line no-constant-condition
+
             while (true) {
                 const existe = await this.prisma.cotizacion.findUnique({
                     where: { numero: `COT-${String(candidato).padStart(3, '0')}` },

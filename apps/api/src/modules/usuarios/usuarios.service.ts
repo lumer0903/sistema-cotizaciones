@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { PermisoModulo, NivelPermiso } from '@goldcontinent/shared/constants/enums';
 import {
@@ -92,7 +93,6 @@ export class UsuariosService {
     await this.assertRolValido(rol);
 
     try {
-      const bcrypt = require('bcryptjs');
       const password_hash = await bcrypt.hash(data.password, 10);
 
       return await this.prisma.usuario.create({
@@ -136,7 +136,6 @@ export class UsuariosService {
     }
 
     if (data.password) {
-      const bcrypt = require('bcryptjs');
       updateData.password_hash = await bcrypt.hash(data.password, 10);
       updateData.refresh_token_hash = null;
     }
