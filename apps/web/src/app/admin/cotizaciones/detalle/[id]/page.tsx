@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Badge, ESTADO_BADGE } from '@/components/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Badge, ESTADO_BADGE, ConfirmModal } from '@/components/ui';
 import { showToast } from '@/lib/toast';
 import {
   cambiarEstadoCotizacion,
@@ -19,6 +19,18 @@ const ESTADO_DISPLAY: Record<string, string> = {
   aprobada: 'APROBADO',
   rechazada: 'RECHAZADO',
 };
+
+// Espejo de TRANSICIONES en cotizaciones.service.ts (cambiarEstado).
+const TRANSICIONES_UI: Record<string, string[]> = {
+  borrador: ['borrador', 'enviada'],
+  enviada: ['enviada', 'borrador', 'aprobada', 'parcialmente_pagada', 'rechazada'],
+  parcialmente_pagada: ['parcialmente_pagada', 'aprobada', 'rechazada'],
+  aprobada: ['aprobada'],
+  rechazada: ['rechazada', 'borrador'],
+};
+
+// Transiciones que cierran o rechazan el negocio → piden confirmación.
+const TRANSICIONES_SENSIBLES = new Set(['aprobada', 'parcialmente_pagada', 'rechazada']);
 
 function money(n: number | string | null | undefined): string {
   const v = Number(n || 0);
@@ -78,7 +90,8 @@ interface ItemRow {
 }
 
 /**
- * Resumen de cotización (solo lectura) con cambio de estado borrador → enviada.
+ * Resumen de cotización (solo lectura) con cambio de estado según la máquina
+ * de transiciones del backend (aprobar/rechazar/parcial requieren confirmación).
  * Ojo en tablas → aquí. Edición en /editar/[id].
  */
 export default function CotizacionDetallePage() {
@@ -88,6 +101,7 @@ export default function CotizacionDetallePage() {
 
   const [loading, setLoading] = useState(true);
   const [savingEstado, setSavingEstado] = useState(false);
+  const [estadoPendiente, setEstadoPendiente] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [numero, setNumero] = useState('');
   const [estado, setEstado] = useState('');
@@ -173,19 +187,29 @@ export default function CotizacionDetallePage() {
     };
   }, [id]);
 
-  const handleEstadoChange = async (nuevo: string) => {
+  const aplicarEstado = async (nuevo: string) => {
     if (!id || !nuevo || nuevo === estado || savingEstado) return;
     setSavingEstado(true);
     try {
       await cambiarEstadoCotizacion(id, nuevo);
       setEstado(nuevo);
       showToast.success(`Estado actualizado a ${ESTADO_DISPLAY[nuevo] || nuevo.toUpperCase()}`);
-    } catch (err) {
-      console.error('Error changing estado:', err);
-      showToast.error('No se pudo cambiar el estado');
+    } catch (error) {
+      console.error('Error changing estado:', error);
+      showToast.error(error instanceof Error ? error.message : 'No se pudo cambiar el estado');
     } finally {
       setSavingEstado(false);
+      setEstadoPendiente(null);
     }
+  };
+
+  const handleEstadoChange = async (nuevo: string) => {
+    if (!id || !nuevo || nuevo === estado || savingEstado) return;
+    if (TRANSICIONES_SENSIBLES.has(nuevo)) {
+      setEstadoPendiente(nuevo);
+      return;
+    }
+    await aplicarEstado(nuevo);
   };
 
   const handleExportPdf = async () => {
@@ -200,6 +224,8 @@ export default function CotizacionDetallePage() {
       setExporting(false);
     }
   };
+
+  const opcionesEstado = TRANSICIONES_UI[estado] || [estado];
 
   if (loading && !numero) {
     return (
@@ -229,20 +255,17 @@ export default function CotizacionDetallePage() {
         <div>
           <select
             value={estado}
-            disabled={savingEstado}
+            disabled={savingEstado || opcionesEstado.length <= 1}
             onChange={(e) => handleEstadoChange(e.target.value)}
-            className="bg-white border border-zinc-200 text-xs font-bold text-zinc-700 px-3 py-1.5 rounded-lg shadow-sm focus:outline-none cursor-pointer uppercase"
+            className={`bg-white border border-zinc-200 text-xs font-bold text-zinc-700 px-3 py-1.5 rounded-lg shadow-sm focus:outline-none uppercase ${
+              opcionesEstado.length <= 1 ? 'cursor-default text-zinc-500' : 'cursor-pointer'
+            }`}
           >
-            {estado === 'borrador' ? (
-              <>
-                <option value="borrador">BORRADOR</option>
-                <option value="enviada">ENVIADO</option>
-              </>
-            ) : (
-              <option value={estado}>
-                {ESTADO_DISPLAY[estado] || (estado || '').toUpperCase()}
+            {opcionesEstado.map((op) => (
+              <option key={op} value={op}>
+                {ESTADO_DISPLAY[op] || op.toUpperCase()}
               </option>
-            )}
+            ))}
           </select>
         </div>
       </div>
@@ -373,6 +396,28 @@ export default function CotizacionDetallePage() {
           Exportar PDF
         </Button>
       </div>
+
+      {/* Confirmación de transiciones sensibles (aprobar / rechazar / parcial) */}
+      {estadoPendiente && (
+        <ConfirmModal
+          open
+          onClose={() => setEstadoPendiente(null)}
+          onConfirm={() => aplicarEstado(estadoPendiente)}
+          title="Cambiar estado"
+          message={
+            <>
+              ¿Deseas marcar <span className="font-semibold text-zinc-800">{numero}</span> como{' '}
+              <span className="font-semibold text-zinc-800">
+                {ESTADO_DISPLAY[estadoPendiente] || estadoPendiente.toUpperCase()}
+              </span>
+              ?
+            </>
+          }
+          confirmLabel="Confirmar"
+          variant={estadoPendiente === 'aprobada' ? 'primary' : 'danger'}
+          loading={savingEstado}
+        />
+      )}
     </div>
   );
 }

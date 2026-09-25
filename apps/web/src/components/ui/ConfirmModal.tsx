@@ -13,6 +13,7 @@ export interface ConfirmModalProps {
   confirmLabel?: string;
   cancelLabel?: string;
   loading?: boolean;
+  variant?: 'primary' | 'danger';
 }
 
 export const ConfirmModal = ({
@@ -24,6 +25,7 @@ export const ConfirmModal = ({
   confirmLabel = 'Confirmar',
   cancelLabel = 'Cancelar',
   loading = false,
+  variant = 'danger',
 }: ConfirmModalProps) => (
   <Modal
     open={open}
@@ -37,7 +39,7 @@ export const ConfirmModal = ({
         <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
           {cancelLabel}
         </Button>
-        <Button type="button" variant="danger" onClick={() => void onConfirm()} loading={loading}>
+        <Button type="button" variant={variant} onClick={() => void onConfirm()} loading={loading}>
           {confirmLabel}
         </Button>
       </div>
