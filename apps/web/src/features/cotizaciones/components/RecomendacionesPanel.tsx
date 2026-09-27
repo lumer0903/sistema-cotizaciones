@@ -11,13 +11,15 @@ import {
     Minus,
     RotateCcw,
     Sparkles,
-    MessageSquare,
-    MapPin,
+    Package,
+    Archive,
 } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { Button } from '@/components/ui';
+import { getImageUrl } from '@/lib/imageUtils';
 import { obtenerRecomendacionesItem, RecomendarItemRequest, RecomendacionItem, RecomendarItemResponse } from '../api/cotizacionApi';
 import { formatCode } from '@/lib/formatters';
+import type { ProductoBase } from './AgregarProductoModal';
 
 export type TipoRecomendacion = 'similar' | 'upsell' | 'equilibrio';
 
@@ -46,8 +48,12 @@ interface RecomendacionesPanelProps {
     itemExistenteId?: string | null;
     /** Incrementar para forzar recarga */
     refreshKey?: number;
-    onAgregar: (item: RecomendacionItem, tipo: TipoRecomendacion) => void;
-    onReemplazar?: (itemExistenteId: string, nuevoItem: RecomendacionItem, tipo: TipoRecomendacion) => void;
+    /** Catálogo ya cargado del formulario: permite resolver la imagen de cada recomendación en cliente */
+    productosCatalogo?: ProductoBase[];
+    /** El usuario pulsó AGREGAR: el contenedor decide (p.ej. abrir el modal de confirmación) */
+    onSelectAgregar: (item: RecomendacionItem, tipo: TipoRecomendacion) => void;
+    /** El usuario pulsó REEMPLAZAR sobre el item base seleccionado */
+    onSelectReemplazar?: (itemExistenteId: string, nuevoItem: RecomendacionItem, tipo: TipoRecomendacion) => void;
 }
 
 export const TIPO_CONFIG = {
@@ -199,8 +205,9 @@ export function RecomendacionesPanel({
     idAlmacen,
     itemExistenteId,
     refreshKey = 0,
-    onAgregar,
-    onReemplazar,
+    productosCatalogo,
+    onSelectAgregar,
+    onSelectReemplazar,
 }: RecomendacionesPanelProps) {
     const [isMinimized, setIsMinimized] = useState(false);
     const [activeTab, setActiveTab] = useState<TipoRecomendacion>('similar');
@@ -232,15 +239,22 @@ export function RecomendacionesPanel({
 
     const baseCartId = itemExistenteId ?? baseItem?.id ?? null;
 
-    const handleAgregar = (item: RecomendacionItem, tipo: TipoRecomendacion) => {
-        onAgregar(item, tipo);
-        showToast.success(`${TIPO_CONFIG[tipo].label} agregado al carrito`);
+    const catalogoById = useMemo(() => {
+        const mapa = new Map<number, ProductoBase>();
+        (productosCatalogo ?? []).forEach((p) => {
+            const key = Number(p.id_producto ?? p.id);
+            if (!Number.isNaN(key)) mapa.set(key, p);
+        });
+        return mapa;
+    }, [productosCatalogo]);
+
+    const handleSelectAgregar = (item: RecomendacionItem, tipo: TipoRecomendacion) => {
+        onSelectAgregar(item, tipo);
     };
 
-    const handleReemplazar = (item: RecomendacionItem, tipo: TipoRecomendacion) => {
-        if (baseCartId && onReemplazar) {
-            onReemplazar(baseCartId, item, tipo);
-            showToast.success(`Reemplazado por ${TIPO_CONFIG[tipo].label}`);
+    const handleSelectReemplazar = (item: RecomendacionItem, tipo: TipoRecomendacion) => {
+        if (baseCartId && onSelectReemplazar) {
+            onSelectReemplazar(baseCartId, item, tipo);
         }
     };
 
@@ -249,7 +263,7 @@ export function RecomendacionesPanel({
     const activeConfig = TIPO_CONFIG[activeTab];
 
     return (
-        <div className="w-full max-w-sm bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden transition-all duration-300">
+        <div className="w-full max-w-sm bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden transition-all duration-300 font-['DM_Sans']">
             {/* CABECERA PRINCIPAL */}
             <div className={`p-4 flex items-center justify-between ${!isMinimized ? 'border-b border-gray-100' : ''}`}>
                 <div className="flex items-center gap-2">
@@ -261,7 +275,7 @@ export function RecomendacionesPanel({
                             RECOMENDACIONES
                         </h3>
                         {productoBase && !isMinimized && (
-                            <span className="text-[10px] font-mono text-zinc-400">
+                            <span className="text-xs font-mono text-zinc-500">
                                 BASE: {formatCode(productoBase.codigo)}
                             </span>
                         )}
@@ -272,8 +286,10 @@ export function RecomendacionesPanel({
                 <button
                     type="button"
                     onClick={() => setIsMinimized(!isMinimized)}
-                    className="p-1 hover:bg-gray-100 rounded-md transition-colors text-amber-500"
+                    className="min-h-11 min-w-11 -mr-2 inline-flex items-center justify-center hover:bg-gray-100 rounded-md transition-colors text-amber-700"
                     title={isMinimized ? 'Expandir' : 'Minimizar'}
+                    aria-label={isMinimized ? 'Expandir recomendaciones' : 'Minimizar recomendaciones'}
+                    aria-expanded={!isMinimized}
                 >
                     {isMinimized ? (
                         <Plus className="w-5 h-5 stroke-[2.5]" />
@@ -298,13 +314,14 @@ export function RecomendacionesPanel({
                                     key={tipo}
                                     type="button"
                                     onClick={() => setActiveTab(tipo)}
-                                    className={`flex-1 py-1.5 px-2 rounded-lg text-[10px] font-extrabold font-['DM_Sans'] tracking-wider transition-all flex items-center justify-center gap-1 ${isActive ? cfg.activeTabBg : cfg.inactiveTabBg
+                                    aria-pressed={isActive}
+                                    className={`flex-1 min-h-11 px-2 rounded-lg text-xs font-extrabold font-['DM_Sans'] tracking-wider transition-all flex items-center justify-center gap-1 ${isActive ? cfg.activeTabBg : cfg.inactiveTabBg
                                         }`}
                                 >
                                     <span>{cfg.label}</span>
                                     {count > 0 && (
                                         <span
-                                            className={`px-1 py-0.2 text-[9px] rounded-full ${isActive ? 'bg-white/30 text-white' : 'bg-gray-200 text-zinc-700'
+                                            className={`px-1 py-0.2 text-xs rounded-full ${isActive ? 'bg-white/30 text-white' : 'bg-gray-200 text-zinc-700'
                                                 }`}
                                         >
                                             {count}
@@ -318,35 +335,35 @@ export function RecomendacionesPanel({
                     {/* LISTADO */}
                     <div className="p-4 space-y-4 max-h-[550px] overflow-y-auto">
                         {cartItems.length === 0 ? (
-                            <div className="text-center py-10 text-zinc-400 space-y-2">
+                            <div className="text-center py-10 text-zinc-500 space-y-2">
                                 <Sparkles className="size-7 mx-auto text-amber-500 opacity-80" />
                                 <p className="text-xs font-medium">Agrega un producto al carrito para ver sugerencias de IA</p>
                             </div>
                         ) : !baseItem ? (
-                            <div className="text-center py-10 text-zinc-400 space-y-2">
-                                <MessageSquare className="size-7 mx-auto text-amber-500 opacity-80" />
+                            <div className="text-center py-10 text-zinc-500 space-y-2">
+                                <Sparkles className="size-7 mx-auto text-amber-500 opacity-80" />
                                 <p className="text-xs font-medium">
-                                    Haz clic en el icono de mensaje de un producto para ver sugerencias
+                                    Haz clic en el icono de recomendaciones IA de un producto para ver sugerencias
                                 </p>
                             </div>
                         ) : !productoBase ? (
-                            <div className="text-center py-8 text-zinc-400">
+                            <div className="text-center py-8 text-zinc-500">
                                 <p className="text-xs font-medium">El producto seleccionado no tiene ID válido para recomendar</p>
                             </div>
                         ) : error ? (
                             <div className="text-center py-6 text-red-600">
                                 <p className="text-xs">{error}</p>
                                 <Button variant="outline" size="sm" onClick={refetch} className="mt-2">
-                                    <RotateCcw className="w-3.5 h-3.5 mr-1" /> Reintentar
+                                    <RotateCcw className="w-3.5 h-3.5" /> Reintentar
                                 </Button>
                             </div>
                         ) : loading ? (
-                            <div className="py-12 text-center text-zinc-400 text-xs animate-pulse">
-                                <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-amber-500" />
+                            <div className="py-12 text-center text-zinc-500 text-xs animate-pulse">
+                                <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-amber-600" />
                                 Analizando con IA y consultando precios/stock...
                             </div>
                         ) : currentList.length === 0 ? (
-                            <div className="text-center py-8 text-zinc-400">
+                            <div className="text-center py-8 text-zinc-500">
                                 <p className="text-xs">No hay productos en la categoría <strong>{activeConfig.label}</strong></p>
                             </div>
                         ) : (
@@ -359,16 +376,17 @@ export function RecomendacionesPanel({
                                             item={item}
                                             tipo={activeTab}
                                             config={activeConfig}
-                                            onAgregar={() => handleAgregar(item, activeTab)}
-                                            onReemplazar={() => handleReemplazar(item, activeTab)}
-                                            showReemplazar={!!baseCartId && !!onReemplazar}
+                                            catalogoItem={catalogoById.get(Number(item.id_producto))}
+                                            onAgregar={() => handleSelectAgregar(item, activeTab)}
+                                            onReemplazar={() => handleSelectReemplazar(item, activeTab)}
+                                            showReemplazar={!!baseCartId && !!onSelectReemplazar}
                                         />
                                     ))}
                                 </div>
                             </div>
                         )}
 
-                        <p className="text-[10px] text-zinc-400 text-right pt-1 border-t border-gray-100">
+                        <p className="text-xs text-zinc-500 text-right pt-1 border-t border-gray-100">
                             Precios según: <strong>{tipoPrecioCliente}</strong>
                         </p>
                     </div>
@@ -382,6 +400,7 @@ export interface RecomendacionCardSectionProps {
     item: RecomendacionItem;
     tipo: TipoRecomendacion;
     config: typeof TIPO_CONFIG[TipoRecomendacion];
+    catalogoItem?: ProductoBase;
     onAgregar: () => void;
     onReemplazar: () => void;
     showReemplazar: boolean;
@@ -389,71 +408,85 @@ export interface RecomendacionCardSectionProps {
 
 export function RecomendacionCardSection({
     item,
+    catalogoItem,
     onAgregar,
     onReemplazar,
     showReemplazar,
 }: RecomendacionCardSectionProps) {
-    const imagenUrl = (item as any).imagen_url || (item as any).imagen || 'https://placehold.co/81x69?text=Sin+Imagen';
+    const rawImagen =
+        item.imagen_url || catalogoItem?.foto_url || catalogoItem?.imagenUrl || null;
+    const imagenSrc = rawImagen ? getImageUrl(rawImagen) : null;
+    const ubicacion = item.ubicacion || item.almacen || catalogoItem?.estante || '';
+    const empaque = item.unidades_por_caja ?? catalogoItem?.unidades_por_caja ?? catalogoItem?.presentacion ?? null;
 
     return (
         <div className="bg-white rounded-lg border border-gray-200/80 p-2.5 shadow-sm space-y-2.5">
             {/* DETALLES DE PRODUCTO */}
             <div className="flex gap-2.5 items-start">
-                {/* IMAGEN */}
-                <div className="w-20 h-20 rounded-md border border-amber-400 flex-shrink-0 overflow-hidden bg-gray-50 flex items-center justify-center">
-                    <Image src={imagenUrl} alt={item.descripcion} width={80} height={80} className="w-full h-full object-cover" />
+                {/* IMAGEN (64×64 con placeholder elegante por categoría) */}
+                <div className="w-16 h-16 rounded-lg border border-zinc-200/80 flex-shrink-0 overflow-hidden bg-zinc-50 flex items-center justify-center">
+                    {imagenSrc ? (
+                        <Image
+                            src={imagenSrc}
+                            alt={item.descripcion}
+                            width={64}
+                            height={64}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                                (e.target as HTMLImageElement).style.visibility = 'hidden';
+                            }}
+                        />
+                    ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-brand-soft/60 text-brand-ink">
+                            <Package className="size-5" aria-hidden="true" />
+                            <span className="text-xs font-bold uppercase tracking-wider text-brand-options text-center leading-none px-1 line-clamp-1" title={item.categoria || 'Producto'}>
+                                {item.categoria || 'Producto'}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {/* CONTENIDO */}
                 <div className="flex-1 min-w-0 space-y-1">
-                    <div className="inline-block px-1.5 py-0.5 bg-zinc-100 rounded text-zinc-700 font-bold text-[10px] font-['DM_Sans'] border border-zinc-200">
+                    <div className="inline-block px-1.5 py-0.5 bg-zinc-50 rounded text-zinc-600 font-medium text-xs font-['DM_Sans'] border border-zinc-200/80">
                         {formatCode(item.codigo)}
                     </div>
 
-                    <p className="text-[11px] font-normal text-zinc-900 line-clamp-2 leading-tight font-['Inter']">
+                    <p className="text-xs font-semibold text-zinc-900 line-clamp-2 leading-tight font-['DM_Sans']" title={item.descripcion}>
                         {item.descripcion}
                     </p>
 
-                    <div className="flex flex-wrap items-center gap-1 text-[9px] pt-0.5 font-['DM_Sans']">
-                        <span className="px-1.5 py-0.5 bg-red-50 text-red-600 border border-red-200/60 rounded font-semibold">
-                            S/ {Number(item.precio ?? 0).toFixed(2)}
-                        </span>
+                    <div className="flex flex-wrap items-center gap-1 text-xs pt-0.5 font-['DM_Sans']">
+                        {ubicacion && (
+                            <span className="px-1.5 py-0.5 bg-neutral-100 text-neutral-700 border border-neutral-200/80 rounded font-semibold flex items-center gap-1">
+                                <Archive className="w-3 h-3 text-neutral-500" aria-hidden="true" />
+                                {ubicacion}
+                            </span>
+                        )}
 
-                        <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200/60 rounded font-semibold flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                        {empaque && (
+                            <span className="px-1.5 py-0.5 bg-zinc-100 text-zinc-700 border border-zinc-200/80 rounded font-semibold flex items-center gap-1">
+                                <Package className="w-3 h-3 text-zinc-500" aria-hidden="true" />
+                                {empaque}
+                            </span>
+                        )}
+
+                        <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded font-semibold flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" aria-hidden="true" />
                             {item.stock}
                         </span>
-
-                        {((item as any).almacen || (item as any).ubicacion) && (
-                            <span className="px-1.5 py-0.5 bg-neutral-100 text-neutral-600 border border-neutral-200/80 rounded flex items-center gap-0.5">
-                                <MapPin className="w-2.5 h-2.5 text-neutral-400" />
-                                {(item as any).ubicacion || (item as any).almacen}
-                            </span>
-                        )}
-
-                        {item.similarityScore !== undefined && (
-                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200/60 rounded">
-                                Sim: {(item.similarityScore * 100).toFixed(0)}%
-                            </span>
-                        )}
-
-                        {item.margen !== undefined && (
-                            <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/60 rounded">
-                                Mg: {item.margen.toFixed(1)}%
-                            </span>
-                        )}
                     </div>
                 </div>
             </div>
 
             {/* ACCIONES */}
-            <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-gray-100">
+            <div className="flex items-center justify-end gap-2 pt-1 border-t border-gray-100">
                 <button
                     type="button"
                     onClick={onAgregar}
-                    className="px-3 py-1.5 text-[10px] font-black font-['DM_Sans'] text-zinc-500 hover:text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-50 transition-colors uppercase tracking-wider flex items-center gap-1"
+                    className="min-h-9 px-3 py-2 text-xs font-semibold font-['DM_Sans'] text-zinc-600 hover:text-zinc-900 border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors uppercase tracking-wider inline-flex items-center gap-1.5"
                 >
-                    <Plus className="w-3 h-3" />
+                    <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                     AGREGAR
                 </button>
 
@@ -461,7 +494,7 @@ export function RecomendacionCardSection({
                     <button
                         type="button"
                         onClick={onReemplazar}
-                        className="px-3 py-1.5 text-[10px] font-black font-['DM_Sans'] text-amber-600 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400 rounded-lg transition-colors uppercase tracking-wider flex items-center gap-1"
+                        className="min-h-9 px-3 py-2 text-xs font-semibold font-['DM_Sans'] text-amber-700 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-300/70 rounded-lg transition-colors uppercase tracking-wider inline-flex items-center gap-1.5"
                     >
                         REEMPLAZAR
                     </button>

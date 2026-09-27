@@ -1,7 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
+  ArrowLeft,
   FileText,
   Loader2
 } from 'lucide-react';
@@ -13,7 +15,7 @@ interface PdfViewerPageProps {
   backHref: string;
 }
 
-export function PdfViewerPage({ cotizacionId, filename: _filename, backHref: _backHref }: PdfViewerPageProps) {
+export function PdfViewerPage({ cotizacionId, filename: _filename, backHref }: PdfViewerPageProps) {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,13 +50,24 @@ export function PdfViewerPage({ cotizacionId, filename: _filename, backHref: _ba
   }, [cotizacionId]);
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)] font-['DM_Sans']">
+    <div className="flex flex-col min-h-[calc(100dvh-4rem)] font-['DM_Sans']">
       {/* ÁREA PRINCIPAL DEL VISOR */}
       <div className="flex-1 flex flex-col justify-between gap-4">
-        <div className="w-full max-w-5xl mx-auto h-[720px] lg:h-[calc(100vh-140px)] bg-white rounded-xl border border-neutral-200 shadow-md overflow-hidden">
+        {/* VOLVER (visible en todos los breakpoints; en móvil el breadcrumb oculta ancestros) */}
+        <div className="w-full max-w-5xl mx-auto">
+          <Link
+            href={backHref}
+            className="inline-flex items-center gap-1.5 min-h-11 px-3 rounded-lg text-sm font-semibold text-brand-ink hover:bg-brand-soft transition-colors"
+          >
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            Volver al listado
+          </Link>
+        </div>
+
+        <div className="w-full max-w-5xl mx-auto h-[60vh] lg:h-[calc(100dvh-180px)] bg-white rounded-xl border border-neutral-200 shadow-md overflow-hidden">
           {loading && (
             <div className="h-full flex flex-col items-center justify-center gap-3 text-neutral-500">
-              <Loader2 className="size-10 animate-spin text-amber-500" />
+              <Loader2 className="size-10 animate-spin text-amber-600" />
               <p className="text-sm font-semibold">Cargando documento…</p>
             </div>
           )}
@@ -71,6 +84,7 @@ export function PdfViewerPage({ cotizacionId, filename: _filename, backHref: _ba
               id="pdf-iframe"
               src={`${objectUrl}#toolbar=1&view=FitH`}
               title="Vista del documento PDF"
+              loading="lazy"
               className="w-full h-full border-none"
             />
           )}

@@ -45,7 +45,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                     <TableHead className="w-28 text-center">FECHA</TableHead>
                     <TableHead className="w-28 text-center">TOTAL</TableHead>
                     <TableHead className="w-28 text-center">ESTADO</TableHead>
-                    <TableHead className="w-32 text-right">ACCIONES</TableHead>
+                    <TableHead className="w-32 text-right sticky right-0 bg-gray-50 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]">ACCIONES</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -60,7 +60,12 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                             </TableCell>
 
                             {/* CLIENTE */}
-                            <TableCell className="min-w-[200px] font-light text-neutral-700 whitespace-nowrap">
+                            <TableCell
+                                className="min-w-[160px] max-w-[220px] truncate font-light text-neutral-700"
+                                title={typeof item.cliente === 'string'
+                                    ? item.cliente
+                                    : (item.cliente as any)?.nombre || (item.cliente as any)?.nombre_cliente || '-'}
+                            >
                                 {typeof item.cliente === 'string'
                                     ? item.cliente
                                     : (item.cliente as any)?.nombre || (item.cliente as any)?.nombre_cliente || '-'}
@@ -91,18 +96,19 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                             </TableCell>
 
                             {/* ACCIONES */}
-                            <TableCell className="w-32 text-right whitespace-nowrap">
-                                <div className="flex items-center justify-end gap-3">
+                            <TableCell className="w-32 text-right whitespace-nowrap sticky right-0 bg-white group-hover:bg-amber-50/40 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]">
+                                <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                                     {/* Lápiz (Editar): Activo solo en BORRADOR */}
                                     <button
                                         type="button"
                                         disabled={!isBorrador}
                                         onClick={() => onEdit?.(item.id_cotizacion || item.id)}
-                                        className={`p-1 transition-colors ${isBorrador
-                                                ? 'text-brand-primary hover:text-brand-hover cursor-pointer'
-                                                : 'text-gray-200 cursor-not-allowed'
+                                        className={`min-h-11 min-w-11 inline-flex items-center justify-center rounded-lg transition-colors ${isBorrador
+                                                ? 'text-brand-ink hover:bg-brand-soft cursor-pointer'
+                                                : 'text-gray-300 cursor-not-allowed'
                                             }`}
                                         title={isBorrador ? 'Editar (borrador)' : 'No editable'}
+                                        aria-label={isBorrador ? 'Editar cotización' : 'No editable'}
                                     >
                                         <Pencil className="w-5 h-5" />
                                     </button>
@@ -112,11 +118,12 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                                         type="button"
                                         disabled={isBorrador}
                                         onClick={() => onView?.(item.id_cotizacion || item.id)}
-                                        className={`p-1 transition-colors ${!isBorrador
-                                                ? 'text-brand-primary hover:text-brand-hover cursor-pointer'
-                                                : 'text-gray-200 cursor-not-allowed'
+                                        className={`min-h-11 min-w-11 inline-flex items-center justify-center rounded-lg transition-colors ${!isBorrador
+                                                ? 'text-brand-ink hover:bg-brand-soft cursor-pointer'
+                                                : 'text-gray-300 cursor-not-allowed'
                                             }`}
                                         title={!isBorrador ? 'Ver documento (solo lectura)' : 'No disponible en borrador'}
+                                        aria-label={!isBorrador ? 'Ver documento' : 'No disponible en borrador'}
                                     >
                                         <Eye className="w-5 h-5" />
                                     </button>

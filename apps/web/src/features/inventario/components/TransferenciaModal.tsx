@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -263,14 +263,14 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                                                     {p.descripcion}
                                                 </span>
                                             </div>
-                                            <span className="text-[10px] bg-stone-100 px-2 py-0.5 rounded font-medium text-stone-600">
+                                            <span className="text-xs bg-stone-100 px-2 py-0.5 rounded font-medium text-stone-600">
                                                 Stock: {stockTotal} u.
                                             </span>
                                         </button>
                                     );
                                 })
                             ) : (
-                                <div className="p-3 text-xs text-stone-400 text-center">
+                                <div className="p-3 text-xs text-stone-500 text-center">
                                     No se encontraron productos coincidentes
                                 </div>
                             )}
@@ -332,7 +332,7 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                 <div className="space-y-1.5">
                     {stockOrigen !== null && (
                         <div className="flex flex-col">
-                            <span className="block text-[11px] font-bold text-brand-subtitle uppercase tracking-wider mb-1.5">
+                            <span className="block text-xs font-bold text-brand-subtitle uppercase tracking-wider mb-1.5">
                                 STOCK EN ORIGEN
                             </span>
                             <div className="bg-estado-enviado-soft border border-estado-enviado/30 rounded-xl px-3 h-[46px] flex items-center justify-between">
@@ -366,7 +366,7 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                     </p>
                 )}
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100">
                     <Button type="button" variant="ghost" onClick={handleLimpiar} disabled={isSubmitting}>
                         Limpiar
                     </Button>

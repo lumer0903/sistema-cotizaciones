@@ -15,6 +15,7 @@ import {
     Settings,
     LogOut,
     ChevronDown,
+    X,
 } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
 
@@ -51,7 +52,12 @@ function findActiveSubmenu(pathname: string): string | null {
     return activeParent ? activeParent.name : null;
 }
 
-export function Sidebar() {
+interface SidebarProps {
+    open?: boolean;
+    onClose?: () => void;
+}
+
+export function Sidebar({ open = false, onClose }: SidebarProps) {
     const pathname = usePathname();
     const { logout } = useAuth();
     const [openSubmenu, setOpenSubmenu] = useState<string | null>(() => findActiveSubmenu(pathname));
@@ -71,30 +77,42 @@ export function Sidebar() {
     };
 
     return (
-        <aside className="w-64 h-screen bg-white border-r border-zinc-200/80 flex flex-col justify-between fixed left-0 top-0 z-40 font-['DM_Sans'] select-none">
-            <div className="flex flex-col w-full">
+        <aside
+            id="menu-lateral"
+            className={`w-64 h-screen bg-white border-r border-zinc-200/80 flex flex-col justify-between fixed left-0 top-0 z-50 font-['DM_Sans'] select-none transition-[transform,visibility] duration-300 ease-in-out lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full invisible lg:visible'}`}
+        >
+            <div className="flex flex-col w-full flex-1 min-h-0">
+                {/* BOTÓN CERRAR (solo móvil) */}
+                <div className="flex items-center justify-end px-3 pt-3 lg:hidden">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-lg text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 transition-colors"
+                        aria-label="Cerrar menú"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
                 {/* LOGO SUPERIOR: Espaciado refinado y texto minimalista */}
-                <div className="w-full pt-8 pb-6 flex justify-center items-center px-4">
-                    <Link href="/admin/dashboard" className="text-center group">
+                <div className="w-full pt-4 pb-6 flex justify-center items-center px-4">
+                    <Link href="/admin/dashboard" className="text-center group" onClick={onClose}>
                         <Image
-                            src="/logo.png"
+                            src="/LOGO_GRANDE.svg"
                             alt="Import & Export Gold Continent"
-                            width={192}
-                            height={48}
-                            className="w-48 h-12 object-contain mx-auto transition-transform duration-200 group-hover:scale-[1.02]"
+                            width={55}
+                            height={55}
+                            className="h-12 w-12 object-contain mx-auto transition-transform duration-200 group-hover:scale-[1.02]"
                             onError={(e) => {
-                                (e.target as HTMLElement).style.display = 'none';
+                                // Oculta sin colapsar el espacio: evita CLS al fallar
+                                (e.target as HTMLElement).style.visibility = 'hidden';
                             }}
                         />
-                        <div className="text-center font-black text-[10px] text-zinc-800 tracking-widest uppercase leading-tight mt-1.5 transition-colors group-hover:text-brand-primary">
-                            IMPORT &amp; EXPORT <br />
-                            <span className="text-xs text-brand-primary tracking-wider">GOLD CONTINENT</span>
-                        </div>
                     </Link>
                 </div>
 
                 {/* MENÚ DE NAVEGACIÓN: Con paddings internos dinámicos y bordes redondeados modernos */}
-                <nav className="w-full flex flex-col overflow-y-auto max-h-[calc(100vh-170px)] px-3.5 space-y-1">
+                <nav className="w-full flex flex-col flex-1 overflow-y-auto px-3.5 space-y-1 py-1">
                     {menuItems.map((item) => {
                         const isActive = pathname.startsWith(item.href);
                         const Icon = item.icon;
@@ -108,16 +126,16 @@ export function Sidebar() {
                                         type="button"
                                         onClick={() => handleItemClick(item)}
                                         className={`w-full h-11 px-3.5 py-2 rounded-xl inline-flex items-center justify-between gap-3 transition-all duration-200 ${isActive
-                                                ? 'bg-brand-selection text-brand-primary font-bold shadow-sm shadow-brand-modalFocus/5'
-                                                : 'text-zinc-600 font-medium hover:bg-zinc-50 hover:text-zinc-900'
+                                            ? 'bg-brand-selection text-brand-ink font-bold shadow-sm shadow-brand-modalFocus/5'
+                                            : 'text-zinc-600 font-medium hover:bg-zinc-50 hover:text-zinc-900'
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <Icon className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-brand-primary' : 'text-zinc-400'}`} />
+                                            <Icon className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-brand-ink' : 'text-zinc-500'}`} />
                                             <span className="text-xs sm:text-sm">{item.name}</span>
                                         </div>
                                         <ChevronDown
-                                            className={`w-4 h-4 transition-transform duration-200 ${isActive ? 'text-brand-primary' : 'text-zinc-400'
+                                            className={`w-4 h-4 transition-transform duration-200 ${isActive ? 'text-brand-ink' : 'text-zinc-500'
                                                 } ${isSubmenuOpen ? 'rotate-180' : ''}`}
                                         />
                                     </button>
@@ -131,9 +149,10 @@ export function Sidebar() {
                                                     <Link
                                                         key={sub.name}
                                                         href={sub.href}
+                                                        onClick={onClose}
                                                         className={`w-full h-9 pl-9 pr-4 rounded-lg inline-flex items-center text-xs sm:text-sm transition-all duration-150 ${isSubActive
-                                                                ? 'text-brand-primary font-bold bg-white shadow-sm shadow-zinc-200/50'
-                                                                : 'text-zinc-400 font-medium hover:text-zinc-700 hover:bg-white/60'
+                                                            ? 'text-brand-ink font-bold bg-white shadow-sm shadow-zinc-200/50'
+                                                            : 'text-zinc-500 font-medium hover:text-zinc-700 hover:bg-white/60'
                                                             }`}
                                                     >
                                                         <span>{sub.name}</span>
@@ -150,13 +169,16 @@ export function Sidebar() {
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                onClick={() => handleItemClick(item)}
+                                onClick={() => {
+                                    handleItemClick(item);
+                                    onClose?.();
+                                }}
                                 className={`w-full h-11 px-3.5 py-2 rounded-xl inline-flex items-center gap-3 text-xs sm:text-sm transition-all duration-200 ${isActive
-                                        ? 'bg-brand-selection text-brand-primary font-bold shadow-sm shadow-brand-modalFocus/5'
-                                        : 'text-zinc-600 font-medium hover:bg-zinc-50 hover:text-zinc-900'
+                                    ? 'bg-brand-selection text-brand-ink font-bold shadow-sm shadow-brand-modalFocus/5'
+                                    : 'text-zinc-600 font-medium hover:bg-zinc-50 hover:text-zinc-900'
                                     }`}
                             >
-                                <Icon className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-brand-primary' : 'text-zinc-400'}`} />
+                                <Icon className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-brand-ink' : 'text-zinc-500'}`} />
                                 <span>{item.name}</span>
                             </Link>
                         );
@@ -177,7 +199,7 @@ export function Sidebar() {
                     }}
                     className="w-full h-11 px-4 py-2 rounded-xl inline-flex items-center gap-3 text-xs sm:text-sm text-zinc-500 font-semibold hover:bg-estado-rechazado-soft hover:text-danger active:bg-estado-rechazado-soft/80 transition-all duration-200 focus:outline-none"
                 >
-                    <LogOut className="w-4.5 h-4.5 text-zinc-400 transition-colors group-hover:text-danger" />
+                    <LogOut className="w-4.5 h-4.5 text-zinc-500 transition-colors group-hover:text-danger" />
                     <span>Cerrar sesión</span>
                 </button>
             </div>

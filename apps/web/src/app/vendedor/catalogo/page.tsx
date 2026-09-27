@@ -1,9 +1,10 @@
-'use client';
+﻿'use client';
 
 import { Search, Filter, Grid, List, Package, Tag, ChevronDown, Eye } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState, useMemo } from 'react';
 import { formatCode } from '@/lib/formatters';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
 
 interface Producto {
@@ -41,7 +42,7 @@ function renderGridView(productos: Producto[]) {
           <p className="font-medium text-gray-900 text-sm line-clamp-2">{producto.descripcion}</p>
           <div className="mt-3 flex items-center justify-between">
             <div>
-              <p className="text-lg font-bold text-brand-primary">S/ ${producto.precio_unidad_normal.toFixed(2)}</p>
+              <p className="text-lg font-bold text-brand-ink">S/ ${producto.precio_unidad_normal.toFixed(2)}</p>
               <p className="text-xs text-gray-500">Docena: S/ ${producto.precio_docena_normal.toFixed(2)}</p>
             </div>
             <div className="flex items-center gap-1 text-sm text-gray-500">
@@ -103,11 +104,11 @@ function renderTableRows({ productos }: { productos: Producto[] }) {
               <span className="ml-2 text-red-500 text-xs font-medium">⚠ Stock bajo</span>
             )}
           </TableCell>
-          <TableCell className="font-semibold text-brand-primary">S/ ${producto.precio_unidad_normal.toFixed(2)}</TableCell>
+          <TableCell className="font-semibold text-brand-ink">S/ ${producto.precio_unidad_normal.toFixed(2)}</TableCell>
           <TableCell className="text-sm text-gray-600">S/ ${producto.precio_docena_normal.toFixed(2)}</TableCell>
           <TableCell className="text-sm text-gray-600">S/ ${producto.precio_mayor_normal.toFixed(2)}</TableCell>
           <TableCell>
-            <button className="p-2 text-gray-400 hover:text-brand-primary hover:bg-brand-soft rounded-lg transition-colors" title="Ver detalle">
+            <button className="min-h-11 min-w-11 inline-flex items-center justify-center text-gray-500 hover:text-brand-ink hover:bg-brand-soft rounded-lg transition-colors" title="Ver detalle" aria-label="Ver detalle">
               <Eye className="h-4 w-4" />
             </button>
           </TableCell>
@@ -136,6 +137,7 @@ export default function CatalogoPage() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const searchDebounced = useDebounce(search, 300);
   const [categoriaFilter, setCategoriaFilter] = useState<number | 'todos'>('todos');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
@@ -164,17 +166,17 @@ export default function CatalogoPage() {
 
   const filteredProductos = useMemo(() => {
     let filtered = productos;
-    if (search) {
+    if (searchDebounced) {
       filtered = filtered.filter(p =>
-        p.codigo.toLowerCase().includes(search.toLowerCase()) ||
-        p.descripcion.toLowerCase().includes(search.toLowerCase())
+        p.codigo.toLowerCase().includes(searchDebounced.toLowerCase()) ||
+        p.descripcion.toLowerCase().includes(searchDebounced.toLowerCase())
       );
     }
     if (categoriaFilter !== 'todos') {
       filtered = filtered.filter(p => p.id_categoria === categoriaFilter);
     }
     return filtered;
-  }, [search, categoriaFilter, productos]);
+  }, [searchDebounced, categoriaFilter, productos]);
 
   return (
     <>
@@ -186,45 +188,53 @@ export default function CatalogoPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 mb-6">
-        <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:flex-wrap gap-4">
+          <div className="relative flex-1 min-w-[200px] max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" aria-hidden="true" />
             <input
               type="text"
               placeholder="Buscar por código, descripción..."
+              aria-label="Buscar por código o descripción"
               value={search}
               onChange={(e) => setSearch(e.target.value.toUpperCase())}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
+              className="w-full h-11 pl-10 pr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
             />
           </div>
           <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" aria-hidden="true" />
             <select
               value={categoriaFilter}
+              aria-label="Filtrar por categoría"
               onChange={(e) => setCategoriaFilter(e.target.value === 'todos' ? 'todos' : Number(e.target.value))}
-              className="pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm appearance-none"
+              className="h-11 pl-10 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm appearance-none"
             >
               <option value="todos">Todas las categorías</option>
               {categorias.map((cat) => (
                 <option key={cat.id_categoria} value={cat.id_categoria}>{cat.nombre_categoria}</option>
               ))}
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
           </div>
           <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
             <button
+              type="button"
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-white shadow' : ''}`}
+              className={`min-h-11 min-w-11 inline-flex items-center justify-center rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-white shadow' : ''}`}
               title="Vista en cuadrícula"
+              aria-label="Vista en cuadrícula"
+              aria-pressed={viewMode === 'grid'}
             >
-              <Grid className="h-5 w-5" />
+              <Grid className="h-5 w-5" aria-hidden="true" />
             </button>
             <button
+              type="button"
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white shadow' : ''}`}
+              className={`min-h-11 min-w-11 inline-flex items-center justify-center rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white shadow' : ''}`}
               title="Vista en lista"
+              aria-label="Vista en lista"
+              aria-pressed={viewMode === 'list'}
             >
-              <List className="h-5 w-5" />
+              <List className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
         </div>

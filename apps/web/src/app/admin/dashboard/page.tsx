@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Package, FileText, DollarSign, TrendingUp } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
@@ -52,9 +52,9 @@ export default function DashboardPage() {
   return (
     <>
       {loading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse">
+            <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 animate-pulse">
               <div className="h-4 w-24 bg-gray-200 rounded mb-2" />
               <div className="h-8 w-16 bg-gray-200 rounded" />
             </div>
@@ -62,9 +62,9 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
             {statCards.map((stat) => (
-              <Link key={stat.label} href={stat.href} className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+              <Link key={stat.label} href={stat.href} className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-500">{stat.label}</p>
@@ -78,21 +78,21 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Accesos rápidos</h2>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Link href="/admin/productos" className="p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                <Package className="h-8 w-8 text-brand-primary mb-2" />
+                <Package className="h-8 w-8 text-brand-ink mb-2" />
                 <p className="font-medium text-gray-900">Gestionar Productos</p>
                 <p className="text-sm text-gray-500 mt-1">Inventario, precios, importación</p>
               </Link>
               <Link href="/admin/cotizaciones/crear?nueva=1" className="p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                <FileText className="h-8 w-8 text-brand-primary mb-2" />
+                <FileText className="h-8 w-8 text-brand-ink mb-2" />
                 <p className="font-medium text-gray-900">Nueva Cotización</p>
                 <p className="text-sm text-gray-500 mt-1">Crear cotización para cliente</p>
               </Link>
               <Link href="/admin/cobranza" className="p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                <DollarSign className="h-8 w-8 text-brand-primary mb-2" />
+                <DollarSign className="h-8 w-8 text-brand-ink mb-2" />
                 <p className="font-medium text-gray-900">Cobranza</p>
                 <p className="text-sm text-gray-500 mt-1">Registrar pagos de cotizaciones</p>
               </Link>

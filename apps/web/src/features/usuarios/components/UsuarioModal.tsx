@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -216,7 +216,7 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="text-xs font-semibold text-brand-primary hover:underline"
+                  className="text-xs font-semibold text-brand-ink hover:underline"
                 >
                   Cambiar foto
                 </button>
@@ -297,7 +297,7 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2 border-t border-gray-100">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Cancelar
           </Button>

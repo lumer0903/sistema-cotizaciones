@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Plus, Shield, Users, Lock } from 'lucide-react';
@@ -123,7 +123,7 @@ function NuevoRolModal({ open, onClose, onCreated }: NuevoRolModalProps) {
         <p className="text-xs text-gray-500 -mt-2">
           Se usa en JWT y permisos. Minúsculas, números y guion bajo.
         </p>
-        <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2 border-t border-gray-100">
           <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
@@ -272,7 +272,7 @@ export function RolesYPermisosView() {
                         <span className="flex items-center gap-2">
                           <span className="font-medium text-gray-900 truncate">{rol.nombre}</span>
                           {rol.es_sistema && (
-                            <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                            <span className="text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
                               Sistema
                             </span>
                           )}
@@ -281,7 +281,7 @@ export function RolesYPermisosView() {
                           <Users className="h-3 w-3" />
                           {rol.total_usuarios ?? 0} usuarios
                           <span className="text-gray-300">·</span>
-                          <code className="text-[11px]">{rol.codigo}</code>
+                          <code className="text-xs">{rol.codigo}</code>
                         </span>
                       </span>
                     </button>
@@ -302,11 +302,11 @@ export function RolesYPermisosView() {
                 {selected && (
                   <>
                     <span className="text-gray-300">·</span>
-                    <span className="text-brand-primary">{selected.nombre}</span>
+                    <span className="text-brand-ink">{selected.nombre}</span>
                   </>
                 )}
                 {bloqueado && (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase px-2 py-0.5 rounded bg-gray-100 text-gray-600">
+                  <span className="inline-flex items-center gap-1 text-xs font-bold uppercase px-2 py-0.5 rounded bg-gray-100 text-gray-600">
                     <Lock className="h-3 w-3" />
                     Bloqueado
                   </span>
@@ -325,7 +325,7 @@ export function RolesYPermisosView() {
             )}
           </div>
 
-          <div className="border-b border-gray-200">
+          <div className="border-b border-gray-200 overflow-x-auto">
             <nav className="flex -mb-px" aria-label="Grupos de módulos">
               {(Object.keys(GRUPOS_MODULOS) as Array<keyof typeof GRUPOS_MODULOS>).map((g) => (
                 <button
@@ -334,7 +334,7 @@ export function RolesYPermisosView() {
                   onClick={() => setGrupo(g)}
                   className={`px-6 py-3 text-sm border-b-2 transition-colors whitespace-nowrap ${
                     grupo === g
-                      ? 'border-[#F8B602] text-brand-primary font-bold'
+                      ? 'border-[#F8B602] text-brand-ink font-bold'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium'
                   }`}
                 >

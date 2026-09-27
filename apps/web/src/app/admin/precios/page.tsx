@@ -96,7 +96,7 @@ export default function ConsultaPrecioPage() {
   )?.codigo;
 
   return (
-    <div className="p-0 md:p-0 w-full max-w-[1700px] mx-auto space-y-6 font-['DM_Sans']">
+    <div className="w-full max-w-[1700px] mx-auto space-y-6 font-['DM_Sans']">
       {/* Filtros */}
       <FilterCard>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">

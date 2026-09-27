@@ -6,11 +6,15 @@ import React from 'react';
 export interface TableProps extends React.TableHTMLAttributes<HTMLTableElement> {
     children?: React.ReactNode;
     className?: string;
+    /** Clases aplicadas al contenedor con scroll horizontal (borde, sombra, redondeo) */
+    wrapperClassName?: string;
 }
 
 export const Table = React.forwardRef<HTMLTableElement, TableProps>(
-    ({ children, className = '', ...props }, ref) => (
-        <div className="w-full rounded-xl border border-gray-100 shadow-sm overflow-x-auto bg-white">
+    ({ children, className = '', wrapperClassName = '', ...props }, ref) => (
+        <div
+            className={`w-full rounded-xl border border-gray-100 shadow-sm overflow-x-auto select-text bg-white ${wrapperClassName}`}
+        >
             <table
                 ref={ref}
                 className={`w-full text-left text-sm text-brand-subtitle ${className}`}
@@ -33,7 +37,7 @@ export const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeader
     ({ children, className = '', ...props }, ref) => (
         <thead
             ref={ref}
-            className={`bg-gray-50/80 border-b border-gray-200 uppercase tracking-wider ${className}`}
+            className={`bg-gray-50/80 border-b border-gray-200 uppercase tracking-wider [&_tr]:hover:bg-transparent ${className}`}
             {...props}
         >
             {children}
@@ -72,7 +76,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
         <tr
             ref={ref}
             onClick={onClick}
-            className={`transition-colors hover:bg-brand-soft ${onClick ? 'cursor-pointer' : ''
+            className={`group transition-colors duration-150 ease-in-out hover:bg-amber-50/40 ${onClick ? 'cursor-pointer' : ''
                 } ${className}`}
             {...props}
         >

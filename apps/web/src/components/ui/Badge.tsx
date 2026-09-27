@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 
@@ -42,7 +42,7 @@ export const Badge: React.FC<BadgeProps> = ({
             neutral: 'bg-neutral-200 outline-zinc-600 text-neutral-700',
             secondary: 'bg-neutral-200 outline-zinc-600 text-neutral-700',
             borrador: 'bg-neutral-200 outline-zinc-600 text-neutral-700',
-            brand: 'bg-brand-soft outline-brand-primary text-brand-primary',
+            brand: 'bg-brand-soft outline-brand-primary text-brand-ink',
             enviado: 'bg-estado-enviado-soft outline-estado-enviado text-estado-enviado-text',
             aprobado: 'bg-estado-aprobado-soft outline-estado-aprobado text-estado-aprobado-text',
             rechazado: 'bg-estado-rechazado-soft outline-estado-rechazado text-estado-rechazado-text',
@@ -58,14 +58,37 @@ export const Badge: React.FC<BadgeProps> = ({
         );
     }
 
+    // Cápsula de estado/tipo (tabla, listas y reportes): rounded-full con colores corporativos
+    if (size === 'estado') {
+        const estadoCapsules: Record<string, string> = {
+            borrador: 'bg-estado-borrador text-estado-borrador-text border-estado-borrador/60',
+            enviado: 'bg-estado-enviado-soft text-estado-enviado-text border-estado-enviado/40',
+            aprobado: 'bg-estado-aprobado-soft text-estado-aprobado-text border-estado-aprobado/40',
+            rechazado: 'bg-estado-rechazado-soft text-estado-rechazado-text border-estado-rechazado/40',
+            parcial: 'bg-amber-50 text-amber-600 border-amber-500/40',
+            tienda: 'bg-tienda-soft text-tienda border-tienda/40',
+            distribuidor: 'bg-distribuidor-soft text-distribuidor border-distribuidor/40',
+            neutral: 'bg-neutral-200 text-neutral-700 border-neutral-300/60',
+            brand: 'bg-brand-soft text-brand-ink border-brand-primary/40',
+        };
+        const color = estadoCapsules[variant] ?? estadoCapsules.neutral;
+        return (
+            <span
+                className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${color} ${className}`.trim()}
+            >
+                {children}
+            </span>
+        );
+    }
+
     // Estilos de TEXTO PLANO (Sin fondo ni bordes - Exactos a la tabla del sistema)
     const plainTextVariants: Record<string, string> = {
         // Estados de Cotización / Venta
         borrador: 'text-zinc-500 font-bold uppercase tracking-wide',
         enviado: 'text-[#2563EB] font-bold uppercase tracking-wide',
-        aprobado: 'text-[#059669] font-bold uppercase tracking-wide',
+        aprobado: 'text-emerald-700 font-bold uppercase tracking-wide',
         rechazado: 'text-[#DC2626] font-bold uppercase tracking-wide',
-        parcial: 'text-[#D97706] font-bold uppercase tracking-wide',
+        parcial: 'text-amber-700 font-bold uppercase tracking-wide',
 
         // Tipos de Precio / Cliente
         tienda: 'text-[#1D4ED8] font-bold uppercase',
@@ -101,9 +124,9 @@ export const Badge: React.FC<BadgeProps> = ({
         distribuidor: 'bg-distribuidor-soft text-distribuidor border-distribuidor/40',
     };
     const sizes: Record<string, string> = {
-        sm: 'px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase',
+        sm: 'px-2 py-0.5 text-xs font-bold tracking-wider uppercase',
         md: 'px-2.5 py-1 text-xs font-semibold',
-        estado: 'px-2 py-0.5 text-[11px] font-bold tracking-wider uppercase',
+        estado: 'px-2 py-0.5 text-xs font-bold tracking-wider uppercase',
     };
     const color = variants[variant] ?? variants.neutral;
     const sizeClass = sizes[size] ?? sizes.md;

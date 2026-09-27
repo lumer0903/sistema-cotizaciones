@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { Search, RotateCw, PackagePlus, ArrowLeftRight, ClipboardList, Bell, Plus } from 'lucide-react';
@@ -59,10 +59,10 @@ export function InventarioFilters({
   }));
 
   return (
-    <FilterCard className="p-4">
-      <div className="flex flex-wrap lg:flex-nowrap items-end gap-4 w-full">
+    <FilterCard>
+      <div className="flex flex-wrap items-end gap-4 w-full">
         {/* BUSCADOR */}
-        <div className="flex-1 min-w-[240px]">
+        <div className="flex-1 min-w-[200px] sm:min-w-[240px]">
           <Input
             label="BUSCAR"
             icon={<Search className="w-4 h-4" />}
@@ -74,7 +74,7 @@ export function InventarioFilters({
         </div>
 
         {/* CATEGORÍA */}
-        <div className="w-40">
+        <div className="w-full sm:w-40">
           <Select
             label="CATEGORÍA"
             value={selectedCategoria}
@@ -85,7 +85,7 @@ export function InventarioFilters({
         </div>
 
         {/* UBICACIÓN */}
-        <div className="w-40">
+        <div className="w-full sm:w-40">
           <Select
             label="UBICACIÓN"
             value={selectedUbicacion}
@@ -96,7 +96,7 @@ export function InventarioFilters({
         </div>
 
         {/* BLOQUE DE ACCIONES */}
-        <div className="flex items-center gap-2 h-10 ml-auto">
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
           {/* Refrescar */}
           <Button
             variant="yellowOutline"
@@ -104,7 +104,7 @@ export function InventarioFilters({
             onClick={onRefresh}
             disabled={loading}
             title="Actualizar lista"
-            className="h-10 w-10 p-0"
+            className="min-h-11 min-w-11 p-0"
           >
             <RotateCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
@@ -116,7 +116,7 @@ export function InventarioFilters({
               size="sm"
               onClick={onMovimiento}
               title="Nuevo Movimiento Global"
-              className="h-10 w-10 p-0"
+              className="min-h-11 min-w-11 p-0"
             >
               <PackagePlus className="w-4 h-4" />
             </Button>
@@ -129,7 +129,7 @@ export function InventarioFilters({
               size="sm"
               onClick={onTransferencia}
               title="Transferencia Global"
-              className="h-10 w-10 p-0"
+              className="min-h-11 min-w-11 p-0"
             >
               <ArrowLeftRight className="w-4 h-4" />
             </Button>
@@ -142,7 +142,7 @@ export function InventarioFilters({
               size="sm"
               onClick={onKardex}
               title="Kárdex Global"
-              className="h-10 w-10 p-0"
+              className="min-h-11 min-w-11 p-0"
             >
               <ClipboardList className="w-4 h-4" />
             </Button>
@@ -155,12 +155,12 @@ export function InventarioFilters({
               size="sm"
               onClick={onAlertas}
               title="Ver Alertas de Stock"
-              className="h-10 px-3 gap-1.5 relative"
+              className="min-h-11 px-3 gap-1.5 relative"
             >
               <Bell className="w-4 h-4" />
               <span className="hidden sm:inline">Alertas</span>
               {alertasCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-danger text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-danger text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                   {alertasCount > 9 ? '9+' : alertasCount}
                 </span>
               )}

@@ -1,25 +1,28 @@
-'use client';
+﻿'use client';
 
 import { FileText, Plus, Search, Filter, ChevronDown, Eye, Edit, Download } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Badge, ESTADO_BADGE } from '@/components/ui';
+import { Badge, ESTADO_BADGE, Pagination } from '@/components/ui';
 import {
   exportarPdfCotizacion,
   getCotizaciones,
 } from '@/features/cotizaciones/api/cotizacionApi';
 import { CotizacionItem, EstadoCotizacion } from '@/features/cotizaciones/types/cotizacion';
+import { useDebounce } from '@/hooks/useDebounce';
 import { showToast } from '@/lib/toast';
 
 export default function CotizacionesPage() {
   const [cotizaciones, setCotizaciones] = useState<CotizacionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const searchDebounced = useDebounce(search, 300);
   const [fecha, setFecha] = useState('');
   const [estadoFilter, setEstadoFilter] = useState<EstadoCotizacion | 'TODOS'>('TODOS');
+  const [tipoFilter, setTipoFilter] = useState<'TODOS' | 'DISTRIBUIDOR' | 'TIENDA'>('TODOS');
   const [currentPage, setCurrentPage] = useState(1);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
-  const itemsPerPage = 20;
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   const handleDescargarPdf = async (cot: CotizacionItem) => {
     setDownloadingId(cot.id_cotizacion);
@@ -40,7 +43,7 @@ export default function CotizacionesPage() {
       try {
         setLoading(true);
         const res = await getCotizaciones({
-          buscar: search,
+          buscar: searchDebounced,
           fecha,
           estado: estadoFilter,
           limit: 1000,
@@ -58,7 +61,7 @@ export default function CotizacionesPage() {
     return () => {
       cancelado = true;
     };
-  }, [search, fecha, estadoFilter]);
+  }, [searchDebounced, fecha, estadoFilter]);
 
   // Filtrado reactivo en cliente (refuerza los filtros del servidor)
   const filteredCotizaciones = useMemo(() => {
@@ -71,9 +74,12 @@ export default function CotizacionesPage() {
       const matchEstado =
         estadoFilter === 'TODOS' || c.estado === estadoFilter;
 
-      return matchBuscar && matchEstado;
+      const matchTipo =
+        tipoFilter === 'TODOS' || c.tipo === tipoFilter;
+
+      return matchBuscar && matchEstado && matchTipo;
     });
-  }, [cotizaciones, search, estadoFilter]);
+  }, [cotizaciones, search, estadoFilter, tipoFilter]);
 
   // Paginación local
   const totalPages = Math.ceil(filteredCotizaciones.length / itemsPerPage) || 1;
@@ -91,7 +97,7 @@ export default function CotizacionesPage() {
         </div>
         <Link
           href="/vendedor/cotizaciones/crear"
-          className="px-4 py-2 bg-brand-primary text-white rounded-xl hover:bg-brand-hover transition-colors flex items-center gap-2"
+          className="min-h-11 px-4 bg-brand-primary text-white rounded-xl hover:bg-brand-hover transition-colors inline-flex items-center gap-2 font-medium"
         >
           <Plus className="h-4 w-4" />
           Nueva Cotización
@@ -99,18 +105,19 @@ export default function CotizacionesPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200">
-        <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:flex-wrap gap-4">
+          <div className="relative flex-1 min-w-[200px] max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" aria-hidden="true" />
             <input
               type="text"
               placeholder="Buscar por número o cliente..."
+              aria-label="Buscar por número o cliente"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value.toUpperCase());
                 setCurrentPage(1);
               }}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
+              className="w-full h-11 pl-10 pr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
             />
           </div>
           <div className="w-full sm:w-48">
@@ -122,18 +129,19 @@ export default function CotizacionesPage() {
                 setFecha(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
+              className="w-full h-11 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
             />
           </div>
           <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" aria-hidden="true" />
             <select
               value={estadoFilter}
+              aria-label="Filtrar por estado"
               onChange={(e) => {
                 setEstadoFilter(e.target.value as EstadoCotizacion | 'TODOS');
                 setCurrentPage(1);
               }}
-              className="pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm appearance-none"
+              className="h-11 pl-10 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm appearance-none"
             >
               <option value="TODOS">Todos los estados</option>
               <option value="BORRADOR">Borrador</option>
@@ -142,7 +150,23 @@ export default function CotizacionesPage() {
               <option value="APROBADO">Aprobado</option>
               <option value="RECHAZADO">Rechazado</option>
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" aria-hidden="true" />
+          </div>
+          <div className="relative">
+            <select
+              value={tipoFilter}
+              onChange={(e) => {
+                setTipoFilter(e.target.value as 'TODOS' | 'DISTRIBUIDOR' | 'TIENDA');
+                setCurrentPage(1);
+              }}
+              aria-label="Tipo de cliente"
+              className="h-11 px-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm appearance-none"
+            >
+              <option value="TODOS">Todos los tipos</option>
+              <option value="DISTRIBUIDOR">Distribuidor</option>
+              <option value="TIENDA">Tienda</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" aria-hidden="true" />
           </div>
         </div>
 
@@ -175,24 +199,26 @@ export default function CotizacionesPage() {
                       <span className="text-sm text-gray-500">{cot.fecha}</span>
                     </div>
                     <p className="text-gray-900 font-medium mt-1 truncate sm:max-w-md">{cot.cliente || 'Cliente no especificado'}</p>
-                    <p className="text-lg font-bold text-brand-primary mt-1">S/ ${cot.total.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-brand-ink mt-1">S/ ${cot.total.toLocaleString()}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     <Link
                       href={`/vendedor/cotizaciones/pdf/${cot.id_cotizacion}`}
-                      className="p-2 text-gray-500 hover:text-brand-primary hover:bg-gray-100 rounded-lg transition-colors"
+                      className="min-h-11 min-w-11 flex items-center justify-center text-gray-500 hover:text-brand-ink hover:bg-gray-100 rounded-lg transition-colors"
                       title="Ver documento (PDF)"
+                      aria-label={`Ver PDF de ${cot.codigo}`}
                     >
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-5 w-5" aria-hidden="true" />
                     </Link>
                     {cot.estado === 'BORRADOR' && (
                       <>
                         <Link
                           href={`/vendedor/cotizaciones/editar/${cot.id_cotizacion}`}
-                          className="p-2 text-gray-500 hover:text-brand-primary hover:bg-gray-100 rounded-lg transition-colors"
+                          className="min-h-11 min-w-11 flex items-center justify-center text-gray-500 hover:text-brand-ink hover:bg-gray-100 rounded-lg transition-colors"
                           title="Editar"
+                          aria-label={`Editar ${cot.codigo}`}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-5 w-5" aria-hidden="true" />
                         </Link>
                       </>
                     )}
@@ -200,10 +226,11 @@ export default function CotizacionesPage() {
                       type="button"
                       onClick={() => void handleDescargarPdf(cot)}
                       disabled={downloadingId === cot.id_cotizacion}
-                      className="p-2 text-gray-500 hover:text-brand-primary hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                      className="min-h-11 min-w-11 flex items-center justify-center text-gray-500 hover:text-brand-ink hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
                       title="Descargar PDF"
+                      aria-label={`Descargar PDF de ${cot.codigo}`}
                     >
-                      <Download className="h-4 w-4" />
+                      <Download className="h-5 w-5" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -211,44 +238,19 @@ export default function CotizacionesPage() {
             </div>
 
             {/* Paginación */}
-            {totalPages > 1 && (
-              <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-sm text-gray-500">
-                  Mostrando <span className="font-medium">{paginatedData.length}</span> de{' '}
-                  <span className="font-medium">{filteredCotizaciones.length}</span> cotizaciones
-                </div>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-8 h-8 rounded-lg font-medium text-sm transition-colors ${currentPage === page
-                          ? 'bg-brand-primary text-white shadow-sm'
-                          : 'text-gray-600 hover:bg-gray-100'
-                        }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                  {currentPage < totalPages && (
-                    <>
-                      <button
-                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                        className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg"
-                      >
-                        <ChevronDown className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setCurrentPage(totalPages)}
-                        className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg"
-                      >
-                        <ChevronDown className="w-4 h-4" style={{ transform: 'rotate(-90deg)' }} />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredCotizaciones.length}
+              limit={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onLimitChange={(n) => {
+                setItemsPerPage(n);
+                setCurrentPage(1);
+              }}
+              loading={loading}
+              itemLabel="cotizaciones"
+            />
           </>
         )}
       </div>

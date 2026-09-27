@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, Pencil, Power, PowerOff, Users, ShieldCheck } from 'lucide-react';
@@ -177,7 +177,7 @@ export default function UsuariosPage() {
         </FilterCard>
       )}
 
-      <div className="border-b border-gray-200 mb-4">
+      <div className="border-b border-gray-200 mb-4 overflow-x-auto">
         <nav className="flex -mb-px" aria-label="Tabs">
           {tabs.map((tab) => (
             <button
@@ -185,7 +185,7 @@ export default function UsuariosPage() {
               type="button"
               onClick={() => setActiveTab(tab.id)}
               className={`px-6 py-3 text-sm border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${activeTab === tab.id
-                  ? 'border-[#F8B602] text-brand-primary font-bold'
+                  ? 'border-[#F8B602] text-brand-ink font-bold'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium'
                 }`}
             >
@@ -199,7 +199,6 @@ export default function UsuariosPage() {
       {activeTab === 'usuarios' ? (
         <div className="space-y-4">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
-            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -257,15 +256,15 @@ export default function UsuariosPage() {
                           </TableCell>
 
                           <TableCell>
-                            <div className="flex items-center justify-end gap-1">
+                            <div className="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
                               <button
                                 type="button"
                                 onClick={() => openEdit(user)}
                                 title="Editar usuario"
                                 aria-label="Editar usuario"
-                                className="p-2 text-gray-500 hover:text-brand-primary hover:bg-brand-soft rounded-lg transition-colors"
+                                className="min-h-11 min-w-11 inline-flex items-center justify-center text-gray-500 hover:text-brand-ink hover:bg-brand-soft rounded-lg transition-colors"
                               >
-                                <Pencil className="h-4 w-4" />
+                                <Pencil className="h-5 w-5" aria-hidden="true" />
                               </button>
                               <button
                                 type="button"
@@ -279,7 +278,7 @@ export default function UsuariosPage() {
                                       : 'Activar usuario'
                                 }
                                 aria-label={user.activo ? 'Desactivar usuario' : 'Activar usuario'}
-                                className={`p-2 rounded-lg transition-colors ${statusDisabled
+                                className={`min-h-11 min-w-11 inline-flex items-center justify-center rounded-lg transition-colors ${statusDisabled
                                     ? 'text-gray-300 cursor-not-allowed'
                                     : user.activo
                                       ? 'text-danger hover:bg-estado-rechazado-soft'
@@ -287,9 +286,9 @@ export default function UsuariosPage() {
                                   }`}
                               >
                                 {user.activo ? (
-                                  <PowerOff className="h-4 w-4" />
+                                  <PowerOff className="h-5 w-5" aria-hidden="true" />
                                 ) : (
-                                  <Power className="h-4 w-4" />
+                                  <Power className="h-5 w-5" aria-hidden="true" />
                                 )}
                               </button>
                             </div>
@@ -300,7 +299,6 @@ export default function UsuariosPage() {
                   )}
                 </TableBody>
               </Table>
-            </div>
 
             <Pagination
               currentPage={currentPage}

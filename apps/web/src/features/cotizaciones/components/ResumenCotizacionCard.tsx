@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { FileText, Minus, Plus } from 'lucide-react';
@@ -54,7 +54,7 @@ export function ResumenCotizacionCard({
   const [isMinimized, setIsMinimized] = useState(false);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 p-6 space-y-4 font-['DM_Sans'] transition-all">
+    <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 p-6 space-y-5 font-['DM_Sans'] transition-all">
       {/* Encabezado con botón de minimizar */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
@@ -67,8 +67,9 @@ export function ResumenCotizacionCard({
         <button
           type="button"
           onClick={() => setIsMinimized((prev) => !prev)}
-          className="p-1 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+          className="min-h-11 min-w-11 -mr-2 inline-flex items-center justify-center text-amber-700 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition-colors"
           aria-label={isMinimized ? 'Expandir resumen' : 'Minimizar resumen'}
+          aria-expanded={!isMinimized}
         >
           {isMinimized ? <Plus className="size-5 stroke-[2.5]" /> : <Minus className="size-5 stroke-[2.5]" />}
         </button>
@@ -78,42 +79,50 @@ export function ResumenCotizacionCard({
       {!isMinimized && (
         <>
           {/* Desglose de Totales */}
-          <div className="flex flex-col pt-1">
+          <div className="flex flex-col">
             <ResumenRow label={`Subtotal (${itemsCount} items)`} value={`S/ ${subtotal.toFixed(2)}`} />
             <ResumenRow label="Carreta" value={`S/ ${costoCarreta.toFixed(2)}`} />
             {igv !== undefined && (
               <ResumenRow label="IGV (18%)" value={`S/ ${igv.toFixed(2)}`} />
             )}
 
-            <div className="border-t border-zinc-100 mt-2 pt-2 flex justify-between items-center">
-              <span className="text-xl font-black text-zinc-800 tracking-tight">Total</span>
-              <span className="text-xl font-black text-zinc-800">
+            <div className="border-t border-zinc-200 mt-3 pt-3 flex justify-between items-center">
+              <span className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Total</span>
+              <span className="text-xl font-bold text-brand-ink">
                 S/ {total.toFixed(2)}
               </span>
             </div>
           </div>
 
           {/* Toggle de Carreta */}
-          <div className="space-y-1 pt-1">
+          <div className="pt-1 border-t border-zinc-100">
             <button
               type="button"
               onClick={() => onToggleCarreta(!incluyeCarreta)}
-              className="flex items-center gap-2 cursor-pointer select-none group"
+              className="w-full flex items-center justify-between gap-2 cursor-pointer select-none group py-1"
             >
-              <div
-                className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors duration-200 ${incluyeCarreta ? 'bg-emerald-500' : 'bg-zinc-300'
+              <span className="flex items-center gap-2">
+                <span
+                  className={`w-9 h-5 inline-flex items-center rounded-full p-0.5 transition-colors duration-200 ${incluyeCarreta ? 'bg-emerald-500' : 'bg-zinc-300'
+                    }`}
+                >
+                  <span
+                    className={`bg-white size-4 rounded-full shadow-md transform transition-transform duration-200 ${incluyeCarreta ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                  />
+                </span>
+                <span className="text-sm font-semibold text-zinc-700">Carreta</span>
+              </span>
+              <span
+                className={`text-xs font-bold px-2 py-0.5 rounded-full tabular-nums transition-colors ${incluyeCarreta
+                  ? 'bg-emerald-50 text-emerald-600'
+                  : 'bg-zinc-100 text-zinc-500'
                   }`}
               >
-                <div
-                  className={`bg-white size-4 rounded-full shadow-md transform transition-transform duration-200 ${incluyeCarreta ? 'translate-x-4' : 'translate-x-0'
-                    }`}
-                />
-              </div>
-              <span className="text-sm font-semibold text-emerald-600">
-                Carreta
+                {incluyeCarreta ? '+ S/ 15.00' : 'S/ 0.00'}
               </span>
             </button>
-            <p className="text-[10px] text-zinc-400 font-light pl-0.5">
+            <p className="text-xs text-zinc-500 font-light pl-0.5 mt-1">
               *Carreta precio aproximado S/15
             </p>
           </div>
@@ -121,13 +130,10 @@ export function ResumenCotizacionCard({
           {/* Botón Continuar */}
           <div className="flex justify-end pt-2">
             <Button
-              variant="primary"
+              variant={continuarDisabled ? 'ghost' : 'primary'}
               disabled={continuarDisabled}
               onClick={onContinuar}
-              className={`px-6 py-2.5 !rounded-xl text-sm font-bold transition-all ${continuarDisabled
-                ? '!bg-zinc-400 !text-white cursor-not-allowed opacity-90'
-                : '!bg-zinc-500 hover:!bg-zinc-600 !text-white'
-                }`}
+              className="min-h-11 px-6 !rounded-xl text-sm font-bold transition-all"
             >
               Continuar
             </Button>

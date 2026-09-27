@@ -172,9 +172,10 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
                 <span>{color.name}</span>
                 <button
                   onClick={() => removeColor(color.name)}
-                  className="text-brand-options hover:text-red-500 transition-colors ml-1"
+                  aria-label={`Quitar ${color.name}`}
+                  className="min-h-8 min-w-8 -my-1 -mr-1 inline-flex items-center justify-center text-brand-options hover:text-red-500 transition-colors"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             ))}
@@ -202,8 +203,9 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
               <input
                 type="color"
                 value={newHex}
+                aria-label="Seleccionar color"
                 onChange={(e) => setNewHex(e.target.value)}
-                className="w-2.5 h-2.5 rounded-full cursor-pointer border-0 bg-transparent p-0 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-full [&::-moz-color-swatch]:border-none [&::-moz-color-swatch]:rounded-full"
+                className="w-8 h-8 rounded-md cursor-pointer border border-gray-300 bg-transparent p-0.5 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded [&::-moz-color-swatch]:border-none [&::-moz-color-swatch]:rounded"
               />
               <input
                 ref={inputRef}
@@ -212,14 +214,19 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
                 onChange={(e) => handleNameChange(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addColor()}
                 placeholder="Color"
+                aria-label="Nombre del color"
                 autoFocus
-                className="w-24 px-2 py-1 text-xs border border-gray-400 rounded-lg outline-none focus:border-brand-primary"
+                className="w-24 min-h-11 px-2 text-xs border border-gray-400 rounded-lg outline-none focus:border-brand-primary"
               />
-              <button onClick={addColor} className="text-xs font-bold text-brand-subtitle hover:text-black px-1">
+              <button onClick={addColor} className="min-h-11 px-3 text-xs font-bold text-brand-subtitle hover:text-black">
                 OK
               </button>
-              <button onClick={() => setIsAdding(false)} className="text-xs font-bold text-brand-options hover:text-brand-subtitle px-1">
-                <X className="w-3 h-3" />
+              <button
+                onClick={() => setIsAdding(false)}
+                aria-label="Cancelar alta de color"
+                className="min-h-8 min-w-8 inline-flex items-center justify-center text-brand-options hover:text-brand-subtitle"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
           )}
@@ -246,7 +253,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100">
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>

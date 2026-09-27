@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { forwardRef, useState, useRef, useEffect, ReactNode, SelectHTMLAttributes } from 'react';
 import { createPortal } from 'react-dom';
@@ -48,8 +48,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         // Colores directos en gris neutro para el variant modal
         const borderColor = isModal ? '#d4d4d8' : 'var(--color-brand-primary)'; // zinc-300
         const focusColor = isModal ? '#71717a' : 'var(--color-brand-primary)'; // zinc-500
-        const labelIconColor = isModal ? '#71717a' : 'var(--color-brand-primary)'; // zinc-500
-        const chevronColor = isModal ? '#71717a' : 'var(--color-brand-primary)'; // zinc-500
+        const labelIconColor = isModal ? '#71717a' : 'var(--color-brand-ink)'; // zinc-500 / amarillo oscuro AA
+        const chevronColor = isModal ? '#71717a' : 'var(--color-brand-ink)'; // zinc-500 / amarillo oscuro AA
 
         const [isOpen, setIsOpen] = useState(false);
         const [selectedValue, setSelectedValue] = useState<string | number>(
@@ -137,7 +137,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         };
 
         const selectedOption = parsedOptions.find((opt) => String(opt.value) === String(selectedValue));
-        const heightClass = sizeVariant === 'sm' ? 'h-8 text-xs' : 'h-10 text-xs sm:text-sm';
+        const heightClass = sizeVariant === 'sm' ? 'min-h-11 h-11 text-xs' : 'h-11 text-xs sm:text-sm';
 
         return (
             <div className="w-full space-y-1" ref={containerRef}>
@@ -159,7 +159,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
 
                 {label && (
                     <label
-                        className="block text-[10px] sm:text-xs font-black uppercase tracking-wider transition-colors"
+                        className="block text-xs font-black uppercase tracking-wider transition-colors"
                         style={{ color: labelIconColor }}
                     >
                         {label}
@@ -173,7 +173,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                         disabled={disabled}
                         onClick={() => !disabled && setIsOpen((prev) => !prev)}
                         className={`
-              w-full ${heightClass} flex items-center justify-between rounded-2xl border bg-white 
+              relative w-full ${heightClass} flex items-center justify-between rounded-2xl border bg-white 
               font-medium transition-all text-left disabled:bg-gray-100 disabled:cursor-not-allowed pr-8 
               ${icon ? 'pl-9' : 'px-3.5'} 
               ${error ? '!border-red-500 focus:ring-2 focus:ring-red-200' : ''} 
@@ -194,7 +194,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                             </div>
                         )}
 
-                        <span className={`block truncate ${!selectedOption?.value ? 'text-zinc-400' : ''}`}>
+                        <span className={`block truncate ${!selectedOption?.value ? 'text-zinc-500' : ''}`}>
                             {selectedOption ? selectedOption.label : placeholder}
                         </span>
 
@@ -232,7 +232,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                                         );
                                     })
                                 ) : (
-                                    <div className="px-3 py-2 text-xs text-stone-400 text-center">
+                                    <div className="px-3 py-2 text-xs text-stone-500 text-center">
                                         No hay opciones
                                     </div>
                                 )}

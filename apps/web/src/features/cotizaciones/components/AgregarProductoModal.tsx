@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { Package, Archive } from 'lucide-react';
+import { Package, Archive, Info } from 'lucide-react';
 import { ProductoCarrito } from '../types/cotizacion';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
@@ -51,6 +51,16 @@ interface AgregarProductoModalProps {
     producto: ProductoBase | null;
     tipoPrecioCliente: 'DISTRIBUIDOR' | 'TIENDA' | string;
     onAgregar: (item: ProductoCarrito) => void;
+    /** Cantidad inicial (flujo de recomendaciones: p.ej. la del producto a reemplazar) */
+    cantidadInicial?: number;
+    /** Precio inicial precargado (flujo de recomendaciones); si no se pasa se usa la tabla de precios */
+    precioInicial?: number;
+    /** Tipo de venta inicial (default 'MAYOR') */
+    tipoVentaInicial?: 'UNIDAD' | 'DOCENA' | 'MAYOR';
+    /** Aviso superior, p.ej. "Reemplazando V-GR55-01 por V-GR55-02" */
+    aviso?: string | null;
+    /** Label del botón de confirmación (default 'Guardar') */
+    confirmLabel?: string;
 }
 
 export default function AgregarProductoModal({
@@ -59,6 +69,11 @@ export default function AgregarProductoModal({
     producto,
     tipoPrecioCliente,
     onAgregar,
+    cantidadInicial,
+    precioInicial,
+    tipoVentaInicial,
+    aviso,
+    confirmLabel = 'Guardar',
 }: AgregarProductoModalProps) {
     const [tipoColor, setTipoColor] = useState<'SURTIDO' | 'ESPECIFICO'>('SURTIDO');
     const [colorSeleccionado, setColorSeleccionado] = useState<string>('');
@@ -70,6 +85,9 @@ export default function AgregarProductoModal({
         isOpen: boolean;
         producto: ProductoBase | null;
         tipoPrecioCliente: string;
+        cantidadInicial?: number;
+        precioInicial?: number;
+        tipoVentaInicial?: string;
     } | null>(null);
 
     // Extracción segura de los 6 precios (tienda + distribuidor) desde cualquier forma del producto
@@ -86,15 +104,18 @@ export default function AgregarProductoModal({
         prevReset === null ||
         prevReset.isOpen !== isOpen ||
         prevReset.producto !== producto ||
-        prevReset.tipoPrecioCliente !== tipoPrecioCliente
+        prevReset.tipoPrecioCliente !== tipoPrecioCliente ||
+        prevReset.cantidadInicial !== cantidadInicial ||
+        prevReset.precioInicial !== precioInicial ||
+        prevReset.tipoVentaInicial !== tipoVentaInicial
     ) {
-        setPrevReset({ isOpen, producto, tipoPrecioCliente });
+        setPrevReset({ isOpen, producto, tipoPrecioCliente, cantidadInicial, precioInicial, tipoVentaInicial });
         if (isOpen && producto) {
             setTipoColor('SURTIDO');
             setColorSeleccionado('');
-            setTipoVenta('MAYOR');
-            setCantidad(1);
-            const inicial = esTienda ? tienda.mayor : distribuidor.mayor;
+            setTipoVenta(tipoVentaInicial ?? 'MAYOR');
+            setCantidad(cantidadInicial ?? 1);
+            const inicial = precioInicial ?? (esTienda ? tienda.mayor : distribuidor.mayor);
             setPrecioInput(Number(inicial || 0).toFixed(2));
             setImgError(false);
         }
@@ -168,6 +189,14 @@ export default function AgregarProductoModal({
             maxWidth="md"
         >
             <div className="space-y-5 text-zinc-700 p-1">
+                {/* Aviso contextual (flujo de recomendaciones: reemplazo) */}
+                {aviso && (
+                    <div className="flex items-center gap-2 rounded-xl border border-brand-primary/30 bg-brand-soft px-3.5 py-2.5 text-xs font-semibold text-brand-subtitle">
+                        <Info className="size-4 shrink-0 text-brand-ink" />
+                        <span>{aviso}</span>
+                    </div>
+                )}
+
                 {/* Ficha de producto con manejo de errores de imagen */}
                 <div className="border border-zinc-200 rounded-2xl p-3.5 flex gap-3.5 bg-white items-center">
                     <div className="size-20 rounded-xl border border-zinc-200 flex items-center justify-center overflow-hidden bg-zinc-50 shrink-0">
@@ -184,19 +213,19 @@ export default function AgregarProductoModal({
                                 }}
                             />
                         ) : (
-                            <Package className="size-8 text-zinc-400" />
+                            <Package className="size-8 text-zinc-500" />
                         )}
                     </div>
                     <div className="flex flex-col justify-between py-0.5 min-w-0 flex-1 gap-1">
                         <div>
-                            <span className="inline-block bg-zinc-100 text-zinc-600 text-[11px] font-bold px-2.5 py-0.5 rounded-md uppercase">
+                            <span className="inline-block bg-zinc-100 text-zinc-600 text-xs font-bold px-2.5 py-0.5 rounded-md uppercase">
                                 {formatCode(producto.codigo)}
                             </span>
                             <p className="text-xs text-zinc-700 font-medium leading-tight truncate mt-1">
                                 {producto.descripcion}
                             </p>
                         </div>
-                        <div className="flex items-center gap-1.5 text-[11px] pt-1">
+                        <div className="flex items-center gap-1.5 text-xs pt-1">
                             <span className="inline-flex items-center gap-1 bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-md font-medium">
                                 <Archive className="size-3 text-zinc-500" />
                                 {estanteDisplay}
@@ -224,7 +253,7 @@ export default function AgregarProductoModal({
                                 type="checkbox"
                                 checked={tipoColor === 'SURTIDO'}
                                 onChange={() => setTipoColor('SURTIDO')}
-                                className="size-4 rounded accent-brand-primary cursor-pointer"
+                                className="size-5 rounded accent-brand-primary cursor-pointer"
                             />
                             Surtido
                         </label>
@@ -233,7 +262,7 @@ export default function AgregarProductoModal({
                                 type="checkbox"
                                 checked={tipoColor === 'ESPECIFICO'}
                                 onChange={() => setTipoColor('ESPECIFICO')}
-                                className="size-4 rounded accent-brand-primary cursor-pointer"
+                                className="size-5 rounded accent-brand-primary cursor-pointer"
                             />
                             Color específico
                         </label>
@@ -243,7 +272,7 @@ export default function AgregarProductoModal({
                 {/* Selección y Validación de Color Específico */}
                 {tipoColor === 'ESPECIFICO' && (
                     <div className="space-y-1.5">
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <Select
                                 label="Seleccionar color"
                                 variant="modal"
@@ -269,7 +298,7 @@ export default function AgregarProductoModal({
                 )}
 
                 {/* Tipo de Venta y Cantidad */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Select
                         label="Tipo de venta"
                         variant="modal"
@@ -295,13 +324,13 @@ export default function AgregarProductoModal({
                 </div>
 
                 {/* Precio y Subtotal */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input
                         label="Precio"
                         variant="modal"
                         type="number"
                         step="0.01"
-                        icon={<span className="text-[11px] font-semibold">S/</span>}
+                        icon={<span className="text-xs font-semibold">S/</span>}
                         value={precioInput}
                         onChange={(e) => setPrecioInput(e.target.value)}
                         className="h-11 font-semibold"
@@ -310,7 +339,7 @@ export default function AgregarProductoModal({
                         label="Subtotal"
                         variant="modal"
                         readOnly
-                        icon={<span className="text-[11px] font-semibold">S/</span>}
+                        icon={<span className="text-xs font-semibold">S/</span>}
                         value={subtotal.toFixed(2)}
                         className="h-11 !bg-zinc-50 font-bold"
                     />
@@ -323,12 +352,12 @@ export default function AgregarProductoModal({
                         : 'bg-[#FAF3F0] border-[#E8D8CE] text-[#A13A17]'
                         }`}
                 >
-                    <span className="text-center text-[11px] font-extrabold uppercase tracking-wide block mb-2">
+                    <span className="text-center text-xs font-extrabold uppercase tracking-wide block mb-2">
                         {tituloEscala}
                     </span>
-                    <div className="grid grid-cols-3 divide-x divide-current/20 text-center">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-current/20 text-center">
                         <div className="px-2">
-                            <span className="block text-[10px] font-bold uppercase opacity-75">
+                            <span className="block text-xs font-bold uppercase opacity-75">
                                 UNIDAD
                             </span>
                             <span className="text-xs font-extrabold mt-0.5 block">
@@ -336,7 +365,7 @@ export default function AgregarProductoModal({
                             </span>
                         </div>
                         <div className="px-2">
-                            <span className="block text-[10px] font-bold uppercase opacity-75">
+                            <span className="block text-xs font-bold uppercase opacity-75">
                                 DOCENA
                             </span>
                             <span className="text-xs font-extrabold mt-0.5 block">
@@ -344,7 +373,7 @@ export default function AgregarProductoModal({
                             </span>
                         </div>
                         <div className="px-2">
-                            <span className="block text-[10px] font-bold uppercase opacity-75">
+                            <span className="block text-xs font-bold uppercase opacity-75">
                                 MAYOR
                             </span>
                             <span className="text-xs font-extrabold mt-0.5 block">
@@ -355,12 +384,12 @@ export default function AgregarProductoModal({
                 </div>
 
                 {/* Botones de acción */}
-                <div className="flex justify-end items-center gap-3 pt-2">
+                <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 sm:gap-3 pt-2">
                     <Button
                         type="button"
                         variant="ghost"
                         onClick={onClose}
-                        className="px-5 py-2.5 text-sm font-bold text-zinc-400 hover:text-zinc-600 transition-colors"
+                        className="min-h-11 px-5 text-sm font-bold text-zinc-500 hover:text-zinc-600 transition-colors"
                     >
                         Cancelar
                     </Button>
@@ -369,11 +398,11 @@ export default function AgregarProductoModal({
                         disabled={sinStock}
                         onClick={handleGuardar}
                         className={`px-8 py-2.5 text-sm font-bold rounded-xl shadow-none transition-colors ${sinStock
-                            ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
+                            ? 'bg-zinc-200 text-zinc-500 cursor-not-allowed'
                             : 'bg-brand-primary hover:bg-brand-hover text-white'
                             }`}
                     >
-                        Guardar
+                        {confirmLabel}
                     </Button>
                 </div>
             </div>

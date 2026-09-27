@@ -60,6 +60,8 @@ export interface RecomendacionItem {
     es_sugerido_ia: boolean;
     almacen?: string | null;
     ubicacion?: string | null;
+    unidades_por_caja?: number | null;
+    imagen_url?: string;
 }
 
 export interface RecomendarItemRequest {

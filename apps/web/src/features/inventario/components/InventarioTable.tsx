@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { Eye, Pencil, Trash2 } from 'lucide-react';
@@ -49,7 +49,7 @@ export function InventarioTable({
 
   if (loading) {
     return (
-      <div className="w-full bg-white rounded-2xl p-12 text-center text-neutral-400 font-medium shadow-sm border border-gray-100 font-['DM_Sans']">
+      <div className="w-full bg-white rounded-2xl p-12 text-center text-neutral-500 font-medium shadow-sm border border-gray-100 font-['DM_Sans']">
         Cargando inventario...
       </div>
     );
@@ -57,7 +57,7 @@ export function InventarioTable({
 
   if (productos.length === 0) {
     return (
-      <div className="w-full bg-white rounded-2xl p-16 text-center text-neutral-400 font-medium shadow-sm border border-gray-100 font-['DM_Sans']">
+      <div className="w-full bg-white rounded-2xl p-8 sm:p-16 text-center text-neutral-500 font-medium shadow-sm border border-gray-100 font-['DM_Sans']">
         No se encontraron productos en el inventario.
       </div>
     );
@@ -65,14 +65,14 @@ export function InventarioTable({
 
   return (
     <>
-      <Table>
+      <Table wrapperClassName="border-0 rounded-none shadow-none" className="min-w-[600px]">
         <TableHeader>
           <TableRow>
             <TableHead>CÓDIGO</TableHead>
             <TableHead>CATEGORÍA</TableHead>
             <TableHead>UBICACIÓN</TableHead>
             <TableHead className="text-center">STOCK</TableHead>
-            <TableHead className="text-center">ACCIONES</TableHead>
+            <TableHead className="text-center sticky right-0 bg-gray-50 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]">ACCIONES</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -85,43 +85,46 @@ export function InventarioTable({
 
             return (
               <TableRow key={id}>
-                <TableCell className="font-bold text-neutral-900 font-mono text-sm">
+                <TableCell className="font-bold text-neutral-900 font-mono text-sm whitespace-nowrap">
                   {formatCode(prod.codigo)}
                 </TableCell>
-                <TableCell className="text-sm">
+                <TableCell className="text-sm truncate max-w-[180px]" title={formatText(categoria)}>
                   {formatText(categoria)}
                 </TableCell>
-                <TableCell className="text-sm">
+                <TableCell className="text-sm truncate max-w-[180px]" title={formatText(ubicacion)}>
                   {formatText(ubicacion)}
                 </TableCell>
                 <TableCell className="text-center font-bold text-estado-aprobado-text text-sm">
                   {stockVal}
                 </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex items-center justify-center gap-1.5">
+                <TableCell className="text-center sticky right-0 bg-white group-hover:bg-amber-50/40 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]">
+                  <div className="flex items-center justify-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                     <button
                       type="button"
                       onClick={() => handleVerDetalle(prod)}
-                      className="p-1.5 text-brand-primary hover:text-brand-hover hover:bg-brand-soft rounded-lg transition-colors"
+                      className="min-h-11 min-w-11 inline-flex items-center justify-center text-brand-ink hover:text-brand-ink hover:bg-brand-soft rounded-lg transition-colors"
                       title="Ver detalle"
+                      aria-label={`Ver detalle de ${formatCode(prod.codigo)}`}
                     >
-                      <Eye className="w-4 h-4" />
+                      <Eye className="w-5 h-5" />
                     </button>
                     <button
                       type="button"
                       onClick={() => onEditar(prod)}
-                      className="p-1.5 text-brand-primary hover:text-brand-hover hover:bg-brand-soft rounded-lg transition-colors"
+                      className="min-h-11 min-w-11 inline-flex items-center justify-center text-brand-ink hover:text-brand-ink hover:bg-brand-soft rounded-lg transition-colors"
                       title="Editar"
+                      aria-label={`Editar ${formatCode(prod.codigo)}`}
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="w-5 h-5" />
                     </button>
                     <button
                       type="button"
                       onClick={() => onEliminar(id)}
-                      className="p-1.5 text-brand-primary hover:text-brand-hover hover:bg-brand-soft rounded-lg transition-colors"
+                      className="min-h-11 min-w-11 inline-flex items-center justify-center text-brand-ink hover:text-danger hover:bg-estado-rechazado-soft rounded-lg transition-colors"
                       title="Eliminar"
+                      aria-label={`Eliminar ${formatCode(prod.codigo)}`}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
                 </TableCell>

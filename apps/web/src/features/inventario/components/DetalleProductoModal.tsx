@@ -1,11 +1,10 @@
-'use client';
+﻿'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
-import { Store, Box, Image as ImageIcon } from 'lucide-react';
+import { Store, Box, Image as ImageIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { Modal, Button } from '@/components/ui';
 import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
-import { ColorTags } from './ColorTags';
 import { getImageUrl, handleImageError } from '@/lib/imageUtils';
 import { formatCode, formatText, formatPrice, obtenerPreciosEstandarizados } from '@/lib/formatters';
 import { ProductoConsulta } from '@/features/precio-historial/types/precio';
@@ -27,6 +26,8 @@ export function DetalleProductoModal({
     onEditar,
     canEdit = false,
 }: DetalleProductoModalProps) {
+    const [showDetails, setShowDetails] = useState(false);
+
     if (!producto) return null;
 
     // Casteo seguro a 'any' para extraer variables comunes sin conflictos de TypeScript
@@ -66,7 +67,7 @@ export function DetalleProductoModal({
                         {/* Cabecera con Código y Stock */}
                         <div className="flex items-center justify-between gap-2">
                             <div>
-                                <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider block">Código Producto</span>
+                                <span className="text-xs uppercase font-bold text-gray-500 tracking-wider block">Código Producto</span>
                                 <h3 className="text-lg sm:text-xl font-black text-brand-subtitle leading-none mt-0.5">
                                     {formatCode(prod.codigo)}
                                 </h3>
@@ -82,26 +83,64 @@ export function DetalleProductoModal({
                             </div>
                         </div>
 
-                        {/* ESPECIFICACIONES TÉCNICAS */}
-                        <div className="bg-gray-50/80 p-3 rounded-2xl border border-gray-200/80">
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                <div>
-                                    <span className="block text-[10px] text-gray-400 uppercase font-bold">Categoría</span>
-                                    <span className="text-xs font-semibold text-brand-subtitle truncate block">
-                                        {formatText(categoria)}
-                                    </span>
-                                </div>
-                                <div>
-                                    <span className="block text-[10px] text-gray-400 uppercase font-bold">Tipo Flor</span>
-                                    <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.tipo_flor || '-'}</span>
-                                </div>
-                                <div>
-                                    <span className="block text-[10px] text-gray-400 uppercase font-bold">Material</span>
-                                    <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.material || '-'}</span>
-                                </div>
-                                <div>
-                                    <span className="block text-[10px] text-gray-400 uppercase font-bold">Presentación</span>
-                                    <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.presentacion || '-'}</span>
+                        {/* DESCRIPCIÓN DESTACADA */}
+                        <div className="pt-1">
+                            <p className="text-sm font-semibold text-gray-800 leading-snug">
+                                {prod.nombre_producto || prod.descripcion_autogenerada || prod.descripcion || 'Sin descripción disponible'}
+                            </p>
+                        </div>
+
+                        {/* BOTÓN ACORDEÓN */}
+                        <button
+                            type="button"
+                            onClick={() => setShowDetails(!showDetails)}
+                            className="flex items-center gap-1.5 text-xs font-bold text-brand-ink hover:text-brand-ink transition-colors mt-2 focus:outline-none"
+                        >
+                            {showDetails ? (
+                                <>Ocultar <ChevronUp className="w-3.5 h-3.5" /></>
+                            ) : (
+                                <>Mostrar más <ChevronDown className="w-3.5 h-3.5" /></>
+                            )}
+                        </button>
+
+                        {/* ESPECIFICACIONES TÉCNICAS DESPLEGABLES */}
+                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showDetails ? 'max-h-[500px] opacity-100 mt-3' : 'max-h-0 opacity-0 mt-0'}`}>
+                            <div className="bg-gray-50/80 p-3 rounded-2xl border border-gray-200/80">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                    <div>
+                                        <span className="block text-xs text-gray-500 uppercase font-bold">Categoría</span>
+                                        <span className="text-xs font-semibold text-brand-subtitle truncate block">
+                                            {formatText(categoria)}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="block text-xs text-gray-500 uppercase font-bold">Presentación</span>
+                                        <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.presentacion || '-'}</span>
+                                    </div>
+                                    {prod.tipo_flor && prod.tipo_flor !== '-' && (
+                                        <div>
+                                            <span className="block text-xs text-gray-500 uppercase font-bold">Tipo Flor</span>
+                                            <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.tipo_flor}</span>
+                                        </div>
+                                    )}
+                                    {prod.material && prod.material !== '-' && (
+                                        <div>
+                                            <span className="block text-xs text-gray-500 uppercase font-bold">Material</span>
+                                            <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.material}</span>
+                                        </div>
+                                    )}
+                                    {prod.alto && prod.alto !== '-' && (
+                                        <div>
+                                            <span className="block text-xs text-gray-500 uppercase font-bold">Alto</span>
+                                            <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.alto}</span>
+                                        </div>
+                                    )}
+                                    {prod.ancho && prod.ancho !== '-' && (
+                                        <div>
+                                            <span className="block text-xs text-gray-500 uppercase font-bold">Ancho</span>
+                                            <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.ancho}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -120,28 +159,28 @@ export function DetalleProductoModal({
                             {/* BLOQUE PRECIO DISTRIBUIDOR */}
                             {(tipoPrecio === '' || tipoPrecio === 'distribuidor') && (
                                 <div className="w-full p-1 bg-distribuidor-soft/60 border border-distribuidor/40 rounded-2xl flex flex-col items-center gap-1.5">
-                                    <span className="text-distribuidor text-[8px] font-black tracking-wider uppercase">
+                                    <span className="text-distribuidor text-xs font-black tracking-wider uppercase">
                                         Precio Distribuidor
                                     </span>
 
-                                    <div className="w-full grid grid-cols-3 text-center gap-1">
+                                    <div className="w-full grid grid-cols-3 gap-1 text-center min-w-0">
                                         <div className="flex flex-col items-center">
-                                            <span className="text-gray-400 text-[8px] font-bold uppercase">Unidad</span>
-                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5">
+                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Unidad</span>
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(distribuidor.unidad)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
-                                            <span className="text-gray-400 text-[8px] font-bold uppercase">Docena</span>
-                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5">
+                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Docena</span>
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(distribuidor.docena)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
-                                            <span className="text-gray-400 text-[8px] font-bold uppercase">Caja / Mayor</span>
-                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5">
+                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Caja / Mayor</span>
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(distribuidor.mayor)}
                                             </span>
                                         </div>
@@ -152,28 +191,28 @@ export function DetalleProductoModal({
                             {/* BLOQUE PRECIO TIENDA */}
                             {(tipoPrecio === '' || tipoPrecio === 'tienda') && (
                                 <div className="w-full p-1 bg-estado-enviado-soft/60 border border-estado-enviado/30 rounded-2xl flex flex-col items-center gap-1.5">
-                                    <span className="text-estado-enviado text-[8px] font-black tracking-wider uppercase">
+                                    <span className="text-estado-enviado text-xs font-black tracking-wider uppercase">
                                         Precio Tienda
                                     </span>
 
-                                    <div className="w-full grid grid-cols-3 text-center gap-1">
+                                    <div className="w-full grid grid-cols-3 gap-1 text-center min-w-0">
                                         <div className="flex flex-col items-center">
-                                            <span className="text-gray-400 text-[8px] font-bold uppercase">Unidad</span>
-                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5">
+                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Unidad</span>
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(tienda.unidad)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
-                                            <span className="text-gray-400 text-[8px] font-bold uppercase">Docena</span>
-                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5">
+                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Docena</span>
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(tienda.docena)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
-                                            <span className="text-gray-400 text-[8px] font-bold uppercase">Caja / Mayor</span>
-                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5">
+                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Caja / Mayor</span>
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(tienda.mayor)}
                                             </span>
                                         </div>
@@ -198,7 +237,7 @@ export function DetalleProductoModal({
                                             className="flex items-center justify-between px-3.5 py-2 bg-white border border-gray-200/80 rounded-xl"
                                         >
                                             <div className="flex items-center gap-2 min-w-0">
-                                                <Store className="w-4 h-4 text-brand-primary shrink-0" />
+                                                <Store className="w-4 h-4 text-brand-ink shrink-0" />
                                                 <span className="text-xs font-bold text-brand-subtitle truncate">
                                                     {formatText(st.almacen?.nombre || '')}
                                                 </span>
@@ -220,7 +259,42 @@ export function DetalleProductoModal({
                                 Colores disponibles
                             </h4>
                             {prod.colores_surtido && prod.colores_surtido.length > 0 ? (
-                                <ColorTags colors={prod.colores_surtido} maxVisible={10} size="sm" />
+                                <div className="flex flex-wrap gap-2">
+                                    {prod.colores_surtido.map((c: any, i: number) => {
+                                        const colorObj = c.color || c;
+                                        const nombreColor = colorObj.nombre_color || colorObj.nombre || 'Desconocido';
+
+                                        // Mapa básico de colores comunes como fallback
+                                        const colorMap: Record<string, string> = {
+                                            'rojo': '#ef4444',
+                                            'azul': '#3b82f6',
+                                            'verde': '#22c55e',
+                                            'amarillo': '#eab308',
+                                            'blanco': '#ffffff',
+                                            'negro': '#000000',
+                                            'gris': '#6b7280',
+                                            'rosa': '#ec4899',
+                                            'naranja': '#f97316',
+                                            'morado': '#a855f7',
+                                            'celeste': '#38bdf8',
+                                            'beige': '#f5f5dc',
+                                            'marron': '#8b4513',
+                                            'dorado': '#fbbf24',
+                                            'plateado': '#94a3b8'
+                                        };
+
+                                        const hex = colorObj.hex || colorMap[nombreColor.toLowerCase()] || '#e5e7eb';
+
+                                        return (
+                                            <div
+                                                key={colorObj.id_color || i}
+                                                className="w-6 h-6 rounded-full border border-gray-200 shadow-sm transition-transform hover:scale-110 cursor-help"
+                                                style={{ backgroundColor: hex }}
+                                                title={nombreColor}
+                                            />
+                                        );
+                                    })}
+                                </div>
                             ) : (
                                 <p className="text-xs text-brand-options italic">Sin colores asignados.</p>
                             )}
@@ -229,7 +303,7 @@ export function DetalleProductoModal({
                 </div>
 
                 {/* BOTONES DE ACCIÓN */}
-                <div className="flex items-center justify-end gap-3 pt-3 border-t border-stone-100">
+                <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 sm:gap-3 pt-3 border-t border-stone-100">
                     <Button
                         variant="ghost"
                         size="md"

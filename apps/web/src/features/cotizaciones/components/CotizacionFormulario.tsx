@@ -1,17 +1,19 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
-  MessageSquare,
+  Sparkles,
   Search,
   ShoppingCart,
   X,
   Loader2,
   FileText,
   Trash2,
+  ArrowLeft,
 } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { useCrearCotizacionStore } from '@/features/cotizaciones/store/useCrearCotizacionStore';
 
 import {
@@ -26,10 +28,11 @@ import {
   Button,
   Badge,
 } from '@/components/ui';
-import { ProductoCarrito } from '@/features/cotizaciones/types/cotizacion';
+import { ProductoCarrito, RecomendacionItem } from '@/features/cotizaciones/types/cotizacion';
 import AgregarProductoModal, { ProductoBase } from '@/features/cotizaciones/components/AgregarProductoModal';
-import { RecomendacionesPanel } from '@/features/cotizaciones/components/RecomendacionesPanel';
+import { RecomendacionesPanel, TipoRecomendacion } from '@/features/cotizaciones/components/RecomendacionesPanel';
 import { obtenerProductosImportados, getProximoNumeroCotizacion } from '@/features/cotizaciones/api/cotizacionApi';
+import { formatCode } from '@/lib/formatters';
 import { autosaveCotizacion, puedeAutosave } from '@/features/cotizaciones/api/autosave';
 import { ClienteAutocomplete, Cliente } from '@/features/cotizaciones/components/ClienteAutocomplete';
 import { ResumenCotizacionCard } from '@/features/cotizaciones/components/ResumenCotizacionCard';
@@ -63,7 +66,6 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
   const router = useRouter();
   const pathname = usePathname() || '';
   const base = pathname.startsWith('/vendedor') ? '/vendedor/cotizaciones' : '/admin/cotizaciones';
-  const editandoId = useCrearCotizacionStore((s) => s.editandoId);
 
   const esNueva =
     modo === 'crear' &&
@@ -138,6 +140,16 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
   // Modal Agregar Producto
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [productoParaModal, setProductoParaModal] = useState<ProductoBase | null>(null);
+  // Contexto del flujo de recomendaciones (null = alta desde el buscador)
+  const [modalRecContexto, setModalRecContexto] = useState<{
+    aviso: string | null;
+    cantidadInicial: number;
+    precioInicial: number;
+    tipoVentaInicial: 'UNIDAD' | 'DOCENA' | 'MAYOR';
+    confirmLabel: string;
+    observacion: string;
+    reemplazaId: string | null;
+  } | null>(null);
 
   // Recomendaciones IA
   const [refreshKeyRecs, setRefreshKeyRecs] = useState(0);
@@ -304,11 +316,25 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setProductoParaModal(null);
+    setModalRecContexto(null);
   };
 
   const handleAgregarProducto = (nuevoItem: ProductoCarrito) => {
     const id = nextCartId();
-    setItems((prev) => [...prev, { ...nuevoItem, id }]);
+    const itemFinal: ProductoCarrito = modalRecContexto
+      ? { ...nuevoItem, id, es_sugerido_ia: true, observacion: modalRecContexto.observacion }
+      : { ...nuevoItem, id };
+
+    if (modalRecContexto?.reemplazaId) {
+      const reemplazaId = modalRecContexto.reemplazaId;
+      setItems((prev) => [...prev.filter((i) => i.id !== reemplazaId), itemFinal]);
+      showToast.success('Producto reemplazado en el carrito');
+    } else {
+      setItems((prev) => [...prev, itemFinal]);
+      if (modalRecContexto) showToast.success('Producto agregado al carrito');
+    }
+
+    setSelectedItemId(id);
     handleCloseModal();
   };
 
@@ -322,47 +348,64 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
     setRefreshKeyRecs((k) => k + 1);
   };
 
-  const handleAgregarRecomendacion = (item: any, tipo: 'similar' | 'upsell' | 'equilibrio') => {
-    const nuevoItem: ProductoCarrito = {
-      id: nextCartId(),
-      id_producto: Number(item.id_producto ?? item.id ?? 0) || undefined,
-      codigo: item.codigo,
-      descripcion: item.descripcion,
-      precioUnitario: Number(item.precio ?? 0),
-      cantidad: 1,
-      total: Number(item.precio ?? 0),
-      tipo_venta: 'UNIDAD',
-      observacion: `Sugerido por IA (${tipo.toUpperCase()})`,
-      es_sugerido_ia: true,
-      stock: Number(item.stock ?? 0),
-      almacen: item.almacen,
-      ubicacion: item.ubicacion,
+  /** Precarga el AgregarProductoModal con los datos de la recomendación (imagen, stock, estante, precios del catálogo) */
+  const mapRecToProductoBase = (rec: RecomendacionItem): ProductoBase => {
+    const catalogo = productosApi.find(
+      (p) => Number(p.id_producto ?? p.id) === Number(rec.id_producto)
+    );
+    const stock = Number(rec.stock ?? 0);
+    return {
+      id: rec.id_producto,
+      id_producto: rec.id_producto,
+      codigo: rec.codigo,
+      descripcion: rec.descripcion,
+      foto_url: rec.imagen_url ?? catalogo?.foto_url ?? null,
+      imagenUrl: catalogo?.imagenUrl ?? null,
+      estante: rec.ubicacion ?? catalogo?.estante,
+      stock,
+      stock_total: stock,
+      stockTotal: stock,
+      stock_minimo: catalogo?.stock_minimo ?? catalogo?.stockAlerta,
+      stockAlerta: catalogo?.stockAlerta,
+      almacen: { nombre: rec.almacen ?? null, ubicacion: rec.ubicacion ?? null },
+      precios: catalogo?.precios,
+      coloresDisponibles: catalogo?.coloresDisponibles,
+      colores_surtido: catalogo?.colores_surtido,
+      unidades_por_caja: rec.unidades_por_caja ?? catalogo?.unidades_por_caja,
+      presentacion: catalogo?.presentacion,
     };
-    setItems((prev) => [...prev, nuevoItem]);
-    setSelectedItemId(nuevoItem.id);
   };
 
-  const handleReemplazarRecomendacion = (itemExistenteId: string, nuevoItem: any, tipo: 'similar' | 'upsell' | 'equilibrio') => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === itemExistenteId
-          ? {
-            ...item,
-            id_producto: Number(nuevoItem.id_producto ?? nuevoItem.id ?? (item as any).id_producto ?? 0) || (item as any).id_producto,
-            codigo: nuevoItem.codigo,
-            descripcion: nuevoItem.descripcion,
-            precioUnitario: Number(nuevoItem.precio ?? 0),
-            total: Number(nuevoItem.precio ?? 0) * item.cantidad,
-            observacion: `Reemplazado por IA (${tipo.toUpperCase()})`,
-            es_sugerido_ia: true,
-            stock: Number(nuevoItem.stock ?? (item as any).stock ?? 0),
-            almacen: nuevoItem.almacen ?? (item as any).almacen,
-            ubicacion: nuevoItem.ubicacion ?? (item as any).ubicacion,
-          }
-          : item
-      )
-    );
-    setSelectedItemId(itemExistenteId);
+  /** AGREGAR desde el panel → modal de confirmación con cantidad 1 y precio de la recomendación */
+  const handleSelectAgregar = (rec: RecomendacionItem, tipo: TipoRecomendacion) => {
+    setModalRecContexto({
+      aviso: null,
+      cantidadInicial: 1,
+      precioInicial: Number(rec.precio ?? 0),
+      tipoVentaInicial: 'UNIDAD',
+      confirmLabel: 'Agregar',
+      observacion: `Sugerido por IA (${tipo.toUpperCase()})`,
+      reemplazaId: null,
+    });
+    setProductoParaModal(mapRecToProductoBase(rec));
+    setIsModalOpen(true);
+  };
+
+  /** REEMPLAZAR desde el panel → modal con la cantidad del producto base y aviso de reemplazo */
+  const handleSelectReemplazar = (baseCartId: string, rec: RecomendacionItem, tipo: TipoRecomendacion) => {
+    const base = items.find((i) => i.id === baseCartId);
+    if (!base) return;
+    setModalRecContexto({
+      aviso: `Reemplazando ${formatCode(base.codigo)} por ${formatCode(rec.codigo)}`,
+      cantidadInicial: base.cantidad,
+      precioInicial: Number(rec.precio ?? 0),
+      tipoVentaInicial: 'UNIDAD',
+      confirmLabel: 'Reemplazar',
+      observacion: `Reemplazado por IA (${tipo.toUpperCase()})`,
+      reemplazaId: baseCartId,
+    });
+    setProductoParaModal(mapRecToProductoBase(rec));
+    setIsModalOpen(true);
   };
 
   const subtotal = useMemo(() => items.reduce((acc, item) => acc + item.total, 0), [items]);
@@ -398,18 +441,26 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
   };
 
   return (
-    <div className="p-0 md:p-0 w-full max-w-[1700px] mx-auto space-y-6 font-['DM_Sans']">
+      <div className="w-full max-w-[1700px] mx-auto space-y-6 font-['DM_Sans']">
 
       {/* Encabezado */}
-      <div className="flex justify-between items-center w-full px-1">
-        <div className="flex items-center gap-2.5">
-          <FileText className="w-5 h-5 text-brand-primary" />
-          <span className="text-xl font-black text-zinc-700 tracking-tight">
+      <div className="flex flex-wrap justify-between items-center w-full gap-2 px-1">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <Link
+            href={base}
+            aria-label="Volver al listado de cotizaciones"
+            className="inline-flex items-center gap-1.5 min-h-11 min-w-11 justify-center px-2 -ml-2 rounded-lg text-sm font-semibold text-brand-ink hover:bg-brand-soft transition-colors shrink-0"
+          >
+            <ArrowLeft className="w-5 h-5" aria-hidden="true" />
+            <span className="hidden sm:inline">Volver</span>
+          </Link>
+          <FileText className="w-5 h-5 text-brand-ink" aria-hidden="true" />
+          <span className="text-xl font-black text-zinc-700 tracking-tight truncate">
             {numeroCotizacion}
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {(items.length > 0 || nombre.trim() !== '' || rucDni.trim() !== '') && (
             <Button
               variant="ghost"
@@ -420,8 +471,8 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
               Limpiar
             </Button>
           )}
-          <Badge size="xl" variant={editandoId != null ? 'secondary' : 'neutral'}>
-            {editandoId != null ? 'EDITANDO' : 'BORRADOR'}
+          <Badge size="estado" variant="borrador">
+            BORRADOR
           </Badge>
         </div>
       </div>
@@ -429,7 +480,7 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
       <div className="grid grid-cols-12 gap-6">
 
         {/* Columna Izquierda: Formulario y Carrito */}
-        <div className="col-span-12 lg:col-span-8 space-y-6">
+        <div className="col-span-12 lg:col-span-8 min-w-0 space-y-6">
 
           {/* Formulario Información General */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80 space-y-4">
@@ -540,9 +591,9 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
                   placeholder="Escribe el código o nombre del producto (ej: RY-)..."
                   icon={
                     isLoadingProductos ? (
-                      <Loader2 className="size-4 animate-spin text-brand-primary" />
+                      <Loader2 className="size-4 animate-spin text-brand-ink" />
                     ) : (
-                      <Search className="size-4 text-brand-primary" />
+                      <Search className="size-4 text-brand-ink" />
                     )
                   }
                   value={searchQuery}
@@ -589,7 +640,7 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
                               <p className="text-xs font-medium text-zinc-700 leading-tight">
                                 {prod.descripcion}
                               </p>
-                              <p className="text-[10px] text-zinc-400 mt-0.5">
+                              <p className="text-xs text-zinc-500 mt-0.5">
                                 Stock Total: {prod.stockTotal ?? 'N/A'} | {prod.estante || 'Sin estante'}
                               </p>
                             </div>
@@ -604,7 +655,7 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
                         </div>
                       ))
                     ) : (
-                      <div className="p-4 text-center text-xs text-zinc-400">
+                      <div className="p-4 text-center text-xs text-zinc-500">
                         {isLoadingProductos
                           ? 'Cargando catálogo...'
                           : `No se encontraron productos importados con "${searchQuery}"`}
@@ -621,7 +672,7 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
                 className="h-44 border-2 border-dashed border-zinc-200 rounded-xl flex flex-col justify-center items-center gap-2 cursor-pointer hover:bg-stone-50/80 transition-colors"
               >
                 <ShoppingCart className="size-8 text-zinc-300" />
-                <span className="text-zinc-400 font-medium text-xs">
+                <span className="text-zinc-500 font-medium text-xs">
                   Busca un producto importado arriba para agregarlo
                 </span>
               </div>
@@ -652,14 +703,14 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
                             variant="ghost"
                             size="xs"
                             onClick={() => handleAbrirRecomendaciones(item.id)}
-                            aria-label={`Ver recomendaciones de ${item.codigo}`}
-                            title="Ver sugerencias"
+                            aria-label={`Ver recomendaciones IA de ${item.codigo}`}
+                            title="Ver recomendaciones IA"
                             className={`!px-1.5 ${selectedItemId === item.id
-                              ? '!bg-brand-selection !text-brand-primary outline outline-1 outline-offset-[-1px] outline-brand-modalFocus'
-                              : '!text-zinc-400 hover:!text-brand-primary'
+                              ? '!bg-brand-selection !text-brand-ink outline outline-1 outline-offset-[-1px] outline-brand-modalFocus'
+                              : '!text-zinc-500 hover:!text-brand-ink'
                               }`}
                           >
-                            <MessageSquare className="size-4" />
+                            <Sparkles className="size-4" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -667,7 +718,7 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
                             onClick={() => handleEliminarItem(item.id)}
                             aria-label={`Eliminar ${item.codigo} del carrito`}
                             title="Eliminar del carrito"
-                            className="!px-1.5 !text-zinc-400 hover:!text-red-500"
+                            className="!px-1.5 !text-zinc-500 hover:!text-red-500"
                           >
                             <Trash2 className="size-4" />
                           </Button>
@@ -703,8 +754,9 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
             idCliente={idCliente ?? undefined}
             itemExistenteId={selectedItemId}
             refreshKey={refreshKeyRecs}
-            onAgregar={handleAgregarRecomendacion}
-            onReemplazar={handleReemplazarRecomendacion}
+            productosCatalogo={productosApi}
+            onSelectAgregar={handleSelectAgregar}
+            onSelectReemplazar={handleSelectReemplazar}
           />
         </div>
       </div>
@@ -715,6 +767,11 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
         producto={productoParaModal}
         tipoPrecioCliente={tipoPrecioCliente}
         onAgregar={handleAgregarProducto}
+        cantidadInicial={modalRecContexto?.cantidadInicial}
+        precioInicial={modalRecContexto?.precioInicial}
+        tipoVentaInicial={modalRecContexto?.tipoVentaInicial}
+        aviso={modalRecContexto?.aviso}
+        confirmLabel={modalRecContexto?.confirmLabel}
       />
     </div>
   );

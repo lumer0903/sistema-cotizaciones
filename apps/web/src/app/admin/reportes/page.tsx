@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { FileText, Package, TrendingUp, Sparkles, AlertTriangle } from 'lucide-react';
@@ -59,7 +59,7 @@ export default function ReportesPage() {
 
   if (loading) {
     return (
-      <div className="p-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="h-28 bg-white rounded-xl border border-gray-200 animate-pulse" />
         ))}
@@ -69,7 +69,7 @@ export default function ReportesPage() {
 
   if (!detalle) {
     return (
-      <div className="p-6">
+      <div>
         <p className="text-gray-600">No se pudieron cargar los reportes. Verifica que la API esté disponible.</p>
       </div>
     );
@@ -92,9 +92,9 @@ export default function ReportesPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpiCards.map((kpi) => (
           <div key={kpi.label} className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center justify-between">
@@ -130,7 +130,7 @@ export default function ReportesPage() {
               );
             })}
           </div>
-          <div className="mt-6 pt-4 border-t border-gray-100 grid grid-cols-2 gap-4 text-sm">
+          <div className="mt-6 pt-4 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-gray-500">Items aprobados</p>
               <p className="text-xl font-bold text-gray-900">{itemsAprobados.total}</p>
@@ -174,7 +174,7 @@ export default function ReportesPage() {
 
       <FilterCard>
         <div className="flex items-center gap-2 mb-4">
-          <Package className="h-5 w-5 text-brand-primary" />
+          <Package className="h-5 w-5 text-brand-ink" />
           <h2 className="text-lg font-semibold text-gray-900">Alertas de stock activas</h2>
         </div>
         <Table>

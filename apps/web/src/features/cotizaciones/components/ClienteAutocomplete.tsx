@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader2, Search } from 'lucide-react';
@@ -137,8 +137,8 @@ export function ClienteAutocomplete({
           className="absolute z-30 left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-xl shadow-lg max-h-64 overflow-y-auto divide-y divide-zinc-100"
         >
           {cargando && resultados.length === 0 ? (
-            <div className="p-3 flex items-center gap-2 text-xs text-zinc-400">
-              <Loader2 className="size-3.5 animate-spin text-brand-primary" />
+            <div className="p-3 flex items-center gap-2 text-xs text-zinc-500">
+              <Loader2 className="size-3.5 animate-spin text-brand-ink" />
               Buscando clientes…
             </div>
           ) : (
@@ -158,7 +158,7 @@ export function ClienteAutocomplete({
               >
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-zinc-700 truncate">{c.nombre}</p>
-                  <p className="text-[10px] text-zinc-400 mt-0.5">
+                  <p className="text-xs text-zinc-500 mt-0.5">
                     {[c.ruc_dni, c.telefono].filter(Boolean).join(' · ') || 'Sin documento/teléfono'}
                   </p>
                 </div>

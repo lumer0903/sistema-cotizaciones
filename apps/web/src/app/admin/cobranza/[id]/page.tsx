@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -146,7 +146,7 @@ export default function CobranzaDetallePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-brand-ink" />
       </div>
     );
   }
@@ -173,7 +173,7 @@ export default function CobranzaDetallePage() {
         <div className="flex items-center gap-3">
           <Link
             href="/admin/cobranza"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600 hover:text-brand-primary"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600 hover:text-brand-ink"
           >
             <ArrowLeft className="size-4" /> Cobranza
           </Link>
@@ -184,7 +184,7 @@ export default function CobranzaDetallePage() {
         </div>
         <Link
           href={`/admin/cotizaciones/detalle/${cuenta.id_cotizacion}`}
-          className="text-sm font-semibold text-brand-primary hover:underline"
+          className="text-sm font-semibold text-brand-ink hover:underline"
           title="Ver documento (solo lectura)"
         >
           Ver cotización
@@ -208,13 +208,13 @@ export default function CobranzaDetallePage() {
           <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
             <Clock className="h-4 w-4" /> Saldo
           </div>
-          <p className={`text-2xl font-bold ${saldoCero ? 'text-estado-aprobado-text' : 'text-brand-primary'}`}>
+          <p className={`text-2xl font-bold ${saldoCero ? 'text-estado-aprobado-text' : 'text-brand-ink'}`}>
             S/ {money(saldo)}
           </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-4">
         <div className="flex items-center gap-2 text-zinc-700 font-bold text-sm uppercase tracking-wide">
           <User className="h-4 w-4" /> Datos
         </div>
@@ -222,7 +222,7 @@ export default function CobranzaDetallePage() {
           <div>
             <p className="text-gray-500">Cliente</p>
             <p className="font-semibold text-gray-900">{cuenta.cliente?.nombre || 'Sin cliente'}</p>
-            {cuenta.cliente?.ruc_dni && <p className="text-xs text-gray-400">{cuenta.cliente.ruc_dni}</p>}
+            {cuenta.cliente?.ruc_dni && <p className="text-xs text-gray-500">{cuenta.cliente.ruc_dni}</p>}
           </div>
           <div>
             <p className="text-gray-500">Emisión</p>
@@ -247,7 +247,7 @@ export default function CobranzaDetallePage() {
       {!saldoCero && (
         <form
           onSubmit={handleRegistrarPago}
-          className="bg-white rounded-xl border border-gray-200 p-6 space-y-4"
+          className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-4"
         >
           <div className="flex items-center gap-2 text-zinc-700 font-bold text-sm uppercase tracking-wide">
             <DollarSign className="h-4 w-4" /> Registrar abono
@@ -292,9 +292,9 @@ export default function CobranzaDetallePage() {
           <span className="text-sm text-gray-500">{pagos.length} pago(s)</span>
         </div>
         {pagos.length === 0 ? (
-          <div className="p-8 text-center text-gray-400 text-sm border border-gray-100 rounded-b-xl bg-white">Sin pagos registrados</div>
+          <div className="p-6 sm:p-8 text-center text-gray-500 text-sm border border-gray-100 rounded-b-xl bg-white">Sin pagos registrados</div>
         ) : (
-          <Table className="rounded-t-none border-t-0">
+          <Table wrapperClassName="rounded-t-none border-t-0">
             <TableHeader>
               <TableRow>
                 <TableHead>Fecha</TableHead>

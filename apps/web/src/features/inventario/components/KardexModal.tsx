@@ -249,13 +249,13 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                                                 {formatText(p.descripcion)}
                                             </span>
                                         </div>
-                                        <span className="text-[10px] bg-stone-100 px-2 py-0.5 rounded font-medium text-stone-600">
+                                        <span className="text-xs bg-stone-100 px-2 py-0.5 rounded font-medium text-stone-600">
                                             Stock: {p.stock_total ?? p.stock_actual?.[0]?.cantidad ?? 0} u.
                                         </span>
                                     </button>
                                 ))
                             ) : (
-                                <div className="p-3 text-xs text-stone-400 text-center">
+                                <div className="p-3 text-xs text-stone-500 text-center">
                                     No se encontraron productos coincidentes
                                 </div>
                             )}
@@ -337,7 +337,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                                 )}
                             </div>
                             <div>
-                                <h4 className="font-bold text-brand-primary text-xl text-outline">
+                                <h4 className="font-bold text-brand-ink text-xl text-outline">
                                     {formatText(selectedProducto.codigo)}
                                 </h4>
                                 <h4 className="font-medium text-brand-text text-gray-700 text-sm">
@@ -347,7 +347,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                         </div>
                         <div className="flex items-center gap-3 border-t md:border-t-0 md:border-l border-brand-primary/40 pt-2 md:pt-0 md:pl-4">
                             <div className="text-center">
-                                <span className="block text-[10px] font-bold text-gray-700 uppercase">Stock Actual</span>
+                                <span className="block text-xs font-bold text-gray-700 uppercase">Stock Actual</span>
                                 <span className="text-lg font-bold text-estado-aprobado-text text-outline">
                                     {selectedProducto.stock_total ?? selectedProducto.stock_actual?.[0]?.cantidad ?? 0} u.
                                 </span>
@@ -359,17 +359,17 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                 {/* TABLA DE MOVIMIENTOS */}
                 {!selectedProducto ? (
                     <div className="p-12 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
-                        <p className="text-xs font-medium text-stone-400">
+                        <p className="text-xs font-medium text-stone-500">
                             Selecciona un producto para cargar el historial de movimientos.
                         </p>
                     </div>
                 ) : loading ? (
-                    <div className="p-8 text-center text-brand-options text-sm animate-pulse">
-                        <RefreshCw className="w-6 h-6 mx-auto mb-2 animate-spin text-brand-primary" />
+                    <div className="p-6 sm:p-8 text-center text-brand-options text-sm animate-pulse">
+                        <RefreshCw className="w-6 h-6 mx-auto mb-2 animate-spin text-brand-ink" />
                         Cargando historial de movimientos del Kárdex...
                     </div>
                 ) : movimientos.length === 0 ? (
-                    <div className="p-8 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-300">
+                    <div className="p-6 sm:p-8 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-300">
                         <p className="text-xs font-semibold text-brand-options">
                             No se registraron movimientos con los filtros seleccionados.
                         </p>
@@ -397,7 +397,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                                         <TableCell className="font-medium text-xs">{renderOrigen(mov.origen, mov.tipo, mov.referencia)}</TableCell>
                                         <TableCell className={`text-right font-bold ${mov.tipo === 'entrada' ? 'text-estado-aprobado-text' :
                                                 mov.tipo === 'salida' ? 'text-danger' :
-                                                    mov.tipo === 'ajuste' ? 'text-brand-primary' :
+                                                    mov.tipo === 'ajuste' ? 'text-brand-ink' :
                                                         'text-estado-enviado'
                                             }`}>
                                             {mov.tipo === 'entrada' ? `+${mov.cantidad}` : mov.tipo === 'salida' ? `-${mov.cantidad}` : mov.cantidad}
@@ -413,16 +413,18 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
 
                         {/* PAGINACIÓN */}
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-between px-2 py-3 border-t border-gray-100">
+                            <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-3 border-t border-gray-100">
                                 <div className="text-xs text-brand-options">
                                     Mostrando {((page - 1) * limit) + 1} - {Math.min(page * limit, total)} de {total} movimientos
                                 </div>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 flex-wrap">
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         onClick={() => setPage(page - 1)}
                                         disabled={page <= 1 || loading}
+                                        aria-label="Página anterior"
+                                        className="min-h-11 min-w-11"
                                     >
                                         <ChevronLeft className="w-4 h-4" />
                                     </Button>
@@ -443,7 +445,9 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                                                 variant={page === pageNum ? 'primary' : 'outline'}
                                                 size="sm"
                                                 onClick={() => setPage(pageNum)}
-                                                className="w-8 h-8 px-0"
+                                                aria-label={`Página ${pageNum}`}
+                                                aria-current={page === pageNum ? 'page' : undefined}
+                                                className="min-h-11 min-w-11 px-0"
                                             >
                                                 {pageNum}
                                             </Button>
@@ -454,6 +458,8 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                                         size="sm"
                                         onClick={() => setPage(page + 1)}
                                         disabled={page >= totalPages || loading}
+                                        aria-label="Página siguiente"
+                                        className="min-h-11 min-w-11"
                                     >
                                         <ChevronRight className="w-4 h-4" />
                                     </Button>
@@ -464,7 +470,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                 )}
 
                 {/* PIE Y BOTONES */}
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 pt-3 border-t border-gray-100">
                     <Button
                         variant="yellowOutline"
                         onClick={handleExportCSV}

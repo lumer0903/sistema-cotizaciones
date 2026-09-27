@@ -55,37 +55,39 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-white flex items-center justify-center p-4 sm:p-6 md:p-8">
-      <main className="w-full max-w-[1280px] flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 my-auto">
+    <div className="min-h-[100dvh] w-full bg-white flex items-center justify-center p-4 sm:p-6 md:p-8">
+      <main className="w-full max-w-[1280px] flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-12 my-auto">
         {/* LOGO PRINCIPAL */}
         <div className="w-full lg:w-[666px] flex justify-center lg:justify-start">
           <Image
-            className="w-full lg:h-[500px] object-contain"
+            className="w-full max-h-32 sm:max-h-40 lg:max-h-none lg:h-[500px] object-contain"
             alt="Gold Continent Import & Export"
             src="/LOGO_GRANDE.svg"
             width={666}
             height={500}
+            priority
           />
         </div>
 
         {/* TARJETA DE LOGIN (Derecha) */}
         <section
-          className="relative w-full max-w-[468px] min-h-[558px] bg-white rounded-2xl border border-gray-200 shadow-xl p-6 sm:p-10 flex flex-col justify-center"
+          className="relative w-full max-w-[468px] lg:min-h-[558px] bg-white rounded-2xl border border-gray-200 shadow-xl p-6 sm:p-10 flex flex-col justify-center"
           aria-labelledby="login-heading"
         >
           {/* ISOTIPO SECUNDARIO */}
           <Image
-            className="absolute top-8 right-8 w-[120px] h-[120px] object-contain opacity-50"
-            alt="Gold Continent Icon"
+            className="absolute top-8 right-8 w-[120px] h-[120px] object-contain opacity-50 pointer-events-none"
+            alt=""
+            aria-hidden="true"
             src="/MUNDO.svg"
             width={120}
             height={120}
           />
 
-          <form className="w-full flex flex-col mt-10 sm:mt-12" onSubmit={handleSubmit(onSubmit)}>
+          <form className="w-full flex flex-col mt-6 sm:mt-12" onSubmit={handleSubmit(onSubmit)}>
             {/* MENSAJE DE ERROR */}
             {error && (
-              <div className="mb-6 flex items-center gap-2 text-sm text-danger bg-estado-rechazado-soft border border-estado-rechazado/30 px-4 py-3 rounded-lg shadow-sm" role="alert">
+              <div className="relative z-10 mb-6 flex items-center gap-2 text-sm text-danger bg-estado-rechazado-soft border border-estado-rechazado/30 px-4 py-3 rounded-lg shadow-sm" role="alert">
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <span>{error}</span>
               </div>
@@ -95,7 +97,7 @@ function LoginForm() {
             <div className="flex flex-col items-start w-full mb-8">
               <h1
                 id="login-heading"
-                className="font-black text-[#f8b602] text-4xl sm:text-5xl tracking-tight leading-tight m-0"
+                className="font-black text-amber-600 text-4xl sm:text-5xl tracking-tight leading-tight m-0"
               >
                 Bienvenido,
               </h1>
@@ -113,7 +115,7 @@ function LoginForm() {
                 Correo electrónico
               </label>
               <div className="relative w-full">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" aria-hidden="true" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" aria-hidden="true" />
                 <input
                   id="email"
                   type="email"
@@ -124,7 +126,7 @@ function LoginForm() {
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? 'email-error' : undefined}
                   className="w-full h-11 pl-12 pr-4 rounded-xl border border-gray-200 text-sm text-gray-900 bg-white outline-none transition-colors
-                    placeholder:text-gray-400
+                    placeholder:text-gray-500
                     focus:border-[#f8b602] focus:ring-2 focus:ring-[#f8b602]/20
                     disabled:bg-gray-50 disabled:cursor-not-allowed
                     error:border-red-300 error:focus:border-red-500 error:focus:ring-red-200"
@@ -147,7 +149,7 @@ function LoginForm() {
                 Contraseña
               </label>
               <div className="relative w-full">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" aria-hidden="true" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" aria-hidden="true" />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -158,7 +160,7 @@ function LoginForm() {
                   aria-invalid={!!errors.password}
                   aria-describedby={errors.password ? 'password-error' : undefined}
                   className="w-full h-11 pl-12 pr-14 rounded-xl border border-gray-200 text-sm text-gray-900 bg-white outline-none transition-colors
-                    placeholder:text-gray-400
+                    placeholder:text-gray-500
                     focus:border-[#f8b602] focus:ring-2 focus:ring-[#f8b602]/20
                     disabled:bg-gray-50 disabled:cursor-not-allowed
                     error:border-red-300 error:focus:border-red-500 error:focus:ring-red-200"
@@ -167,7 +169,7 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 min-h-11 min-w-11 flex items-center justify-center text-gray-500 hover:text-gray-700 cursor-pointer transition-colors"
                   aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   aria-pressed={showPassword}
                 >
@@ -210,7 +212,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <React.Suspense fallback={
-      <div className="min-h-screen w-full bg-white flex items-center justify-center p-4 sm:p-6 md:p-8">
+      <div className="min-h-[100dvh] w-full bg-white flex items-center justify-center p-4 sm:p-6 md:p-8">
         <div className="w-full max-w-[1280px] flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 my-auto">
           <div className="w-full lg:w-[666px] flex justify-center lg:justify-start">
             <Image

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { forwardRef, TextareaHTMLAttributes } from 'react';
 
@@ -27,11 +27,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     const borderColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-primary)';
     const focusColor = isModal ? 'var(--color-brand-modalFocus)' : 'var(--color-brand-primary)';
     const textColor = 'var(--color-brand-subtitle)';
-    const labelColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-primary)';
-    const iconColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-primary)';
+    const labelColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-ink)';
+    const iconColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-ink)';
 
     const baseStyles =
-      'w-full bg-white border rounded-xl outline-none transition-colors placeholder:text-zinc-400 disabled:bg-gray-50 disabled:cursor-not-allowed';
+      'w-full bg-white border rounded-xl outline-none transition-colors placeholder:text-zinc-500 disabled:bg-gray-50 disabled:cursor-not-allowed';
     const errorStyles = error
       ? 'border-red-300 focus:border-red-500 focus:ring-red-200 focus:ring-2'
       : 'focus:ring-2';

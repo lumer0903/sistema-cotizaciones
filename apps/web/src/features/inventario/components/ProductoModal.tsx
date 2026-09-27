@@ -368,7 +368,7 @@ export function ProductoModal({
         <form onSubmit={handleSubmit(handleFormSubmit as any)} className="space-y-4">
           {/* SECCIÓN 1: DATOS PRINCIPALES */}
           <div className="bg-gray-50/50 border border-gray-200/50 rounded-xl p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <Input
                 label="CODIGO"
                 placeholder="Ej: RYG18-NU02"
@@ -502,7 +502,7 @@ export function ProductoModal({
                 variant="modal"
               />
               <div className="flex flex-col space-y-1">
-                <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                   COLORES SURTIDOS
                 </label>
                 <Button
@@ -530,7 +530,7 @@ export function ProductoModal({
               {...register("descripcion")}
               variant="modal"
             />
-            <p className="text-[10px] text-gray-600 mt-1">
+            <p className="text-xs text-gray-600 mt-1">
               Puede editar manualmente. La autogeneración se reactiva al cambiar atributos físicos.
             </p>
           </div>
@@ -539,13 +539,13 @@ export function ProductoModal({
           <Table className="text-center text-xs">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="text-center text-brand-primary py-3">
+                <TableHead className="text-center text-brand-ink py-3">
                   UNIDAD DE MEDIDA
                 </TableHead>
                 <TableHead className="text-center text-estado-enviado py-3 bg-estado-enviado-soft/20">
                   PRECIO TIENDA (S/)
                 </TableHead>
-                <TableHead className="text-center text-brand-primary py-3 bg-brand-soft/20">
+                <TableHead className="text-center text-brand-ink py-3 bg-brand-soft/20">
                   DISTRIBUIDOR (S/)
                 </TableHead>
               </TableRow>
@@ -553,7 +553,7 @@ export function ProductoModal({
             <TableBody>
               {/* UNIDAD */}
               <TableRow className="hover:bg-transparent">
-                <TableCell className="font-bold text-brand-primary py-2.5 text-center">
+                <TableCell className="font-bold text-brand-ink py-2.5 text-center">
                   UNIDAD
                 </TableCell>
                 <TableCell className="p-1 bg-estado-enviado-soft/40">
@@ -571,7 +571,7 @@ export function ProductoModal({
                 </TableCell>
                 <TableCell className="p-1 bg-brand-soft/40">
                   <div className="flex items-center justify-center gap-1 font-medium text-brand-subtitle">
-                    <span className="text-brand-primary font-semibold select-none">S/</span>
+                    <span className="text-brand-ink font-semibold select-none">S/</span>
                     <input
                       type="number"
                       step="0.01"
@@ -586,7 +586,7 @@ export function ProductoModal({
 
               {/* DOCENA */}
               <TableRow className="hover:bg-transparent">
-                <TableCell className="font-bold text-brand-primary py-2.5 text-center">
+                <TableCell className="font-bold text-brand-ink py-2.5 text-center">
                   DOCENA
                 </TableCell>
                 <TableCell className="p-1 bg-estado-enviado-soft/40">
@@ -604,7 +604,7 @@ export function ProductoModal({
                 </TableCell>
                 <TableCell className="p-1 bg-brand-soft/40">
                   <div className="flex items-center justify-center gap-1 font-medium text-brand-subtitle">
-                    <span className="text-brand-primary font-semibold select-none">S/</span>
+                    <span className="text-brand-ink font-semibold select-none">S/</span>
                     <input
                       type="number"
                       step="0.01"
@@ -619,7 +619,7 @@ export function ProductoModal({
 
               {/* CAJA */}
               <TableRow className="hover:bg-transparent">
-                <TableCell className="font-bold text-brand-primary py-2.5 text-center">
+                <TableCell className="font-bold text-brand-ink py-2.5 text-center">
                   CAJA
                 </TableCell>
                 <TableCell className="p-1 bg-estado-enviado-soft/40">
@@ -637,7 +637,7 @@ export function ProductoModal({
                 </TableCell>
                 <TableCell className="p-1 bg-brand-soft/40">
                   <div className="flex items-center justify-center gap-1 font-medium text-brand-subtitle">
-                    <span className="text-brand-primary font-semibold select-none">S/</span>
+                    <span className="text-brand-ink font-semibold select-none">S/</span>
                     <input
                       type="number"
                       step="0.01"
@@ -688,7 +688,7 @@ export function ProductoModal({
                 {/* Recuadro con el Nombre de la Imagen */}
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 h-10 px-3.5 py-2.5 rounded-lg border border-brand-primary flex justify-start items-center gap-2.5 bg-white cursor-pointer hover:border-brand-hover transition-colors overflow-hidden"
+                  className="flex-1 min-h-11 px-3.5 rounded-lg border border-brand-primary flex justify-start items-center gap-2.5 bg-white cursor-pointer hover:border-brand-hover transition-colors overflow-hidden"
                 >
                   <span className="text-gray-600 text-xs font-medium truncate">
                     {imageFile?.name || productoInicial?.foto_url?.split("/").pop() || "imagen.png"}
@@ -723,7 +723,7 @@ export function ProductoModal({
                     setImagePreview(URL.createObjectURL(file));
                   }
                 }}
-                className="w-full h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center gap-2 text-gray-500 hover:border-brand-hover hover:text-brand-hover cursor-pointer transition-colors"
+                className="w-full h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center gap-2 text-gray-500 hover:border-brand-hover hover:text-brand-ink cursor-pointer transition-colors"
               >
                 <CloudUpload className="w-5 h-5" />
                 <span className="text-xs font-medium">
@@ -734,7 +734,7 @@ export function ProductoModal({
           </div>
 
           {/* BOTONES DE ACCIÓN */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100">
             <Button type="button" variant="ghost" onClick={handleLimpiar} disabled={isSubmitting}>
               Limpiar
             </Button>

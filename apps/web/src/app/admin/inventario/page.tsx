@@ -10,6 +10,7 @@ import { MovimientoModal } from '@/features/inventario/components/MovimientoModa
 import { TransferenciaModal } from '@/features/inventario/components/TransferenciaModal';
 import { KardexModal } from '@/features/inventario/components/KardexModal';
 import { Pagination, ConfirmModal } from '@/components/ui';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Categoria, Almacen, ProductoInventario } from '@goldcontinent/shared/types/inventario';
 
 interface ProductoAPI {
@@ -30,6 +31,7 @@ interface ProductoAPI {
   stock_principal: number;
   stock_tacna: number;
   foto_url: string | null;
+  follaje?: string | null;
   activo: boolean;
   unidades_por_caja?: number;
   stock_actual: Array<{
@@ -66,6 +68,7 @@ const mapToProductoInventario = (p: ProductoAPI): ProductoInventario => ({
   stock_minimo: p.stock_minimo,
   stock_principal: p.stock_principal,
   foto_url: p.foto_url,
+  follaje: p.follaje ?? null,
   activo: p.activo,
   stock_actual: p.stock_actual?.map(s => ({
     ...s,
@@ -87,6 +90,7 @@ const mapToProductoInventario = (p: ProductoAPI): ProductoInventario => ({
 
 export default function InventarioPage() {
   const [searchValue, setSearchValue] = useState('');
+  const searchDebounced = useDebounce(searchValue, 300);
   const [selectedCategoria, setSelectedCategoria] = useState('');
   const [selectedUbicacion, setSelectedUbicacion] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -122,7 +126,7 @@ export default function InventarioPage() {
         limit: limit.toString(),
         include: 'precios,categoria,stock',
       });
-      if (searchValue.trim()) params.append('search', searchValue.trim());
+      if (searchDebounced.trim()) params.append('search', searchDebounced.trim());
       if (selectedCategoria) params.append('id_categoria', selectedCategoria);
       if (selectedUbicacion) params.append('id_almacen', selectedUbicacion);
 
@@ -139,7 +143,7 @@ export default function InventarioPage() {
     } finally {
       setLoading(false);
     }
-  }, [searchValue, selectedCategoria, selectedUbicacion, currentPage, limit]);
+  }, [searchDebounced, selectedCategoria, selectedUbicacion, currentPage, limit]);
 
   const handleEliminar = useCallback((id: number) => {
     setConfirmDeleteId(id);
@@ -196,10 +200,11 @@ export default function InventarioPage() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    // setTimeout: evita setState síncrono directo en el effect (react-hooks/set-state-in-effect)
+    const timer = window.setTimeout(() => {
       fetchProductos();
-    }, 300);
-    return () => clearTimeout(timer);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [fetchProductos]);
 
   const totalPages = Math.ceil(totalItems / limit) || 1;

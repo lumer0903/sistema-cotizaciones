@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -87,6 +87,20 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
     }
   }, [open, fetchNotifications, onNotificationsLoaded, onNotificationsError]);
 
+  // Escape cierra el panel y el scroll del body queda bloqueado mientras está abierto
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open, onClose]);
+
   const handleCardClick = async (item: NotificationItem) => {
     if (!item.isRead) {
       if (item.type === 'STOCK_BAJO') {
@@ -139,25 +153,29 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
   };
 
   return (
-    <div className={`fixed inset-0 z-[70] transition-opacity duration-200 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-      <div className="absolute inset-0 bg-transparent" onClick={onClose} />
-      
-      <div 
-        className={`absolute right-4 sm:right-8 top-16 w-[90vw] sm:w-[420px] max-h-[calc(100vh-5rem)] bg-white shadow-2xl rounded-2xl border border-gray-100 transition-all duration-200 flex flex-col ${open ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-4 opacity-0 scale-95 origin-top-right'}`}
+    <div className={`fixed inset-0 z-[70] transition-opacity duration-200 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none invisible'}`}>
+      <div className="absolute inset-0 bg-transparent" onClick={onClose} aria-hidden="true" />
+
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Notificaciones"
+        className={`absolute right-4 sm:right-8 top-16 w-[90vw] sm:w-[420px] max-h-[calc(100dvh-5rem)] bg-white shadow-2xl rounded-2xl border border-gray-100 transition-all duration-200 flex flex-col ${open ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-4 opacity-0 scale-95 origin-top-right'}`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 pb-2">
+        <div className="flex items-center justify-between p-5 pb-2 shrink-0">
           <h2 className="text-xl font-bold text-gray-900">Notificaciones</h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-md text-brand-primary hover:bg-brand-soft transition-colors"
+            aria-label="Cerrar notificaciones"
+            className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-md text-brand-ink hover:bg-brand-soft transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-4 overflow-x-auto scrollbar-hide">
+        <div className="px-5 py-2 border-b border-gray-100 flex items-center gap-2 overflow-x-auto scrollbar-hide shrink-0">
           {(['todas', 'inventario', 'cobranzas'] as TabType[]).map((tab) => {
             const count = tab === 'todas' 
               ? notifications.length 
@@ -171,13 +189,14 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
                 key={tab}
                 type="button"
                 onClick={() => setActiveTab(tab)}
-                className={`flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
-                  active ? 'text-brand-primary' : 'text-gray-400 hover:text-gray-600'
+                aria-pressed={active}
+                className={`min-h-11 px-3 inline-flex items-center gap-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+                  active ? 'text-brand-ink bg-brand-soft' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 }`}
               >
                 {label}
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
-                  active ? 'bg-brand-primary text-white' : 'bg-gray-100 text-gray-500'
+                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                  active ? 'bg-brand-primary text-white' : 'bg-gray-100 text-gray-600'
                 }`}>
                   {count}
                 </span>
@@ -189,12 +208,12 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
         {/* Lista */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white rounded-b-2xl">
           {loading ? (
-            <div className="flex flex-col items-center justify-center h-40 text-gray-400">
+            <div className="flex flex-col items-center justify-center h-40 text-gray-500">
               <Loader2 className="w-6 h-6 animate-spin mb-2" />
               <span className="text-sm">Cargando...</span>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 text-gray-400">
+            <div className="flex flex-col items-center justify-center h-40 text-gray-500">
               <span className="text-sm">No hay notificaciones</span>
             </div>
           ) : (
@@ -220,7 +239,7 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
                           {item.title}
                         </h3>
                         <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                          <span className="text-[10px] font-medium text-gray-400 whitespace-nowrap">
+                          <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
                             {getRelativeTime(item.createdAt)}
                           </span>
                           {isUnread && (

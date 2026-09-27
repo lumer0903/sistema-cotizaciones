@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -48,7 +48,7 @@ interface MovimientoModalProps {
 const TIPO_OPTIONS = [
     { label: 'Entrada (+)', value: 'entrada' as const, icon: ArrowDownLeft, color: 'text-estado-aprobado-text' },
     { label: 'Salida (-)', value: 'salida' as const, icon: ArrowUpRight, color: 'text-danger' },
-    { label: 'Ajuste', value: 'ajuste' as const, icon: Minus, color: 'text-brand-primary' },
+    { label: 'Ajuste', value: 'ajuste' as const, icon: Minus, color: 'text-brand-ink' },
 ];
 
 const ORIGEN_OPTIONS: { label: string; value: OrigenMovimiento; allowedTipos: ('entrada' | 'salida' | 'ajuste')[] }[] = [
@@ -281,17 +281,17 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                                                 <span className="font-bold text-xs text-stone-800 block truncate">
                                                     {formatCode(p.codigo)}
                                                 </span>
-                                                <span className="text-[11px] text-stone-500 truncate block">
+                                                <span className="text-xs text-stone-500 truncate block">
                                                     {p.descripcion}
                                                 </span>
                                             </div>
-                                            <span className="text-[10px] bg-stone-100 px-2 py-0.5 rounded font-medium text-stone-600 shrink-0">
+                                            <span className="text-xs bg-stone-100 px-2 py-0.5 rounded font-medium text-stone-600 shrink-0">
                                                 Stock: {p.stock_total} u.
                                             </span>
                                         </button>
                                     ))
                                 ) : (
-                                    <div className="p-3 text-xs text-stone-400 text-center">
+                                    <div className="p-3 text-xs text-stone-500 text-center">
                                         No se encontraron productos coincidentes
                                     </div>
                                 )}
@@ -321,7 +321,7 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                     <label className="block text-xs font-bold text-brand-subtitle uppercase tracking-wider mb-2">
                         TIPO DE MOVIMIENTO
                     </label>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         {TIPO_OPTIONS.map((opt) => {
                             const Icon = opt.icon;
                             const isSelected = tipo === opt.value;
@@ -406,7 +406,7 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                     variant="modal"
                 />
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100">
                     <Button type="button" variant="ghost" onClick={handleLimpiar} disabled={isSubmitting}>
                         Limpiar
                     </Button>

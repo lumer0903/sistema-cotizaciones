@@ -35,7 +35,7 @@ export const ConfirmModal = ({
   >
     <div className="space-y-5">
       <div className="text-sm text-brand-subtitle leading-relaxed">{message}</div>
-      <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2 border-t border-gray-100">
         <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
           {cancelLabel}
         </Button>

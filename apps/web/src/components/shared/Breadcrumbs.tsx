@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -230,8 +230,8 @@ export function Breadcrumbs({ accent = 'amber' }: BreadcrumbsProps) {
   const lastAccent =
     items.length > 1
       ? accent === 'brand'
-        ? 'text-brand-primary'
-        : 'text-amber-500'
+        ? 'text-brand-ink'
+        : 'text-amber-700'
       : 'text-neutral-700';
 
   const sizeFor = (index: number) =>
@@ -240,24 +240,26 @@ export function Breadcrumbs({ accent = 'amber' }: BreadcrumbsProps) {
     SEPARATOR_SIZES[Math.min(index, SEPARATOR_SIZES.length - 1)];
 
   return (
-    <nav aria-label="Breadcrumb" className="inline-flex items-center gap-2.5">
+    <nav aria-label="Breadcrumb" className="inline-flex items-center gap-2.5 min-w-0 max-w-full overflow-hidden">
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
         const href = item.href && !isLast && item.href !== pathname ? item.href : undefined;
         const size = sizeFor(index);
+        // En móvil sólo se muestra la miga activa para no desbordar la navbar
+        const ancestorClass = isLast ? '' : 'hidden sm:inline';
 
         return (
           <React.Fragment key={`${item.label}-${index}`}>
             {index > 0 && (
               <ChevronRight
-                className={`${separatorFor(index)} text-neutral-700 stroke-[2.5] shrink-0`}
+                className={`${separatorFor(index)} text-neutral-700 stroke-[2.5] shrink-0 ${index < items.length - 1 ? 'hidden sm:inline-flex' : ''}`}
               />
             )}
 
             {href ? (
               <Link
                 href={href}
-                className={`text-neutral-700 ${size} font-extrabold font-['DM_Sans'] hover:text-neutral-900 transition-colors`}
+                className={`text-neutral-700 ${size} font-extrabold font-['DM_Sans'] hover:text-neutral-900 transition-colors ${ancestorClass}`}
               >
                 {item.label}
               </Link>
@@ -265,7 +267,7 @@ export function Breadcrumbs({ accent = 'amber' }: BreadcrumbsProps) {
               <span
                 className={`${size} font-extrabold font-['DM_Sans'] ${
                   isLast ? lastAccent : 'text-neutral-700'
-                }`}
+                } ${isLast ? 'truncate min-w-0' : ancestorClass}`}
               >
                 {item.label}
               </span>

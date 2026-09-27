@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, ChevronDown, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Badge, ESTADO_BADGE, ConfirmModal } from '@/components/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ConfirmModal } from '@/components/ui';
 import { showToast } from '@/lib/toast';
 import {
   cambiarEstadoCotizacion,
@@ -31,6 +31,15 @@ const TRANSICIONES_UI: Record<string, string[]> = {
 
 // Transiciones que cierran o rechazan el negocio → piden confirmación.
 const TRANSICIONES_SENSIBLES = new Set(['aprobada', 'parcialmente_pagada', 'rechazada']);
+
+// Paleta de la cápsula-select de estado (misma que Badge size="estado")
+const ESTADO_SELECT_CLASES: Record<string, string> = {
+  borrador: 'bg-estado-borrador text-estado-borrador-text border-estado-borrador/60',
+  enviada: 'bg-estado-enviado-soft text-estado-enviado-text border-estado-enviado/40',
+  aprobada: 'bg-estado-aprobado-soft text-estado-aprobado-text border-estado-aprobado/40',
+  rechazada: 'bg-estado-rechazado-soft text-estado-rechazado-text border-estado-rechazado/40',
+  parcialmente_pagada: 'bg-amber-50 text-amber-600 border-amber-500/40',
+};
 
 function money(n: number | string | null | undefined): string {
   const v = Number(n || 0);
@@ -244,22 +253,15 @@ export default function CotizacionDetallePage() {
             <FileText className="size-6 text-zinc-700" />
             <h1 className="text-xl font-bold text-zinc-800">{numero}</h1>
           </div>
-
-          {estado && (
-            <Badge size="xl" variant={ESTADO_BADGE[estado] ?? 'neutral'}>
-              {ESTADO_DISPLAY[estado] || estado.toUpperCase()}
-            </Badge>
-          )}
         </div>
 
-        <div>
+        <div className="relative inline-flex">
           <select
             value={estado}
             disabled={savingEstado || opcionesEstado.length <= 1}
             onChange={(e) => handleEstadoChange(e.target.value)}
-            className={`bg-white border border-zinc-200 text-xs font-bold text-zinc-700 px-3 py-1.5 rounded-lg shadow-sm focus:outline-none uppercase ${
-              opcionesEstado.length <= 1 ? 'cursor-default text-zinc-500' : 'cursor-pointer'
-            }`}
+            aria-label="Estado de la cotización"
+            className={`appearance-none rounded-full border px-4 py-1.5 pr-8 text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-brand-soft transition-colors ${ESTADO_SELECT_CLASES[estado] ?? 'bg-neutral-200 text-neutral-700 border-neutral-300/60'} ${opcionesEstado.length <= 1 ? 'cursor-default' : 'cursor-pointer'} ${savingEstado ? 'opacity-60' : ''}`}
           >
             {opcionesEstado.map((op) => (
               <option key={op} value={op}>
@@ -267,45 +269,46 @@ export default function CotizacionDetallePage() {
               </option>
             ))}
           </select>
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 opacity-60" />
         </div>
       </div>
 
       {/* Tarjeta 1: Información general */}
-      <div className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-sm space-y-4">
+      <div className="bg-white rounded-2xl border border-zinc-200/80 p-4 sm:p-6 shadow-sm space-y-4">
         <h2 className="text-base font-bold text-zinc-800">Información general</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-6 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-6 text-xs">
           <div>
-            <p className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Cliente</p>
+            <p className="text-zinc-500 font-bold uppercase tracking-wider text-xs">Cliente</p>
             <p className="font-bold text-zinc-800 mt-0.5">{clienteNombre}</p>
           </div>
           <div>
-            <p className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Documento</p>
+            <p className="text-zinc-500 font-bold uppercase tracking-wider text-xs">Documento</p>
             <p className="font-bold text-zinc-800 mt-0.5">
               {clienteDoc ? `${clienteTipoDoc} · ${clienteDoc}` : '-'}
             </p>
           </div>
           <div>
-            <p className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Teléfono</p>
+            <p className="text-zinc-500 font-bold uppercase tracking-wider text-xs">Teléfono</p>
             <p className="font-bold text-zinc-800 mt-0.5">{clienteTelefono || '-'}</p>
           </div>
           <div>
-            <p className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Email</p>
+            <p className="text-zinc-500 font-bold uppercase tracking-wider text-xs">Email</p>
             <p className="font-bold text-zinc-800 mt-0.5">{clienteEmail || '-'}</p>
           </div>
           <div>
-            <p className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Tipo Precio</p>
+            <p className="text-zinc-500 font-bold uppercase tracking-wider text-xs">Tipo Precio</p>
             <p className="font-bold text-zinc-800 mt-0.5">{tipoPrecio || 'DISTRIBUIDOR'}</p>
           </div>
           <div>
-            <p className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Vencimiento</p>
+            <p className="text-zinc-500 font-bold uppercase tracking-wider text-xs">Vencimiento</p>
             <p className="font-bold text-zinc-800 mt-0.5">{vencimiento || '-'}</p>
           </div>
           <div>
-            <p className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Tipo Pago</p>
+            <p className="text-zinc-500 font-bold uppercase tracking-wider text-xs">Tipo Pago</p>
             <p className="font-bold text-zinc-800 mt-0.5">{tipoPago || 'CONTADO'}</p>
           </div>
           <div>
-            <p className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Carreta</p>
+            <p className="text-zinc-500 font-bold uppercase tracking-wider text-xs">Carreta</p>
             <p className="font-bold text-zinc-800 mt-0.5">
               {incluyeCarreta ? `Si (S/ ${money(costoCarreta)})` : 'No'}
             </p>
@@ -314,11 +317,11 @@ export default function CotizacionDetallePage() {
       </div>
 
       {/* Tarjeta 2: Detalle, totales y observaciones */}
-      <div className="bg-white rounded-2xl border border-zinc-200/80 p-6 shadow-sm space-y-6">
+      <div className="bg-white rounded-2xl border border-zinc-200/80 p-4 sm:p-6 shadow-sm space-y-6">
         <h2 className="text-base font-bold text-zinc-800">Detalle ({itemsCount} items)</h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 min-w-0">
             <Table className="text-xs">
               <TableHeader>
                 <TableRow>
@@ -332,7 +335,7 @@ export default function CotizacionDetallePage() {
               <TableBody className="font-medium text-zinc-700">
                 {items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-6 text-center text-zinc-400">
+                    <TableCell colSpan={5} className="py-6 text-center text-zinc-500">
                       Sin items en el detalle
                     </TableCell>
                   </TableRow>
@@ -340,7 +343,7 @@ export default function CotizacionDetallePage() {
                   items.map((it, idx) => (
                     <TableRow key={idx}>
                       <TableCell className="font-bold">{it.codigo}</TableCell>
-                      <TableCell className="uppercase text-[11px]">{it.descripcion}</TableCell>
+                      <TableCell className="uppercase text-xs">{it.descripcion}</TableCell>
                       <TableCell className="text-right">S/ {money(it.precio)}</TableCell>
                       <TableCell className="text-center">{it.cantidad}</TableCell>
                       <TableCell className="text-right font-bold">S/ {money(it.total)}</TableCell>
@@ -351,7 +354,7 @@ export default function CotizacionDetallePage() {
             </Table>
           </div>
 
-          <div className="space-y-2 text-xs text-right font-medium text-zinc-600 pl-4">
+          <div className="space-y-2 text-xs text-right font-medium text-zinc-600 lg:pl-4">
             <div className="flex justify-between items-center">
               <span>Subtotal</span>
               <span className="font-semibold text-zinc-800">S/ {money(subtotal)}</span>
@@ -368,7 +371,7 @@ export default function CotizacionDetallePage() {
         </div>
 
         <div className="space-y-1.5">
-          <p className="text-zinc-400 font-bold uppercase tracking-wider text-[10px]">Observaciones</p>
+          <p className="text-zinc-500 font-bold uppercase tracking-wider text-xs">Observaciones</p>
           <textarea
             readOnly
             value={observaciones}
@@ -379,7 +382,7 @@ export default function CotizacionDetallePage() {
       </div>
 
       {/* Acciones */}
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
         <Button
           variant="outline"
           size="sm"

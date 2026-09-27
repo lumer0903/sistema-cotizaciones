@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import Image from 'next/image';
 import { History } from 'lucide-react';
 import { ProductoConsulta } from '../types/precio';
@@ -30,23 +30,24 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
                             onError={(e) => handleImageError(e, '200')}
                         />
                 ) : (
-                    <div className="text-brand-primary/50 font-bold text-xs uppercase tracking-wider">Sin imagen</div>
+                    <div className="text-brand-ink/50 font-bold text-xs uppercase tracking-wider">Sin imagen</div>
                 )}
 
                 <button
                     type="button"
                     onClick={() => onVerHistorial?.(producto.id)}
                     title="Ver historial de precios"
-                    className="absolute top-2 right-2 p-1.5 text-brand-primary hover:text-brand-hover bg-white/80 rounded-lg backdrop-blur-sm transition-colors z-10"
+                    aria-label={`Ver historial de precios de ${producto.codigo}`}
+                    className="absolute top-1 right-1 min-h-11 min-w-11 inline-flex items-center justify-center text-brand-ink hover:text-brand-ink bg-white/80 rounded-lg backdrop-blur-sm transition-colors z-10"
                 >
-                    <History className="size-4" />
+                    <History className="size-5" />
                 </button>
             </div>
 
             {/* Cabecera del producto */}
             <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                    <span className="text-brand-primary font-extrabold text-sm tracking-tight uppercase">
+                    <span className="text-brand-ink font-extrabold text-sm tracking-tight uppercase">
                         {formatCode(producto.codigo)}
                     </span>
                     <div className="flex items-center gap-1.5">
@@ -54,7 +55,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
                             className={`size-2 rounded-full ${tieneStock ? 'bg-estado-aprobado' : 'bg-estado-rechazado'}`}
                         />
                         <span
-                            className={`text-[10px] font-bold uppercase tracking-wider ${tieneStock ? 'text-estado-aprobado-text' : 'text-estado-rechazado'
+                            className={`text-xs font-bold uppercase tracking-wider ${tieneStock ? 'text-estado-aprobado-text' : 'text-estado-rechazado'
                                 }`}
                         >
                             STOCK: {producto.stock}
@@ -62,7 +63,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
                     </div>
                 </div>
 
-                <p className="text-zinc-400 text-[11px] font-normal leading-tight line-clamp-2 h-7">
+                <p className="text-zinc-500 text-xs font-normal leading-tight line-clamp-2 h-7">
                     {producto.descripcion}
                 </p>
             </div>
@@ -70,24 +71,24 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
             {/* Precio Distribuidor (1 Fila de 3 columnas) */}
             {tipoPrecio !== 'tienda' && (
                 <div className="bg-distribuidor-soft border border-distribuidor/40 rounded-xl p-2.5 flex flex-col items-center gap-1.5">
-                    <span className="text-distribuidor text-[10px] font-black tracking-wider uppercase">
+                    <span className="text-distribuidor text-xs font-black tracking-wider uppercase">
                         Precio Distribuidor
                     </span>
-                    <div className="w-full grid grid-cols-3 text-center">
+                    <div className="w-full grid grid-cols-3 gap-x-1 text-center">
                         <div className="flex flex-col items-center">
-                            <span className="text-gray-400 text-[9px] font-bold uppercase">Unidad</span>
+                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Unidad</span>
                             <span className="text-distribuidor text-xs font-black">
                                 {formatPrice(distribuidor.unidad)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-gray-400 text-[9px] font-bold uppercase">Docena</span>
+                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Docena</span>
                             <span className="text-distribuidor text-xs font-black">
                                 {formatPrice(distribuidor.docena)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-gray-400 text-[9px] font-bold uppercase">Mayor</span>
+                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Mayor</span>
                             <span className="text-distribuidor text-xs font-black">
                                 {formatPrice(distribuidor.mayor)}
                             </span>
@@ -99,24 +100,24 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
             {/* Precio Tienda (1 Fila de 3 columnas) */}
             {tipoPrecio !== 'distribuidor' && (
                 <div className="bg-tienda-soft/80 border border-tienda/40 rounded-xl p-2.5 flex flex-col items-center gap-1.5">
-                    <span className="text-tienda text-[10px] font-black tracking-wider uppercase">
+                    <span className="text-tienda text-xs font-black tracking-wider uppercase">
                         Precio Tienda
                     </span>
-                    <div className="w-full grid grid-cols-3 text-center">
+                    <div className="w-full grid grid-cols-3 gap-x-1 text-center">
                         <div className="flex flex-col items-center">
-                            <span className="text-gray-400 text-[9px] font-bold uppercase">Unidad</span>
+                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Unidad</span>
                             <span className="text-tienda text-xs font-black">
                                 {formatPrice(tienda.unidad)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-gray-400 text-[9px] font-bold uppercase">Docena</span>
+                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Docena</span>
                             <span className="text-tienda text-xs font-black">
                                 {formatPrice(tienda.docena)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-gray-400 text-[9px] font-bold uppercase">Mayor</span>
+                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Mayor</span>
                             <span className="text-tienda text-xs font-black">
                                 {formatPrice(tienda.mayor)}
                             </span>

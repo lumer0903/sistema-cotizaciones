@@ -88,14 +88,14 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
             <div className="flex border-b border-gray-200 mb-4">
                 <button
                     type="button"
-                    className={`pb-2 px-4 text-sm font-semibold transition-colors ${activeTab === 'inventario' ? 'border-b-2 border-brand-primary text-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`pb-2 px-4 text-sm font-semibold transition-colors ${activeTab === 'inventario' ? 'border-b-2 border-brand-primary text-brand-ink' : 'text-gray-500 hover:text-gray-700'}`}
                     onClick={() => setActiveTab('inventario')}
                 >
                     Inventario
                 </button>
                 <button
                     type="button"
-                    className={`pb-2 px-4 text-sm font-semibold transition-colors ${activeTab === 'cobranzas' ? 'border-b-2 border-brand-primary text-brand-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`pb-2 px-4 text-sm font-semibold transition-colors ${activeTab === 'cobranzas' ? 'border-b-2 border-brand-primary text-brand-ink' : 'text-gray-500 hover:text-gray-700'}`}
                     onClick={() => setActiveTab('cobranzas')}
                 >
                     Cobranzas
@@ -132,12 +132,12 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
                     </div>
 
                     {loading ? (
-                        <div className="p-8 text-center text-brand-options text-sm animate-pulse">
-                            <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-brand-primary" />
+                        <div className="p-6 sm:p-8 text-center text-brand-options text-sm animate-pulse">
+                            <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-brand-ink" />
                             Cargando alertas...
                         </div>
                     ) : alertas.length === 0 ? (
-                        <div className="p-8 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-300">
+                        <div className="p-6 sm:p-8 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-300">
                             <AlertCircle className="w-12 h-12 mx-auto text-gray-300 mb-3" />
                             <p className="text-xs font-semibold text-brand-options">
                                 {estadoFiltro === 'activa' ? 'No hay alertas activas' : 'No hay alertas en este filtro'}
@@ -211,7 +211,7 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
             )}
 
             {activeTab === 'cobranzas' && (
-                <div className="p-8 text-center text-gray-400">
+                <div className="p-6 sm:p-8 text-center text-gray-500">
                     No hay alertas de cobranzas
                 </div>
             )}

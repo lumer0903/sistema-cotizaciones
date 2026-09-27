@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useRef, useState } from 'react';
 import Image from 'next/image';
@@ -72,7 +72,7 @@ export function PerfilModal({ open, onClose }: PerfilModalProps) {
                 className={`w-24 h-24 rounded-full border-2 border-gray-100 object-cover bg-brand-soft ${preview ? '' : 'hidden'}`}
             />
             {!preview && (
-              <div className="w-24 h-24 rounded-full border-2 border-gray-100 bg-brand-soft flex items-center justify-center text-brand-primary font-bold text-2xl">
+              <div className="w-24 h-24 rounded-full border-2 border-gray-100 bg-brand-soft flex items-center justify-center text-brand-ink font-bold text-2xl">
                 {(usuario?.nombre || 'U')
                   .split(' ')
                   .map((n) => n[0])

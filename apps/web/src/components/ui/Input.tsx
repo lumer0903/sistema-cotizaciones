@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { forwardRef, InputHTMLAttributes, ReactNode } from 'react';
 
@@ -30,15 +30,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         const borderColor = isModal ? '#d4d4d8' : 'var(--color-brand-primary)'; // zinc-300
         const focusColor = isModal ? '#71717a' : 'var(--color-brand-primary)'; // zinc-500
         const textColor = '#3f3f46'; // zinc-700
-        const labelIconColor = isModal ? '#71717a' : 'var(--color-brand-primary)'; // zinc-500
+        const labelIconColor = isModal ? '#71717a' : 'var(--color-brand-ink)'; // zinc-500 / amarillo oscuro AA
 
-        const heightClass = sizeVariant === 'sm' ? 'h-8 text-xs' : 'h-10 text-xs sm:text-sm';
+        const heightClass = sizeVariant === 'sm' ? 'min-h-11 h-11 text-xs' : 'h-11 text-xs sm:text-sm';
 
         return (
             <div className="w-full space-y-1">
                 {label && (
                     <label
-                        className="block text-[10px] sm:text-xs font-black uppercase tracking-wider transition-colors"
+                        className="block text-xs font-black uppercase tracking-wider transition-colors"
                         style={{ color: labelIconColor }}
                     >
                         {label}
@@ -59,7 +59,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                         className={`
               w-full ${heightClass} rounded-2xl border bg-white 
               font-medium transition-colors 
-              placeholder:text-zinc-400 focus:outline-none 
+              placeholder:text-zinc-500 focus:outline-none 
               disabled:bg-gray-100 disabled:cursor-not-allowed
               ${icon ? 'pl-9 pr-3' : 'px-3.5'} 
               ${error ? '!border-red-500 focus:!border-red-500 focus:ring-2 focus:ring-red-200' : ''} 

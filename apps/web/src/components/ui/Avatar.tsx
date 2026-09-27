@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import Image from 'next/image';
@@ -24,8 +24,8 @@ export interface AvatarProps {
 }
 
 const SIZE_CLASSES: Record<NonNullable<AvatarProps['size']>, string> = {
-  xs: 'h-7 w-7 text-[10px]',
-  sm: 'h-8 w-8 text-[11px]',
+  xs: 'h-7 w-7 text-xs',
+  sm: 'h-8 w-8 text-xs',
   md: 'h-9 w-9 text-sm',
   lg: 'h-12 w-12 text-base',
   xl: 'h-24 w-24 text-2xl',
@@ -42,7 +42,7 @@ export function Avatar({ src, nombre, size = 'md', className = '', onClick, titl
       onClick={onClick}
       title={title}
       aria-label={title}
-      className={`shrink-0 rounded-full overflow-hidden bg-brand-soft border border-gray-200 flex items-center justify-center font-bold text-brand-primary select-none ${SIZE_CLASSES[size]} ${onClick ? 'hover:border-brand-primary transition-colors cursor-pointer' : ''} ${className}`}
+      className={`shrink-0 rounded-full overflow-hidden bg-brand-soft border border-gray-200 flex items-center justify-center font-bold text-brand-ink select-none ${SIZE_CLASSES[size]} ${onClick ? 'hover:border-brand-primary transition-colors cursor-pointer' : ''} ${className}`}
     >
       {showImg ? (
         <Image

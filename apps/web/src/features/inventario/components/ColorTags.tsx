@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { X } from 'lucide-react';
 import { resolveColorHex } from './ColorConfigModal';
@@ -31,11 +31,6 @@ export function ColorTags({
     md: 'px-2.5 py-1 text-sm gap-1.5',
   };
 
-  const iconSize = {
-    sm: 'w-2.5 h-2.5',
-    md: 'w-3.5 h-3.5',
-  };
-
   if (validColors.length === 0) {
     return (
       <span className={`text-xs text-brand-options italic ${className}`}>
@@ -63,10 +58,10 @@ export function ColorTags({
           {interactive && onRemove && (
             <button
               onClick={() => onRemove(color)}
-              className={`ml-1 p-0.5 rounded-full hover:bg-brand-selection transition-colors text-brand-primary hover:text-brand-hover ${iconSize[size]}`}
+              className={`min-h-11 min-w-11 -my-2.5 -mr-2.5 inline-flex items-center justify-center rounded-full hover:bg-brand-selection transition-colors text-brand-ink hover:text-brand-ink`}
               aria-label={`Eliminar ${color}`}
             >
-              <X className={iconSize[size]} />
+              <X className="w-4 h-4" />
             </button>
           )}
         </span>
