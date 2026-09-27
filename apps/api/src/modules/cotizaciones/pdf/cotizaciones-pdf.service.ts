@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import type { Browser } from 'puppeteer';
 import { CotizacionesService } from '../cotizaciones.service';
+import { computePdfHash } from './pdf-hash';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const puppeteer = require('puppeteer');
@@ -207,9 +208,12 @@ export class CotizacionesPdfService implements OnModuleInit, OnModuleDestroy {
 </html>`;
   }
 
-  async generarPdfBuffer(id: number): Promise<{ buffer: Buffer; filename: string }> {
+  async generarPdfBuffer(
+    id: number,
+  ): Promise<{ buffer: Buffer; filename: string; hash: string }> {
     const cot: any = await this.cotizacionesService.obtenerPorId(id);
     if (!cot) throw new NotFoundException(`Cotización con ID ${id} no encontrada`);
+    const hash = computePdfHash(cot);
 
     const browser = await this.ensureBrowser();
     const page = await browser.newPage();
@@ -223,7 +227,7 @@ export class CotizacionesPdfService implements OnModuleInit, OnModuleDestroy {
       });
       const buffer = Buffer.from(pdf);
       const filename = `${String(cot.numero || `COT-${id}`).replace(/[^A-Za-z0-9-_]+/g, '_')}.pdf`;
-      return { buffer, filename };
+      return { buffer, filename, hash };
     } finally {
       await page.close().catch(() => undefined);
     }

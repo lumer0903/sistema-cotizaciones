@@ -1,6 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CotizacionesService } from './cotizaciones.service';
+import { CreateCotizacionDto } from './dto/create-cotizacion.dto';
+import { UpdateCotizacionDto } from './dto/update-cotizacion.dto';
+import { RegistrarPagoDto } from './dto/registrar-pago.dto';
 
 function makeService(ops: { cot?: Record<string, any> | null } = {}) {
   const cot =
@@ -94,9 +97,9 @@ describe('crear (validación de detalle)', () => {
 
   it('exige id_cliente', async () => {
     const { service } = makeService();
-    await expect(service.crear({ ...base, id_cliente: undefined }, 1)).rejects.toThrow(
-      'id_cliente es obligatorio',
-    );
+    await expect(
+      service.crear({ ...base, id_cliente: undefined } as unknown as CreateCotizacionDto, 1),
+    ).rejects.toThrow('id_cliente es obligatorio');
   });
 
   it('exige al menos una línea', async () => {
@@ -114,15 +117,18 @@ describe('crear (validación de detalle)', () => {
   ];
   it.each(detalleInvalido)('rechaza $caso', async ({ linea }) => {
     const { service, create } = makeService();
-    await expect(service.crear({ ...base, detalle: [linea] }, 1)).rejects.toThrow(
-      'Cada línea del detalle',
-    );
+    await expect(
+      service.crear({ ...base, detalle: [linea] } as unknown as CreateCotizacionDto, 1),
+    ).rejects.toThrow('Cada línea del detalle');
     expect(create).not.toHaveBeenCalled();
   });
 
   it('crea con subtotal y total calculados (incluye carreta)', async () => {
     const { service, create } = makeService();
-    await service.crear({ ...base, incluye_carreta: true, costo_carreta: 15 }, 1);
+    await service.crear(
+      { ...base, incluye_carreta: true, costo_carreta: 15 } as unknown as CreateCotizacionDto,
+      1,
+    );
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ estado: 'borrador', subtotal: 20, total: 35 }),
@@ -132,7 +138,10 @@ describe('crear (validación de detalle)', () => {
 
   it('incluye_carreta:false ignora costo_carreta en total y en lo almacenado', async () => {
     const { service, create } = makeService();
-    await service.crear({ ...base, incluye_carreta: false, costo_carreta: 15 }, 1);
+    await service.crear(
+      { ...base, incluye_carreta: false, costo_carreta: 15 } as unknown as CreateCotizacionDto,
+      1,
+    );
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -163,13 +172,16 @@ describe('actualizar (carreta consistente y detalle)', () => {
   it('rechaza cantidad 0 en detalle', async () => {
     const { service } = makeService({ cot: borrador });
     await expect(
-      service.actualizar(1, { detalle: [{ ...linea, cantidad: 0 }] }),
+      service.actualizar(1, { detalle: [{ ...linea, cantidad: 0 }] } as unknown as UpdateCotizacionDto),
     ).rejects.toThrow('Cada línea del detalle');
   });
 
   it('incluye_carreta:true sin costo conserva el costo actual (no queda en 0)', async () => {
     const { service, update } = makeService({ cot: borrador });
-    await service.actualizar(1, { incluye_carreta: true, detalle: [linea] });
+    await service.actualizar(
+      1,
+      { incluye_carreta: true, detalle: [linea] } as unknown as UpdateCotizacionDto,
+    );
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ subtotal: 20, total: 35 }),
@@ -179,7 +191,10 @@ describe('actualizar (carreta consistente y detalle)', () => {
 
   it('incluye_carreta:false deja la carreta en 0', async () => {
     const { service, update } = makeService({ cot: borrador });
-    await service.actualizar(1, { incluye_carreta: false, detalle: [linea] });
+    await service.actualizar(
+      1,
+      { incluye_carreta: false, detalle: [linea] } as unknown as UpdateCotizacionDto,
+    );
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ subtotal: 20, total: 20, incluye_carreta: false }),
@@ -189,7 +204,10 @@ describe('actualizar (carreta consistente y detalle)', () => {
 
   it('incluye_carreta:true con costo usa ese costo', async () => {
     const { service, update } = makeService({ cot: borrador });
-    await service.actualizar(1, { incluye_carreta: true, costo_carreta: 8, detalle: [linea] });
+    await service.actualizar(
+      1,
+      { incluye_carreta: true, costo_carreta: 8, detalle: [linea] } as unknown as UpdateCotizacionDto,
+    );
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ costo_carreta: 8, total: 28 }),
@@ -250,7 +268,11 @@ describe('registrarPago (guardrails)', () => {
     prisma.$transaction = vi.fn(async (fn: any) =>
       fn({ cotizacion: { update }, cotizacionPago: { create: pagoCreate } }),
     );
-    await service.registrarPago(1, { monto: 20, metodo_pago: 'yape' }, 1);
+    await service.registrarPago(
+      1,
+      { monto: 20, metodo_pago: 'yape' } as unknown as RegistrarPagoDto,
+      1,
+    );
     expect(update).toHaveBeenCalledWith({
       where: { id_cotizacion: 1 },
       data: { estado: 'parcialmente_pagada' },

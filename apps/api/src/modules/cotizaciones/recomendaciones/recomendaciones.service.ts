@@ -16,6 +16,7 @@ export interface RecomendacionItemResponse {
   es_sugerido_ia: boolean;
   almacen?: string | null;
   ubicacion?: string | null;
+  unidades_por_caja?: number | null;
 }
 
 export interface RecomendarItemResponse {
@@ -82,11 +83,35 @@ export class RecomendacionesService {
       if (cliente) tipoPrecio = cliente.tipo as TipoPrecio;
     }
 
+    // Cargar productos reales de la BD (una sola consulta) para anclar código/descripción/datos
+    const idsSolicitados = [...(aiResponse.similar ?? []), ...(aiResponse.upsell ?? []), ...(aiResponse.equilibrio ?? [])]
+      .map((item) => item.id)
+      .filter((id) => Number.isInteger(id) && id > 0);
+
+    const productosReales = idsSolicitados.length
+      ? await this.prisma.producto.findMany({
+          where: { id_producto: { in: idsSolicitados }, deleted_at: null },
+          select: {
+            id_producto: true,
+            codigo: true,
+            descripcion: true,
+            unidades_por_caja: true,
+            categoria: { select: { nombre_categoria: true } },
+          },
+        })
+      : [];
+
+    const productosById = new Map(productosReales.map((p) => [p.id_producto, p]));
+
     const enrichCategory = async (items: AiRecommendationItem[] = []): Promise<RecomendacionItemResponse[]> => {
-      if (!items.length) return [];
+      // Solo se recomiendan productos que existan realmente en la BD
+      const itemsValidos = items.filter((item) => productosById.has(item.id));
+      if (!itemsValidos.length) return [];
 
       return Promise.all(
-        items.map(async (item) => {
+        itemsValidos.map(async (item) => {
+          const productoReal = productosById.get(item.id)!;
+
           // Consultas paralelas por cada ítem recomendado
           const [stockRow, precios] = await Promise.all([
             id_almacen
@@ -122,16 +147,17 @@ export class RecomendacionesService {
 
           return {
             id_producto: item.id,
-            codigo: item.codigo,
-            descripcion: item.descripcion,
+            codigo: productoReal.codigo,
+            descripcion: productoReal.descripcion,
             precio: precioFinal,
             stock: stockReal,
             similarityScore: item.similarityScore,
-            categoria: item.categoria,
+            categoria: productoReal.categoria?.nombre_categoria ?? item.categoria,
             margen: item.margen,
             es_sugerido_ia: true,
             almacen: stockRow?.almacen?.nombre ?? null,
             ubicacion: stockRow?.almacen?.ubicacion ?? null,
+            unidades_por_caja: productoReal.unidades_por_caja ?? null,
           };
         }),
       );

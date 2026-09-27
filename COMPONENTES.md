@@ -124,8 +124,8 @@ No existe `app/page.tsx` — el middleware redirige `/`.
 
 | Pieza | Contenido |
 |-------|-----------|
-| `api/cotizacionApi.ts` | 422 líneas: CRUD cotizaciones, filtros (`buscar`/`fecha`/`estado`), estados (máquina de transiciones), PDF, clientes, próximo número, cobranza (listado/detalle/pagos), recomendaciones IA |
-| `components/` | `CotizacionesTable` (usa `Table*`), `CotizacionesFormulario` (crear/editar, base-path admin/vendedor), `CotizacionesEditarLoader` (carga+hidratación de edición), `AgregarProductoModal`, `ClienteAutocomplete` (debounce 300 ms + teclado), `RecomendacionesPanel`, `ResumenCotizacionCard` (card Resumen estilo Figma — subtotales, toggle Carreta verde, botón Continuar; usada en admin crear/editar), `index` (`CardRecomendacion` eliminado — sin uso) |
+| `api/cotizacionApi.ts` | ~490 líneas: CRUD cotizaciones, filtros (`buscar`/`fecha`/`estado`), estados (máquina de transiciones), **PDF con polling 202** (`getCotizacionPdfBlob` / `exportarPdfCotizacion[ConPolling]` / `getCotizacionPdfObjectUrl`), clientes, próximo número, cobranza (listado/detalle/pagos), recomendaciones IA |
+| `components/` | `CotizacionesTable` (usa `Table*`), `CotizacionesFormulario` (crear/editar, base-path admin/vendedor), `CotizacionesEditarLoader` (carga+hidratación de edición), `AgregarProductoModal`, `ClienteAutocomplete` (debounce 300 ms + teclado), `RecomendacionesPanel`, `ResumenCotizacionCard` (card Resumen estilo Figma — subtotales, toggle Carreta verde, botón Continuar; usada en admin crear/editar), `PdfViewerPage` (preview del PDF en `/pdf/[id]`, usa `getCotizacionPdfObjectUrl`), `index` (`CardRecomendacion` eliminado — sin uso) |
 | `store/useCrearCotizacionStore.ts` | Zustand + `persist` (`crear-cotizacion-draft`): cliente, items, tipo precio, carreta, `editandoId`, acciones del carrito |
 | `types/cotizacion.ts` | Tipos de la feature |
 
@@ -167,6 +167,7 @@ No existe `app/page.tsx` — el middleware redirige `/`.
 | Archivo | Propósito |
 |---------|-----------|
 | `hooks/usePermissions.ts` | `can(modulo, nivel)`, `isAdmin/isGerente/isVendedor`, `usuario` — RBAC de `@goldcontinent/shared` (defaults de rol + overrides de `/usuarios/:id/permisos` cuando existan) |
+| `hooks/useDebounce.ts` | `useDebounce<T>(value, delay=300)` — devuelve el valor cuando deja de cambiar; usado en los listados (inventario, cotizaciones admin/vendedor, cobranza, catálogo) para no disparar una HTTP por tecla |
 | `lib/authProvider.tsx` | Contexto de sesión: mount → `GET /auth/me` si hay cookie `userRole`; `login`, `logout`, `refresh` |
 | `lib/apiClient.ts` | **Cliente API único**: token cookie/localStorage, refresh en 401 + reintento, redirect a login si falla; `uploadFile()` |
 | `lib/toast.ts` | Wrapper sonner: `success/error/info/warning/promise` |

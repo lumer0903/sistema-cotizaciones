@@ -1,6 +1,6 @@
 # Endpoints — Gold Continent API
 
-> **Base URL:** `http://localhost:3001` · **Prefijo global:** `/api` · **Total:** 70 endpoints en 15 controllers
+> **Base URL:** `http://localhost:3001` · **Prefijo global:** `/api` · **Total:** 71 endpoints en 15 controllers
 > **Documentación interactiva (Scalar):** `GET http://localhost:3001/reference`
 > **Autenticación:** JWT en cookie httpOnly (`accessToken`) o header `Authorization: Bearer <token>`
 
@@ -138,7 +138,8 @@ Catálogo dinámico de roles (`admin`/`gerente`/`vendedor` son de sistema, seed)
 | GET | `/api/cotizaciones` | JWT | Lista paginada. Query: `page`, `limit` (def. 10, máx. 1000), `estado`, `id_cliente`, `buscar` (número o cliente, case-insensitive), `fecha` (`YYYY-MM-DD`, día local) |
 | GET | `/api/cotizaciones/proximo-numero` | JWT | Siguiente correlativo `COT-001` |
 | GET | `/api/cotizaciones/:id` | JWT | Detalle con líneas, cliente, usuario y pagos |
-| GET | `/api/cotizaciones/:id/export-pdf` | JWT | Exporta PDF (Puppeteer/Chromium, HTML→A4) como attachment · misma vista que la preview del OJO |
+| GET | `/api/cotizaciones/:id/export-pdf` | JWT | Exporta PDF (Puppeteer/Chromium, HTML→A4) como attachment · misma vista que la preview del OJO · **híbrido:** `200` con binario si está cacheado (header `X-PDF-Cache: hit`); si no, encola en BullMQ y espera hasta 15 s → `200` (recién generado) o `202 {status:'processing', jobId, poll}` |
+| GET | `/api/cotizaciones/:id/pdf-status` | JWT | Estado del job de generación: `{estado: 'pendiente'\|'generando'\|'listo', jobId, pdf_generado_en}` — destino del `poll` del 202 |
 | PATCH | `/api/cotizaciones/:id` | JWT | Actualiza solo si estado = `borrador` · si envía `detalle`, valida líneas y recalcula `subtotal`/`total` · `incluye_carreta:true` sin `costo_carreta` conserva el actual |
 | PATCH | `/api/cotizaciones/:id/estado` | JWT | Cambia estado con **máquina de transiciones** (400 en saltos inválidos): `borrador→enviada`; `enviada→{borrador, aprobada, parcialmente_pagada, rechazada}`; `parcialmente_pagada→{aprobada, rechazada}`; `aprobada` terminal; `rechazada→borrador`. Pagos cambian estado por su vía (`registrarPago`) |
 | POST | `/api/cotizaciones/:id/pagos` | JWT | Registra abono: `{monto, metodo_pago, referencia?}` — valida saldo |
@@ -206,14 +207,15 @@ Catálogo dinámico de roles (`admin`/`gerente`/`vendedor` son de sistema, seed)
 | Puerto | `PORT` o `3001` |
 | CORS | `origin: CLIENT_URL` (`http://localhost:3000`), `credentials: true` |
 | Cookies | `cookie-parser` global |
-| Validación | `ValidationPipe({transform, whitelist, forbidNonWhitelisted})` — solo aplica a DTOs tipados |
+| Validación | `ValidationPipe({transform, whitelist, forbidNonWhitelisted, forbidUnknownValues})` — solo aplica a DTOs tipados |
 | Filtro errores | `AllExceptionsFilter` → `{success:false, message, errors?}` |
 | Guards globales | Ninguno. `RolesGuard` se aplica por controller junto a `JwtAuthGuard` (`@UseGuards(JwtAuthGuard, RolesGuard)`) solo donde hay `@Roles` |
 | Docs | Swagger builder + **Scalar** en `GET /reference` (fuera del prefijo `/api`) |
-| Rate limit / Helmet | Instalados pero **no usados** |
+| Rate limit / Helmet | **Usados globalmente en `main.ts`:** `helmet()` + `express-rate-limit` (300 req / 15 min, headers estándar) |
 
 ### Notas
 
 - `modules/auth/auth.controller.ts` (funciones Express) está **huérfano**; el registrado es `adapters/auth.controller.ts`.
 - `CotizacionesController` y `RecomendacionesController` comparten prefijo `cotizaciones` sin colisión de rutas.
-- Endpoints de cotizaciones usan `@Body() body: any` (sin DTOs), pero el service valida imperativamente: detalle (producto/cantidad/precio), catálogo y máquina de estados, y carreta.
+- Los endpoints de cotizaciones ahora usan **DTOs class-validator** (`src/modules/cotizaciones/dto/`: `create`, `update`, `cambiar-estado`, `registrar-pago`, `create-cotizacion-detalle`, `listar-cotizaciones.query`); con el `ValidationPipe` global, los query params/campos desconocidos rechinan (`400`). El service sigue validando imperativamente lo referencial (detalle, máquina de estados, carreta).
+- PDFs: `export-pdf` y `pdf-status` dependen de Redis (BullMQ) para el miss de cache; sin Redis el encolado falla y responde error 500 — la cache-hit sigue funcionando.

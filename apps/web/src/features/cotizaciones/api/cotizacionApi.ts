@@ -320,19 +320,86 @@ export async function getCotizacionDetalle(id: string | number): Promise<Cotizac
     return (res?.data ?? res) as CotizacionDetalle;
 }
 
-/** Descarga el PDF como Blob (para preview o descarga) */
-export async function getCotizacionPdfBlob(id: number | string): Promise<Blob> {
+const PDF_POLL_INTERVAL_MS = 2000;
+const PDF_POLL_MAX_RETRIES = 10;
+
+export interface PdfExportProgress {
+  estado: 'generando' | 'descargando' | 'listo';
+}
+
+function getTokenForPdf(): string | null {
+  if (typeof window === 'undefined') return null;
+  return (
+    localStorage.getItem('access_token')?.trim() ||
+    localStorage.getItem('token') ||
+    null
+  );
+}
+
+function downloadPdfBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Obtiene el PDF como Blob soportando la respuesta asíncrona del backend:
+ * - 200 OK → consume el Blob directamente.
+ * - 202 Accepted → sondea `pdf-status` cada 2s (máx. 10 reintentos / 20s)
+ *   y solo llama a `export-pdf` cuando el estado es 'listo'.
+ * - Se agota el polling o error → lanza Error (el caller muestra el toast).
+ */
+export async function getCotizacionPdfBlob(
+  id: number | string,
+  onProgress?: (progress: PdfExportProgress) => void,
+): Promise<Blob> {
   const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-  const token =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('access_token')?.trim() || localStorage.getItem('token') || null
-      : null;
-  const res = await fetch(`${base}/api/cotizaciones/${id}/export-pdf`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  const token = getTokenForPdf();
+  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
+  const primera = await fetch(`${base}/api/cotizaciones/${id}/export-pdf`, {
+    headers,
     credentials: 'include',
   });
-  if (!res.ok) throw new Error('No se pudo generar el PDF');
-  return res.blob();
+
+  if (primera.status === 200) return primera.blob();
+  if (primera.status !== 202) throw new Error('No se pudo generar el PDF');
+
+  onProgress?.({ estado: 'generando' });
+
+  for (let intento = 0; intento < PDF_POLL_MAX_RETRIES; intento++) {
+    await sleep(PDF_POLL_INTERVAL_MS);
+
+    const statusRes = await fetch(`${base}/api/cotizaciones/${id}/pdf-status`, {
+      headers,
+      credentials: 'include',
+    });
+    if (!statusRes.ok) continue;
+
+    const status = (await statusRes.json()) as { estado?: string };
+    if (status.estado !== 'listo') continue; // 'generando' | 'pendiente'
+
+    onProgress?.({ estado: 'descargando' });
+    const finalRes = await fetch(`${base}/api/cotizaciones/${id}/export-pdf`, {
+      headers,
+      credentials: 'include',
+    });
+    if (finalRes.status === 200) {
+      onProgress?.({ estado: 'listo' });
+      return finalRes.blob();
+    }
+    if (finalRes.status === 202) continue; // se invalidó: sigue generando
+    throw new Error('No se pudo descargar el PDF');
+  }
+
+  throw new Error('El PDF tardó demasiado en generarse. Intente nuevamente.');
 }
 
 /** URL de objeto para vista previa del PDF (revocar al cerrar) */
@@ -341,16 +408,18 @@ export async function getCotizacionPdfObjectUrl(id: number | string): Promise<st
   return URL.createObjectURL(blob);
 }
 
+/** Descarga el PDF en disco, con soporte de polling y progreso opcional */
+export async function exportarPdfCotizacionConPolling(
+  id: number | string,
+  filename?: string,
+  onProgress?: (progress: PdfExportProgress) => void,
+): Promise<void> {
+  const blob = await getCotizacionPdfBlob(id, onProgress);
+  downloadPdfBlob(blob, filename || `COT-${id}.pdf`);
+}
+
 export async function exportarPdfCotizacion(id: number | string, filename?: string): Promise<void> {
-  const blob = await getCotizacionPdfBlob(id);
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename || `COT-${id}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  await exportarPdfCotizacionConPolling(id, filename);
 }
 
 export async function obtenerRecomendacionesItem(

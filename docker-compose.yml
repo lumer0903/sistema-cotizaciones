@@ -44,6 +44,11 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api:
     build:
@@ -58,10 +63,22 @@ services:
       CLIENT_URL: http://localhost:3000
       AI_SERVICE_URL: http://ai-service:8000
       PORT: 3001
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENABLED: "true"
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
     ports:
       - "3001:3001"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     volumes:
       - ./apps/api:/app

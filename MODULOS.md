@@ -41,14 +41,23 @@ Catálogo de flores/artículos de floristería con precios duales (normal/distri
 - Umbral "bajo stock" hardcodeado a `<= 20` (ignora `stock_minimo` del producto).
 
 ### cotizaciones
-**Núcleo del negocio.** Ciclo de vida con **máquina de transiciones validada en backend** (400 en saltos): `borrador → enviada → aprobada / parcialmente_pagada / rechazada` (`aprobada` terminal; `rechazada → borrador` reabre; los pagos cambian estado por su vía en `registrarPago`). Numeración correlativa `COT-001`, detalle de ítems, carreta (envío), pagos/abonos y exportación PDF (**Puppeteer/Chromium**: HTML → A4; preview del OJO = mismo archivo descargado).
+**Núcleo del negocio.** Ciclo de vida con **máquina de transiciones validada en backend** (400 en saltos): `borrador → enviada → aprobada / parcialmente_pagada / rechazada` (`aprobada` terminal; `rechazada → borrador` reabre; los pagos cambian estado por su vía en `registrarPago`). Numeración correlativa `COT-001`, detalle de ítems, carreta (envío), pagos/abonos y exportación PDF **cacheada + en cola BullMQ** (ver submódulo `pdf/`).
 
-- Sin DTOs (`body: any`), pero validación imperativa en el service: detalle (`id_producto>0`, `cantidad>0`, `precio>=0`), catálogo/máquina de estados y coherencia de carreta.
-- **41 tests unitarios** (`cotizaciones.service.test.ts`, vitest): máquina de transiciones, validación de detalle, carreta y guardrails de pagos.
+- **DTOs class-validator** en `dto/` (6): `create-cotizacion`, `create-cotizacion-detalle`, `update-cotizacion`, `cambiar-estado`, `registrar-pago`, `listar-cotizaciones.query` — el `ValidationPipe` global rechaza campos/query desconocidos (`400`); el service sigue validando lo referencial (detalle, máquina de estados, carreta).
+- **55 tests unitarios** (vitest): `cotizaciones.service.test.ts` (41: máquina de transiciones, detalle, carreta, guardrails de pagos) + `pdf/pdf-hash.test.ts` (6) + `pdf/pdf-export.service.test.ts` (8).
 - `registrarPago` está **duplicado** en `cobranza.service.ts`.
 - `cambiarEstado` no escribe `tiempo_fin` (KPI tiempo muerto sigue en 0).
 - `fecha_vencimiento` nunca se escribe → cobranza no puede marcar "vencida".
 - Submódulo `recomendaciones/` anidado (importado 2 veces en `app.module`).
+
+### cotizaciones/pdf (submódulo)
+Generación de PDFs **asíncrona y cacheada** (Puppeteer → A4):
+
+- **Cache:** hash sha256 de los campos del HTML (`pdf-hash.ts`); si `pdf_hash` vigente + objeto legible en MinIO (bucket `cotizacion-pdfs`, key `cotizaciones/<id>-<hash>.pdf`) o en disco (`pdfs/…` cuando MinIO está off) → **200 binario** con `X-PDF-Cache: hit`.
+- **Miss:** encola job `generate-pdf` (id determinista `cotizo-pdf:<id>:<hash>`) en la cola `cotizacion-pdfs` (reintentos 2, backoff exponencial) y espera ≤ 15 s → `200` recién generado o **`202`** con `jobId` y `poll: /api/cotizaciones/:id/pdf-status`.
+- **Worker `PdfProcessor`** (`@Processor('cotizacion-pdfs')`, concurrency 2, en el proceso de la API): genera el HTML→PDF, lo guarda (`pdf-storage.service.ts`, MinIO con fallback local y guard contra path traversal) y escribe `pdf_key`, `pdf_hash`, `pdf_generado_en` en `cotizaciones`.
+- **Endpoints:** `GET /:id/export-pdf` (híbrido) + `GET /:id/pdf-status` → `{estado: pendiente|generando|listo, jobId, pdf_generado_en}`.
+- Archivos: `pdf.constants.ts`, `pdf-hash.ts`, `pdf-storage.service.ts`, `pdf.processor.ts`, `pdf-export.service.ts` (+ 14 tests).
 
 ### cotizaciones/recomendaciones (submódulo)
 `POST /cotizaciones/recomendar-item`: recibe producto base, llama a la IA, enriquece con stock real por almacén y precios vigentes, audita en `ia_interacciones`. Es el endpoint de IA **sí usado por el frontend**.
@@ -110,9 +119,10 @@ Scaffold DDD vacío (domain/application/adapters/infrastructure con `.gitkeep`).
 `api/login.ts` — llamada a `POST /auth/login`. El login real de la UI usa `AuthProvider` (`lib/authProvider`).
 
 ### cotizaciones
-Feature principal: listar con filtros server-side (`buscar`/`fecha`/`estado`, con debounce), crear/editar con **formulario unificado** (`CotizacionesFormulario` + `CotizacionesEditarLoader`), store Zustand persist con dedup de clientes, cambiar estado **con máquina + `ConfirmModal` en sensibles** (aprobar/rechazar/parcial) en el detalle, detalle, export PDF, autocomplete de cliente con debounce/teclado, creación rápida de clientes y **panel de recomendaciones IA** (Similar/Upsell/Equilibrio). También integra la API de cobranza (listado, detalle, pagos).
+Feature principal: listar con filtros server-side (`buscar`/`fecha`/`estado`, con **debounce 300 ms vía `useDebounce`**), crear/editar con **formulario unificado** (`CotizacionesFormulario` + `CotizacionesEditarLoader`), store Zustand persist con dedup de clientes, cambiar estado **con máquina + `ConfirmModal` en sensibles** (aprobar/rechazar/parcial) en el detalle, detalle, **export PDF con polling** (`exportarPdfCotizacion` → `getCotizacionPdfBlob`: ante 202 sondea `pdf-status` cada 2 s × 10 y solo re-pide `export-pdf` cuando está `listo`; spinner en el botón durante la descarga, toast solo en error/timeout), autocomplete de cliente con debounce/teclado, creación rápida de clientes y **panel de recomendaciones IA** (Similar/Upsell/Equilibrio). También integra la API de cobranza (listado, detalle, pagos).
 
 - Components: `CotizacionesTable`, `CotizacionesFormulario`, `CotizacionesEditarLoader`, `AgregarProductoModal`, `ClienteAutocomplete`, `RecomendacionesPanel`, `ResumenCotizacionCard`.
+- Preview `PdfViewerPage` (`/admin|/vendedor/cotizaciones/pdf/[id]`) usa `getCotizacionPdfObjectUrl` (mismo flujo de polling).
 
 ### inventario
 ✅ **Frontend al 100%.** CRUD productos (RHF+zod), movimientos, transferencias entre almacenes, kardex + export CSV, stock/alertas, configuración de colores por producto.
@@ -120,6 +130,7 @@ Feature principal: listar con filtros server-side (`buscar`/`fecha`/`estado`, co
 - Components: `InventarioTable/Filters`, `ProductoModal`, `MovimientoModal`, `TransferenciaModal`, `KardexModal`, `DetalleProductoModal` (Ficha Técnica), `AlertasStockTable`, `ColorTags`, `ColorConfigModal`.
 - `ColorConfigModal`: chips con color real vía `resolveColorHex` (mapa + aliases del seed, ej. `FUSCIA`); lista vacía en producto nuevo; botón Guardar dinámico (deshabilitado/gris sin colores → amarillo `#F8B602` con ≥1).
 - `ColorTags` (Ficha Técnica): círculo HEX junto al nombre, `border-gray-200` para blancos.
+- **Búsqueda con debounce 300 ms** (`useDebounce`): vive en el padre `app/admin/inventario/page.tsx` (el componente `InventarioFilters` solo recibe props).
 - Hooks: *(eliminados sin uso: `useInventario`, `useInventarioModals`)*. La page orquesta con `useState` + `apiClient` y recibe `categorias`/`almacenes` como props de los modales.
 
 ### precio-historial
@@ -138,6 +149,10 @@ Feature principal: listar con filtros server-side (`buscar`/`fecha`/`estado`, co
 - `ventas` — eliminada (módulo legacy sin UI).
 - `dashboard` — sin feature; la página usa `apiClient` directo.
 
+### Páginas sin feature propia (usan `apiClient` directo)
+
+`admin/dashboard`, `admin/reportes`, `admin/precios`, `admin/configuracion`, `admin/cobranza`, `vendedor/catalogo`. Las búsquedas de **cotizaciones** (admin/vendedor), **cobranza**, **inventario** y **catálogo** están debounced con `useDebounce` (300 ms) — ver `COMPONENTES.md` / `hooks/useDebounce.ts`. En `vendedor/cotizaciones` el filtro local lee el valor crudo (respuesta inmediata) y la API el debounced.
+
 ---
 
 ## Relación entre módulos
@@ -147,6 +162,7 @@ auth ──exporta──► JwtAuthGuard ──► todos los controllers
 productos ◄──► categorias, almacenes, historial-precios (auditoría precios)
 productos ◄──► inventario (stock_actual, movimientos)
 cotizaciones ◄──► clientes, productos, recomendaciones ──► ai ──► FastAPI
+cotizaciones/pdf ──► redis (BullMQ `cotizacion-pdfs`) + minio (`cotizacion-pdfs`) / disco local
 cotizaciones ◄──► cobranza (pagos/abonos sobre las mismas cotizaciones)
 dashboard ──lee──► cotizaciones + inventario + ia_interacciones
 configuracion ──(sin consumidores)──

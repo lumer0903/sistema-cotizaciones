@@ -171,6 +171,19 @@ export class MinioService implements OnModuleInit {
     }, false, 'deleteFile');
   }
 
+  async getObject(bucket: string, key: string): Promise<Buffer | null> {
+    return this.safeExecute(async () => {
+      if (!this.client) throw new Error('MinIO client not initialized');
+
+      const stream = await this.client.getObject(bucket, key);
+      const chunks: Buffer[] = [];
+      for await (const chunk of stream) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      }
+      return Buffer.concat(chunks);
+    }, null, 'getObject');
+  }
+
   async fileExists(bucket: string, key: string): Promise<boolean> {
     return this.safeExecute(async () => {
       if (!this.client) throw new Error('MinIO client not initialized');

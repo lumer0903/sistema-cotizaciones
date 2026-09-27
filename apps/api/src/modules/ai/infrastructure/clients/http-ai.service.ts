@@ -7,8 +7,11 @@ import { AxiosError } from 'axios';
 @Injectable()
 export class HttpAiService implements IAiService {
   private readonly logger = new Logger(HttpAiService.name);
-  private readonly aiUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
-  private readonly useMock = process.env.AI_USE_MOCK === 'true' || !process.env.AI_SERVICE_URL;
+  private readonly aiUrl =
+    process.env.AI_SERVICE_URL || process.env.IA_URL || 'http://localhost:8000';
+  private readonly useMock =
+    process.env.AI_USE_MOCK === 'true' ||
+    (!process.env.AI_SERVICE_URL && !process.env.IA_URL);
   private readonly httpTimeout = parseInt(process.env.AI_HTTP_TIMEOUT || '5000', 10);
 
   constructor(private readonly httpService: HttpService) {}

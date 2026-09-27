@@ -1,11 +1,17 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { CreateCotizacionDto } from './dto/create-cotizacion.dto';
+import { UpdateCotizacionDto } from './dto/update-cotizacion.dto';
+import { RegistrarPagoDto } from './dto/registrar-pago.dto';
+import { ListarCotizacionesQueryDto } from './dto/listar-cotizaciones.query.dto';
+import { EstadoCotizacion } from '@goldcontinent/shared/constants/enums';
 
 @Injectable()
 export class CotizacionesService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async crear(data: any, idUsuario: number) {
+    async crear(data: CreateCotizacionDto, idUsuario: number) {
         const {
             id_cliente,
             tipo_precio = 'normal',
@@ -23,7 +29,7 @@ export class CotizacionesService {
             throw new BadRequestException('La cotización debe incluir al menos un producto en el detalle');
         }
 
-        const detalleInvalido = !detalle.every((it: any) =>
+        const detalleInvalido = !detalle.every((it) =>
             Number(it.id_producto) > 0 && Number(it.cantidad) > 0 && Number(it.precio_unitario) >= 0,
         );
         if (detalleInvalido) {
@@ -37,7 +43,7 @@ export class CotizacionesService {
         const id_usuario = !isNaN(userIdParsed) && userIdParsed > 0 ? userIdParsed : null;
 
         const subtotal = detalle.reduce(
-            (acc: number, item: any) => acc + Number(item.cantidad) * Number(item.precio_unitario),
+            (acc, item) => acc + Number(item.cantidad) * Number(item.precio_unitario),
             0,
         );
         // Coherente con actualizar: si no se incluye carreta, no suma ni almacena costo
@@ -61,7 +67,7 @@ export class CotizacionesService {
                         subtotal,
                         total,
                         detalle: {
-                            create: detalle.map((item: any) => ({
+                            create: detalle.map((item) => ({
                                 id_producto: Number(item.id_producto),
                                 tipo_venta: item.tipo_venta as any,
                                 cantidad: Number(item.cantidad),
@@ -94,12 +100,12 @@ export class CotizacionesService {
         }
     }
 
-    async listar(query: any) {
+    async listar(query: ListarCotizacionesQueryDto) {
         const page = Math.max(Number(query.page) || 1, 1);
         const limit = Math.min(Math.max(Number(query.limit) || 10, 1), 1000);
         const skip = (page - 1) * limit;
 
-        const ESTADOS_VALIDOS = [
+        const ESTADOS_VALIDOS: EstadoCotizacion[] = [
             'borrador',
             'enviada',
             'parcialmente_pagada',
@@ -107,9 +113,9 @@ export class CotizacionesService {
             'rechazada',
         ];
 
-        const where: any = {};
+        const where: Prisma.CotizacionWhereInput = {};
         if (query.estado) {
-            const estado = String(query.estado).trim().toLowerCase();
+            const estado = String(query.estado).trim().toLowerCase() as EstadoCotizacion;
             if (ESTADOS_VALIDOS.includes(estado)) where.estado = estado;
         }
         if (query.id_cliente) where.id_cliente = Number(query.id_cliente);
@@ -228,7 +234,7 @@ export class CotizacionesService {
      * El número correlativo NUNCA se modifica.
      * Si se envía `detalle`, reemplaza todas las líneas y recalcula subtotal/total.
      */
-    async actualizar(id: number, data: any) {
+    async actualizar(id: number, data: UpdateCotizacionDto) {
         const actual = await this.obtenerPorId(id);
 
         if (actual.estado !== 'borrador') {
@@ -244,14 +250,14 @@ export class CotizacionesService {
             incluye_carreta,
             costo_carreta,
             detalle,
-        } = data ?? {};
+        } = data;
 
         if (detalle !== undefined && (!Array.isArray(detalle) || detalle.length === 0)) {
             throw new BadRequestException('La cotización debe incluir al menos un producto en el detalle');
         }
 
         if (Array.isArray(detalle)) {
-            const detalleInvalido = !detalle.every((it: any) =>
+            const detalleInvalido = !detalle.every((it) =>
                 Number(it.id_producto) > 0 && Number(it.cantidad) > 0 && Number(it.precio_unitario) >= 0,
             );
             if (detalleInvalido) {
@@ -264,7 +270,7 @@ export class CotizacionesService {
         const lineas = Array.isArray(detalle) ? detalle : null;
         const subtotal = lineas
             ? lineas.reduce(
-                (acc: number, item: any) => acc + Number(item.cantidad) * Number(item.precio_unitario),
+                (acc, item) => acc + Number(item.cantidad) * Number(item.precio_unitario),
                 0,
             )
             : Number(actual.subtotal);
@@ -295,7 +301,7 @@ export class CotizacionesService {
                             ? {
                                 detalle: {
                                     deleteMany: {},
-                                    create: lineas.map((item: any) => ({
+                                    create: lineas.map((item) => ({
                                         id_producto: Number(item.id_producto),
                                         tipo_venta: item.tipo_venta as any,
                                         cantidad: Number(item.cantidad),
@@ -362,7 +368,7 @@ export class CotizacionesService {
         });
     }
 
-    async registrarPago(id: number, data: any, idUsuario: number) {
+    async registrarPago(id: number, data: RegistrarPagoDto, idUsuario: number) {
         if (!data || !data.monto || !data.metodo_pago) {
             throw new BadRequestException('Debe proporcionar el monto y el metodo_pago');
         }
