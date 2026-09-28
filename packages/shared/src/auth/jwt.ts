@@ -19,21 +19,17 @@ export interface RefreshTokenPayload {
 let _accessTokenSecret: string | null = null;
 let _refreshTokenSecret: string | null = null;
 
-function isServerRuntime(): boolean {
-  return typeof (globalThis as { window?: unknown }).window === 'undefined';
-}
-
+// Sin fallback: un secreto ausente es un error de configuración, no algo que
+// deba ocultarse con un valor por defecto (auditoría C-01/P13).
 function getAccessTokenSecret(): string {
   if (!_accessTokenSecret) {
     const val = process.env.JWT_SECRET;
     if (!val) {
-      if (process.env.NODE_ENV === 'production' && isServerRuntime()) {
-        throw new Error('Missing required env var: JWT_SECRET');
-      }
-      _accessTokenSecret = 'dev-secret-change-in-production';
-    } else {
-      _accessTokenSecret = val;
+      throw new Error(
+        'Missing required env var: JWT_SECRET (define .env / variables de entorno; no existe fallback por seguridad)',
+      );
     }
+    _accessTokenSecret = val;
   }
   return _accessTokenSecret;
 }
@@ -42,13 +38,11 @@ function getRefreshTokenSecret(): string {
   if (!_refreshTokenSecret) {
     const val = process.env.JWT_REFRESH_SECRET;
     if (!val) {
-      if (process.env.NODE_ENV === 'production' && isServerRuntime()) {
-        throw new Error('Missing required env var: JWT_REFRESH_SECRET');
-      }
-      _refreshTokenSecret = 'dev-secret-change-in-production';
-    } else {
-      _refreshTokenSecret = val;
+      throw new Error(
+        'Missing required env var: JWT_REFRESH_SECRET (define .env / variables de entorno; no existe fallback por seguridad)',
+      );
     }
+    _refreshTokenSecret = val;
   }
   return _refreshTokenSecret;
 }

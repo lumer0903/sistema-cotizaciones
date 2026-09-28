@@ -252,8 +252,8 @@ export const inventarioApi = {
             return match ? decodeURIComponent(match[1]) : null;
         };
         const cookieToken = getTokenFromCookies();
-        const localToken = isBrowser ? localStorage.getItem('access_token') : null;
-        const token = (cookieToken?.trim() ?? localToken?.trim()) || null;
+        // Sin localStorage: el JWT vive sólo en cookies (auditoría P13).
+        const token = cookieToken?.trim() || null;
 
         const headers: HeadersInit = {
             'Content-Type': 'application/json',

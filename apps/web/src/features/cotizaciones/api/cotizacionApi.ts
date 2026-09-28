@@ -329,11 +329,11 @@ export interface PdfExportProgress {
 
 function getTokenForPdf(): string | null {
   if (typeof window === 'undefined') return null;
-  return (
-    localStorage.getItem('access_token')?.trim() ||
-    localStorage.getItem('token') ||
-    null
-  );
+  // Cookie (httpOnly la envía el navegador con credentials:'include'; aquí sólo
+  // queda la legible por JS si existiera). Nunca localStorage (auditoría P13).
+  const match = document.cookie.match(/(?:^|; )accessToken=([^;]*)/);
+  const token = match ? decodeURIComponent(match[1]) : null;
+  return token?.trim() || null;
 }
 
 function downloadPdfBlob(blob: Blob, filename: string): void {

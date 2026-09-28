@@ -2,14 +2,12 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
+  // Sólo cookies legibles por JS (las httpOnly las envía el navegador solas y
+  // se leen en servidor/middleware). Nunca localStorage: el JWT no debe vivir
+  // en almacenamiento explotable por XSS (auditoría P13).
   const match = document.cookie.match(/(?:^|; )accessToken=([^;]*)/);
   const cookieToken = match ? decodeURIComponent(match[1]) : null;
-  if (cookieToken?.trim()) return cookieToken.trim();
-  return (
-    localStorage.getItem('access_token')?.trim() ||
-    localStorage.getItem('token')?.trim() ||
-    null
-  );
+  return cookieToken?.trim() || null;
 }
 
 function normalizeUrl(endpoint: string): string {
@@ -39,14 +37,7 @@ async function refreshSession(): Promise<void> {
     credentials: 'include',
   });
   if (!response.ok) throw new Error('No se pudo renovar la sesión');
-  try {
-    const data = await response.json();
-    if (data?.access_token && typeof window !== 'undefined') {
-      localStorage.setItem('access_token', data.access_token);
-    }
-  } catch {
-    // cookies httpOnly ya renovadas por el backend
-  }
+  // El backend renueva las cookies httpOnly; nada que guardar en JS (P13).
 }
 
 function clearSessionAndRedirect(): void {
