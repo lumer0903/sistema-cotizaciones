@@ -2,6 +2,23 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EstadoCotizacion } from '@goldcontinent/shared/constants/enums';
 import { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
+
+interface RawCobranzaRow {
+  id_cotizacion: number;
+  numero: string;
+  id_cliente: number | null;
+  created_at: Date;
+  fecha_vencimiento: Date | null;
+  estado: string;
+  total: number | string | Decimal;
+  pagado: number | string | Decimal;
+  cliente_id: number | null;
+  cliente_nombre: string | null;
+  cliente_ruc_dni: string | null;
+  cliente_email: string | null;
+  cliente_telefono: string | null;
+}
 
 export interface CobranzaItemResponse {
   id_cotizacion: number;
@@ -47,12 +64,6 @@ export interface PaginatedCobranzaResponse {
   limit: number;
 }
 
-const ESTADOS_COBRANZA = [
-  EstadoCotizacion.enviada,
-  EstadoCotizacion.aprobada,
-  EstadoCotizacion.parcialmente_pagada,
-] as const;
-
 function toNumber(value: Decimal | number | null | undefined): number {
   if (value === null || value === undefined) return 0;
   return typeof value === 'number' ? value : Number(value);
@@ -77,61 +88,123 @@ export class CobranzaService {
   ): Promise<PaginatedCobranzaResponse> {
     const skip = (Math.max(page, 1) - 1) * limit;
 
-    const where: any = {
-      estado: { in: [...ESTADOS_COBRANZA] },
-      // Incluye aprobadas/saldadas (saldo 0); estado_cobranza se filtra tras mapItem.
-    };
+    const conditions: Prisma.Sql[] = [
+      filters.estado
+        ? Prisma.sql`c.estado = ${filters.estado}::"EstadoCotizacion"`
+        : Prisma.sql`c.estado IN (
+            ${EstadoCotizacion.enviada}::"EstadoCotizacion",
+            ${EstadoCotizacion.aprobada}::"EstadoCotizacion",
+            ${EstadoCotizacion.parcialmente_pagada}::"EstadoCotizacion"
+          )`,
+    ];
 
-    if (filters.id_cliente) where.id_cliente = filters.id_cliente;
-    if (filters.estado) where.estado = filters.estado;
+    if (filters.id_cliente) {
+      conditions.push(Prisma.sql`c.id_cliente = ${filters.id_cliente}`);
+    }
 
     if (filters.solo_vencidas) {
-      where.fecha_vencimiento = { lt: new Date() };
-    } else if (filters.fecha_vencimiento_inicio || filters.fecha_vencimiento_fin) {
-      where.fecha_vencimiento = {};
-      if (filters.fecha_vencimiento_inicio) where.fecha_vencimiento.gte = filters.fecha_vencimiento_inicio;
-      if (filters.fecha_vencimiento_fin) where.fecha_vencimiento.lte = filters.fecha_vencimiento_fin;
+      conditions.push(Prisma.sql`c.fecha_vencimiento < NOW()`);
+    } else {
+      if (filters.fecha_vencimiento_inicio) {
+        conditions.push(Prisma.sql`c.fecha_vencimiento >= ${filters.fecha_vencimiento_inicio}`);
+      }
+      if (filters.fecha_vencimiento_fin) {
+        conditions.push(Prisma.sql`c.fecha_vencimiento <= ${filters.fecha_vencimiento_fin}`);
+      }
+    }
+
+    // estado_cobranza se calcula en SQL a partir de pagos agregados (antes se filtraba en memoria)
+    const estadoCobranza = (filters.estado_cobranza || '').trim().toLowerCase();
+    if (estadoCobranza) {
+      const pagado = Prisma.sql`COALESCE(p.pagado, 0)`;
+      switch (estadoCobranza) {
+        case 'pagada':
+          conditions.push(Prisma.sql`${pagado} >= c.total`);
+          break;
+        case 'vencida':
+          conditions.push(Prisma.sql`c.total - ${pagado} > 0 AND c.fecha_vencimiento < NOW()`);
+          break;
+        case 'parcial':
+          conditions.push(
+            Prisma.sql`${pagado} > 0 AND ${pagado} < c.total AND (c.fecha_vencimiento IS NULL OR c.fecha_vencimiento >= NOW())`,
+          );
+          break;
+        case 'pendiente':
+          conditions.push(
+            Prisma.sql`${pagado} = 0 AND (c.fecha_vencimiento IS NULL OR c.fecha_vencimiento >= NOW())`,
+          );
+          break;
+        default:
+          conditions.push(Prisma.sql`FALSE`);
+      }
     }
 
     if (filters.q && filters.q.trim()) {
       const q = filters.q.trim();
-      where.OR = [
-        { numero: { contains: q, mode: 'insensitive' } },
-        { cliente: { nombre: { contains: q, mode: 'insensitive' } } },
-        { cliente: { ruc_dni: { contains: q, mode: 'insensitive' } } },
-      ];
+      conditions.push(
+        Prisma.sql`(c.numero ILIKE ${'%' + q + '%'} OR cl.nombre ILIKE ${'%' + q + '%'} OR cl.ruc_dni ILIKE ${'%' + q + '%'})`,
+      );
     }
 
-    const [rows] = await Promise.all([
-      this.prisma.cotizacion.findMany({
-        where,
-        include: {
-          cliente: {
-            select: {
-              id_cliente: true,
-              nombre: true,
-              ruc_dni: true,
-              email: true,
-              telefono: true,
-            },
-          },
-          pagos: { select: { monto: true } },
-        },
-        orderBy: [{ fecha_vencimiento: 'asc' }, { created_at: 'desc' }],
-      }),
+    const where = Prisma.join(conditions, ' AND ');
+
+    // Paginación y suma de pagos resueltas en SQL (antes: findMany completo + slice en memoria)
+    const baseFrom = Prisma.sql`
+      FROM cotizaciones c
+      LEFT JOIN clientes cl ON cl.id_cliente = c.id_cliente
+      LEFT JOIN (
+        SELECT id_cotizacion, SUM(monto) AS pagado
+        FROM cotizacion_pagos
+        GROUP BY id_cotizacion
+      ) p ON p.id_cotizacion = c.id_cotizacion`;
+
+    const [countRows, rows] = await Promise.all([
+      this.prisma.$queryRaw<Array<{ count: number }>>(
+        Prisma.sql`SELECT COUNT(*)::int AS count ${baseFrom} WHERE ${where}`,
+      ),
+      this.prisma.$queryRaw<RawCobranzaRow[]>(
+        Prisma.sql`
+          SELECT
+            c.id_cotizacion, c.numero, c.id_cliente, c.created_at, c.fecha_vencimiento,
+            c.estado, c.total, COALESCE(p.pagado, 0) AS pagado,
+            cl.id_cliente AS cliente_id, cl.nombre AS cliente_nombre,
+            cl.ruc_dni AS cliente_ruc_dni, cl.email AS cliente_email,
+            cl.telefono AS cliente_telefono
+          ${baseFrom}
+          WHERE ${where}
+          ORDER BY c.fecha_vencimiento ASC, c.created_at DESC
+          LIMIT ${limit} OFFSET ${skip}`,
+      ),
     ]);
 
     const now = new Date();
-    const mapped = rows.map((c) => this.mapItem(c, now));
-    const estadoCobranza = (filters.estado_cobranza || '').trim().toLowerCase();
-    const open = estadoCobranza
-      ? mapped.filter((c) => c.estado_cobranza === estadoCobranza)
-      : mapped;
+    const mapped = rows.map((r) =>
+      this.mapItem(
+        {
+          id_cotizacion: r.id_cotizacion,
+          numero: r.numero,
+          id_cliente: r.id_cliente,
+          created_at: r.created_at,
+          fecha_vencimiento: r.fecha_vencimiento,
+          estado: r.estado,
+          total: Number(r.total),
+          cliente:
+            r.cliente_id === null
+              ? null
+              : {
+                  id_cliente: r.cliente_id,
+                  nombre: r.cliente_nombre ?? '',
+                  ruc_dni: r.cliente_ruc_dni,
+                  email: r.cliente_email,
+                  telefono: r.cliente_telefono,
+                },
+          pagos: [{ monto: Number(r.pagado) }],
+        },
+        now,
+      ),
+    );
 
-    const total = open.length;
-    const data = open.slice(skip, skip + limit);
-
-    return { data, total, page, limit };
+    return { data: mapped, total: countRows[0]?.count ?? 0, page, limit };
   }
 
   async findById(id: number): Promise<CobranzaDetalleResponse> {

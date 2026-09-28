@@ -54,7 +54,7 @@ export class ProductosController {
     @Query('include') include?: string,
   ): Promise<{ success: true; data: PaginatedProductosResponse['data']; total: number; page: number; limit: number }> {
     const pageNum = Math.max(1, Number(page) || 1);
-    const limitNum = Math.max(1, Number(limit) || 50);
+    const limitNum = Math.min(Math.max(1, Number(limit) || 50), 100);
 
     const includePrecios = include?.includes('precios') ?? false;
     const includeCategoria = include?.includes('categoria') ?? false;

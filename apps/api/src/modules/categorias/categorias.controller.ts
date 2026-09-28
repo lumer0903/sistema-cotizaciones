@@ -35,7 +35,10 @@ export class CategoriasController {
     @Query('page') page = 1,
     @Query('limit') limit = 100,
   ): Promise<{ success: true; data: PaginatedCategoriasResponse['data']; total: number; page: number; limit: number }> {
-    const result = await this.categoriasService.findAll(Number(page), Number(limit));
+    const result = await this.categoriasService.findAll(
+      Math.max(1, Number(page) || 1),
+      Math.min(Math.max(1, Number(limit) || 50), 100),
+    );
     return { success: true, ...result };
   }
 

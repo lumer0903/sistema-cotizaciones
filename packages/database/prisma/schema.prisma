@@ -29,7 +29,7 @@ model Usuario {
   permisos          UsuarioPermiso[]
 
   @@index([nombre(ops: raw("gin_trgm_ops"))], type: Gin)
-  @@index([email])
+  @@index([deleted_at, created_at])
   @@map("usuarios")
 }
 
@@ -106,6 +106,8 @@ model Producto {
 
   @@index([descripcion(ops: raw("gin_trgm_ops"))], type: Gin)
   @@index([codigo(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([deleted_at, created_at])
+  @@index([id_categoria])
   @@map("productos")
 }
 
@@ -136,6 +138,9 @@ model HistorialPrecios {
   producto         Producto @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade)
   usuario          Usuario? @relation(fields: [id_usuario], references: [id_usuario])
 
+  @@index([id_producto, fecha_cambio])
+  @@index([fecha_cambio])
+  @@index([id_usuario])
   @@map("historial_precios")
 }
 
@@ -157,6 +162,7 @@ model Cliente {
 
   @@index([nombre(ops: raw("gin_trgm_ops"))], type: Gin)
   @@index([ruc_dni(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([deleted_at, created_at])
   @@map("clientes")
 }
 
@@ -185,6 +191,11 @@ model Cotizacion {
   cliente           Cliente?            @relation(fields: [id_cliente], references: [id_cliente])
   usuario           Usuario?            @relation(fields: [id_usuario], references: [id_usuario])
 
+  @@index([created_at])
+  @@index([estado, created_at])
+  @@index([id_cliente, created_at])
+  @@index([id_usuario])
+  @@index([fecha_vencimiento, estado])
   @@map("cotizaciones")
 }
 
@@ -201,6 +212,8 @@ model CotizacionDetalle {
   cotizacion      Cotizacion @relation(fields: [id_cotizacion], references: [id_cotizacion], onDelete: Cascade)
   producto        Producto   @relation(fields: [id_producto], references: [id_producto])
 
+  @@index([id_cotizacion])
+  @@index([id_producto])
   @@map("cotizacion_detalle")
 }
 
@@ -242,6 +255,7 @@ model StockActual {
   producto    Producto @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade)
 
   @@unique([id_producto, id_almacen])
+  @@index([id_almacen])
   @@map("stock_actual")
 }
 
@@ -267,6 +281,8 @@ model InventarioMovimiento {
   @@index([id_almacen, created_at])
   @@index([id_producto, created_at])
   @@index([tipo_referencia, id_referencia])
+  @@index([created_at])
+  @@index([id_usuario])
   @@map("inventario_movimientos")
 }
 
@@ -282,6 +298,8 @@ model IaInteracciones {
   respuesta           String
   created_at          DateTime @default(now())
 
+  @@index([created_at])
+  @@index([id_producto])
   @@map("ia_interacciones")
 }
 
@@ -298,6 +316,8 @@ model alertas_stock {
   productos     Producto     @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade)
 
   @@index([estado])
+  @@index([id_producto, id_almacen, estado])
+  @@index([estado, created_at])
 }
 
 enum PermisoModulo {

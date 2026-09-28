@@ -28,7 +28,10 @@ export class HistorialPreciosController {
     @Query('fecha_inicio') fecha_inicio?: string,
     @Query('fecha_fin') fecha_fin?: string,
   ): Promise<{ success: true; data: PaginatedHistorialPreciosResponse['data']; total: number; page: number; limit: number }> {
-    const result = await this.historialPreciosService.findAll(Number(page), Number(limit), {
+    const result = await this.historialPreciosService.findAll(
+      Math.max(1, Number(page) || 1),
+      Math.min(Math.max(1, Number(limit) || 50), 100),
+      {
       id_producto: id_producto ? Number(id_producto) : undefined,
       id_usuario: id_usuario ? Number(id_usuario) : undefined,
       campo_modificado,

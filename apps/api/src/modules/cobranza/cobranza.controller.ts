@@ -3,6 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
 import { CobranzaService } from './cobranza.service';
 import type { CobranzaDetalleResponse, PaginatedCobranzaResponse } from './cobranza.service';
+import { RegistrarPagoDto } from './dto/registrar-pago.dto';
 import { EstadoCotizacion, MetodoPago } from '@goldcontinent/shared/constants/enums';
 
 @ApiTags('Cobranza')
@@ -34,7 +35,10 @@ export class CobranzaController {
     @Query('fecha_vencimiento_fin') fecha_vencimiento_fin?: string,
     @Query('solo_vencidas') solo_vencidas?: string,
   ): Promise<{ success: true; data: PaginatedCobranzaResponse['data']; total: number; page: number; limit: number }> {
-    const result = await this.cobranzaService.findAll(Number(page) || 1, Number(limit) || 50, {
+    const result = await this.cobranzaService.findAll(
+      Math.max(1, Number(page) || 1),
+      Math.min(Math.max(1, Number(limit) || 50), 100),
+      {
       estado,
       estado_cobranza,
       id_cliente: id_cliente ? Number(id_cliente) : undefined,
@@ -58,7 +62,7 @@ export class CobranzaController {
   @ApiQuery({ name: 'metodo_pago', required: false, enum: MetodoPago })
   async registrarPago(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { monto: number; metodo_pago: string; referencia?: string | null },
+    @Body() body: RegistrarPagoDto,
     @Req() req: any,
   ): Promise<{ success: true; data: CobranzaDetalleResponse }> {
     const userId = req.user?.id_usuario || req.user?.id || req.user?.sub;

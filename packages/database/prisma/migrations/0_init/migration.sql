@@ -2,10 +2,13 @@
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
 -- CreateEnum
-CREATE TYPE "Rol" AS ENUM ('admin', 'gerente', 'vendedor');
+CREATE TYPE "PermisoModulo" AS ENUM ('dashboard', 'productos', 'importacion', 'consulta_precios', 'cotizaciones', 'recomendaciones', 'pdf', 'usuarios', 'cobranza', 'ventas', 'reportes', 'configuracion');
 
 -- CreateEnum
-CREATE TYPE "EstadoCotizacion" AS ENUM ('borrador', 'enviada', 'aprobada', 'rechazada');
+CREATE TYPE "NivelPermiso" AS ENUM ('sin_acceso', 'lectura', 'edicion');
+
+-- CreateEnum
+CREATE TYPE "EstadoCotizacion" AS ENUM ('borrador', 'enviada', 'parcialmente_pagada', 'aprobada', 'rechazada');
 
 -- CreateEnum
 CREATE TYPE "TipoPrecio" AS ENUM ('normal', 'distribuidor');
@@ -14,25 +17,13 @@ CREATE TYPE "TipoPrecio" AS ENUM ('normal', 'distribuidor');
 CREATE TYPE "TipoVenta" AS ENUM ('unidad', 'docena', 'mayor');
 
 -- CreateEnum
-CREATE TYPE "EstadoVenta" AS ENUM ('borrador', 'emitida', 'parcial', 'pagada', 'anulada', 'devuelta');
-
--- CreateEnum
-CREATE TYPE "TipoPago" AS ENUM ('contado', 'credito');
-
--- CreateEnum
 CREATE TYPE "OrigenMovimiento" AS ENUM ('compra', 'venta', 'devolucion_cliente', 'ajuste_fisico', 'merma', 'transferencia', 'cotizacion_aprobada');
 
 -- CreateEnum
 CREATE TYPE "AlertaEstado" AS ENUM ('activa', 'reconocida', 'resuelta');
 
 -- CreateEnum
-CREATE TYPE "EstadoCuenta" AS ENUM ('pendiente', 'parcial', 'pagada', 'vencida', 'castigada');
-
--- CreateEnum
 CREATE TYPE "MetodoPago" AS ENUM ('efectivo', 'transferencia', 'tarjeta_credito', 'tarjeta_debito', 'yape_plin', 'mixto', 'credito');
-
--- CreateEnum
-CREATE TYPE "TipoDocumentoVenta" AS ENUM ('factura', 'boleta', 'nota_venta', 'nota_credito', 'nota_debito', 'guia_remision');
 
 -- CreateEnum
 CREATE TYPE "TipoMovimiento" AS ENUM ('entrada', 'salida', 'ajuste', 'transferencia');
@@ -44,13 +35,45 @@ CREATE TABLE "usuarios" (
     "email" TEXT NOT NULL,
     "password_hash" TEXT NOT NULL,
     "refresh_token_hash" TEXT,
-    "rol" "Rol" NOT NULL DEFAULT 'vendedor',
+    "rol" TEXT NOT NULL DEFAULT 'vendedor',
+    "avatar_url" TEXT,
     "activo" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "deleted_at" TIMESTAMP(3),
 
     CONSTRAINT "usuarios_pkey" PRIMARY KEY ("id_usuario")
+);
+
+-- CreateTable
+CREATE TABLE "usuario_permisos" (
+    "id_usuario" INTEGER NOT NULL,
+    "modulo" "PermisoModulo" NOT NULL,
+    "nivel" "NivelPermiso" NOT NULL,
+
+    CONSTRAINT "usuario_permisos_pkey" PRIMARY KEY ("id_usuario","modulo")
+);
+
+-- CreateTable
+CREATE TABLE "roles" (
+    "id_rol" SERIAL NOT NULL,
+    "nombre" TEXT NOT NULL,
+    "codigo" TEXT NOT NULL,
+    "es_sistema" BOOLEAN NOT NULL DEFAULT false,
+    "orden" INTEGER NOT NULL DEFAULT 0,
+    "activo" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "roles_pkey" PRIMARY KEY ("id_rol")
+);
+
+-- CreateTable
+CREATE TABLE "rol_permisos" (
+    "id_rol" INTEGER NOT NULL,
+    "modulo" "PermisoModulo" NOT NULL,
+    "nivel" "NivelPermiso" NOT NULL,
+
+    CONSTRAINT "rol_permisos_pkey" PRIMARY KEY ("id_rol","modulo")
 );
 
 -- CreateTable
@@ -66,10 +89,17 @@ CREATE TABLE "productos" (
     "id_producto" SERIAL NOT NULL,
     "codigo" TEXT NOT NULL,
     "descripcion" TEXT NOT NULL,
+    "tipo_flor" TEXT,
+    "material" TEXT,
+    "composicion" TEXT,
+    "presentacion" TEXT,
+    "follaje" TEXT,
+    "numero_cabezas" INTEGER,
+    "tamano" TEXT,
+    "colores_surtido" JSONB,
     "foto_url" TEXT,
     "activo" BOOLEAN NOT NULL DEFAULT true,
     "stock_principal" INTEGER NOT NULL DEFAULT 0,
-    "stock_tacna" INTEGER NOT NULL DEFAULT 0,
     "stock_total" INTEGER NOT NULL DEFAULT 0,
     "stock_minimo" INTEGER NOT NULL DEFAULT 10,
     "unidades_por_caja" INTEGER NOT NULL DEFAULT 1,
@@ -147,6 +177,9 @@ CREATE TABLE "cotizaciones" (
     "tiempo_fin" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "fecha_vencimiento" TIMESTAMP(3),
+    "pdf_key" TEXT,
+    "pdf_hash" TEXT,
+    "pdf_generado_en" TIMESTAMP(3),
 
     CONSTRAINT "cotizaciones_pkey" PRIMARY KEY ("id_cotizacion")
 );
@@ -164,6 +197,19 @@ CREATE TABLE "cotizacion_detalle" (
     "es_sugerido_ia" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "cotizacion_detalle_pkey" PRIMARY KEY ("id_detalle")
+);
+
+-- CreateTable
+CREATE TABLE "cotizacion_pagos" (
+    "id_pago" SERIAL NOT NULL,
+    "id_cotizacion" INTEGER NOT NULL,
+    "monto" DECIMAL(12,2) NOT NULL,
+    "metodo_pago" "MetodoPago" NOT NULL,
+    "referencia" TEXT,
+    "id_usuario" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "cotizacion_pagos_pkey" PRIMARY KEY ("id_pago")
 );
 
 -- CreateTable
@@ -186,89 +232,6 @@ CREATE TABLE "stock_actual" (
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "stock_actual_pkey" PRIMARY KEY ("id_stock")
-);
-
--- CreateTable
-CREATE TABLE "ventas" (
-    "id_venta" SERIAL NOT NULL,
-    "serie" VARCHAR(4) NOT NULL,
-    "correlativo" INTEGER NOT NULL,
-    "numero_completo" VARCHAR(20) NOT NULL,
-    "tipo_documento" "TipoDocumentoVenta" NOT NULL DEFAULT 'boleta',
-    "estado" "EstadoVenta" NOT NULL DEFAULT 'emitida',
-    "fecha_emision" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "fecha_vencimiento" TIMESTAMP(3),
-    "id_cotizacion" INTEGER,
-    "id_cliente" INTEGER NOT NULL,
-    "id_usuario" INTEGER NOT NULL,
-    "id_almacen" INTEGER NOT NULL,
-    "subtotal" DECIMAL(12,2) NOT NULL,
-    "igv" DECIMAL(12,2) NOT NULL,
-    "total" DECIMAL(12,2) NOT NULL,
-    "descuento_global" DECIMAL(12,2) NOT NULL DEFAULT 0,
-    "tipoPago" "TipoPago" NOT NULL DEFAULT 'contado',
-    "diasPlazo" INTEGER,
-    "montoPagado" DECIMAL(12,2) NOT NULL DEFAULT 0,
-    "montoPendiente" DECIMAL(12,2) NOT NULL DEFAULT 0,
-    "autorizadoPor" INTEGER,
-    "autorizadoAt" TIMESTAMP(3),
-    "hash_cpe" TEXT,
-    "qr_code" TEXT,
-    "xml_enviado" BOOLEAN NOT NULL DEFAULT false,
-    "observaciones" TEXT,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "ventas_pkey" PRIMARY KEY ("id_venta")
-);
-
--- CreateTable
-CREATE TABLE "venta_detalle" (
-    "id_detalle" SERIAL NOT NULL,
-    "id_venta" INTEGER NOT NULL,
-    "id_producto" INTEGER NOT NULL,
-    "tipo_venta" "TipoVenta" NOT NULL,
-    "cantidad" INTEGER NOT NULL,
-    "precio_unitario" DECIMAL(10,2) NOT NULL,
-    "descuento_item" DECIMAL(10,2) NOT NULL DEFAULT 0,
-    "subtotal" DECIMAL(12,2) NOT NULL,
-    "igv_item" DECIMAL(12,2) NOT NULL,
-    "total_item" DECIMAL(12,2) NOT NULL,
-    "es_sugerido_ia" BOOLEAN NOT NULL DEFAULT false,
-
-    CONSTRAINT "venta_detalle_pkey" PRIMARY KEY ("id_detalle")
-);
-
--- CreateTable
-CREATE TABLE "venta_pagos" (
-    "id_pago" SERIAL NOT NULL,
-    "id_venta" INTEGER NOT NULL,
-    "fecha_pago" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "monto" DECIMAL(12,2) NOT NULL,
-    "metodo_pago" "MetodoPago" NOT NULL,
-    "referencia" TEXT,
-    "id_usuario" INTEGER,
-    "esMora" BOOLEAN NOT NULL DEFAULT false,
-    "moraMonto" DECIMAL(12,2) NOT NULL DEFAULT 0,
-
-    CONSTRAINT "venta_pagos_pkey" PRIMARY KEY ("id_pago")
-);
-
--- CreateTable
-CREATE TABLE "cuentas_cobrar" (
-    "id_cuenta" SERIAL NOT NULL,
-    "id_venta" INTEGER NOT NULL,
-    "id_cliente" INTEGER NOT NULL,
-    "montoOriginal" DECIMAL(12,2) NOT NULL,
-    "montoPendiente" DECIMAL(12,2) NOT NULL,
-    "estado" "EstadoCuenta" NOT NULL DEFAULT 'pendiente',
-    "fechaVencimiento" TIMESTAMP(3) NOT NULL,
-    "diasAtraso" INTEGER NOT NULL DEFAULT 0,
-    "moraAcumulada" DECIMAL(12,2) NOT NULL DEFAULT 0,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "cuentas_cobrar_pkey" PRIMARY KEY ("id_cuenta")
 );
 
 -- CreateTable
@@ -295,6 +258,11 @@ CREATE TABLE "inventario_movimientos" (
 CREATE TABLE "ia_interacciones" (
     "id_interaccion" SERIAL NOT NULL,
     "id_producto" INTEGER,
+    "id_producto_sugerido" INTEGER,
+    "tipo_sugerencia" TEXT,
+    "accion_usuario" TEXT,
+    "id_cotizacion" INTEGER,
+    "id_usuario" INTEGER,
     "prompt" TEXT NOT NULL,
     "respuesta" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -316,6 +284,16 @@ CREATE TABLE "alertas_stock" (
     CONSTRAINT "alertas_stock_pkey" PRIMARY KEY ("id_alerta")
 );
 
+-- CreateTable
+CREATE TABLE "configuracion" (
+    "clave" TEXT NOT NULL,
+    "valor" TEXT NOT NULL,
+    "descripcion" TEXT,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "configuracion_pkey" PRIMARY KEY ("clave")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "usuarios_email_key" ON "usuarios"("email");
 
@@ -323,7 +301,13 @@ CREATE UNIQUE INDEX "usuarios_email_key" ON "usuarios"("email");
 CREATE INDEX "usuarios_nombre_idx" ON "usuarios" USING GIN ("nombre" gin_trgm_ops);
 
 -- CreateIndex
-CREATE INDEX "usuarios_email_idx" ON "usuarios"("email");
+CREATE INDEX "usuarios_deleted_at_created_at_idx" ON "usuarios"("deleted_at", "created_at");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "roles_nombre_key" ON "roles"("nombre");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "roles_codigo_key" ON "roles"("codigo");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "productos_codigo_key" ON "productos"("codigo");
@@ -335,55 +319,64 @@ CREATE INDEX "productos_descripcion_idx" ON "productos" USING GIN ("descripcion"
 CREATE INDEX "productos_codigo_idx" ON "productos" USING GIN ("codigo" gin_trgm_ops);
 
 -- CreateIndex
+CREATE INDEX "productos_deleted_at_created_at_idx" ON "productos"("deleted_at", "created_at");
+
+-- CreateIndex
+CREATE INDEX "productos_id_categoria_idx" ON "productos"("id_categoria");
+
+-- CreateIndex
+CREATE INDEX "historial_precios_id_producto_fecha_cambio_idx" ON "historial_precios"("id_producto", "fecha_cambio");
+
+-- CreateIndex
+CREATE INDEX "historial_precios_fecha_cambio_idx" ON "historial_precios"("fecha_cambio");
+
+-- CreateIndex
+CREATE INDEX "historial_precios_id_usuario_idx" ON "historial_precios"("id_usuario");
+
+-- CreateIndex
 CREATE INDEX "clientes_nombre_idx" ON "clientes" USING GIN ("nombre" gin_trgm_ops);
 
 -- CreateIndex
 CREATE INDEX "clientes_ruc_dni_idx" ON "clientes" USING GIN ("ruc_dni" gin_trgm_ops);
 
 -- CreateIndex
+CREATE INDEX "clientes_deleted_at_created_at_idx" ON "clientes"("deleted_at", "created_at");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "cotizaciones_numero_key" ON "cotizaciones"("numero");
+
+-- CreateIndex
+CREATE INDEX "cotizaciones_created_at_idx" ON "cotizaciones"("created_at");
+
+-- CreateIndex
+CREATE INDEX "cotizaciones_estado_created_at_idx" ON "cotizaciones"("estado", "created_at");
+
+-- CreateIndex
+CREATE INDEX "cotizaciones_id_cliente_created_at_idx" ON "cotizaciones"("id_cliente", "created_at");
+
+-- CreateIndex
+CREATE INDEX "cotizaciones_id_usuario_idx" ON "cotizaciones"("id_usuario");
+
+-- CreateIndex
+CREATE INDEX "cotizaciones_fecha_vencimiento_estado_idx" ON "cotizaciones"("fecha_vencimiento", "estado");
+
+-- CreateIndex
+CREATE INDEX "cotizacion_detalle_id_cotizacion_idx" ON "cotizacion_detalle"("id_cotizacion");
+
+-- CreateIndex
+CREATE INDEX "cotizacion_detalle_id_producto_idx" ON "cotizacion_detalle"("id_producto");
+
+-- CreateIndex
+CREATE INDEX "cotizacion_pagos_id_cotizacion_idx" ON "cotizacion_pagos"("id_cotizacion");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "almacenes_codigo_key" ON "almacenes"("codigo");
 
 -- CreateIndex
+CREATE INDEX "stock_actual_id_almacen_idx" ON "stock_actual"("id_almacen");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "stock_actual_id_producto_id_almacen_key" ON "stock_actual"("id_producto", "id_almacen");
-
--- CreateIndex
-CREATE UNIQUE INDEX "ventas_numero_completo_key" ON "ventas"("numero_completo");
-
--- CreateIndex
-CREATE INDEX "ventas_estado_idx" ON "ventas"("estado");
-
--- CreateIndex
-CREATE INDEX "ventas_fecha_emision_idx" ON "ventas"("fecha_emision");
-
--- CreateIndex
-CREATE INDEX "ventas_id_cliente_fecha_emision_idx" ON "ventas"("id_cliente", "fecha_emision");
-
--- CreateIndex
-CREATE INDEX "ventas_id_cotizacion_idx" ON "ventas"("id_cotizacion");
-
--- CreateIndex
-CREATE INDEX "ventas_tipoPago_estado_idx" ON "ventas"("tipoPago", "estado");
-
--- CreateIndex
-CREATE INDEX "venta_detalle_id_producto_idx" ON "venta_detalle"("id_producto");
-
--- CreateIndex
-CREATE INDEX "venta_detalle_id_venta_idx" ON "venta_detalle"("id_venta");
-
--- CreateIndex
-CREATE INDEX "venta_pagos_id_venta_idx" ON "venta_pagos"("id_venta");
-
--- CreateIndex
-CREATE UNIQUE INDEX "cuentas_cobrar_id_venta_key" ON "cuentas_cobrar"("id_venta");
-
--- CreateIndex
-CREATE INDEX "cuentas_cobrar_fechaVencimiento_estado_idx" ON "cuentas_cobrar"("fechaVencimiento", "estado");
-
--- CreateIndex
-CREATE INDEX "cuentas_cobrar_id_cliente_estado_idx" ON "cuentas_cobrar"("id_cliente", "estado");
 
 -- CreateIndex
 CREATE INDEX "inventario_movimientos_id_almacen_created_at_idx" ON "inventario_movimientos"("id_almacen", "created_at");
@@ -395,7 +388,31 @@ CREATE INDEX "inventario_movimientos_id_producto_created_at_idx" ON "inventario_
 CREATE INDEX "inventario_movimientos_tipo_referencia_id_referencia_idx" ON "inventario_movimientos"("tipo_referencia", "id_referencia");
 
 -- CreateIndex
+CREATE INDEX "inventario_movimientos_created_at_idx" ON "inventario_movimientos"("created_at");
+
+-- CreateIndex
+CREATE INDEX "inventario_movimientos_id_usuario_idx" ON "inventario_movimientos"("id_usuario");
+
+-- CreateIndex
+CREATE INDEX "ia_interacciones_created_at_idx" ON "ia_interacciones"("created_at");
+
+-- CreateIndex
+CREATE INDEX "ia_interacciones_id_producto_idx" ON "ia_interacciones"("id_producto");
+
+-- CreateIndex
 CREATE INDEX "alertas_stock_estado_idx" ON "alertas_stock"("estado");
+
+-- CreateIndex
+CREATE INDEX "alertas_stock_id_producto_id_almacen_estado_idx" ON "alertas_stock"("id_producto", "id_almacen", "estado");
+
+-- CreateIndex
+CREATE INDEX "alertas_stock_estado_created_at_idx" ON "alertas_stock"("estado", "created_at");
+
+-- AddForeignKey
+ALTER TABLE "usuario_permisos" ADD CONSTRAINT "usuario_permisos_id_usuario_fkey" FOREIGN KEY ("id_usuario") REFERENCES "usuarios"("id_usuario") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "rol_permisos" ADD CONSTRAINT "rol_permisos_id_rol_fkey" FOREIGN KEY ("id_rol") REFERENCES "roles"("id_rol") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "productos" ADD CONSTRAINT "productos_id_categoria_fkey" FOREIGN KEY ("id_categoria") REFERENCES "categorias"("id_categoria") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -422,40 +439,16 @@ ALTER TABLE "cotizacion_detalle" ADD CONSTRAINT "cotizacion_detalle_id_cotizacio
 ALTER TABLE "cotizacion_detalle" ADD CONSTRAINT "cotizacion_detalle_id_producto_fkey" FOREIGN KEY ("id_producto") REFERENCES "productos"("id_producto") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "cotizacion_pagos" ADD CONSTRAINT "cotizacion_pagos_id_cotizacion_fkey" FOREIGN KEY ("id_cotizacion") REFERENCES "cotizaciones"("id_cotizacion") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "cotizacion_pagos" ADD CONSTRAINT "cotizacion_pagos_id_usuario_fkey" FOREIGN KEY ("id_usuario") REFERENCES "usuarios"("id_usuario") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "stock_actual" ADD CONSTRAINT "stock_actual_id_almacen_fkey" FOREIGN KEY ("id_almacen") REFERENCES "almacenes"("id_almacen") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "stock_actual" ADD CONSTRAINT "stock_actual_id_producto_fkey" FOREIGN KEY ("id_producto") REFERENCES "productos"("id_producto") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ventas" ADD CONSTRAINT "ventas_id_almacen_fkey" FOREIGN KEY ("id_almacen") REFERENCES "almacenes"("id_almacen") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ventas" ADD CONSTRAINT "ventas_id_cliente_fkey" FOREIGN KEY ("id_cliente") REFERENCES "clientes"("id_cliente") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ventas" ADD CONSTRAINT "ventas_id_cotizacion_fkey" FOREIGN KEY ("id_cotizacion") REFERENCES "cotizaciones"("id_cotizacion") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "ventas" ADD CONSTRAINT "ventas_id_usuario_fkey" FOREIGN KEY ("id_usuario") REFERENCES "usuarios"("id_usuario") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "venta_detalle" ADD CONSTRAINT "venta_detalle_id_producto_fkey" FOREIGN KEY ("id_producto") REFERENCES "productos"("id_producto") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "venta_detalle" ADD CONSTRAINT "venta_detalle_id_venta_fkey" FOREIGN KEY ("id_venta") REFERENCES "ventas"("id_venta") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "venta_pagos" ADD CONSTRAINT "venta_pagos_id_usuario_fkey" FOREIGN KEY ("id_usuario") REFERENCES "usuarios"("id_usuario") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "venta_pagos" ADD CONSTRAINT "venta_pagos_id_venta_fkey" FOREIGN KEY ("id_venta") REFERENCES "ventas"("id_venta") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "cuentas_cobrar" ADD CONSTRAINT "cuentas_cobrar_id_cliente_fkey" FOREIGN KEY ("id_cliente") REFERENCES "clientes"("id_cliente") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "cuentas_cobrar" ADD CONSTRAINT "cuentas_cobrar_id_venta_fkey" FOREIGN KEY ("id_venta") REFERENCES "ventas"("id_venta") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "inventario_movimientos" ADD CONSTRAINT "inventario_movimientos_id_almacen_fkey" FOREIGN KEY ("id_almacen") REFERENCES "almacenes"("id_almacen") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -471,3 +464,4 @@ ALTER TABLE "alertas_stock" ADD CONSTRAINT "alertas_stock_id_almacen_fkey" FOREI
 
 -- AddForeignKey
 ALTER TABLE "alertas_stock" ADD CONSTRAINT "alertas_stock_id_producto_fkey" FOREIGN KEY ("id_producto") REFERENCES "productos"("id_producto") ON DELETE CASCADE ON UPDATE CASCADE;
+

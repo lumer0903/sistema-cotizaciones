@@ -29,7 +29,12 @@ export class AlmacenesController {
     @Query('search') search?: string,
     @Query('activo') activo?: string,
   ): Promise<{ success: true; data: PaginatedAlmacenesResponse['data']; total: number; page: number; limit: number }> {
-    const result = await this.almacenesService.findAll(Number(page), Number(limit), search, activo === 'true');
+    const result = await this.almacenesService.findAll(
+      Math.max(1, Number(page) || 1),
+      Math.min(Math.max(1, Number(limit) || 50), 100),
+      search,
+      activo === 'true',
+    );
     return { success: true, ...result };
   }
 

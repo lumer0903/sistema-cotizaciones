@@ -54,38 +54,29 @@ export class DashboardService {
       this.getAlertasStockActivas(),
     ]);
 
-    const tasaConversion = cotizacionesStats.totalEnviadasAprobadasRechazadas > 0
-      ? (cotizacionesStats.aprobada / cotizacionesStats.totalEnviadasAprobadasRechazadas) * 100
-      : 0;
-
-    const efectividadIA = itemsStats.totalItemsAprobados > 0
-      ? (itemsStats.itemsSugeridosIA / itemsStats.totalItemsAprobados) * 100
-      : 0;
-
-    return {
-      tasaConversion: Math.round(tasaConversion * 100) / 100,
-      efectividadIA: Math.round(efectividadIA * 100) / 100,
-      tiempoPromedioCotizacion: Math.round(tiempoStats * 100) / 100,
-      alertasStockActivas: alertasCount,
-    };
+    return this.buildKpis(cotizacionesStats, itemsStats, tiempoStats, alertasCount);
   }
 
   async getDetalleKpis(): Promise<DetalleKpisResponse> {
     const [
-      kpis,
       cotizacionesStats,
       itemsStats,
+      tiempoStats,
+      alertasCount,
       alertasStock,
       graficoCotizadoVendido,
       graficoAlertasPorAlmacen,
     ] = await Promise.all([
-      this.getKpis(),
       this.getCotizacionesStats(),
       this.getItemsStats(),
+      this.getTiempoPromedioStats(),
+      this.getAlertasStockActivas(),
       this.getAlertasStockDetalle(),
       this.getGraficoCotizadoVsVendido(),
       this.getGraficoAlertasPorAlmacen(),
     ]);
+
+    const kpis = this.buildKpis(cotizacionesStats, itemsStats, tiempoStats, alertasCount);
 
     return {
       kpis,
@@ -108,6 +99,28 @@ export class DashboardService {
     };
   }
 
+  private buildKpis(
+    cotizacionesStats: Awaited<ReturnType<DashboardService['getCotizacionesStats']>>,
+    itemsStats: Awaited<ReturnType<DashboardService['getItemsStats']>>,
+    tiempoStats: number,
+    alertasCount: number,
+  ): KpiResponse {
+    const tasaConversion = cotizacionesStats.totalEnviadasAprobadasRechazadas > 0
+      ? (cotizacionesStats.aprobada / cotizacionesStats.totalEnviadasAprobadasRechazadas) * 100
+      : 0;
+
+    const efectividadIA = itemsStats.totalItemsAprobados > 0
+      ? (itemsStats.itemsSugeridosIA / itemsStats.totalItemsAprobados) * 100
+      : 0;
+
+    return {
+      tasaConversion: Math.round(tasaConversion * 100) / 100,
+      efectividadIA: Math.round(efectividadIA * 100) / 100,
+      tiempoPromedioCotizacion: Math.round(tiempoStats * 100) / 100,
+      alertasStockActivas: alertasCount,
+    };
+  }
+
   private async getCotizacionesStats(): Promise<{
     total: number;
     borrador: number;
@@ -116,13 +129,18 @@ export class DashboardService {
     rechazada: number;
     totalEnviadasAprobadasRechazadas: number;
   }> {
-    const [total, borrador, enviada, aprobada, rechazada] = await Promise.all([
-      this.prisma.cotizacion.count(),
-      this.prisma.cotizacion.count({ where: { estado: EstadoCotizacion.borrador } }),
-      this.prisma.cotizacion.count({ where: { estado: EstadoCotizacion.enviada } }),
-      this.prisma.cotizacion.count({ where: { estado: EstadoCotizacion.aprobada } }),
-      this.prisma.cotizacion.count({ where: { estado: EstadoCotizacion.rechazada } }),
-    ]);
+    // 1 consulta groupBy en vez de 5 counts separados
+    const grupos = await this.prisma.cotizacion.groupBy({
+      by: ['estado'],
+      _count: { _all: true },
+    });
+
+    const cuenta = new Map(grupos.map((g) => [g.estado, g._count._all]));
+    const borrador = cuenta.get(EstadoCotizacion.borrador) ?? 0;
+    const enviada = cuenta.get(EstadoCotizacion.enviada) ?? 0;
+    const aprobada = cuenta.get(EstadoCotizacion.aprobada) ?? 0;
+    const rechazada = cuenta.get(EstadoCotizacion.rechazada) ?? 0;
+    const total = grupos.reduce((s, g) => s + g._count._all, 0);
 
     return {
       total,
@@ -156,22 +174,14 @@ export class DashboardService {
   }
 
   private async getTiempoPromedioStats(): Promise<number> {
-    const cotizaciones = await this.prisma.cotizacion.findMany({
-      where: {
-        estado: { in: [EstadoCotizacion.enviada, EstadoCotizacion.aprobada, EstadoCotizacion.rechazada] },
-        tiempo_fin: { not: null },
-      },
-      select: { tiempo_inicio: true, tiempo_fin: true },
-    });
+    // AVG en SQL: antes cargaba TODAS las cotizaciones finalizadas en memoria
+    const rows = await this.prisma.$queryRaw<Array<{ avg_min: number | string | null }>>`
+      SELECT AVG(EXTRACT(EPOCH FROM (tiempo_fin - tiempo_inicio)) / 60) AS avg_min
+      FROM cotizaciones
+      WHERE estado IN ('enviada', 'aprobada', 'rechazada')
+        AND tiempo_fin IS NOT NULL`;
 
-    if (cotizaciones.length === 0) return 0;
-
-    const totalMinutes = cotizaciones.reduce((sum, c) => {
-      const diff = new Date(c.tiempo_fin!).getTime() - new Date(c.tiempo_inicio).getTime();
-      return sum + diff / (1000 * 60); // minutos
-    }, 0);
-
-    return totalMinutes / cotizaciones.length;
+    return Number(rows[0]?.avg_min ?? 0);
   }
 
   private async getAlertasStockActivas(): Promise<number> {
@@ -212,34 +222,35 @@ export class DashboardService {
 
   private async getGraficoCotizadoVsVendido(): Promise<Array<{ mes: string; cotizado: number; vendido: number }>> {
     const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    // 1 consulta con FILTER en vez de 12 aggregates en loop
+    const rows = await this.prisma.$queryRaw<
+      Array<{ anio: number; mes_num: number; cotizado: number | string | null; vendido: number | string | null }>
+    >`
+      SELECT
+        EXTRACT(YEAR FROM created_at)::int AS anio,
+        EXTRACT(MONTH FROM created_at)::int AS mes_num,
+        SUM(total) FILTER (WHERE estado IN ('enviada', 'aprobada')) AS cotizado,
+        SUM(total) FILTER (WHERE estado IN ('aprobada', 'parcialmente_pagada')) AS vendido
+      FROM cotizaciones
+      WHERE created_at >= ${start} AND created_at < ${end}
+      GROUP BY 1, 2
+      ORDER BY 1, 2`;
+
+    const byMonth = new Map(rows.map((r) => [`${r.anio}-${r.mes_num}`, r]));
     const months: Array<{ mes: string; cotizado: number; vendido: number }> = [];
 
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
       const mesLabel = date.toLocaleString('es-PE', { month: 'short', year: '2-digit' });
-
-      const [cotizado, vendido] = await Promise.all([
-        this.prisma.cotizacion.aggregate({
-          where: {
-            estado: { in: [EstadoCotizacion.enviada, EstadoCotizacion.aprobada] },
-            created_at: { gte: date, lt: nextMonth },
-          },
-          _sum: { total: true },
-        }),
-        this.prisma.cotizacion.aggregate({
-          where: {
-            estado: { in: [EstadoCotizacion.aprobada, EstadoCotizacion.parcialmente_pagada] },
-            created_at: { gte: date, lt: nextMonth },
-          },
-          _sum: { total: true },
-        }),
-      ]);
+      const row = byMonth.get(`${date.getFullYear()}-${date.getMonth() + 1}`);
 
       months.push({
         mes: mesLabel,
-        cotizado: Number(cotizado._sum.total ?? 0),
-        vendido: Number(vendido._sum.total ?? 0),
+        cotizado: Number(row?.cotizado ?? 0),
+        vendido: Number(row?.vendido ?? 0),
       });
     }
 

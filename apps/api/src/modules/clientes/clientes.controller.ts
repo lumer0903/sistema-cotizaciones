@@ -23,7 +23,11 @@ export class ClientesController {
     @Query('limit') limit = 50,
     @Query('search') search?: string,
   ): Promise<{ success: true; data: PaginatedClientesResponse['data']; total: number; page: number; limit: number }> {
-    const result = await this.clientesService.findAll(Number(page), Number(limit), search);
+    const result = await this.clientesService.findAll(
+      Math.max(1, Number(page) || 1),
+      Math.min(Math.max(1, Number(limit) || 50), 100),
+      search,
+    );
     return { success: true, ...result };
   }
 
