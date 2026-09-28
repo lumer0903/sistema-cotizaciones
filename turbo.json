@@ -17,7 +17,7 @@
     },
     "test": {
       "outputs": [],
-      "dependsOn": []
+      "dependsOn": ["^build"]
     },
     "db:generate": {
       "outputs": ["node_modules/.prisma/**"]

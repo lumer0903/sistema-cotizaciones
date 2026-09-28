@@ -46,6 +46,7 @@ export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<UsuarioLista[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(8);
@@ -62,13 +63,19 @@ export default function UsuariosPage() {
     [roles],
   );
 
+  // Debounce (auditoría P9): evita una petición al API por cada tecla.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const res = await getUsuarios({
         page: currentPage,
         limit,
-        search: search.trim() || undefined,
+        search: debouncedSearch || undefined,
       });
       setUsuarios(res.data ?? []);
       setTotalItems(res.total ?? 0);
@@ -81,7 +88,7 @@ export default function UsuariosPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, limit, search]);
+  }, [currentPage, limit, debouncedSearch]);
 
   useEffect(() => {
     getRoles()
