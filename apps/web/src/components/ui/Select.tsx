@@ -32,7 +32,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             className = '',
             disabled,
             variant: _variant = 'default',
-            sizeVariant = 'md',
+            sizeVariant: _sizeVariant = 'md',
             placeholder = 'Seleccionar',
             value: propValue,
             defaultValue,
@@ -125,7 +125,9 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         };
 
         const selectedOption = parsedOptions.find((opt) => String(opt.value) === String(selectedValue));
-        const heightClass = sizeVariant === 'sm' ? 'h-10 text-xs' : 'h-11 text-xs sm:text-sm';
+
+        // ESTANDARIZADO: Altura fija h-10 idéntica a Input
+        const heightClass = 'h-10 text-xs sm:text-sm';
 
         return (
             <div className="w-full space-y-1.5" ref={containerRef}>
@@ -146,7 +148,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 </select>
 
                 {label && (
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#414141]">
                         {label}
                     </label>
                 )}
@@ -159,26 +161,26 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                         onClick={() => !disabled && setIsOpen((prev) => !prev)}
                         className={`
               relative w-full ${heightClass} flex items-center justify-between rounded-xl border 
-              border-zinc-200 bg-zinc-50/50 font-medium transition-all text-left text-zinc-800
-              hover:border-zinc-300 disabled:bg-zinc-100 disabled:cursor-not-allowed pr-8 
+              border-[#E4E4E4] bg-white font-medium transition-all text-left text-[#414141]
+              hover:border-[#8E8E8E] disabled:bg-[#E4E4E4]/40 disabled:text-[#8E8E8E] disabled:cursor-not-allowed pr-8 
               ${icon ? 'pl-9' : 'px-3.5'} 
-              ${isOpen ? 'bg-white border-amber-400 ring-2 ring-amber-400/20' : ''}
-              ${error ? '!border-red-500 focus:ring-2 focus:ring-red-100' : ''} 
+              ${isOpen ? 'border-[#F8B602] ring-2 ring-[#F8B602]/25' : ''}
+              ${error ? '!border-[#7B1C1C] focus:ring-2 focus:ring-red-100' : ''} 
               ${className}
             `.trim()}
                     >
                         {icon && (
-                            <div className="absolute left-3 pointer-events-none flex items-center justify-center text-zinc-400">
+                            <div className="absolute left-3 pointer-events-none flex items-center justify-center text-[#8E8E8E]">
                                 {icon}
                             </div>
                         )}
 
-                        <span className={`block truncate ${!selectedOption?.value ? 'text-zinc-400' : ''}`}>
+                        <span className={`block truncate ${!selectedOption?.value ? 'text-[#8E8E8E]' : ''}`}>
                             {selectedOption ? selectedOption.label : placeholder}
                         </span>
 
                         <ChevronDown
-                            className={`absolute right-2.5 size-4 text-zinc-400 transition-transform duration-200 pointer-events-none ${isOpen ? 'rotate-180 text-amber-500' : ''
+                            className={`absolute right-2.5 size-4 text-[#8E8E8E] transition-transform duration-200 pointer-events-none ${isOpen ? 'rotate-180 text-[#F8B602]' : ''
                                 }`}
                         />
                     </button>
@@ -187,7 +189,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                         createPortal(
                             <div
                                 ref={menuRef}
-                                className="fixed z-[70] bg-white border border-zinc-200 rounded-xl shadow-xl py-1 max-h-56 overflow-y-auto animate-in fade-in-50 zoom-in-95 duration-100"
+                                className="fixed z-[70] bg-white border border-[#E4E4E4] rounded-xl shadow-xl py-1 max-h-56 overflow-y-auto animate-in fade-in-50 zoom-in-95 duration-100"
                                 style={{ top: menuPos.top, left: menuPos.left, width: menuPos.width }}
                                 onMouseDown={(e) => e.stopPropagation()}
                             >
@@ -203,16 +205,16 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                                                     e.stopPropagation();
                                                     handleSelect(opt.value);
                                                 }}
-                                                className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors flex items-center justify-between hover:bg-zinc-100/70 ${isSelected ? 'bg-amber-50 text-amber-900 font-bold' : 'text-zinc-700'
+                                                className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors flex items-center justify-between hover:bg-[#FFF8E7] ${isSelected ? 'bg-[#FFF8E7] text-[#F8B602] font-bold' : 'text-[#414141]'
                                                     }`}
                                             >
                                                 <span className="truncate">{opt.label}</span>
-                                                {isSelected && <Check className="w-3.5 h-3.5 text-amber-600 shrink-0 ml-2" />}
+                                                {isSelected && <Check className="w-3.5 h-3.5 text-[#F8B602] shrink-0 ml-2" />}
                                             </button>
                                         );
                                     })
                                 ) : (
-                                    <div className="px-3 py-2 text-xs text-zinc-400 text-center">
+                                    <div className="px-3 py-2 text-xs text-[#8E8E8E] text-center">
                                         No hay opciones
                                     </div>
                                 )}
@@ -221,7 +223,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                         )}
                 </div>
 
-                {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
+                {error && <p className="text-xs text-[#7B1C1C] font-medium">{error}</p>}
             </div>
         );
     }

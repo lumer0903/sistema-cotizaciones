@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
@@ -488,7 +488,6 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <ClienteAutocomplete
                 value={nombre}
-                variant="modal"
                 onChange={(v) => {
                   setNombre(v);
                   if (idCliente) setClienteEditado(true);
@@ -507,7 +506,6 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
               />
               <Input
                 label="Teléfono"
-                variant="modal"
                 placeholder="Teléfono de contacto"
                 value={telefono}
                 maxLength={9}
@@ -520,7 +518,6 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
 
               <Input
                 label="Email"
-                variant="modal"
                 type="email"
                 placeholder="correo@ejemplo.com"
                 value={email}
@@ -548,7 +545,6 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
               />
               <Input
                 label={docLabel}
-                variant="modal"
                 placeholder={tipoDocumento === 'RUC' ? '11 dígitos' : tipoDocumento === 'DNI' ? '8 dígitos' : 'Documento'}
                 value={rucDni}
                 maxLength={maxDocLength}
@@ -562,7 +558,6 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
               />
               <Input
                 label="Fecha de vencimiento"
-                variant="modal"
                 type="date"
                 value={fechaVencimiento}
                 onChange={(e) => setFechaVencimiento(e.target.value)}

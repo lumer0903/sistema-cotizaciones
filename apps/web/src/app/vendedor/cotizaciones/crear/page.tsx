@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { Plus, Search, X, FileText, ArrowLeft, Save, Send, MessageSquare } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
@@ -548,7 +548,6 @@ export default function VendedorCotizacionCrearPage() {
                           <Input
                             type="number"
                             min={1}
-                            sizeVariant="sm"
                             value={item.cantidad}
                             onChange={(e) => actualizarCantidad(index, Number(e.target.value))}
                             className="text-center"
@@ -687,7 +686,6 @@ export default function VendedorCotizacionCrearPage() {
       >
         <div className="space-y-4">
           <Input
-            variant="modal"
             type="text"
             icon={<Search className="h-4 w-4" />}
             placeholder="Buscar por código o descripción..."

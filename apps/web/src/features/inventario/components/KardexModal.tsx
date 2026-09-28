@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
@@ -227,7 +227,6 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                         }}
                         onFocus={() => setShowSuggestions(true)}
                         icon={<Search className="w-4 h-4 text-brand-options" />}
-                        variant="modal"
                     />
 
                     {/* Desplegable de 3 sugerencias */}
@@ -286,7 +285,6 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                         onChange={(e) => { setFechaInicio(e.target.value); setPage(1); }}
                         disabled={!selectedProducto}
                         icon={<Calendar className="w-4 h-4 text-brand-options" />}
-                        variant="modal"
                     />
                     <Input
                         label="Hasta"
@@ -295,7 +293,6 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                         onChange={(e) => { setFechaFin(e.target.value); setPage(1); }}
                         disabled={!selectedProducto}
                         icon={<Calendar className="w-4 h-4 text-brand-options" />}
-                        variant="modal"
                     />
                     <Select
                         label="Ubicación"
@@ -472,7 +469,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                 {/* PIE Y BOTONES */}
                 <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 pt-3 border-t border-gray-100">
                     <Button
-                        variant="yellowOutline"
+                        variant="outline"
                         onClick={handleExportCSV}
                         disabled={!selectedProducto || exportando || loading || movimientos.length === 0}
                         loading={exportando}

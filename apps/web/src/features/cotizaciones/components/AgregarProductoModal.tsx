@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
@@ -287,7 +287,6 @@ export default function AgregarProductoModal({
                             />
                             <Input
                                 label="Estado de stock"
-                                variant="modal"
                                 readOnly
                                 value={`${stockColorSeleccionado} un.`}
                                 error={sinStock ? 'Sin stock disponible para el color seleccionado.' : undefined}
@@ -314,7 +313,6 @@ export default function AgregarProductoModal({
                     />
                     <Input
                         label="Cantidad"
-                        variant="modal"
                         type="number"
                         min={1}
                         value={cantidad}
@@ -327,7 +325,6 @@ export default function AgregarProductoModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input
                         label="Precio"
-                        variant="modal"
                         type="number"
                         step="0.01"
                         icon={<span className="text-xs font-semibold">S/</span>}
@@ -337,7 +334,6 @@ export default function AgregarProductoModal({
                     />
                     <Input
                         label="Subtotal"
-                        variant="modal"
                         readOnly
                         icon={<span className="text-xs font-semibold">S/</span>}
                         value={subtotal.toFixed(2)}

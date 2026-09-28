@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -248,7 +248,6 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Nombre"
-            variant="modal"
             placeholder="Nombre completo"
             error={errors.nombre?.message}
             {...register('nombre')}
@@ -256,7 +255,6 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
           <Input
             label="Correo"
             type="email"
-            variant="modal"
             placeholder="correo@ejemplo.com"
             error={errors.email?.message}
             {...register('email')}
@@ -279,7 +277,6 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
             <Input
               label={isEdit ? 'Nueva contraseña' : 'Contraseña'}
               type="password"
-              variant="modal"
               autoComplete="new-password"
               placeholder={isEdit ? 'Dejar vacío para no cambiar' : 'Mínimo 6 caracteres'}
               error={errors.password?.message}
@@ -288,7 +285,6 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
             <Input
               label="Confirmar contraseña"
               type="password"
-              variant="modal"
               autoComplete="new-password"
               placeholder={isEdit ? 'Dejar vacío para no cambiar' : 'Repetir contraseña'}
               error={errors.passwordConfirm?.message}

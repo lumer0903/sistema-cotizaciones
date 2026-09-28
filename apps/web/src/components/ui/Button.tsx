@@ -3,7 +3,7 @@
 import { forwardRef, ButtonHTMLAttributes } from 'react';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'yellowOutline' | 'danger';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'icon' | 'danger';
   size?: 'xs' | 'sm' | 'md' | 'lg';
   loading?: boolean;
 }
@@ -22,51 +22,54 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-black font-sans rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+      'inline-flex items-center justify-center font-bold rounded-xl transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:cursor-not-allowed select-none shrink-0';
 
     const variantStyles = {
-      // 1. "Agregar Producto" (Amarillo marca)
+      // Primary: Fondo amarillo con texto e ícono blanco
       primary:
-        'bg-brand-primary text-white hover:bg-brand-hover focus:ring-brand-primary outline outline-1 outline-offset-[-1px] outline-brand-primary shadow-sm',
+        'bg-[#F8B602] text-white hover:bg-[#e0a402] active:bg-[#c89302] active:scale-[0.98] focus:ring-[#F8B602] shadow-sm disabled:bg-[#E4E4E4] disabled:text-[#8E8E8E]',
 
-      // 2. "Continuar" (Gris neutro)
+      // Secondary: Tono suave con borde
       secondary:
-        'bg-brand-options text-white hover:bg-brand-options/80 focus:ring-brand-options outline outline-1 outline-offset-[-1px] outline-brand-options shadow-sm',
+        'bg-[#FFF8E7] text-[#414141] border border-[#F8B602]/40 hover:bg-[#fceec9] hover:border-[#F8B602] active:bg-[#f7e3aa] active:scale-[0.98] focus:ring-[#F8B602] disabled:bg-[#f5f5f5] disabled:border-[#E4E4E4] disabled:text-[#8E8E8E]',
 
-      // 3. "AGREGAR" (Borde gris sin fondo)
+      // Outline
       outline:
-        'bg-transparent text-brand-options hover:bg-brand-soft outline outline-1 outline-offset-[-1px] outline-brand-options focus:ring-brand-options',
+        'bg-white text-[#414141] border border-[#E4E4E4] hover:bg-zinc-50 hover:border-[#8E8E8E] active:bg-zinc-100 active:scale-[0.98] focus:ring-zinc-400 disabled:bg-[#f5f5f5] disabled:text-[#8E8E8E] disabled:border-[#E4E4E4]',
 
-      // 4. "REEMPLAZAR" (Borde y texto amarillo con fondo translúcido)
-      yellowOutline:
-        'bg-brand-primary/10 text-brand-ink hover:bg-brand-primary/20 outline outline-1 outline-offset-[-1px] outline-brand-primary focus:ring-brand-primary',
-
-      // 5. "Cancelar" (Sin fondo ni bordes)
+      // Ghost
       ghost:
-        'bg-transparent text-brand-options hover:bg-brand-soft focus:ring-brand-options/50',
+        'bg-transparent text-[#414141] hover:bg-zinc-100 active:bg-zinc-200 active:scale-[0.98] focus:ring-zinc-300 disabled:text-[#8E8E8E]',
 
-      // 6. Alerta/Peligro (solo destructivo)
+      // Icon: Forzamos [&>svg]:w-5 [&>svg]:h-5 para garantizar que NINGÚN ícono se encoja
+      icon:
+        'bg-white text-[#414141] border border-[#E4E4E4] hover:bg-[#FFF8E7] hover:border-[#F8B602] hover:text-[#414141] active:bg-[#fceec9] active:scale-[0.95] focus:ring-[#F8B602] disabled:bg-[#f5f5f5] disabled:text-[#8E8E8E] disabled:border-[#E4E4E4] [&>svg]:w-5 [&>svg]:h-5 [&>svg]:stroke-[2]',
+
+      // Danger
       danger:
-        'bg-danger text-white hover:bg-danger-hover focus:ring-danger outline outline-1 outline-offset-[-1px] outline-danger shadow-sm',
+        'bg-[#7B1C1C] text-white hover:bg-[#631616] active:bg-[#4d1111] active:scale-[0.98] focus:ring-red-400 disabled:bg-[#E4E4E4] disabled:text-[#8E8E8E]',
     };
 
     const sizeStyles = {
-      xs: 'min-h-9 px-3.5 py-1 text-xs gap-1.5',
-      sm: 'min-h-10 px-3 py-1.5 text-xs gap-1.5',
-      md: 'h-11 px-3.5 py-2.5 text-base gap-2',
-      lg: 'h-12 px-6 py-3 text-lg gap-2.5',
+      xs: 'h-8 px-2.5 text-xs gap-1.5',
+      sm: 'h-9 px-3 text-xs gap-1.5',
+      md: 'h-10 px-4 text-xs sm:text-sm gap-2',
+      lg: 'h-12 px-6 text-base gap-2.5',
     };
+
+    // Si es variante ícono, le damos tamaño cuadrado perfecto (40x40px)
+    const finalSize = variant === 'icon' ? 'h-10 w-10 p-0' : sizeStyles[size];
 
     return (
       <button
         ref={ref}
         disabled={disabled || loading}
-        className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+        className={`${baseStyles} ${variantStyles[variant]} ${finalSize} ${className}`}
         {...props}
       >
         {loading && (
-          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
         )}

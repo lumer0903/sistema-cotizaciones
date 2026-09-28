@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
@@ -28,9 +28,6 @@ import { toast } from "sonner";
 import { showToast } from "@/lib/toast";
 import { obtenerPreciosEstandarizados } from "@/lib/formatters";
 
-
-
-
 interface Categoria {
   id_categoria: number;
   nombre_categoria: string;
@@ -53,6 +50,31 @@ interface ProductoModalProps {
 }
 
 type ProductoFormData = z.infer<typeof CrearProductoSchema>;
+
+const DEFAULT_FORM_VALUES = {
+  codigo: "",
+  id_categoria: 1,
+  id_almacen: 1,
+  tipo_flor: "",
+  material: "",
+  composicion: "",
+  presentacion: "",
+  numero_cabezas: undefined,
+  tamano: "",
+  unidades_por_caja: 1,
+  stock_principal: 0,
+  stock_minimo: 10,
+  descripcion: "",
+  colores_surtido: [],
+  precio_tienda_unidad: undefined,
+  precio_tienda_docena: undefined,
+  precio_tienda_caja: undefined,
+  precio_distribuidor_unidad: undefined,
+  precio_distribuidor_docena: undefined,
+  precio_distribuidor_caja: undefined,
+  costo_normal: 0,
+  costo_distribuidor: 0,
+};
 
 export function ProductoModal({
   open,
@@ -85,36 +107,12 @@ export function ProductoModal({
     formState: { errors, isSubmitting },
   } = useForm<ProductoFormData>({
     resolver: zodResolver(CrearProductoSchema) as any,
-    defaultValues: {
-      codigo: "",
-      id_categoria: 1,
-      id_almacen: 1,
-      tipo_flor: "",
-      material: "",
-      composicion: "",
-      presentacion: "",
-      numero_cabezas: 1,
-      tamano: "",
-      unidades_por_caja: 1,
-      stock_principal: 0,
-      stock_minimo: 10,
-      descripcion: "",
-      colores_surtido: [],
-      precio_tienda_unidad: undefined,
-      precio_tienda_docena: undefined,
-      precio_tienda_caja: undefined,
-      precio_distribuidor_unidad: undefined,
-      precio_distribuidor_docena: undefined,
-      precio_distribuidor_caja: undefined,
-      costo_normal: 0,
-      costo_distribuidor: 0,
-    },
+    defaultValues: DEFAULT_FORM_VALUES as any,
     mode: "onChange",
     values: (() => {
       if (!isEditing || !productoInicial) return undefined;
       const inv = productoInicial as any;
       const almacenPrincipal = inv.stock_actual?.[0]?.id_almacen || 1;
-      // Extracción segura de los 6 precios desde cualquier forma (precios_actuales, precios, precioTienda/Distribuidor)
       const { tienda, distribuidor } = obtenerPreciosEstandarizados(inv);
       const costoNormal = Number(inv.precios_actuales?.costo_normal ?? inv.precios?.costo_normal ?? inv.costo_normal ?? 0);
       const costoDist = Number(inv.precios_actuales?.costo_distribuidor ?? inv.precios?.costo_distribuidor ?? inv.costo_distribuidor ?? 0);
@@ -126,7 +124,7 @@ export function ProductoModal({
         material: inv.material || "",
         composicion: inv.composicion || "",
         presentacion: inv.presentacion || "",
-        numero_cabezas: inv.numero_cabezas || 1,
+        numero_cabezas: inv.numero_cabezas ?? undefined,
         tamano: inv.tamano || "",
         unidades_por_caja: inv.unidades_por_caja || 1,
         stock_principal: inv.stock_principal || 0,
@@ -157,21 +155,27 @@ export function ProductoModal({
 
   useEffect(() => {
     if (!isEditing) {
+      const tieneAtributos = Boolean(
+        composicion || tipoFlor || material || presentacion || tamano || (numeroCabezas && Number(numeroCabezas) > 0)
+      );
+
+      if (!tieneAtributos) {
+        setValue("descripcion", "", { shouldValidate: true });
+        return;
+      }
+
       const partes = [
         composicion,
         tipoFlor ? `DE ${tipoFlor}` : null,
         material,
         presentacion,
-        numeroCabezas ? `DE ${numeroCabezas} CABEZAS` : null,
+        numeroCabezas && Number(numeroCabezas) > 0 ? `DE ${numeroCabezas} CABEZAS` : null,
         tamano,
         unidadesPorCaja && Number(unidadesPorCaja) > 1 ? `(CAJA X ${unidadesPorCaja} UNID)` : null,
       ].filter(Boolean);
 
       const descripcionGenerada = partes.join(" ").toUpperCase().replace(/\s+/g, " ").trim();
-
-      if (descripcionGenerada) {
-        setValue("descripcion", descripcionGenerada, { shouldValidate: true });
-      }
+      setValue("descripcion", descripcionGenerada, { shouldValidate: true });
     }
   }, [
     isEditing,
@@ -225,8 +229,11 @@ export function ProductoModal({
   useEffect(() => {
     if (isEditing && productoInicial?.foto_url) {
       setImagePreview(getImageUrl(productoInicial.foto_url, '150'));
+    } else if (!isEditing) {
+      setImagePreview(null);
+      setImageFile(null);
     }
-  }, [isEditing, productoInicial]);
+  }, [isEditing, productoInicial, open]);
 
   const initialColorsForModal: ColorItem[] = (coloresSurtidos as string[]).map((name) => ({
     name,
@@ -236,29 +243,23 @@ export function ProductoModal({
   const coloresSurtidosParaGuardar = coloresSurtidos as string[];
 
   const resetForm = () => {
-    reset();
+    reset(DEFAULT_FORM_VALUES as any);
     setImageFile(null);
     setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleClose = () => {
+    resetForm();
     onClose();
   };
 
-  const handleLimpiar = () => {
-    resetForm();
-  };
-
   const handleFormSubmit: SubmitHandler<ProductoFormData> = async (data) => {
-    const coloresArray = Array.isArray(data.colores_surtido)
-      ? data.colores_surtido
-      : [];
-
+    const coloresArray = Array.isArray(data.colores_surtido) ? data.colores_surtido : [];
     let fotoUrlToSend = isEditing ? productoInicial?.foto_url || null : null;
 
     if (imageFile) {
       let uploadedUrl: string | null = null;
-
       try {
         const formData = new FormData();
         formData.append('file', imageFile);
@@ -270,8 +271,6 @@ export function ProductoModal({
 
         if (isValidUrl) {
           uploadedUrl = rawUrl.trim();
-        } else {
-          console.warn('Upload response inválida o vacía:', rawUrl);
         }
       } catch (err) {
         console.warn("Fallo endpoint de subida de imagen:", err);
@@ -365,387 +364,369 @@ export function ProductoModal({
   return (
     <>
       <Modal open={open} onClose={handleClose} title={title} maxWidth="lg">
-        <form onSubmit={handleSubmit(handleFormSubmit as any)} className="space-y-4">
-          {/* SECCIÓN 1: DATOS PRINCIPALES */}
-          <div className="bg-gray-50/50 border border-gray-200/50 rounded-xl p-4">
-            <div className="grid grid-cols-1 gap-3">
-              <Input
-                label="CODIGO"
-                placeholder="Ej: RYG18-NU02"
-                error={errors.codigo?.message as string}
-                {...register("codigo")}
-                disabled={isEditing}
-                variant="modal"
-                onChange={(e) => setValue("codigo", e.target.value.toUpperCase(), { shouldValidate: true })}
-              />
-            </div>
-          </div>
-
-          {/* SECCIÓN 2: ATRIBUTOS FÍSICOS */}
-          <div className="bg-gray-50/50 border border-gray-200/50 rounded-xl p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Select
-                label="CATEGORÍA"
-                error={errors.id_categoria?.message as string}
-                {...register("id_categoria", {
-                  setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
-                })}
-                disabled={loadingFilters}
-                variant="modal"
-              >
-                <option value="">Seleccionar</option>
-                {categorias.map((c) => (
-                  <option key={c.id_categoria} value={c.id_categoria}>
-                    {c.nombre_categoria}
-                  </option>
-                ))}
-              </Select>
-              <Input
-                label="TIPO DE FLOR"
-                placeholder="Rosa"
-                error={errors.tipo_flor?.message as string}
-                {...register("tipo_flor")}
-                variant="modal"
-              />
-              <Input
-                label="MATERIAL"
-                placeholder="Tela Premium"
-                error={errors.material?.message as string}
-                {...register("material")}
-                variant="modal"
-              />
-              <Input
-                label="COMPOSICIÓN"
-                placeholder="Ramo"
-                error={errors.composicion?.message as string}
-                {...register("composicion")}
-                variant="modal"
-              />
-              <Input
-                label="PRESENTACIÓN"
-                placeholder="Ramo"
-                error={errors.presentacion?.message as string}
-                {...register("presentacion")}
-                variant="modal"
-              />
-              <Input
-                label="Nº CABEZAS"
-                type="number"
-                min="1"
-                placeholder="18"
-                error={errors.numero_cabezas?.message as string}
-                {...register("numero_cabezas", {
-                  setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
-                })}
-                variant="modal"
-              />
-            </div>
-          </div>
-
-          {/* SECCIÓN 3: COLORES SURTIDOS Y DETALLES */}
-          <div className="bg-gray-50/50 border border-gray-200/50 rounded-xl p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Input
-                label="TAMAÑO"
-                placeholder="35cm aprox"
-                error={errors.tamano?.message as string}
-                {...register("tamano")}
-                variant="modal"
-              />
-              <Select
-                label="UBICACIÓN"
-                error={errors.id_almacen?.message as string}
-                {...register("id_almacen", {
-                  setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
-                })}
-                disabled={loadingFilters}
-                variant="modal"
-              >
-                <option value="">Seleccionar</option>
-                {almacenes.map((a) => (
-                  <option key={a.id_almacen} value={a.id_almacen}>
-                    {a.nombre}
-                  </option>
-                ))}
-              </Select>
-              <Input
-                label="UNIDADES POR CAJA"
-                type="number"
-                min="1"
-                placeholder="12"
-                error={errors.unidades_por_caja?.message as string}
-                {...register("unidades_por_caja", {
-                  setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
-                })}
-                variant="modal"
-              />
-              <Input
-                label="STOCK ACTUAL"
-                type="number"
-                min="0"
-                placeholder="10"
-                error={errors.stock_principal?.message as string}
-                {...register("stock_principal", {
-                  setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
-                })}
-                variant="modal"
-              />
-              <Input
-                label="STOCK MÍNIMO"
-                type="number"
-                min="0"
-                placeholder="10"
-                error={errors.stock_minimo?.message as string}
-                {...register("stock_minimo", {
-                  setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
-                })}
-                variant="modal"
-              />
-              <div className="flex flex-col space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  COLORES SURTIDOS
-                </label>
-                <Button
-                  variant='secondary'
-                  onClick={() => setIsColorModalOpen(true)}
-                >
-                  Configurar {coloresSurtidosParaGuardar.length > 0 && `(${coloresSurtidosParaGuardar.length})`}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* SECCIÓN 4: DESCRIPCIÓN AUTOGENERADA */}
-          <div className="bg-gray-50/50 border border-gray-200/50 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="text-xs font-bold text-brand-options uppercase tracking-wider text-gray-600 flex items-center gap-1">
-                DESCRIPCIÓN
-              </h3>
-            </div>
-            <Textarea
-              label=""
-              placeholder="Se autogenera: COMPOSICIÓN DE TIPO_FLOR MATERIAL PRESENTACIÓN DE N° CABEZAS TAMAÑO (CAJA X UNID)"
-              error={errors.descripcion?.message as string}
-              rows={3}
-              {...register("descripcion")}
-              variant="modal"
-            />
-            <p className="text-xs text-gray-600 mt-1">
-              Puede editar manualmente. La autogeneración se reactiva al cambiar atributos físicos.
-            </p>
-          </div>
-
-          {/* SECCIÓN 5: MATRIZ DE PRECIOS */}
-          <Table className="text-center text-xs">
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="text-center text-brand-ink py-3">
-                  UNIDAD DE MEDIDA
-                </TableHead>
-                <TableHead className="text-center text-estado-enviado py-3 bg-estado-enviado-soft/20">
-                  PRECIO TIENDA (S/)
-                </TableHead>
-                <TableHead className="text-center text-brand-ink py-3 bg-brand-soft/20">
-                  DISTRIBUIDOR (S/)
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {/* UNIDAD */}
-              <TableRow className="hover:bg-transparent">
-                <TableCell className="font-bold text-brand-ink py-2.5 text-center">
-                  UNIDAD
-                </TableCell>
-                <TableCell className="p-1 bg-estado-enviado-soft/40">
-                  <div className="flex items-center justify-center gap-1 font-medium text-estado-enviado-text">
-                    <span className="text-estado-enviado font-semibold select-none">S/</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-estado-enviado/50 px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      {...cleanNumberInputProps("precio_tienda_unidad")}
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className="p-1 bg-brand-soft/40">
-                  <div className="flex items-center justify-center gap-1 font-medium text-brand-subtitle">
-                    <span className="text-brand-ink font-semibold select-none">S/</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-brand-primary px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      {...cleanNumberInputProps("precio_distribuidor_unidad")}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-
-              {/* DOCENA */}
-              <TableRow className="hover:bg-transparent">
-                <TableCell className="font-bold text-brand-ink py-2.5 text-center">
-                  DOCENA
-                </TableCell>
-                <TableCell className="p-1 bg-estado-enviado-soft/40">
-                  <div className="flex items-center justify-center gap-1 font-medium text-estado-enviado-text">
-                    <span className="text-estado-enviado font-semibold select-none">S/</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-estado-enviado/50 px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      {...cleanNumberInputProps("precio_tienda_docena")}
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className="p-1 bg-brand-soft/40">
-                  <div className="flex items-center justify-center gap-1 font-medium text-brand-subtitle">
-                    <span className="text-brand-ink font-semibold select-none">S/</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-brand-primary px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      {...cleanNumberInputProps("precio_distribuidor_docena")}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-
-              {/* CAJA */}
-              <TableRow className="hover:bg-transparent">
-                <TableCell className="font-bold text-brand-ink py-2.5 text-center">
-                  CAJA
-                </TableCell>
-                <TableCell className="p-1 bg-estado-enviado-soft/40">
-                  <div className="flex items-center justify-center gap-1 font-medium text-estado-enviado-text">
-                    <span className="text-estado-enviado font-semibold select-none">S/</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-estado-enviado/50 px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      {...cleanNumberInputProps("precio_tienda_caja")}
-                    />
-                  </div>
-                </TableCell>
-                <TableCell className="p-1 bg-brand-soft/40">
-                  <div className="flex items-center justify-center gap-1 font-medium text-brand-subtitle">
-                    <span className="text-brand-ink font-semibold select-none">S/</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-brand-primary px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      {...cleanNumberInputProps("precio_distribuidor_caja")}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-          {/* ÁREA DE IMAGEN */}
-          <div className="w-full bg-gray-50/50 border border-gray-200/50 rounded-xl p-4 flex items-center justify-center">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  const file = e.target.files[0];
-                  if (!file.type.startsWith("image/")) return;
-                  setImageFile(file);
-                  setImagePreview(URL.createObjectURL(file));
-                }
-              }}
-              accept="image/*"
-              className="hidden"
-            />
-
-            {imagePreview ? (
-              <div className="w-full max-w-[515px] inline-flex justify-between items-center gap-3">
-                {/* Previsualización de la Imagen */}
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="size-14 relative rounded-lg border border-neutral-300 overflow-hidden shrink-0 cursor-pointer hover:opacity-80 transition-opacity bg-white"
-                >
-                  <Image
-                    src={imagePreview}
-                    alt="Preview"
-                    width={150}
-                    height={150}
-                    className="w-full h-full object-cover"
-                    onError={(e) => handleImageError(e, "150")}
+        <div className="flex flex-col max-h-[80vh]">
+          <form onSubmit={handleSubmit(handleFormSubmit as any)} className="flex flex-col flex-1 min-h-0">
+            {/* ÁREA CON SCROLL (SOLO PARA EL CONTENIDO) */}
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+              {/* SECCIÓN 1: DATOS PRINCIPALES */}
+              <div className="bg-gray-50/50 border border-gray-200/50 rounded-xl p-4">
+                <div className="grid grid-cols-1 gap-3">
+                  <Input
+                    label="CÓDIGO"
+                    placeholder="Ej: RYG18-NU02"
+                    error={errors.codigo?.message as string}
+                    {...register("codigo")}
+                    disabled={isEditing}
+                    onChange={(e) => setValue("codigo", e.target.value.toUpperCase(), { shouldValidate: true })}
                   />
                 </div>
+              </div>
 
-                {/* Recuadro con el Nombre de la Imagen */}
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 min-h-11 px-3.5 rounded-lg border border-brand-primary flex justify-start items-center gap-2.5 bg-white cursor-pointer hover:border-brand-hover transition-colors overflow-hidden"
-                >
-                  <span className="text-gray-600 text-xs font-medium truncate">
-                    {imageFile?.name || productoInicial?.foto_url?.split("/").pop() || "imagen.png"}
-                  </span>
+              {/* SECCIÓN 2: ATRIBUTOS FÍSICOS */}
+              <div className="bg-gray-50/50 border border-gray-200/50 rounded-xl p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Select
+                    label="CATEGORÍA"
+                    error={errors.id_categoria?.message as string}
+                    {...register("id_categoria", {
+                      setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                    })}
+                    disabled={loadingFilters}
+                  >
+                    <option value="">Seleccionar</option>
+                    {categorias.map((c) => (
+                      <option key={c.id_categoria} value={c.id_categoria}>
+                        {c.nombre_categoria}
+                      </option>
+                    ))}
+                  </Select>
+                  <Input
+                    label="TIPO DE FLOR"
+                    placeholder="Rosa"
+                    error={errors.tipo_flor?.message as string}
+                    {...register("tipo_flor")}
+                  />
+                  <Input
+                    label="MATERIAL"
+                    placeholder="Tela Premium"
+                    error={errors.material?.message as string}
+                    {...register("material")}
+                  />
+                  <Input
+                    label="COMPOSICIÓN"
+                    placeholder="Ramo"
+                    error={errors.composicion?.message as string}
+                    {...register("composicion")}
+                  />
+                  <Input
+                    label="PRESENTACIÓN"
+                    placeholder="Ramo"
+                    error={errors.presentacion?.message as string}
+                    {...register("presentacion")}
+                  />
+                  <Input
+                    label="Nº CABEZAS"
+                    type="number"
+                    min="1"
+                    placeholder="18"
+                    error={errors.numero_cabezas?.message as string}
+                    {...cleanNumberInputProps("numero_cabezas")}
+                  />
                 </div>
+              </div>
 
-                {/* Botón Eliminar */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setImageFile(null);
-                    setImagePreview(null);
-                    if (fileInputRef.current) fileInputRef.current.value = "";
+              {/* SECCIÓN 3: COLORES SURTIDOS Y DETALLES */}
+              <div className="bg-gray-50/50 border border-gray-200/50 rounded-xl p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Input
+                    label="TAMAÑO"
+                    placeholder="35cm aprox"
+                    error={errors.tamano?.message as string}
+                    {...register("tamano")}
+                  />
+                  <Select
+                    label="UBICACIÓN"
+                    error={errors.id_almacen?.message as string}
+                    {...register("id_almacen", {
+                      setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                    })}
+                    disabled={loadingFilters}
+                  >
+                    <option value="">Seleccionar</option>
+                    {almacenes.map((a) => (
+                      <option key={a.id_almacen} value={a.id_almacen}>
+                        {a.nombre}
+                      </option>
+                    ))}
+                  </Select>
+                  <Input
+                    label="UNIDADES POR CAJA"
+                    type="number"
+                    min="1"
+                    placeholder="12"
+                    error={errors.unidades_por_caja?.message as string}
+                    {...cleanNumberInputProps("unidades_por_caja")}
+                  />
+                  <Input
+                    label="STOCK ACTUAL"
+                    type="number"
+                    min="0"
+                    placeholder="10"
+                    error={errors.stock_principal?.message as string}
+                    {...cleanNumberInputProps("stock_principal")}
+                  />
+                  <Input
+                    label="STOCK MÍNIMO"
+                    type="number"
+                    min="0"
+                    placeholder="10"
+                    error={errors.stock_minimo?.message as string}
+                    {...cleanNumberInputProps("stock_minimo")}
+                  />
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      COLORES SURTIDOS
+                    </label>
+                    <Button
+                      type="button"
+                      variant='secondary'
+                      onClick={() => setIsColorModalOpen(true)}
+                    >
+                      Configurar {coloresSurtidosParaGuardar.length > 0 && `(${coloresSurtidosParaGuardar.length})`}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECCIÓN 4: DESCRIPCIÓN AUTOGENERADA */}
+              <div className="bg-gray-50/50 border border-gray-200/50 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-xs font-bold text-brand-options uppercase tracking-wider text-gray-600 flex items-center gap-1">
+                    DESCRIPCIÓN
+                  </h3>
+                </div>
+                <Textarea
+                  label=""
+                  placeholder="Se autogenera según los atributos físicos completados"
+                  error={errors.descripcion?.message as string}
+                  rows={3}
+                  {...register("descripcion")}
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Puede editar manualmente. La autogeneración se reactiva al cambiar atributos físicos.
+                </p>
+              </div>
+
+              {/* SECCIÓN 5: MATRIZ DE PRECIOS */}
+              <Table className="text-center text-xs">
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-center text-brand-ink py-3">
+                      UNIDAD DE MEDIDA
+                    </TableHead>
+                    <TableHead className="text-center text-estado-enviado py-3 bg-estado-enviado-soft/20">
+                      PRECIO TIENDA (S/)
+                    </TableHead>
+                    <TableHead className="text-center text-brand-ink py-3 bg-brand-soft/20">
+                      DISTRIBUIDOR (S/)
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {/* UNIDAD */}
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell className="font-bold text-brand-ink py-2.5 text-center">
+                      UNIDAD
+                    </TableCell>
+                    <TableCell className="p-1 bg-estado-enviado-soft/40">
+                      <div className="flex items-center justify-center gap-1 font-medium text-estado-enviado-text">
+                        <span className="text-estado-enviado font-semibold select-none">S/</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-estado-enviado/50 px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          {...cleanNumberInputProps("precio_tienda_unidad")}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="p-1 bg-brand-soft/40">
+                      <div className="flex items-center justify-center gap-1 font-medium text-brand-subtitle">
+                        <span className="text-brand-ink font-semibold select-none">S/</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-brand-primary px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          {...cleanNumberInputProps("precio_distribuidor_unidad")}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+
+                  {/* DOCENA */}
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell className="font-bold text-brand-ink py-2.5 text-center">
+                      DOCENA
+                    </TableCell>
+                    <TableCell className="p-1 bg-estado-enviado-soft/40">
+                      <div className="flex items-center justify-center gap-1 font-medium text-estado-enviado-text">
+                        <span className="text-estado-enviado font-semibold select-none">S/</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-estado-enviado/50 px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          {...cleanNumberInputProps("precio_tienda_docena")}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="p-1 bg-brand-soft/40">
+                      <div className="flex items-center justify-center gap-1 font-medium text-brand-subtitle">
+                        <span className="text-brand-ink font-semibold select-none">S/</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-brand-primary px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          {...cleanNumberInputProps("precio_distribuidor_docena")}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+
+                  {/* CAJA */}
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell className="font-bold text-brand-ink py-2.5 text-center">
+                      CAJA
+                    </TableCell>
+                    <TableCell className="p-1 bg-estado-enviado-soft/40">
+                      <div className="flex items-center justify-center gap-1 font-medium text-estado-enviado-text">
+                        <span className="text-estado-enviado font-semibold select-none">S/</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-estado-enviado/50 px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          {...cleanNumberInputProps("precio_tienda_caja")}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="p-1 bg-brand-soft/40">
+                      <div className="flex items-center justify-center gap-1 font-medium text-brand-subtitle">
+                        <span className="text-brand-ink font-semibold select-none">S/</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          className="w-20 text-left bg-transparent outline-none py-1 rounded focus:bg-white focus:ring-2 focus:ring-brand-primary px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          {...cleanNumberInputProps("precio_distribuidor_caja")}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+
+              {/* ÁREA DE IMAGEN */}
+              <div className="w-full bg-gray-50/50 border border-gray-200/50 rounded-xl p-4 flex items-center justify-center">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      const file = e.target.files[0];
+                      if (!file.type.startsWith("image/")) return;
+                      setImageFile(file);
+                      setImagePreview(URL.createObjectURL(file));
+                    }
                   }}
-                  className="size-10 rounded-lg flex justify-center items-center shrink-0 hover:bg-estado-rechazado-soft hover:border-estado-rechazado/30 group transition-colors"
-                  title="Eliminar imagen"
-                >
-                  <Trash2 className="w-5 h-5 text-red-800 group-hover:text-red-600 transition-colors" />
-                </button>
-              </div>
-            ) : (
-              /* Estado inicial cuando NO hay imagen adjuntada */
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                    const file = e.dataTransfer.files[0];
-                    if (!file.type.startsWith("image/")) return;
-                    setImageFile(file);
-                    setImagePreview(URL.createObjectURL(file));
-                  }
-                }}
-                className="w-full h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center gap-2 text-gray-500 hover:border-brand-hover hover:text-brand-ink cursor-pointer transition-colors"
-              >
-                <CloudUpload className="w-5 h-5" />
-                <span className="text-xs font-medium">
-                  Arrastra o selecciona la imagen del producto
-                </span>
-              </div>
-            )}
-          </div>
+                  accept="image/*"
+                  className="hidden"
+                />
 
-          {/* BOTONES DE ACCIÓN */}
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100">
-            <Button type="button" variant="ghost" onClick={handleLimpiar} disabled={isSubmitting}>
-              Limpiar
-            </Button>
-            <Button type="button" variant="ghost" onClick={handleClose} disabled={isSubmitting}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="primary" loading={isSubmitting}>
-              {isSubmitting ? "Guardando..." : "Guardar"}
-            </Button>
-          </div>
-        </form>
+                {imagePreview ? (
+                  <div className="w-full max-w-[515px] inline-flex justify-between items-center gap-3">
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="size-14 relative rounded-lg border border-neutral-300 overflow-hidden shrink-0 cursor-pointer hover:opacity-80 transition-opacity bg-white"
+                    >
+                      <Image
+                        src={imagePreview}
+                        alt="Preview"
+                        width={150}
+                        height={150}
+                        className="w-full h-full object-cover"
+                        onError={(e) => handleImageError(e, "150")}
+                      />
+                    </div>
+
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 min-h-11 px-3.5 rounded-lg border border-brand-primary flex justify-start items-center gap-2.5 bg-white cursor-pointer hover:border-brand-hover transition-colors overflow-hidden"
+                    >
+                      <span className="text-gray-600 text-xs font-medium truncate">
+                        {imageFile?.name || productoInicial?.foto_url?.split("/").pop() || "imagen.png"}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageFile(null);
+                        setImagePreview(null);
+                        if (fileInputRef.current) fileInputRef.current.value = "";
+                      }}
+                      className="size-10 rounded-lg flex justify-center items-center shrink-0 hover:bg-estado-rechazado-soft hover:border-estado-rechazado/30 group transition-colors"
+                      title="Eliminar imagen"
+                    >
+                      <Trash2 className="w-5 h-5 text-red-800 group-hover:text-red-600 transition-colors" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                        const file = e.dataTransfer.files[0];
+                        if (!file.type.startsWith("image/")) return;
+                        setImageFile(file);
+                        setImagePreview(URL.createObjectURL(file));
+                      }
+                    }}
+                    className="w-full h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center gap-2 text-gray-500 hover:border-brand-hover hover:text-brand-ink cursor-pointer transition-colors"
+                  >
+                    <CloudUpload className="w-5 h-5" />
+                    <span className="text-xs font-medium">
+                      Arrastra o selecciona la imagen del producto
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* BOTONES DE ACCIÓN FIJOS AL FINAL */}
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 mt-2 border-t border-gray-100 bg-white shrink-0">
+              <Button type="button" variant="ghost" onClick={resetForm} disabled={isSubmitting}>
+                Limpiar
+              </Button>
+              <Button type="button" variant="ghost" onClick={handleClose} disabled={isSubmitting}>
+                Cancelar
+              </Button>
+              <Button type="submit" variant="primary" loading={isSubmitting}>
+                {isSubmitting ? "Guardando..." : "Guardar"}
+              </Button>
+            </div>
+          </form>
+        </div>
       </Modal>
 
       <ColorConfigModal

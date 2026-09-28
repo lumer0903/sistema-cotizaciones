@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -263,7 +263,6 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                             onFocus={() => setShowSuggestions(true)}
                             icon={<Search className="w-4 h-4 text-brand-options" />}
                             error={errors.id_producto?.message}
-                            variant="modal"
                         />
 
                         {/* Desplegable de sugerencias alineado y acotado */}
@@ -369,7 +368,6 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                         {...register('cantidad', {
                             setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
                         })}
-                        variant="modal"
                     />
 
                     <Input
@@ -382,7 +380,6 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                         {...register('costo_unitario', {
                             setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
                         })}
-                        variant="modal"
                     />
                 </div>
 
@@ -403,7 +400,6 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                     maxLength={500}
                     error={errors.observaciones?.message}
                     {...register('observaciones')}
-                    variant="modal"
                 />
 
                 <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100">

@@ -17,7 +17,6 @@ interface ClienteAutocompleteProps {
   value: string;
   onChange: (v: string) => void;
   onSelectCliente: (c: Cliente | null) => void;
-  variant?: 'default' | 'modal';
 }
 
 const DEBOUNCE_MS = 300;
@@ -27,7 +26,6 @@ export function ClienteAutocomplete({
   value,
   onChange,
   onSelectCliente,
-  variant = 'default',
 }: ClienteAutocompleteProps) {
   const [abierta, setAbierta] = useState(false);
   const [resultados, setResultados] = useState<ClienteApi[]>([]);
@@ -115,7 +113,6 @@ export function ClienteAutocomplete({
     <div className="relative" ref={contenedorRef}>
       <Input
         label="Nombre del cliente"
-        variant={variant}
         placeholder="Nombre o razón social"
         value={value}
         role="combobox"

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Plus, Shield, Users, Lock } from 'lucide-react';
@@ -105,14 +105,12 @@ function NuevoRolModal({ open, onClose, onCreated }: NuevoRolModalProps) {
       <div className="space-y-4">
         <Input
           label="Nombre del rol"
-          variant="modal"
           placeholder="Ej. Supervisor de Ventas"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
         />
         <Input
           label="Código"
-          variant="modal"
           placeholder="supervisor_ventas"
           value={codigoFinal}
           onChange={(e) => {

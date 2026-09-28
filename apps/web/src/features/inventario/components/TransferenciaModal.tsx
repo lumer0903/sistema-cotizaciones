@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -238,7 +238,6 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                         onFocus={() => setShowSuggestions(true)}
                         icon={<Search className="w-4 h-4 text-brand-options" />}
                         error={errors.id_producto?.message}
-                        variant="modal"
                     />
 
                     {/* Desplegable de sugerencias (Máximo 3 opciones) */}
@@ -306,7 +305,6 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                         {...register('cantidad', {
                             setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
                         })}
-                        variant="modal"
                     />
 
                     <Select
@@ -357,7 +355,6 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                     maxLength={500}
                     error={errors.observaciones?.message}
                     {...register('observaciones')}
-                    variant="modal"
                 />
 
                 {almacenes.length > 0 && almacenes.length < 2 && (
