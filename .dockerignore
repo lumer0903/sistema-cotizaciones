@@ -1,21 +1,26 @@
-# Frontend builds & deps
-Admin-front/
-Empleado-front/
+# Dependencias y builds (se reinstalan/recompilan dentro de la imagen)
 node_modules/
-Gold_back/node_modules/
-Gold_back/.git/
+**/node_modules/
+**/dist/
+**/.next/
+**/.turbo/
+**/coverage/
 
-# Git
+# Secrets: los .env NUNCA van a la imagen (van por fly secrets / env)
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Git / IDE / OS
 .git/
 .gitignore
-
-# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS
 .DS_Store
 Thumbs.db
 
@@ -23,15 +28,17 @@ Thumbs.db
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
+pnpm-debug.log*
 
-# Test coverage
-coverage/
-.nyc_output/
+# Tests (no se ejecutan dentro de la imagen)
+**/*.test.ts
 
-# Misc
+# Cachés locales
+.puppeteer-cache/
+
+# Diversos
 *.md
-!.dockerignore
 docker-compose*.yml
 *.bat
 *.ps1
+.github/

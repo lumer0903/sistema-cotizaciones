@@ -1,0 +1,33 @@
+# fly.toml — Web (Next.js)
+# IMPORTANTE:
+#  - Ajusta `app` al nombre real de tu app Fly (`fly apps list`) y guárdalo
+#    como secreto de GitHub FLY_API_TOKEN_WEB.
+#  - NEXT_PUBLIC_API_URL se inyecta en build: la URL pública del API.
+#  - El middleware (runtime node) verifica JWT en runtime: inyecta los
+#    secretos con `fly secrets set JWT_SECRET=... JWT_REFRESH_SECRET=...`
+#    (no van aquí ni en el código).
+
+app = 'goldcontinent-web'
+primary_region = 'dfw'
+
+[build]
+  dockerfile = 'apps/web/Dockerfile'
+  [build.args]
+    NEXT_PUBLIC_API_URL = 'https://goldcontinent-api.fly.dev'
+
+[env]
+  NODE_ENV = 'production'
+  PORT = '3000'
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'off'
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  memory = '256mb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256

@@ -1,8 +1,8 @@
-version: '3.8'
-
 services:
   minio:
-    image: minio/minio:latest
+    # MinIO publica sus imágenes oficiales en quay.io (minio/minio en
+    # Docker Hub fue retirado).
+    image: quay.io/minio/minio:latest
     container_name: goldcontinent-minio
     command: server /data --console-address ":9001"
     ports:
@@ -30,7 +30,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-scripts:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U goldcontinent"]
       interval: 5s
@@ -52,16 +51,18 @@ services:
 
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
     container_name: goldcontinent-api
     environment:
       NODE_ENV: development
       DATABASE_URL: postgresql://goldcontinent:goldcontinent_dev@postgres:5432/goldcontinent?schema=public
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-in-production}
       JWT_EXPIRES_IN: 8h
       CLIENT_URL: http://localhost:3000
       AI_SERVICE_URL: http://ai-service:8000
+      IA_URL: http://ai-service:8000
       PORT: 3001
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -81,14 +82,19 @@ services:
       minio:
         condition: service_healthy
     volumes:
-      - ./apps/api:/app
-      - /app/node_modules
-    command: pnpm dev
+      # Hot-reload del código; los node_modules de estos directorios se
+      # preservan con volúmenes anónimos (puestos en la imagen) para no
+      # perder los symlinks del workspace pnpm.
+      - ./apps/api:/app/apps/api
+      - ./packages:/app/packages
+      - /app/apps/api/node_modules
+      - /app/packages/shared/node_modules
+      - /app/packages/database/node_modules
 
   web:
     build:
-      context: ./apps/web
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
     container_name: goldcontinent-web
     environment:
       NODE_ENV: development
@@ -98,10 +104,12 @@ services:
     depends_on:
       - api
     volumes:
-      - ./apps/web:/app
-      - /app/node_modules
-      - /app/.next
-    command: pnpm dev
+      - ./apps/web:/app/apps/web
+      - ./packages:/app/packages
+      - /app/apps/web/node_modules
+      - /app/packages/shared/node_modules
+      - /app/packages/database/node_modules
+      - /app/apps/web/.next
 
   ai-service:
     build:

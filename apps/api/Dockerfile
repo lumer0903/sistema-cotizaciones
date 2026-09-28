@@ -1,5 +1,5 @@
-# Desarrollo del API — contexto = raíz del monorepo
-FROM node:20-slim
+# ===== Builder: monorepo pnpm (contexto = raíz del repo) =====
+FROM node:20-slim AS builder
 
 # unzip es obligatorio: la descarga de Chrome (Puppeteer) extrae un .zip
 RUN apt-get update && apt-get install -y --no-install-recommends unzip \
@@ -7,8 +7,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends unzip \
 
 RUN npm install -g pnpm@9.15.0
 
-WORKDIR /app
+# Chrome de Puppeteer se descarga en `pnpm install`; la caché queda dentro
+# del repo para copiarla al runner.
+ENV PUPPETEER_CACHE_DIR=/repo/.puppeteer-cache
 
+WORKDIR /repo
+
+# Solo los manifestos primero (capa de cache de dependencias)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY apps/web/package.json apps/web/package.json
@@ -18,11 +23,19 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-# Prisma client + tipos de @goldcontinent/shared
+# Prisma client antes de compilar (los types de @prisma/client son necesarios)
 RUN pnpm --filter @goldcontinent/database db:generate
 RUN pnpm --filter @goldcontinent/shared build
+RUN pnpm --filter @goldcontinent/api build
 
-# Dependencias de sistema de Chromium (PDFs con Puppeteer en contenedor)
+# ===== Runner: producción =====
+FROM node:20-slim AS runner
+
+ENV NODE_ENV=production \
+    PORT=3001 \
+    PUPPETEER_CACHE_DIR=/repo/.puppeteer-cache
+
+# Dependencias de sistema de Chromium (Puppeteer) y fuentes para PDFs
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libnss3 \
     libnspr4 \
@@ -43,8 +56,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxcb1 \
     libxext6 \
     fonts-liberation \
+    fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g pnpm@9.15.0
+
+WORKDIR /repo
+COPY --from=builder /repo /repo
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "pnpm --filter @goldcontinent/shared build && pnpm --filter @goldcontinent/api dev"]
+# Migraciones idempotentes en cada arranque y luego el API
+CMD ["sh", "-c", "pnpm --filter @goldcontinent/database db:migrate:deploy && pnpm --filter @goldcontinent/api start"]
