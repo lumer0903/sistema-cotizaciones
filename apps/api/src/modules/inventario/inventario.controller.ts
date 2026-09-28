@@ -3,6 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
 import { InventarioService } from './inventario.service';
 import { CreateMovimientoDto } from './dto/create-movimiento.dto';
+import { CreateTransferenciaDto } from './dto/create-transferencia.dto';
 import type { MovimientoResponse, KardexResponse } from './inventario.service';
 import { TipoMovimientoInventario, OrigenMovimiento } from '@goldcontinent/shared/constants/enums';
 import type { Response } from 'express';
@@ -28,14 +29,7 @@ export class InventarioController {
   @Post('transferencia')
   @ApiOperation({ summary: 'Realizar transferencia entre almacenes' })
   async createTransferencia(
-    @Body()
-    body: {
-      id_producto: number;
-      id_almacen_origen: number;
-      id_almacen_destino: number;
-      cantidad: number;
-      observaciones?: string;
-    },
+    @Body() body: CreateTransferenciaDto,
     @Req() req: Request & { user: { id_usuario: number; id?: number } },
   ): Promise<{ success: true; data: { salida: MovimientoResponse; entrada: MovimientoResponse } }> {
     const userId = req.user.id_usuario ?? req.user.id;
@@ -136,8 +130,8 @@ export class InventarioController {
       origen,
       fecha_inicio: fecha_inicio ? new Date(fecha_inicio) : undefined,
       fecha_fin: fecha_fin ? new Date(fecha_fin) : undefined,
-      page: Number(page),
-      limit: Number(limit),
+      page: Math.max(1, Number(page) || 1),
+      limit: Math.min(Math.max(1, Number(limit) || 100), 500),
     });
     return { success: true, ...result };
   }

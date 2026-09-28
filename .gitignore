@@ -10,7 +10,8 @@ build/
 # Environment
 .env
 .env.local
-.env.*.local
+.env.*
+!.env.example
 
 # IDE
 .idea/
@@ -31,6 +32,10 @@ pnpm-debug.log*
 # Testing
 coverage/
 .nyc_output/
+
+# Python
+__pycache__/
+*.pyc
 
 # Turbo
 .turbo/

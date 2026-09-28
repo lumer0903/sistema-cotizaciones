@@ -59,16 +59,7 @@ export class MinioService implements OnModuleInit {
         const exists = await this.client.bucketExists(bucket);
         if (!exists) {
           await this.client.makeBucket(bucket, 'us-east-1');
-          const policy = {
-            Version: '2012-10-17',
-            Statement: [{
-              Effect: 'Allow',
-              Principal: { AWS: ['*'] },
-              Action: ['s3:GetObject'],
-              Resource: [`arn:aws:s3:::${bucket}/*`],
-            }],
-          };
-          await this.client.setBucketPolicy(bucket, JSON.stringify(policy));
+          // Sin política anónima: los objetos se sirven vía presigned URLs
         }
       } catch (error) {
         this.logger.warn(`Failed to ensure bucket ${bucket}: ${error instanceof Error ? error.message : 'Unknown error'}`);

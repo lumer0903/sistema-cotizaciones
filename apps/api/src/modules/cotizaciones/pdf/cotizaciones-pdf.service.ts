@@ -325,9 +325,9 @@ export class CotizacionesPdfService implements OnModuleInit, OnModuleDestroy {
     const hash = computePdfHash(cot);
 
     const pooled = await this.acquireBrowser();
-    const browser = pooled.browser;
-    const page = await browser.newPage();
+    let page: import('puppeteer').Page | null = null;
     try {
+      page = await pooled.browser.newPage();
       const html = this.buildHtml(cot);
       await page.setContent(html, { waitUntil: 'load', timeout: 15000 });
       const pdf = await page.pdf({
@@ -339,7 +339,7 @@ export class CotizacionesPdfService implements OnModuleInit, OnModuleDestroy {
       const filename = `${String(cot.numero || `COT-${id}`).replace(/[^A-Za-z0-9-_]+/g, '_')}.pdf`;
       return { buffer, filename, hash };
     } finally {
-      await page.close().catch(() => undefined);
+      await page?.close().catch(() => undefined);
       this.releaseBrowser(pooled);
     }
   }
