@@ -6,8 +6,9 @@ const nextConfig = {
     // Imágenes de productos/avatares servidas por la API (hostname variable
     // según entorno) y placeholders externos (placehold.co).
     remotePatterns: [
-      { protocol: 'http', hostname: '**' },
-      { protocol: 'https', hostname: '**' },
+      { protocol: 'http', hostname: 'localhost', port: '3001' },
+      { protocol: 'http', hostname: 'localhost', port: '9000' },
+      { protocol: 'https', hostname: 'placehold.co' },
     ],
     // Logos del login son SVG locales: next/image exige habilitarlo.
     dangerouslyAllowSVG: true,

@@ -19,10 +19,10 @@ function money(n: number | string | null | undefined): string {
 
 function esc(s: unknown): string {
   return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"');
 }
 
 function fechaCorta(value: string | null | undefined): string {
@@ -34,58 +34,167 @@ function fechaCorta(value: string | null | undefined): string {
   }
 }
 
+interface PooledBrowser {
+  browser: Browser;
+  inUse: boolean;
+  lastUsed: number;
+  jobCount: number;
+}
+
 @Injectable()
 export class CotizacionesPdfService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CotizacionesPdfService.name);
-  private browser: Browser | null = null;
-  private browserPromise: Promise<Browser> | null = null;
+  private readonly MAX_POOL_SIZE = 2;
+  private readonly MAX_JOBS_PER_BROWSER = 50;
+  private readonly HEALTH_CHECK_INTERVAL_MS = 30_000;
+  private readonly BROWSER_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+
+  private pool: PooledBrowser[] = [];
+  private healthCheckInterval: NodeJS.Timeout | null = null;
+  private initializing = false;
 
   constructor(private readonly cotizacionesService: CotizacionesService) {}
 
   async onModuleInit() {
-    // Warmup: lanza Chromium en segundo plano (no bloquea el boot de Nest)
-    this.ensureBrowser().catch((e) => {
-      this.logger.warn(`Puppeteer no pudo pre-lanzarse: ${e?.message ?? e}`);
+    // Warmup pool in background
+    this.warmupPool().catch((e) => {
+      this.logger.warn(`Puppeteer pool warmup failed: ${e?.message ?? e}`);
     });
   }
 
   async onModuleDestroy() {
-    const b = this.browser;
-    this.browser = null;
-    this.browserPromise = null;
-    if (b) {
-      try {
-        await b.close();
-      } catch {
-        /* browser ya cerrado */
-      }
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = null;
+    }
+    await this.shutdownPool();
+  }
+
+  private async warmupPool(): Promise<void> {
+    if (this.initializing) return;
+    this.initializing = true;
+    try {
+      await Promise.all(
+        Array(this.MAX_POOL_SIZE)
+          .fill(null)
+          .map(() => this.createBrowser()),
+      );
+      this.startHealthCheck();
+    } finally {
+      this.initializing = false;
     }
   }
 
-  private async ensureBrowser(): Promise<Browser> {
-    if (this.browser && this.browser.connected) return this.browser;
-    if (!this.browserPromise) {
-      this.browserPromise = puppeteer
-        .launch({
-          headless: true,
-          args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
-        })
-        .then((b: Browser) => {
-          this.browser = b;
-          this.browserPromise = null;
-          b.on('disconnected', () => {
-            if (this.browser === b) this.browser = null;
-          });
-          return b;
-        })
-        .catch((e: unknown) => {
-          this.browserPromise = null;
-          throw e;
-        });
+  private startHealthCheck(): void {
+    if (this.healthCheckInterval) return;
+    this.healthCheckInterval = setInterval(() => this.pruneDeadBrowsers(), this.HEALTH_CHECK_INTERVAL_MS);
+  }
+
+  private async createBrowser(): Promise<Browser> {
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+    });
+
+    const pooled: PooledBrowser = {
+      browser,
+      inUse: false,
+      lastUsed: Date.now(),
+      jobCount: 0,
+    };
+
+    browser.on('disconnected', () => {
+      const idx = this.pool.findIndex((p) => p.browser === browser);
+      if (idx >= 0) {
+        this.logger.warn(`Browser disconnected, removing from pool (pool size: ${this.pool.length - 1})`);
+        this.pool.splice(idx, 1);
+      }
+    });
+
+    this.pool.push(pooled);
+    this.logger.log(`Browser created, pool size: ${this.pool.length}`);
+    return browser;
+  }
+
+  private pruneDeadBrowsers(): void {
+    const now = Date.now();
+    for (let i = this.pool.length - 1; i >= 0; i--) {
+      const pooled = this.pool[i];
+      if (!pooled.browser.connected) {
+        this.logger.warn(`Removing dead browser from pool`);
+        pooled.browser.close().catch(() => {});
+        this.pool.splice(i, 1);
+      } else if (!pooled.inUse && now - pooled.lastUsed > this.BROWSER_IDLE_TIMEOUT_MS && this.pool.length > 1) {
+        this.logger.log(`Closing idle browser (idle for ${Math.round((now - pooled.lastUsed) / 1000)}s)`);
+        pooled.browser.close().catch(() => {});
+        this.pool.splice(i, 1);
+      } else if (pooled.jobCount >= this.MAX_JOBS_PER_BROWSER && !pooled.inUse) {
+        this.logger.log(`Recycling browser after ${pooled.jobCount} jobs`);
+        pooled.browser.close().catch(() => {});
+        this.pool.splice(i, 1);
+      }
     }
-    const activo: Promise<Browser> | null = this.browserPromise;
-    if (!activo) throw new Error('No se pudo iniciar Chromium (Puppeteer)');
-    return activo;
+
+    // Ensure minimum pool size
+    if (this.pool.length === 0) {
+      this.logger.warn('Pool empty, creating new browser');
+      this.createBrowser().catch((e) => this.logger.error(`Failed to create browser: ${e.message}`));
+    }
+  }
+
+  private async shutdownPool(): Promise<void> {
+    await Promise.all(
+      this.pool.map(async (pooled) => {
+        try {
+          await pooled.browser.close();
+        } catch {
+          /* already closed */
+        }
+      }),
+    );
+    this.pool.length = 0;
+  }
+
+  private async acquireBrowser(): Promise<PooledBrowser> {
+    // Try to find an available browser
+    for (const pooled of this.pool) {
+      if (pooled.browser.connected && !pooled.inUse) {
+        pooled.inUse = true;
+        pooled.lastUsed = Date.now();
+        return pooled;
+      }
+    }
+
+    // Create new browser if under limit
+    if (this.pool.length < this.MAX_POOL_SIZE) {
+      const browser = await this.createBrowser();
+      const pooled = this.pool.find((p) => p.browser === browser)!;
+      pooled.inUse = true;
+      pooled.lastUsed = Date.now();
+      return pooled;
+    }
+
+    // Wait for a browser to become available (with timeout)
+    const start = Date.now();
+    const timeout = 30_000;
+    while (Date.now() - start < timeout) {
+      await new Promise((r) => setTimeout(r, 500));
+      for (const pooled of this.pool) {
+        if (pooled.browser.connected && !pooled.inUse) {
+          pooled.inUse = true;
+          pooled.lastUsed = Date.now();
+          return pooled;
+        }
+      }
+    }
+
+    throw new Error('No available browsers in pool (timeout)');
+  }
+
+  private releaseBrowser(pooled: PooledBrowser): void {
+    pooled.inUse = false;
+    pooled.lastUsed = Date.now();
+    pooled.jobCount += 1;
   }
 
   private buildHtml(cot: any): string {
@@ -158,7 +267,7 @@ export class CotizacionesPdfService implements OnModuleInit, OnModuleDestroy {
 <body>
   <div class="page">
     <div class="header">
-      <div class="brand">GOLD CONTINENT<small>Floristería &amp; Distribución</small></div>
+      <div class="brand">GOLD CONTINENT<small>Floristería & Distribución</small></div>
       <div class="doc-title">
         <h1>Cotización ${numero}</h1>
         <p>Fecha: ${fecha} · Tipo precio: ${tipoPrecio}</p>
@@ -215,7 +324,8 @@ export class CotizacionesPdfService implements OnModuleInit, OnModuleDestroy {
     if (!cot) throw new NotFoundException(`Cotización con ID ${id} no encontrada`);
     const hash = computePdfHash(cot);
 
-    const browser = await this.ensureBrowser();
+    const pooled = await this.acquireBrowser();
+    const browser = pooled.browser;
     const page = await browser.newPage();
     try {
       const html = this.buildHtml(cot);
@@ -230,6 +340,7 @@ export class CotizacionesPdfService implements OnModuleInit, OnModuleDestroy {
       return { buffer, filename, hash };
     } finally {
       await page.close().catch(() => undefined);
+      this.releaseBrowser(pooled);
     }
   }
 }

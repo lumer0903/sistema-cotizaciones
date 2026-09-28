@@ -6,12 +6,13 @@ import { LoginUseCase } from '../application/login.use-case';
 import { PrismaUserRepository } from './prisma-user.repository';
 import { IUserRepository } from '../domain/user.repository.interface';
 import { JwtStrategy } from './jwt.strategy';
+import { JWT_CONFIG } from '@goldcontinent/shared/auth/jwt';
 
 @Module({
   imports: [
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
+      secret: JWT_CONFIG.ACCESS_TOKEN_SECRET,
       signOptions: { expiresIn: '8h' },
     }),
   ],

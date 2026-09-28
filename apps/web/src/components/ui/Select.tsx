@@ -31,7 +31,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             options = [],
             className = '',
             disabled,
-            variant = 'default',
+            variant: _variant = 'default',
             sizeVariant = 'md',
             placeholder = 'Seleccionar',
             value: propValue,
@@ -43,14 +43,6 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         },
         ref
     ) => {
-        const isModal = variant === 'modal';
-
-        // Colores directos en gris neutro para el variant modal
-        const borderColor = isModal ? '#d4d4d8' : 'var(--color-brand-primary)'; // zinc-300
-        const focusColor = isModal ? '#71717a' : 'var(--color-brand-primary)'; // zinc-500
-        const labelIconColor = isModal ? '#71717a' : 'var(--color-brand-ink)'; // zinc-500 / amarillo oscuro AA
-        const chevronColor = isModal ? '#71717a' : 'var(--color-brand-ink)'; // zinc-500 / amarillo oscuro AA
-
         const [isOpen, setIsOpen] = useState(false);
         const [selectedValue, setSelectedValue] = useState<string | number>(
             propValue !== undefined ? propValue : defaultValue || ''
@@ -61,7 +53,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
         const flattenOptionNodes = (nodes: any): any[] => {
-            if (nodes == null || nodes === false || nodes === true) return [];
+            if (nodes == null || typeof nodes === 'boolean') return [];
             if (Array.isArray(nodes)) return nodes.flatMap(flattenOptionNodes);
             if (typeof nodes === 'object' && nodes.props) return [nodes];
             return [];
@@ -88,9 +80,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         }
 
         useEffect(() => {
-            if (propValue !== undefined) {
-                setSelectedValue(propValue);
-            }
+            if (propValue !== undefined) setSelectedValue(propValue);
         }, [propValue]);
 
         useEffect(() => {
@@ -131,16 +121,14 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         const handleSelect = (optValue: string | number) => {
             setSelectedValue(optValue);
             setIsOpen(false);
-            if (onChange) {
-                onChange({ target: { value: optValue, name } });
-            }
+            if (onChange) onChange({ target: { value: optValue, name } });
         };
 
         const selectedOption = parsedOptions.find((opt) => String(opt.value) === String(selectedValue));
-        const heightClass = sizeVariant === 'sm' ? 'min-h-11 h-11 text-xs' : 'h-11 text-xs sm:text-sm';
+        const heightClass = sizeVariant === 'sm' ? 'h-10 text-xs' : 'h-11 text-xs sm:text-sm';
 
         return (
-            <div className="w-full space-y-1" ref={containerRef}>
+            <div className="w-full space-y-1.5" ref={containerRef}>
                 <select
                     ref={ref}
                     name={name}
@@ -158,10 +146,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 </select>
 
                 {label && (
-                    <label
-                        className="block text-xs font-black uppercase tracking-wider transition-colors"
-                        style={{ color: labelIconColor }}
-                    >
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">
                         {label}
                     </label>
                 )}
@@ -173,34 +158,28 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                         disabled={disabled}
                         onClick={() => !disabled && setIsOpen((prev) => !prev)}
                         className={`
-              relative w-full ${heightClass} flex items-center justify-between rounded-2xl border bg-white 
-              font-medium transition-all text-left disabled:bg-gray-100 disabled:cursor-not-allowed pr-8 
+              relative w-full ${heightClass} flex items-center justify-between rounded-xl border 
+              border-zinc-200 bg-zinc-50/50 font-medium transition-all text-left text-zinc-800
+              hover:border-zinc-300 disabled:bg-zinc-100 disabled:cursor-not-allowed pr-8 
               ${icon ? 'pl-9' : 'px-3.5'} 
-              ${error ? '!border-red-500 focus:ring-2 focus:ring-red-200' : ''} 
+              ${isOpen ? 'bg-white border-amber-400 ring-2 ring-amber-400/20' : ''}
+              ${error ? '!border-red-500 focus:ring-2 focus:ring-red-100' : ''} 
               ${className}
             `.trim()}
-                        style={{
-                            borderColor: error ? undefined : isOpen ? focusColor : borderColor,
-                            boxShadow: isOpen && !error ? `0 0 0 2px color-mix(in srgb, ${focusColor} 20%, transparent)` : 'none',
-                            color: '#3f3f46',
-                        }}
                     >
                         {icon && (
-                            <div
-                                className="absolute left-3 pointer-events-none flex items-center justify-center"
-                                style={{ color: labelIconColor }}
-                            >
+                            <div className="absolute left-3 pointer-events-none flex items-center justify-center text-zinc-400">
                                 {icon}
                             </div>
                         )}
 
-                        <span className={`block truncate ${!selectedOption?.value ? 'text-zinc-500' : ''}`}>
+                        <span className={`block truncate ${!selectedOption?.value ? 'text-zinc-400' : ''}`}>
                             {selectedOption ? selectedOption.label : placeholder}
                         </span>
 
                         <ChevronDown
-                            className={`absolute right-2.5 size-4 transition-transform duration-200 pointer-events-none ${isOpen ? 'rotate-180' : ''}`}
-                            style={{ color: chevronColor }}
+                            className={`absolute right-2.5 size-4 text-zinc-400 transition-transform duration-200 pointer-events-none ${isOpen ? 'rotate-180 text-amber-500' : ''
+                                }`}
                         />
                     </button>
 
@@ -208,7 +187,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                         createPortal(
                             <div
                                 ref={menuRef}
-                                className="fixed z-[70] bg-white border border-stone-200 rounded-xl shadow-lg py-1 max-h-56 overflow-y-auto"
+                                className="fixed z-[70] bg-white border border-zinc-200 rounded-xl shadow-xl py-1 max-h-56 overflow-y-auto animate-in fade-in-50 zoom-in-95 duration-100"
                                 style={{ top: menuPos.top, left: menuPos.left, width: menuPos.width }}
                                 onMouseDown={(e) => e.stopPropagation()}
                             >
@@ -224,15 +203,16 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                                                     e.stopPropagation();
                                                     handleSelect(opt.value);
                                                 }}
-                                                className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors flex items-center justify-between hover:bg-stone-50 ${isSelected ? 'bg-stone-50 text-stone-900 font-bold' : 'text-stone-700'}`}
+                                                className={`w-full text-left px-3.5 py-2 text-xs font-medium transition-colors flex items-center justify-between hover:bg-zinc-100/70 ${isSelected ? 'bg-amber-50 text-amber-900 font-bold' : 'text-zinc-700'
+                                                    }`}
                                             >
                                                 <span className="truncate">{opt.label}</span>
-                                                {isSelected && <Check className="w-3.5 h-3.5 text-stone-600 shrink-0 ml-2" />}
+                                                {isSelected && <Check className="w-3.5 h-3.5 text-amber-600 shrink-0 ml-2" />}
                                             </button>
                                         );
                                     })
                                 ) : (
-                                    <div className="px-3 py-2 text-xs text-stone-500 text-center">
+                                    <div className="px-3 py-2 text-xs text-zinc-400 text-center">
                                         No hay opciones
                                     </div>
                                 )}

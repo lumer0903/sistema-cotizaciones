@@ -5,7 +5,7 @@ import { AppError } from '../../common/middleware/errorHandler';
 import { JWT_CONFIG, JWTPayload, TokenPair, createAccessTokenPayload } from '@goldcontinent/shared/auth/jwt';
 import { UsuarioAutenticado } from '@goldcontinent/shared/auth';
 
-const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET || 'change-me-refresh-secret';
+const REFRESH_TOKEN_SECRET = JWT_CONFIG.REFRESH_TOKEN_SECRET;
 
 function quitarDatosSensibles(usuario: { password_hash: string; [key: string]: any }) {
   const { password_hash, ...usuarioSeguro } = usuario;
