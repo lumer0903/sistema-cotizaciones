@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "node scripts/dev.js",
     "dev:api": "turbo run dev --filter=@goldcontinent/api",
     "dev:web": "turbo run dev --filter=@goldcontinent/web",
     "build": "turbo run build",
