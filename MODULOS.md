@@ -44,7 +44,7 @@ Catálogo de flores/artículos de floristería con precios duales (normal/distri
 **Núcleo del negocio.** Ciclo de vida con **máquina de transiciones validada en backend** (400 en saltos): `borrador → enviada → aprobada / parcialmente_pagada / rechazada` (`aprobada` terminal; `rechazada → borrador` reabre; los pagos cambian estado por su vía en `registrarPago`). Numeración correlativa `COT-001`, detalle de ítems, carreta (envío), pagos/abonos y exportación PDF **cacheada + en cola BullMQ** (ver submódulo `pdf/`).
 
 - **DTOs class-validator** en `dto/` (6): `create-cotizacion`, `create-cotizacion-detalle`, `update-cotizacion`, `cambiar-estado`, `registrar-pago`, `listar-cotizaciones.query` — el `ValidationPipe` global rechaza campos/query desconocidos (`400`); el service sigue validando lo referencial (detalle, máquina de estados, carreta).
-- **84 tests unitarios/integración** (vitest): `cotizaciones.service.test.ts` (41) + `pdf/pdf-hash.test.ts` (6) + `pdf/pdf-export.service.test.ts` (8) + `cobranza.service.integration.test.ts` (5) + `dashboard.service.integration.test.ts` (3) + `auth/rbac.test.ts` (16) + `auth/jwt-secrets.test.ts` (5).
+- **93 tests unitarios/integración** (vitest): `cotizaciones.service.test.ts` (44) + `pdf/pdf-hash.test.ts` (6) + `pdf/pdf-export.service.test.ts` (8) + `pdf/pdf-role.test.ts` (6) + `cobranza.service.integration.test.ts` (5) + `dashboard.service.integration.test.ts` (3) + `auth/rbac.test.ts` (16) + `auth/jwt-secrets.test.ts` (5).
 - `registrarPago` está **duplicado** en `cobranza.service.ts`.
 - `cambiarEstado` **escribe `tiempo_fin`** al pasar a `enviada` (indicador de tesis: tiempo de generación termina en el envío).
 - `fecha_vencimiento` se llena desde el DTO de crear/editar (la fija el asesor de ventas) → habilita la cobranza "vencida".
@@ -55,9 +55,9 @@ Generación de PDFs **asíncrona y cacheada** (Puppeteer → A4):
 
 - **Cache:** hash sha256 de los campos del HTML (`pdf-hash.ts`); si `pdf_hash` vigente + objeto legible en MinIO (bucket `cotizacion-pdfs`, key `cotizaciones/<id>-<hash>.pdf`) o en disco (`pdfs/…` cuando MinIO está off) → **200 binario** con `X-PDF-Cache: hit`.
 - **Miss:** encola job `generate-pdf` (id determinista `cotizo-pdf:<id>:<hash>`) en la cola `cotizacion-pdfs` (reintentos 2, backoff exponencial) y espera ≤ 15 s → `200` recién generado o **`202`** con `jobId` y `poll: /api/cotizaciones/:id/pdf-status`.
-- **Worker `PdfProcessor`** (`@Processor('cotizacion-pdfs')`, concurrency 2, en el proceso de la API): genera el HTML→PDF, lo guarda (`pdf-storage.service.ts`, MinIO con fallback local y guard contra path traversal) y escribe `pdf_key`, `pdf_hash`, `pdf_generado_en` en `cotizaciones`.
+- **Worker `PdfProcessor`** (`@Processor('cotizacion-pdfs')`, concurrency 2): genera el HTML→PDF, lo guarda (`pdf-storage.service.ts`, MinIO con fallback local y guard contra path traversal) y escribe `pdf_key`, `pdf_hash`, `pdf_generado_en` en `cotizaciones`. El registro es **condicional** vía `PdfWorkerModule.forRoot(entrada)` según `PDF_ROLE` (`both` = proceso único · `producer` = sólo encola · `consumer` = proceso dedicado `pdf-worker.ts`, puerto `PDF_WORKER_PORT`, sólo expone `/health`).
 - **Endpoints:** `GET /:id/export-pdf` (híbrido) + `GET /:id/pdf-status` → `{estado: pendiente|generando|listo, jobId, pdf_generado_en}`.
-- Archivos: `pdf.constants.ts`, `pdf-hash.ts`, `pdf-storage.service.ts`, `pdf.processor.ts`, `pdf-export.service.ts` (+ 14 tests).
+- Archivos: `pdf.constants.ts`, `pdf-hash.ts`, `pdf-storage.service.ts`, `pdf.processor.ts`, `pdf-export.service.ts`, `pdf-worker.module.ts` (+ 18 tests); procesos: `worker.module.ts` + `pdf-worker.ts` en la raíz de `src/`.
 
 ### cotizaciones/recomendaciones (submódulo)
 `POST /cotizaciones/recomendar-item`: recibe producto base, llama a la IA, enriquece con stock real por almacén y precios vigentes, audita en `ia_interacciones`. Es el endpoint de IA **sí usado por el frontend**.

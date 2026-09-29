@@ -28,7 +28,7 @@
                         │   16    │  │ FastAPI · TF-IDF│
                         └─────────┘  └─────────────────┘
 
-  Infra docker-compose: postgres · redis (BullMQ) · minio · api · web · ai-service
+  Infra docker-compose: postgres · redis (BullMQ) · minio · api (PDF_ROLE=producer) · pdf-worker (PDF_ROLE=consumer) · web · ai-service
 ```
 
 ---
@@ -121,9 +121,10 @@ GET /api/cotizaciones/:id/export-pdf
          → aún generando → 202 {status, jobId, poll: /pdf-status}
   → worker PdfProcessor (concurrency 2): Puppeteer HTML→A4 → PdfStorageService
      → actualiza pdf_key / pdf_hash / pdf_generado_en
-
 GET /api/cotizaciones/:id/pdf-status → {estado: pendiente|generando|listo, jobId, pdf_generado_en}
 ```
+
+El worker corre según `PDF_ROLE`: `both` (default: en el mismo proceso de la API) · `producer` (la API sólo encola) · `consumer` (proceso dedicado `pdf-worker.ts`, puerto `PDF_WORKER_PORT=3002`, expone **solo** `/health`). En compose: servicio `api` = `producer` + servicio `pdf-worker` = `consumer`.
 
 Cliente: `getCotizacionPdfBlob` en `cotizacionApi.ts` — ante 202 sondea `pdf-status` cada 2 s (máx. 10 intentos = 20 s) y solo vuelve a llamar `export-pdf` cuando `estado === 'listo'`; agota → error con toast.
 
@@ -225,7 +226,7 @@ features/<nombre>/
 
 | Tema | Estado |
 |------|--------|
-| Redis/BullMQ | **Activo:** cola `cotizacion-pdfs` + worker `PdfProcessor` (en el mismo proceso de la API) |
+| Redis/BullMQ | **Activo:** cola `cotizacion-pdfs` + worker `PdfProcessor` (registro condicional por `PDF_ROLE`: mismo proceso con `both`, o proceso dedicado `pdf-worker` con `producer`/`consumer`) |
 | helmet / express-rate-limit | **Activos** en `main.ts` (helmet + 300 req/15 min) |
 | node-cron | Instalado, **sin jobs** |
 | ESLint | **Configurado** (flat config en `apps/api` y `apps/web`); `pnpm lint` verde |

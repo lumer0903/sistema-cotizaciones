@@ -5,7 +5,6 @@ import { MinioModule } from '../../common/storage/minio.module';
 import { CotizacionesController } from './cotizaciones.controller';
 import { CotizacionesService } from './cotizaciones.service';
 import { CotizacionesPdfService } from './pdf/cotizaciones-pdf.service';
-import { PdfProcessor } from './pdf/pdf.processor';
 import { PdfStorageService } from './pdf/pdf-storage.service';
 import { PdfExportService } from './pdf/pdf-export.service';
 import { PDF_QUEUE } from './pdf/pdf.constants';
@@ -30,10 +29,10 @@ import { RecomendacionesModule } from './recomendaciones/recomendaciones.module'
     providers: [
         CotizacionesService,
         CotizacionesPdfService,
-        PdfProcessor,
         PdfStorageService,
         PdfExportService,
     ],
-    exports: [CotizacionesService, CotizacionesPdfService, PdfExportService],
+    // PdfProcessor (worker BullMQ) vive en PdfWorkerModule (registro condicional por PDF_ROLE)
+    exports: [CotizacionesService, CotizacionesPdfService, PdfExportService, PdfStorageService],
 })
 export class CotizacionesModule { }

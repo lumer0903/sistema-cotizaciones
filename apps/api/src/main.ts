@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module';
+import { getPdfRole } from './modules/cotizaciones/pdf/pdf.constants';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
@@ -85,6 +86,10 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
+  const pdfRole = getPdfRole();
   console.log(`Application is running on port ${port}`);
+  console.log(
+    `PDF_ROLE=${pdfRole} → worker de PDFs en este proceso: ${pdfRole === 'both' ? 'sí' : 'no (requiere pdf-worker)'}`,
+  );
 }
 bootstrap();

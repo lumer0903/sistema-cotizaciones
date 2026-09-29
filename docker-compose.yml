@@ -72,6 +72,8 @@ services:
       MINIO_USE_SSL: "false"
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
+      # El worker de PDFs corre en su propio servicio (pdf-worker); el API sólo encola
+      PDF_ROLE: producer
     ports:
       - "3001:3001"
     depends_on:
@@ -90,6 +92,47 @@ services:
       - /app/apps/api/node_modules
       - /app/packages/shared/node_modules
       - /app/packages/database/node_modules
+
+  pdf-worker:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    container_name: goldcontinent-pdf-worker
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://goldcontinent:goldcontinent_dev@postgres:5432/goldcontinent?schema=public
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-in-production}
+      JWT_EXPIRES_IN: 8h
+      CLIENT_URL: http://localhost:3000
+      AI_SERVICE_URL: http://ai-service:8000
+      IA_URL: http://ai-service:8000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENABLED: "true"
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      PDF_ROLE: consumer
+      PDF_WORKER_PORT: 3002
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./packages:/app/packages
+      - /app/apps/api/node_modules
+      - /app/packages/shared/node_modules
+      - /app/packages/database/node_modules
+    command: sh -c "pnpm --filter @goldcontinent/shared build && pnpm --filter @goldcontinent/api dev:worker"
 
   web:
     build:

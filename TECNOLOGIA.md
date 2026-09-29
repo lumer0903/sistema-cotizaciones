@@ -33,7 +33,7 @@
 
 ### Raíz (`package.json` — `goldcontinent`)
 
-- Scripts: `dev`, `dev:api`, `dev:web`, `dev:ai`*, `build`, `lint`, `typecheck`, `test`, `db:*`, `docker:*`
+- Scripts: `dev`, `dev:api`, `dev:web`, `dev:ai`*, `dev:worker` (API), `build`, `lint`, `typecheck`, `test`, `db:*`, `docker:*`
 - devDeps: `turbo`, `typescript`
 - deps: `clsx`, `tailwind-merge`
 
@@ -91,6 +91,7 @@ Tipos y contratos compartidos:
 | `CLIENT_URL` | CORS origin | `http://localhost:3000` |
 | `NEXT_PUBLIC_API_URL` | Base URL del front | `http://localhost:3001` |
 | `REDIS_HOST` / `REDIS_PORT` | BullMQ (cola PDF) | `localhost` / `6379` |
+| `PDF_ROLE` / `PDF_WORKER_PORT` | Quién ejecuta `PdfProcessor`: `producer` (API sólo encola) · `consumer` (worker dedicado) · `both` (un proceso, default) / puerto del worker | `both` / `3002` |
 | `MINIO_*` + `MINIO_ENABLED` | Object storage (imágenes + PDFs bucket `cotizacion-pdfs`) | fallback placeholder si false |
 | `AI_SERVICE_URL` | URL FastAPI (preferida por el código) | `http://localhost:8000` |
 | `AI_USE_MOCK` | Fuerza mock IA | — |
@@ -106,7 +107,8 @@ Tipos y contratos compartidos:
 | postgres | `postgres:16` · 5432 | healthcheck; volumen `./init-scripts` **referenciado pero no existe** |
 | redis | `redis:7` · 6379 | healthcheck; **en uso** por BullMQ (cola `cotizacion-pdfs`) |
 | minio | 9000 / consola 9001 | healthcheck; buckets se crean lazy desde la API (`product-images`, `cotizacion-pdfs`) |
-| api | `Dockerfile.dev` · 3001 | `AI_SERVICE_URL=http://ai-service:8000`; `depends_on` con condition de healthcheck a redis y minio |
+| api | `Dockerfile.dev` · 3001 | `AI_SERVICE_URL=http://ai-service:8000`; `PDF_ROLE=producer` (el worker corre aparte); `depends_on` con condition de healthcheck a redis y minio |
+| pdf-worker | `Dockerfile.dev` · 3002 | `PDF_ROLE=consumer` · `dev:worker` (mismas dependencias que api; sólo expone `/health`) |
 | web | 3000 | |
 | ai-service | uvicorn · 8000 | FastAPI |
 
@@ -157,5 +159,5 @@ Seed: `pnpm --filter=@goldcontinent/database db:seed`.
 | 13 | ~~Precios mock en consulta FE~~ | **Resuelto:** precios reales vía `/productos?include=precios` |
 | 14 | ~~Models legacy de ventas en BD~~ | **Resuelto:** `Venta`/`VentaDetalle`/`VentaPago`/`CuentaCobrar` eliminados del schema; `db:push` aplicado |
 | 15 | ~~Soft delete inconsistente~~ | **Resuelto:** los listados de usuarios filtran `deleted_at: null` |
-| 16 | **Cola PDF acoplada al proceso API** | El worker BullMQ (`PdfProcessor`, Chromium) corre dentro de `nest start` — sin Redis no hay encolado (cache-hit sigue funcionando) |
+| 16 | ~~Cola PDF acoplada al proceso API~~ | **Resuelto:** `PdfWorkerModule.forRoot()` registra `PdfProcessor` según `PDF_ROLE` (`producer`/`consumer`/`both`); entrypoint `pdf-worker.ts` (solo `/health`) + servicio `pdf-worker` en compose; API con `PDF_ROLE=producer` sólo encola |
 | 17 | ~~Historial de migraciones desincronizado~~ | **Resuelto:** baseline `0_init` + `migrate deploy` aplicado |

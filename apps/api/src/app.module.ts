@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { HealthController } from './health.controller';
 import { BullModule } from '@nestjs/bullmq';
+import { bullRootOptions } from './common/bull/bull-root.options';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { StorageModule } from './common/storage/storage.module';
 import { MinioModule } from './common/storage/minio.module';
@@ -20,6 +21,7 @@ import { RecomendacionesModule } from './modules/cotizaciones/recomendaciones/re
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ConfiguracionModule } from './modules/configuracion/configuracion.module';
 import { RolesModule } from './modules/roles/roles.module';
+import { PdfWorkerModule } from './modules/cotizaciones/pdf/pdf-worker.module';
 
 @Module({
   imports: [
@@ -29,14 +31,11 @@ import { RolesModule } from './modules/roles/roles.module';
     MinioModule,
     AuthModule,
     BullModule.forRootAsync({
-      useFactory: () => ({
-        connection: {
-          host: process.env.REDIS_HOST || 'localhost',
-          port: parseInt(process.env.REDIS_PORT || '6379', 10),
-        },
-      }),
+      useFactory: bullRootOptions,
     }),
     CotizacionesModule,
+    // Worker BullMQ del PDF: activo en este proceso sólo con PDF_ROLE=both
+    PdfWorkerModule.forRoot('api'),
     AiModule,
     ProductosModule,
     UsuariosModule,
