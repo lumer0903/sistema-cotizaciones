@@ -26,12 +26,13 @@ export class PdfStorageService {
   async save(id: number, hash: string, buffer: Buffer): Promise<SavedPdf> {
     if (this.minio.isHealthy()) {
       const key = `cotizaciones/${id}-${hash}.pdf`;
+      // presigned máx. 7 días (S3/MinIO rechaza expiry mayor)
       const url = await this.minio.uploadFile(
         PDF_BUCKET,
         key,
         buffer,
         'application/pdf',
-        365 * 24 * 60 * 60,
+        7 * 24 * 60 * 60,
       );
       if (url) return { key, url };
       this.logger.warn(`MinIO upload devolvió null para ${key}; usando almacenamiento local`);

@@ -125,7 +125,8 @@ export class MinioService implements OnModuleInit {
       await this.client.putObject(this.bucketPdfs, key, pdfBuffer, pdfBuffer.length, {
         'Content-Type': 'application/pdf',
       });
-      return this.client.presignedUrl('GET', this.bucketPdfs, key, 365 * 24 * 60 * 60);
+      // Máximo permitido por S3/MinIO: 7 días (más => "expires cannot be greater than 7 days")
+      return this.client.presignedUrl('GET', this.bucketPdfs, key, 7 * 24 * 60 * 60);
     }, fallbackUrl, 'uploadPdf');
   }
 
