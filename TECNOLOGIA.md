@@ -140,6 +140,14 @@ Seed: `pnpm --filter=@goldcontinent/database db:seed`.
 
 ---
 
+## Performance (medido)
+
+- **Bundle producción** (`next build` + gzip de `apps/web/.next/static`): **417 KB gzip** en 44 chunks — top: 71.6 / 41.7 / 38.7 / 32.9 / 24.7 KB gz; CSS 84.6 KB raw. Sin librerías pesadas en FE (no hay charts/xlsx/moment/lodash/framer).
+- **Carga real** (Puppeteer, dev server, 1440×900): login FCP 604 ms · load 989 ms; dashboard admin FCP 564 ms · **LCP 968 ms** · DCL 328 ms.
+- Sin deuda pendiente: todas las imágenes pasan por `next/image` (`remotePatterns`), no hay componentes que exijan `next/dynamic`.
+
+---
+
 ## Gaps y riesgos conocidos
 
 | # | Gap | Impacto |
