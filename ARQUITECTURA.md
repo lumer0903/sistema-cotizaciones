@@ -236,4 +236,4 @@ features/<nombre>/
 | IA env | **Resuelta:** `AI_SERVICE_URL \|\| IA_URL` + compose con `AI_SERVICE_URL` |
 | CI/CD | **Resuelto:** `deploy.yml` (ci + deploy condicional a `main`/`ENABLE_FLY_DEPLOY`) + `fly-api.toml`/`fly-web.toml` (dos apps) |
 | Duplicados | `registrarPago`, `toNumber`, dos clientes API, auth controller legado |
-| Campos huérfanos | `fecha_vencimiento`, `tiempo_fin` (leídos, nunca escritos) |
+| Campos huérfanos | **Resueltos:** `tiempo_fin` se escribe al pasar a `enviada`; `fecha_vencimiento` la fija el asesor (DTO crear/editar) |

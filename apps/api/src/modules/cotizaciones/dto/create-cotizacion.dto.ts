@@ -3,6 +3,7 @@ import {
   ArrayNotEmpty,
   IsArray,
   IsBoolean,
+  IsDateString,
   IsEnum,
   IsInt,
   IsNumber,
@@ -48,8 +49,16 @@ export class CreateCotizacionDto {
   @ApiPropertyOptional({ example: 'COT-001', maxLength: 50 })
   @IsOptional()
   @IsString()
-  @MaxLength(50)
   numero?: string;
+
+  @ApiPropertyOptional({
+    example: '2026-10-15',
+    nullable: true,
+    description: 'Fecha de vencimiento del crédito, fijada por el asesor de ventas',
+  })
+  @IsOptional()
+  @IsDateString()
+  fecha_vencimiento?: string | null;
 
   @ApiProperty({ type: [CreateCotizacionDetalleDto] })
   @IsArray()

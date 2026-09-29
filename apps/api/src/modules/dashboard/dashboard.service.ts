@@ -7,6 +7,10 @@ export interface KpiResponse {
   efectividadIA: number;
   tiempoPromedioCotizacion: number;
   alertasStockActivas: number;
+  /** Indicador de tesis: % de cotizaciones aceptadas (aprobadas / total registradas × 100). */
+  eficacia: number;
+  /** Indicador de tesis: % de ingresos (suma de aprobadas / suma total × 100). */
+  rendimientoMonetario: number;
 }
 
 export interface AlertaStockDetalle {
@@ -47,14 +51,16 @@ export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getKpis(): Promise<KpiResponse> {
-    const [cotizacionesStats, itemsStats, tiempoStats, alertasCount] = await Promise.all([
-      this.getCotizacionesStats(),
-      this.getItemsStats(),
-      this.getTiempoPromedioStats(),
-      this.getAlertasStockActivas(),
-    ]);
+    const [cotizacionesStats, itemsStats, tiempoStats, alertasCount, rendimientoMonetario] =
+      await Promise.all([
+        this.getCotizacionesStats(),
+        this.getItemsStats(),
+        this.getTiempoPromedioStats(),
+        this.getAlertasStockActivas(),
+        this.getRendimientoMonetarioStats(),
+      ]);
 
-    return this.buildKpis(cotizacionesStats, itemsStats, tiempoStats, alertasCount);
+    return this.buildKpis(cotizacionesStats, itemsStats, tiempoStats, alertasCount, rendimientoMonetario);
   }
 
   async getDetalleKpis(): Promise<DetalleKpisResponse> {
@@ -63,6 +69,7 @@ export class DashboardService {
       itemsStats,
       tiempoStats,
       alertasCount,
+      rendimientoMonetario,
       alertasStock,
       graficoCotizadoVendido,
       graficoAlertasPorAlmacen,
@@ -71,12 +78,13 @@ export class DashboardService {
       this.getItemsStats(),
       this.getTiempoPromedioStats(),
       this.getAlertasStockActivas(),
+      this.getRendimientoMonetarioStats(),
       this.getAlertasStockDetalle(),
       this.getGraficoCotizadoVsVendido(),
       this.getGraficoAlertasPorAlmacen(),
     ]);
 
-    const kpis = this.buildKpis(cotizacionesStats, itemsStats, tiempoStats, alertasCount);
+    const kpis = this.buildKpis(cotizacionesStats, itemsStats, tiempoStats, alertasCount, rendimientoMonetario);
 
     return {
       kpis,
@@ -104,6 +112,7 @@ export class DashboardService {
     itemsStats: Awaited<ReturnType<DashboardService['getItemsStats']>>,
     tiempoStats: number,
     alertasCount: number,
+    rendimientoMonetario: number,
   ): KpiResponse {
     const tasaConversion = cotizacionesStats.totalEnviadasAprobadasRechazadas > 0
       ? (cotizacionesStats.aprobada / cotizacionesStats.totalEnviadasAprobadasRechazadas) * 100
@@ -113,11 +122,18 @@ export class DashboardService {
       ? (itemsStats.itemsSugeridosIA / itemsStats.totalItemsAprobados) * 100
       : 0;
 
+    // Eficacia de la tesis: aceptadas (aprobadas) sobre el TOTAL registrado
+    const eficacia = cotizacionesStats.total > 0
+      ? (cotizacionesStats.aprobada / cotizacionesStats.total) * 100
+      : 0;
+
     return {
       tasaConversion: Math.round(tasaConversion * 100) / 100,
       efectividadIA: Math.round(efectividadIA * 100) / 100,
       tiempoPromedioCotizacion: Math.round(tiempoStats * 100) / 100,
       alertasStockActivas: alertasCount,
+      eficacia: Math.round(eficacia * 100) / 100,
+      rendimientoMonetario,
     };
   }
 
@@ -182,6 +198,23 @@ export class DashboardService {
         AND tiempo_fin IS NOT NULL`;
 
     return Number(rows[0]?.avg_min ?? 0);
+  }
+
+  /**
+   * Rendimiento monetario de la tesis:
+   * X1 = ventas de cotizaciones (suma del total de APROBADAS, que equivalen a
+   *      pago completo) / X2 = ventas totales (suma del total de TODAS) × 100.
+   */
+  private async getRendimientoMonetarioStats(): Promise<number> {
+    const rows = await this.prisma.$queryRaw<Array<{ aprobadas: number | string; total: number | string }>>`
+      SELECT COALESCE(SUM(total) FILTER (WHERE estado = 'aprobada'), 0) AS aprobadas,
+             COALESCE(SUM(total), 0) AS total
+      FROM cotizaciones`;
+
+    const aprobadas = Number(rows[0]?.aprobadas ?? 0);
+    const total = Number(rows[0]?.total ?? 0);
+    if (total <= 0) return 0;
+    return Math.round((aprobadas / total) * 10000) / 100;
   }
 
   private async getAlertasStockActivas(): Promise<number> {

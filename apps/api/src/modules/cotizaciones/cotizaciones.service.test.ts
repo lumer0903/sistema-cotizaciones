@@ -59,7 +59,10 @@ describe('cambiarEstado (máquina de transiciones)', () => {
     await service.cambiarEstado(1, hacia);
     expect(update).toHaveBeenCalledWith({
       where: { id_cotizacion: 1 },
-      data: { estado: hacia },
+      data:
+        hacia === 'enviada'
+          ? { estado: 'enviada', tiempo_fin: expect.any(Date) }
+          : { estado: hacia },
     });
   });
 
@@ -88,6 +91,35 @@ describe('cambiarEstado (máquina de transiciones)', () => {
     const res = await service.cambiarEstado(1, 'enviada');
     expect(update).not.toHaveBeenCalled();
     expect(res).toEqual(expect.objectContaining({ estado: 'enviada' }));
+  });
+
+  it('al pasar a enviada escribe tiempo_fin (indicador de tesis)', async () => {
+    const { service, update } = makeService({ cot: { ...BASE_COT, estado: 'borrador' } });
+    await service.cambiarEstado(1, 'enviada');
+    const data = update.mock.calls[0][0].data;
+    expect(data.estado).toBe('enviada');
+    expect(data.tiempo_fin).toBeInstanceOf(Date);
+  });
+
+  it('no pisa tiempo_fin si ya está escrito (reenvío)', async () => {
+    const previo = new Date('2026-01-15T10:00:00Z');
+    const { service, update } = makeService({
+      cot: { ...BASE_COT, estado: 'borrador', tiempo_fin: previo },
+    });
+    await service.cambiarEstado(1, 'enviada');
+    expect(update).toHaveBeenCalledWith({
+      where: { id_cotizacion: 1 },
+      data: { estado: 'enviada' },
+    });
+  });
+
+  it('otros estados (p. ej. aprobada) no escriben tiempo_fin', async () => {
+    const { service, update } = makeService({ cot: { ...BASE_COT, estado: 'enviada' } });
+    await service.cambiarEstado(1, 'aprobada');
+    expect(update).toHaveBeenCalledWith({
+      where: { id_cotizacion: 1 },
+      data: { estado: 'aprobada' },
+    });
   });
 });
 

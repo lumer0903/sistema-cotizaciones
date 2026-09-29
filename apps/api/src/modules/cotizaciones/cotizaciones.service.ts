@@ -19,6 +19,7 @@ export class CotizacionesService {
             incluye_carreta = false,
             costo_carreta = 0,
             detalle = [],
+            fecha_vencimiento = null,
         } = data;
 
         if (!id_cliente) {
@@ -66,6 +67,8 @@ export class CotizacionesService {
                         costo_carreta: carreta,
                         subtotal,
                         total,
+                        // La llena el asesor de ventas (habilita cobranza "vencida")
+                        fecha_vencimiento: fecha_vencimiento ? new Date(fecha_vencimiento) : null,
                         detalle: {
                             create: detalle.map((item) => ({
                                 id_producto: Number(item.id_producto),
@@ -250,6 +253,7 @@ export class CotizacionesService {
             incluye_carreta,
             costo_carreta,
             detalle,
+            fecha_vencimiento,
         } = data;
 
         if (detalle !== undefined && (!Array.isArray(detalle) || detalle.length === 0)) {
@@ -295,6 +299,9 @@ export class CotizacionesService {
                         ...(observaciones !== undefined ? { observaciones } : {}),
                         ...(incluye_carreta !== undefined ? { incluye_carreta: Boolean(incluye_carreta) } : {}),
                         ...(costo_carreta !== undefined ? { costo_carreta: Number(costo_carreta) } : {}),
+                        ...(fecha_vencimiento !== undefined
+                            ? { fecha_vencimiento: fecha_vencimiento ? new Date(fecha_vencimiento) : null }
+                            : {}),
                         subtotal,
                         total,
                         ...(lineas
@@ -364,7 +371,12 @@ export class CotizacionesService {
 
         return this.prisma.cotizacion.update({
             where: { id_cotizacion: id },
-            data: { estado: estado as any },
+            data: {
+                estado: estado as any,
+                // Indicador de tesis (tiempo de generación): termina en el paso
+                // a 'enviada'; no se pisa si ya tiene valor (p. ej. reenvíos).
+                ...(estado === 'enviada' && !cot.tiempo_fin ? { tiempo_fin: new Date() } : {}),
+            },
         });
     }
 

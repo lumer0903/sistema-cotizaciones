@@ -46,8 +46,8 @@ Catálogo de flores/artículos de floristería con precios duales (normal/distri
 - **DTOs class-validator** en `dto/` (6): `create-cotizacion`, `create-cotizacion-detalle`, `update-cotizacion`, `cambiar-estado`, `registrar-pago`, `listar-cotizaciones.query` — el `ValidationPipe` global rechaza campos/query desconocidos (`400`); el service sigue validando lo referencial (detalle, máquina de estados, carreta).
 - **84 tests unitarios/integración** (vitest): `cotizaciones.service.test.ts` (41) + `pdf/pdf-hash.test.ts` (6) + `pdf/pdf-export.service.test.ts` (8) + `cobranza.service.integration.test.ts` (5) + `dashboard.service.integration.test.ts` (3) + `auth/rbac.test.ts` (16) + `auth/jwt-secrets.test.ts` (5).
 - `registrarPago` está **duplicado** en `cobranza.service.ts`.
-- `cambiarEstado` no escribe `tiempo_fin` (KPI tiempo muerto sigue en 0).
-- `fecha_vencimiento` nunca se escribe → cobranza no puede marcar "vencida".
+- `cambiarEstado` **escribe `tiempo_fin`** al pasar a `enviada` (indicador de tesis: tiempo de generación termina en el envío).
+- `fecha_vencimiento` se llena desde el DTO de crear/editar (la fija el asesor de ventas) → habilita la cobranza "vencida".
 - Submódulo `recomendaciones/` anidado (importado 2 veces en `app.module`).
 
 ### cotizaciones/pdf (submódulo)
@@ -83,13 +83,12 @@ Cartera de cobro sobre cotizaciones: estado (`pendiente|parcial|pagada|vencida`)
 
 - `registrarPago` duplicado respecto a cotizaciones.
 - Paginación **en memoria** (carga todo y `.slice()`).
-- Estado "vencida" muerto (nadie escribe `fecha_vencimiento`); no calcula mora (`tasaMora` sin usar).
+- Estado "vencida" **operativo** cuando el asesor fija `fecha_vencimiento`; no calcula mora (`tasaMora` sin usar).
 
 ### dashboard
-KPIs de administración/tesis: tasa de conversión, efectividad de IA, tiempo promedio de cotización, alertas de stock + gráficos.
+KPIs de administración/tesis: tasa de conversión, efectividad de IA, tiempo promedio de cotización, alertas de stock + gráficos. **Indicadores de la tesis**: `eficacia` (aprobadas/total×100), `rendimientoMonetario` (Σ aprobadas/Σ total×100) y `tiempoPromedioCotizacion` (min, vivo desde que `cambiarEstado` escribe `tiempo_fin`).
 
-- `tiempoPromedioCotizacion` lee `tiempo_fin` que nadie escribe → siempre 0.
-- `getDetalleKpis` duplica queries de `getKpis`.
+- `getDetalleKpis` hace las mismas queries base que `getKpis` más gráficos (paralelo, no duplica roundtrips).
 
 ### configuracion
 Almacén clave-valor (`clave`, `valor`, `descripcion`) con endpoints REST:

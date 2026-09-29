@@ -151,7 +151,7 @@ Seed: `pnpm --filter=@goldcontinent/database db:seed`.
 | 7 | ~~`ai-service` fuera de pnpm~~ | **Resuelto:** `pnpm dev` lo orquesta (venv/PATH + sonda `:8000/health`) y `pnpm dev:ai` existe |
 | 8 | ~~CI/CD stale~~ | **Resuelto:** `deploy.yml` reescrito + `fly-api.toml`/`fly-web.toml` (dos apps Fly) |
 | 9 | ~~`init-scripts/` no existe~~ | **Resuelto:** volumen/dependencia muerta eliminada del compose |
-| 10 | **Campos huérfanos** (`fecha_vencimiento`, `tiempo_fin`) | Cobranza "vencida" y KPI tiempo muertos |
+| 10 | ~~Campos huérfanos~~ | **Resuelto:** `tiempo_fin` se escribe al pasar a `enviada` (KPI tiempo vivo); `fecha_vencimiento` la llena el asesor vía DTO (cobranza "vencida" operativa) |
 | 11 | ~~Doble cliente API FE~~ | **Resuelto:** unificado en `lib/apiClient.ts` con refresh |
 | 12 | ~~`console.log` en cliente API~~ | **Resuelto** |
 | 13 | ~~Precios mock en consulta FE~~ | **Resuelto:** precios reales vía `/productos?include=precios` |
