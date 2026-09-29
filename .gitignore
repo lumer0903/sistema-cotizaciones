@@ -45,3 +45,6 @@ docker-compose.override.yml
 
 # Prisma
 prisma/migrations/.migration_lock.toml
+# Artefactos de QA visual (scripts/qa-routes.mjs)
+qa-screenshots/
+qa-report.json
