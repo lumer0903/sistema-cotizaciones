@@ -94,7 +94,6 @@ module/
 - `prisma/` — module + service (conexión global)
 - `storage/` — `StorageService` (disco local) **y** `MinioModule` (S3-compatible) — dos backends conviviendo
 - `filters/all-exceptions.filter.ts` — respuestas uniformes `{success:false, message}`
-- `middleware/` — handlers Express legados (`errorHandler`, `notFoundHandler`) **no registrados** en `main.ts`
 
 ### Pipeline HTTP (`main.ts`)
 
@@ -157,7 +156,7 @@ PATCH /api/auth/avatar   → setea foto (data URL base64, máx ~512 KB)
 DELETE /api/auth/avatar  → elimina foto
 ```
 
-- Secrets con fallbacks inseguros (`'dev-secret-change-in-production'`).
+- **Secretos JWT obligatorios** (auditoría P13): `jwt.ts` lanza si faltan `JWT_SECRET`/`JWT_REFRESH_SECRET` (sin fallback; la API los carga vía `load-env.ts` y el web vía `next.config.mjs`).
 - `JwtModule` en `auth.module.ts` declara expiración 8h **sin uso efectivo** (los tokens reales usan `JWT_CONFIG` de shared: 15m).
 
 ### Roles
@@ -166,7 +165,7 @@ Catálogo dinámico en BD (`model Rol` + `model RolPermiso`); `Usuario.rol` es *
 
 - RBAC en `packages/shared/src/auth/rbac.ts` (`puede()`, niveles `sin_acceso < lectura < edicion`, `GRUPOS_MODULOS` administrativo/operativo, `esMatrizBloqueada`).
 - **Backend:** módulo `roles` (CRUD + permisos) con `@Roles('admin')`; `RolesGuard` **por controller** + `@Roles(...)` en endpoints sensibles (usuarios, roles, categorías, almacenes, dashboard, PUT configuración). Sin `@Roles` → solo `JwtAuthGuard`. No está como `APP_GUARD` global (ese orden rompería `user` antes del JWT).
-- **Frontend:** `usePermissions()` + `ProtectedRoute` en layouts + `middleware.ts` estricto (rutas `/admin` y `/vendedor` exigen sesión y cookie `userRole`); pestaña Roles y Permisos en `/admin/usuarios`.
+- **Frontend:** `usePermissions()` + `ProtectedRoute` en layouts + `proxy.ts` estricto (rutas `/admin` y `/vendedor` exigen token JWT verificado y el rol del token); pestaña Roles y Permisos en `/admin/usuarios`.
 
 ---
 
@@ -174,7 +173,7 @@ Catálogo dinámico en BD (`model Rol` + `model RolPermiso`); `Usuario.rol` es *
 
 ### Protección de rutas (3 niveles)
 
-1. **`middleware.ts` (edge):** lee cookies `accessToken/refreshToken/userRole`; redirige `/` por rol; bloquea cruce admin↔vendedor (débil si falta `userRole`).
+1. **`proxy.ts` (Next 16, runtime Node):** verifica la firma del `accessToken` con `jose` (rol sacado del token verificado; el refreshToken solo como respaldo y la cookie `userRole` como hint de UI); redirige `/` por rol, bloquea cruce admin↔vendedor y hace **fail-closed** si faltan los secretos. (`middleware.ts` quedó deprecado en Next 16.)
 2. **`ProtectedRoute` en layouts:** `admin/layout.tsx` exige `roles: [admin, gerente]` + permiso `dashboard`; `vendedor/layout.tsx` exige `roles: [vendedor]` + permiso `cotizaciones`.
 3. **RBAC client-side:** `usePermissions()` → `can(modulo, nivel)` de `@goldcontinent/shared/auth`.
 
@@ -205,7 +204,7 @@ features/<nombre>/
 
 - **Contexto:** `lib/authProvider.tsx` (sesión, login/logout/refresh).
 - **Zustand:** `useCrearCotizacionStore` (borrador de creación, `persist`).
-- **Cliente API único:** `lib/apiClient.ts` — token desde cookie `accessToken` → `localStorage` (`access_token`/`token`); en 401 intenta `POST /auth/refresh` una vez y reintenta; si falla → limpia sesión y redirige a `/login?redirectTo=...`. Incluye `uploadFile()` para FormData.
+- **Cliente API único:** `lib/apiClient.ts` — token **solo en cookie httpOnly** (nunca en `localStorage`; P13); en 401 intenta `POST /auth/refresh` una vez y reintenta; si falla → limpia sesión y redirige a `/login?redirectTo=...`. Incluye `uploadFile()` para FormData.
 - **Debounce de filtros:** `hooks/useDebounce.ts` (300 ms) en páginas de listado (inventario, cotizaciones admin/vendedor, cobranza, catálogo); el valor crudo se usa para el filtro local inmediato y el debounced para la consulta HTTP.
 - **PDF:** fetch directo con cookies/Bearer en `cotizacionApi.ts` (polling 202 descrito en el flujo backend), no pasa por `apiClient`.
 
@@ -230,11 +229,11 @@ features/<nombre>/
 | helmet / express-rate-limit | **Activos** en `main.ts` (helmet + 300 req/15 min) |
 | node-cron | Instalado, **sin jobs** |
 | ESLint | **Configurado** (flat config en `apps/api` y `apps/web`); `pnpm lint` verde |
-| Tests | **55 specs vitest** (solo API: 41 cotizaciones + 14 PDF); frontend sin tests |
-| Migraciones | 1 legacy + flujo real `db:push` (historial desincronizado) |
+| Tests | **84 specs vitest** (solo API: 41 cotizaciones + 14 PDF + 8 integración + 16 RBAC + 5 JWT); frontend sin tests |
+| Migraciones | **Resuelto:** baseline `0_init` + `db:migrate deploy` aplicado (`migrate status` up-to-date) |
 | Models legacy | ~~`Venta`, `VentaDetalle`, `VentaPago`, `CuentaCobrar`~~ **eliminados del schema** |
 | DTOs cotizaciones | **Resuelto:** DTOs class-validator (`dto/`) en create/update/estado/pago/listado |
 | IA env | **Resuelta:** `AI_SERVICE_URL \|\| IA_URL` + compose con `AI_SERVICE_URL` |
-| CI/CD | `fly.toml` y `deploy.yml` apuntan a `Gold_back/` inexistente |
+| CI/CD | **Resuelto:** `deploy.yml` (ci + deploy condicional a `main`/`ENABLE_FLY_DEPLOY`) + `fly-api.toml`/`fly-web.toml` (dos apps) |
 | Duplicados | `registrarPago`, `toNumber`, dos clientes API, auth controller legado |
 | Campos huérfanos | `fecha_vencimiento`, `tiempo_fin` (leídos, nunca escritos) |

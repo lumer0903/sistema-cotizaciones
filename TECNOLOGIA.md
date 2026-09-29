@@ -85,8 +85,8 @@ Tipos y contratos compartidos:
 | Variable | Uso | Default notable |
 |----------|-----|-----------------|
 | `DATABASE_URL` | Conexión Prisma/PG | — |
-| `JWT_SECRET` | Access token | `'dev-secret-change-in-production'` ⚠ |
-| `JWT_REFRESH_SECRET` | Refresh token | `'change-me-refresh-secret'` ⚠ |
+| `JWT_SECRET` | Access token | **Obligatorio** (sin fallback; lanza si falta) |
+| `JWT_REFRESH_SECRET` | Refresh token | **Obligatorio** (sin fallback; lanza si falta) |
 | `PORT` | Puerto API | `3001` |
 | `CLIENT_URL` | CORS origin | `http://localhost:3000` |
 | `NEXT_PUBLIC_API_URL` | Base URL del front | `http://localhost:3001` |
@@ -145,17 +145,17 @@ Seed: `pnpm --filter=@goldcontinent/database db:seed`.
 | 1 | ~~Sin RolesGuard en API~~ | **Resuelto:** `RolesGuard` por controller (junto a JWT) + `@Roles` en usuarios, categorías, almacenes, dashboard, config PUT |
 | 2 | ~~helmet y rate-limit sin usar~~ | **Resuelto:** `helmet()` + `express-rate-limit` (300 req/15 min) globales en `main.ts` |
 | 3 | ~~Sin config ESLint~~ | **Resuelto:** flat config (`eslint.config.mjs`) en `apps/api` y `apps/web`; `pnpm lint` verde |
-| 4 | ~~Sin tests~~ | **Resuelto:** 55 specs vitest en API (41 cotizaciones + 6 hash PDF + 8 export PDF). **Frontend sin tests** |
-| 5 | **Secrets con fallback** | Riesgo si se despliega sin `.env` |
+| 4 | ~~Sin tests~~ | **Resuelto:** 84 specs vitest en API (41 cotizaciones + 14 PDF + 8 integración + 16 RBAC + 5 JWT). **Frontend sin tests** |
+| 5 | ~~Secrets con fallback~~ | **Resuelto:** `jwt.ts` sin fallback (throw si faltan); `load-env.ts` en API y dotenv en `next.config.mjs` |
 | 6 | ~~Mismatch `IA_URL` vs `AI_SERVICE_URL`~~ | **Resuelto:** código lee `AI_SERVICE_URL \|\| IA_URL`; compose inyecta `AI_SERVICE_URL` |
 | 7 | **`ai-service` fuera de pnpm** | `dev:ai` no funciona |
-| 8 | **CI/CD stale** (`fly.toml`, `deploy.yml` → `Gold_back/`) | Deploy roto si se usa |
-| 9 | **`init-scripts/` no existe** | compose puede fallar o ignorar volumen |
+| 8 | ~~CI/CD stale~~ | **Resuelto:** `deploy.yml` reescrito + `fly-api.toml`/`fly-web.toml` (dos apps Fly) |
+| 9 | ~~`init-scripts/` no existe~~ | **Resuelto:** volumen/dependencia muerta eliminada del compose |
 | 10 | **Campos huérfanos** (`fecha_vencimiento`, `tiempo_fin`) | Cobranza "vencida" y KPI tiempo muertos |
 | 11 | ~~Doble cliente API FE~~ | **Resuelto:** unificado en `lib/apiClient.ts` con refresh |
 | 12 | ~~`console.log` en cliente API~~ | **Resuelto** |
 | 13 | ~~Precios mock en consulta FE~~ | **Resuelto:** precios reales vía `/productos?include=precios` |
 | 14 | ~~Models legacy de ventas en BD~~ | **Resuelto:** `Venta`/`VentaDetalle`/`VentaPago`/`CuentaCobrar` eliminados del schema; `db:push` aplicado |
-| 15 | **Soft delete inconsistente** | Usuarios eliminados siguen listados |
+| 15 | ~~Soft delete inconsistente~~ | **Resuelto:** los listados de usuarios filtran `deleted_at: null` |
 | 16 | **Cola PDF acoplada al proceso API** | El worker BullMQ (`PdfProcessor`, Chromium) corre dentro de `nest start` — sin Redis no hay encolado (cache-hit sigue funcionando) |
-| 17 | **Historial de migraciones desincronizado** | Workflow real = `db:push`; `db:migrate` rechazará hasta regenerar migraciones |
+| 17 | ~~Historial de migraciones desincronizado~~ | **Resuelto:** baseline `0_init` + `migrate deploy` aplicado |

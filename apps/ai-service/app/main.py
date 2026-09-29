@@ -1,246 +1,208 @@
 import os
-import re
-import unicodedata
-from pathlib import Path
-from contextlib import asynccontextmanager
-from fastapi import FastAPI
+import math
+from typing import List, Optional, Dict, Any
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import Optional
-from dotenv import load_dotenv
-import psycopg2.pool
+import psycopg2
 from psycopg2.extras import RealDictCursor
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
 
-# 1. Cargar el .env de la raíz del monorepo (sube 3 niveles desde app/main.py)
-ENV_PATH = Path(__file__).resolve().parent.parent.parent.parent / ".env"
-load_dotenv(dotenv_path=ENV_PATH)
+app = FastAPI(
+    title="Gold Continent AI Service",
+    version="0.1.0"
+)
 
-# 2. Leer DATABASE_URL y limpiar parámetros como '?schema=public' que psycopg2 no soporta
-raw_db_url = os.getenv("DATABASE_URL", "postgresql://postgres:root@localhost:5432/postgres")
-DATABASE_URL = raw_db_url.split("?")[0]
+# Configuración de base de datos PostgreSQL desde la cadena DATABASE_URL de tu .env
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:root@localhost:5432/postgres")
 
-STOP_WORDS_SPANISH = [
-    'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'de', 'del', 'al', 'y', 'o', 'en', 'con', 'para', 'por',
-    'su', 'sus', 'a', 'ante', 'bajo', 'cabe', 'contra', 'desde', 'durante', 'entre', 'hacia', 'hasta', 'mediante',
-    'segun', 'sin', 'sobre', 'tras', 'versus', 'via', 'que', 'este', 'esta', 'estos', 'estas', 'mi', 'mis', 'tu', 'tus',
-    'yo', 'me', 'nos', 'se', 'ellos', 'ellas', 'nosotros', 'nosotras', 'cual', 'cuales', 'cm', 'm', 'mts', 'x', 'color'
-]
+# Variables globales para Cache de IA
+PRODUCTS_CACHE: List[Dict[str, Any]] = []
+VECTORIZER: Optional[TfidfVectorizer] = None
+TFIDF_MATRIX = None
 
-db_pool: psycopg2.pool.ThreadedConnectionPool | None = None
-tfidf_matrix = None
-product_ids = None
-vectorizer = None
-products_data = None
-
-# Schemas de Pydantic
+# Modelos de entrada y salida (Pydantic)
 class RecommendRequest(BaseModel):
     id_producto: int
     id_cliente: Optional[int] = None
     id_almacen: Optional[int] = None
+    tipo_precio: Optional[str] = "precio_unidad_normal"
 
 class ProductRecommendation(BaseModel):
     id: int
     codigo: str
     descripcion: str
     precio: float
-    stock: int
+    stock: float
     similarityScore: float
-    categoria: Optional[str] = None
-    margen: Optional[float] = None
+    categoria: str
+    margen: float
 
 class RecommendResponse(BaseModel):
-    similar: list[ProductRecommendation]
-    upsell: list[ProductRecommendation]
-    equilibrio: list[ProductRecommendation]
+    similar: List[ProductRecommendation]
+    upsell: List[ProductRecommendation]
+    equilibrio: List[ProductRecommendation]
 
-# Funciones de Preprocesamiento y Vectorización
-def normalizar_texto(texto: str) -> str:
-    if not texto:
-        return ""
-    texto = unicodedata.normalize('NFD', texto).encode('ascii', 'ignore').decode("utf-8")
-    texto = texto.lower()
-    texto = re.sub(r'[^a-z0-9\s]', ' ', texto)
-    return re.sub(r'\s+', ' ', texto).strip()
 
-def enriquecer_descripcion(desc: str) -> str:
-    clean_desc = normalizar_texto(desc)
-    keywords = ['rosa', 'rosita', 'girasol', 'crisantemo', 'orquidea', 'peonia', 'ramo', 'vara', 'guia', 'maceta', 'follaje', 'panel']
-    enriquecidas = [w for w in clean_desc.split() if w in keywords]
-    return f"{clean_desc} {' '.join(enriquecidas)}"
+def get_db_connection():
+    return psycopg2.connect(
+        DATABASE_URL,
+        cursor_factory=RealDictCursor
+    )
 
-def load_products():
-    global product_ids, vectorizer, tfidf_matrix, products_data
-    if not db_pool:
-        return
-    conn = db_pool.getconn()
-    try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            query = """
-            SELECT 
-                p.id_producto, 
-                p.codigo, 
-                p.descripcion, 
-                p.stock_total,
-                p.id_categoria,
-                c.nombre_categoria,
-                COALESCE(pa.precio_unidad_normal, 0) as precio_normal,
-                COALESCE(pa.precio_unidad_dist, 0) as precio_distribuidor,
-                COALESCE(pa.costo_normal, 0) as costo_normal,
-                COALESCE(pa.costo_distribuidor, 0) as costo_distribuidor
-            FROM productos p 
-            LEFT JOIN precios_actuales pa ON p.id_producto = pa.id_producto
-            LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
-            WHERE p.activo = true
-            """
-            cur.execute(query)
-            rows = cur.fetchall()
-            products_data = {r['id_producto']: r for r in rows}
-            product_ids = [r['id_producto'] for r in rows]
-            corpus = [enriquecer_descripcion(r['descripcion']) for r in rows]
-    finally:
-        db_pool.putconn(conn)
+
+def obtener_precio_y_costo(prod: Dict[str, Any], tipo_precio: str):
+    """
+    Soporta los 6 esquemas de precios y 2 costos de la BD.
+    """
+    precios_validos = [
+        'precio_unidad_normal', 'precio_docena_normal', 'precio_mayor_normal',
+        'precio_unidad_dist', 'precio_docena_dist', 'precio_mayor_dist'
+    ]
     
-    if corpus and any(d.strip() for d in corpus):
-        vectorizer = TfidfVectorizer(
-            stop_words=STOP_WORDS_SPANISH,
-            ngram_range=(1, 2),
-            sublinear_tf=True,
-            norm='l2'
-        )
-        tfidf_matrix = vectorizer.fit_transform(corpus)
-        print(f"✅ Matriz TF-IDF cargada: {tfidf_matrix.shape[0]} productos x {tfidf_matrix.shape[1]} términos.")
-
-def calculate_margin(product: dict, tipo_precio: str) -> float:
-    if tipo_precio == 'distribuidor':
-        precio = float(product.get('precio_distribuidor', 0) or 0)
-        costo = float(product.get('costo_distribuidor', 0) or 0)
-    else:
-        precio = float(product.get('precio_normal', 0) or 0)
-        costo = float(product.get('costo_normal', 0) or 0)
+    col_precio = tipo_precio if tipo_precio in precios_validos else 'precio_unidad_normal'
+    col_costo = 'costo_distribuidor' if '_dist' in col_precio else 'costo_normal'
     
+    precio = float(prod.get(col_precio) or 0)
+    costo = float(prod.get(col_costo) or 0)
+    
+    return precio, costo
+
+
+def calcular_margen(precio: float, costo: float) -> float:
     if costo <= 0:
         return 0.0
-    return ((precio - costo) / costo) * 100
+    return round(((precio - costo) / costo) * 100, 2)
 
-def get_stock_by_almacen_batch(pids: list[int], id_almacen: int) -> dict[int, int]:
-    if not pids or not db_pool:
-        return {}
-    conn = db_pool.getconn()
+
+def load_products_and_train_tfidf():
+    global PRODUCTS_CACHE, VECTORIZER, TFIDF_MATRIX
     try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            query = "SELECT id_producto, cantidad FROM stock_actual WHERE id_almacen = %s AND id_producto = ANY(%s)"
-            cur.execute(query, (id_almacen, pids))
-            rows = cur.fetchall()
-            return {r['id_producto']: r['cantidad'] for r in rows}
-    finally:
-        db_pool.putconn(conn)
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Consulta SQL con las 8 columnas exactas de precios_actuales
+        query = """
+            SELECT 
+                p.id_producto,
+                p.codigo,
+                p.descripcion,
+                COALESCE(p.stock_total, 100) as stock_total,
+                COALESCE(c.nombre_categoria, 'GENERAL') as nombre_categoria,
+                COALESCE(pa.costo_normal, 0) as costo_normal,
+                COALESCE(pa.precio_unidad_normal, 0) as precio_unidad_normal,
+                COALESCE(pa.precio_docena_normal, 0) as precio_docena_normal,
+                COALESCE(pa.precio_mayor_normal, 0) as precio_mayor_normal,
+                COALESCE(pa.costo_distribuidor, 0) as costo_distribuidor,
+                COALESCE(pa.precio_unidad_dist, 0) as precio_unidad_dist,
+                COALESCE(pa.precio_docena_dist, 0) as precio_docena_dist,
+                COALESCE(pa.precio_mayor_dist, 0) as precio_mayor_dist
+            FROM productos p
+            LEFT JOIN precios_actuales pa ON p.id_producto = pa.id_producto
+            LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
+            WHERE p.activo = true;
+        """
+        cursor.execute(query)
+        PRODUCTS_CACHE = cursor.fetchall()
+        cursor.close()
+        conn.close()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global db_pool
-    db_pool = psycopg2.pool.ThreadedConnectionPool(1, 10, DATABASE_URL)
+        if not PRODUCTS_CACHE:
+            print("⚠️ Advertencia: No se encontraron productos en la Base de Datos.")
+            return
+
+        # Vectorización TF-IDF basada en la descripción y categoría del producto
+        corpus = [
+            f"{p['descripcion']} {p['nombre_categoria']}"
+            for p in PRODUCTS_CACHE
+        ]
+        
+        VECTORIZER = TfidfVectorizer(stop_words='english')
+        TFIDF_MATRIX = VECTORIZER.fit_transform(corpus)
+        print(f"✅ Matriz TF-IDF cargada: {len(PRODUCTS_CACHE)} productos procesados.")
+
+    except Exception as e:
+        print(f"❌ Error al cargar datos e inicializar TF-IDF: {e}")
+
+
+@app.on_event("startup")
+def startup_event():
     print("Pool PostgreSQL conectado.")
-    load_products()
-    yield
-    if db_pool:
-        db_pool.closeall()
-        print("Pool PostgreSQL cerrado.")
+    load_products_and_train_tfidf()
 
-app = FastAPI(title="Gold Continent AI Service", lifespan=lifespan)
 
 @app.get("/health")
-async def health():
+def health_check():
     return {"status": "ok", "service": "goldcontinent-ai"}
 
-@app.post("/suggest", response_model=RecommendResponse)
-async def suggest(req: RecommendRequest):
-    if tfidf_matrix is None or req.id_producto not in product_ids:
-        return {"similar": [], "upsell": [], "equilibrio": []}
-    
-    tipo_precio = 'normal'
-    if req.id_cliente and db_pool:
-        conn = db_pool.getconn()
-        try:
-            with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute("SELECT tipo FROM clientes WHERE id_cliente = %s", (req.id_cliente,))
-                row = cur.fetchone()
-                if row:
-                    tipo_precio = row['tipo']
-        finally:
-            db_pool.putconn(conn)
-    
-    idx = product_ids.index(req.id_producto)
-    sim_scores = cosine_similarity(tfidf_matrix[idx], tfidf_matrix).flatten()
-    
-    top_indices = np.argsort(-sim_scores)
-    top_candidates = []
-    for i in top_indices:
-        pid = product_ids[i]
-        if pid != req.id_producto:
-            top_candidates.append((pid, float(sim_scores[i])))
-        if len(top_candidates) >= 50:
-            break
-            
-    stock_map = {}
-    if req.id_almacen:
-        candidate_pids = [pid for pid, _ in top_candidates]
-        stock_map = get_stock_by_almacen_batch(candidate_pids, req.id_almacen)
 
-    enriched = []
-    for pid, sim_score in top_candidates:
-        prod = products_data[pid]
-        stock = stock_map.get(pid, prod['stock_total']) if req.id_almacen else prod['stock_total']
-        
-        if stock <= 0:
-            continue
-            
-        precio = float(prod.get('precio_distribuidor', 0) or 0) if tipo_precio == 'distribuidor' else float(prod.get('precio_normal', 0) or 0)
-        margen = calculate_margin(prod, tipo_precio)
-        
-        enriched.append({
-            'id': pid,
-            'codigo': prod['codigo'],
-            'descripcion': prod['descripcion'],
-            'precio': precio,
-            'stock': stock,
-            'similarityScore': round(sim_score, 4),
-            'categoria': prod.get('nombre_categoria'),
-            'margen': round(margen, 2),
+@app.post("/admin/refresh-cache")
+def refresh_cache():
+    load_products_and_train_tfidf()
+    return {"status": "success", "total_productos": len(PRODUCTS_CACHE)}
+
+
+@app.post("/suggest", response_model=RecommendResponse)
+def suggest(req: RecommendRequest):
+    if not PRODUCTS_CACHE or TFIDF_MATRIX is None:
+        raise HTTPException(status_code=500, detail="El modelo TF-IDF no está inicializado")
+
+    # 1. Buscar producto base por id_producto
+    target_idx = next((i for i, p in enumerate(PRODUCTS_CACHE) if p['id_producto'] == req.id_producto), None)
+    
+    if target_idx is None:
+        return {"similar": [], "upsell": [], "equilibrio": []}
+
+    target_prod = PRODUCTS_CACHE[target_idx]
+    target_precio, target_costo = obtener_precio_y_costo(target_prod, req.tipo_precio)
+
+    # 2. Calcular similitud del coseno entre el producto base y los demás
+    cosine_sim = cosine_similarity(TFIDF_MATRIX[target_idx], TFIDF_MATRIX).flatten()
+
+    candidates = []
+    for idx, prod in enumerate(PRODUCTS_CACHE):
+        if idx == target_idx:
+            continue  # Excluir el mismo producto
+
+        precio, costo = obtener_precio_y_costo(prod, req.tipo_precio)
+        score = float(cosine_sim[idx])
+        margen = calcular_margen(precio, costo)
+        stock = float(prod.get('stock_total', 0))
+
+        candidates.append({
+            "id": prod['id_producto'],
+            "codigo": prod['codigo'],
+            "descripcion": prod['descripcion'],
+            "precio": precio,
+            "stock": stock,
+            "similarityScore": round(score, 4),
+            "categoria": prod['nombre_categoria'],
+            "margen": margen
         })
 
-    base_prod = products_data[req.id_producto]
-    base_categoria = base_prod.get('id_categoria')
-    base_precio = float(base_prod.get('precio_distribuidor', 0) or 0) if tipo_precio == 'distribuidor' else float(base_prod.get('precio_normal', 0) or 0)
+    # 3. Categorizar recomendaciones
 
-    same_cat = [p for p in enriched if products_data[p['id']].get('id_categoria') == base_categoria]
-    diff_cat = [p for p in enriched if products_data[p['id']].get('id_categoria') != base_categoria]
-    similar = (same_cat + diff_cat)[:2]
+    # SIMILAR: Mayor similitud por TF-IDF
+    similar = sorted(candidates, key=lambda x: x['similarityScore'], reverse=True)[:5]
 
-    upsell_candidates = [p for p in enriched if p['precio'] >= base_precio * 1.10]
-    upsell = sorted(upsell_candidates, key=lambda x: (-x['margen'], -x['similarityScore']))[:2]
+    # UPSELL: Similitud relevante + Precio mayor al producto base (>= +5%) + Buen margen
+    upsell_candidates = [
+        c for c in candidates 
+        if c['precio'] >= (target_precio * 1.05) and c['similarityScore'] > 0.05
+    ]
+    upsell = sorted(upsell_candidates, key=lambda x: (x['margen'], x['precio']), reverse=True)[:5]
 
-    equilibrio_candidates = [p for p in enriched if p['stock'] >= 5]
-    for p in equilibrio_candidates:
-        p['value_score'] = (p['similarityScore'] * 0.5) + ((p['margen'] / 100) * 0.3) + (min(p['stock'], 100) / 100 * 0.2)
-        
-    equilibrio = sorted(equilibrio_candidates, key=lambda x: -x['value_score'])[:2]
-    
-    for p in equilibrio:
-        p.pop('value_score', None)
+    # EQUILIBRIO: Ponderación de Similitud (50%), Margen (35%) y Stock (15%)
+    def calcular_score_equilibrio(item):
+        norm_sim = item['similarityScore']
+        norm_margen = min(item['margen'] / 100.0, 1.0)
+        norm_stock = 1.0 if item['stock'] > 0 else 0.0
+        return (norm_sim * 0.50) + (norm_margen * 0.35) + (norm_stock * 0.15)
+
+    equilibrio = sorted(candidates, key=calcular_score_equilibrio, reverse=True)[:5]
 
     return {
         "similar": similar,
         "upsell": upsell,
         "equilibrio": equilibrio
     }
-
-@app.post("/admin/refresh-cache")
-async def refresh_cache():
-    load_products()
-    return {"status": "ok", "products_loaded": len(product_ids) if product_ids else 0}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

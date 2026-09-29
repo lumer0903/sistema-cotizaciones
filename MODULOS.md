@@ -44,7 +44,7 @@ Catálogo de flores/artículos de floristería con precios duales (normal/distri
 **Núcleo del negocio.** Ciclo de vida con **máquina de transiciones validada en backend** (400 en saltos): `borrador → enviada → aprobada / parcialmente_pagada / rechazada` (`aprobada` terminal; `rechazada → borrador` reabre; los pagos cambian estado por su vía en `registrarPago`). Numeración correlativa `COT-001`, detalle de ítems, carreta (envío), pagos/abonos y exportación PDF **cacheada + en cola BullMQ** (ver submódulo `pdf/`).
 
 - **DTOs class-validator** en `dto/` (6): `create-cotizacion`, `create-cotizacion-detalle`, `update-cotizacion`, `cambiar-estado`, `registrar-pago`, `listar-cotizaciones.query` — el `ValidationPipe` global rechaza campos/query desconocidos (`400`); el service sigue validando lo referencial (detalle, máquina de estados, carreta).
-- **55 tests unitarios** (vitest): `cotizaciones.service.test.ts` (41: máquina de transiciones, detalle, carreta, guardrails de pagos) + `pdf/pdf-hash.test.ts` (6) + `pdf/pdf-export.service.test.ts` (8).
+- **84 tests unitarios/integración** (vitest): `cotizaciones.service.test.ts` (41) + `pdf/pdf-hash.test.ts` (6) + `pdf/pdf-export.service.test.ts` (8) + `cobranza.service.integration.test.ts` (5) + `dashboard.service.integration.test.ts` (3) + `auth/rbac.test.ts` (16) + `auth/jwt-secrets.test.ts` (5).
 - `registrarPago` está **duplicado** en `cobranza.service.ts`.
 - `cambiarEstado` no escribe `tiempo_fin` (KPI tiempo muerto sigue en 0).
 - `fecha_vencimiento` nunca se escribe → cobranza no puede marcar "vencida".
