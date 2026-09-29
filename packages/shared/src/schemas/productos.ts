@@ -8,6 +8,7 @@ export const CrearProductoSchema = z.object({
   material: z.string().optional().nullable(),
   composicion: z.string().min(1, "Seleccione la composición"),
   presentacion: z.string().optional().nullable(),
+  follaje: z.string().optional().nullable(),
   numero_cabezas: z.coerce.number().min(1, "Ingrese el número de cabezas"),
   tamano: z.string().optional().nullable(),
   unidades_por_caja: z.coerce.number().min(1, "Ingrese unidades por caja"),

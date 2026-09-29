@@ -1,6 +1,6 @@
 import os
 import math
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Literal
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import psycopg2
@@ -16,6 +16,12 @@ app = FastAPI(
 # Configuración de base de datos PostgreSQL desde la cadena DATABASE_URL de tu .env
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:root@localhost:5432/postgres")
 
+# Los 6 esquemas de precio de precios_actuales (contrato obligatorio de /suggest)
+TipoPrecioEsquema = Literal[
+    'precio_unidad_normal', 'precio_docena_normal', 'precio_mayor_normal',
+    'precio_unidad_dist', 'precio_docena_dist', 'precio_mayor_dist',
+]
+
 # Variables globales para Cache de IA
 PRODUCTS_CACHE: List[Dict[str, Any]] = []
 VECTORIZER: Optional[TfidfVectorizer] = None
@@ -26,7 +32,7 @@ class RecommendRequest(BaseModel):
     id_producto: int
     id_cliente: Optional[int] = None
     id_almacen: Optional[int] = None
-    tipo_precio: Optional[str] = "precio_unidad_normal"
+    tipo_precio: TipoPrecioEsquema = 'precio_unidad_normal'
 
 class ProductRecommendation(BaseModel):
     id: int

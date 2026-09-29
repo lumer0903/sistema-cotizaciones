@@ -27,6 +27,8 @@ export interface ProductoBaseRecomendacion {
     id: number;
     codigo: string;
     descripcion: string;
+    /** Tipo de venta del ítem base (UNIDAD | DOCENA | MAYOR) para el esquema de precio */
+    tipo_venta?: string;
 }
 
 export interface SidebarCartItem {
@@ -34,6 +36,7 @@ export interface SidebarCartItem {
     id_producto?: number;
     codigo: string;
     descripcion: string;
+    tipo_venta?: string;
 }
 
 interface RecomendacionesPanelProps {
@@ -152,6 +155,7 @@ export function useRecomendaciones(
                 id_cliente: idCliente,
                 id_almacen: idAlmacen,
                 tipo_precio: tipoPrecioCliente === 'DISTRIBUIDOR' ? 'distribuidor' : 'normal',
+                tipo_venta: productoBase?.tipo_venta,
             };
             const data = await obtenerRecomendacionesItem(request);
             if (seqRef.current !== seq) return;
@@ -167,7 +171,7 @@ export function useRecomendaciones(
         // refreshKey es un nonce del padre: solo aporta identidad al callback
         // para que el efecto dispare de nuevo el fetch.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [baseId, idCliente, idAlmacen, tipoPrecioCliente, silent, resetWhenEmpty, refreshKey]);
+    }, [baseId, idCliente, idAlmacen, tipoPrecioCliente, productoBase?.tipo_venta, silent, resetWhenEmpty, refreshKey]);
 
     const [prevReset, setPrevReset] = useState({ enabled, baseId, resetWhenEmpty });
     if (
@@ -220,12 +224,18 @@ export function RecomendacionesPanel({
     const idProducto = baseItem?.id_producto;
     const codigoProducto = baseItem?.codigo ?? '';
     const descripcionProducto = baseItem?.descripcion ?? '';
+    const tipoVentaProducto = baseItem?.tipo_venta;
     const productoBase = useMemo(
         () =>
             idProducto != null && Number(idProducto) > 0
-                ? { id: Number(idProducto), codigo: codigoProducto, descripcion: descripcionProducto }
+                ? {
+                    id: Number(idProducto),
+                    codigo: codigoProducto,
+                    descripcion: descripcionProducto,
+                    tipo_venta: tipoVentaProducto,
+                }
                 : null,
-        [idProducto, codigoProducto, descripcionProducto],
+        [idProducto, codigoProducto, descripcionProducto, tipoVentaProducto],
     );
 
     const { recomendaciones, loading, error, refetch } = useRecomendaciones(productoBase, {

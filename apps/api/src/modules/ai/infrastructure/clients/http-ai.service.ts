@@ -83,6 +83,7 @@ export class HttpAiService implements IAiService {
     id_producto: number;
     id_cliente?: number;
     id_almacen?: number;
+    tipo_precio?: string;
   }): Promise<AiRecommendationResponse> {
     return this.callAIService('/suggest', data);
   }

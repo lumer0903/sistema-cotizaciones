@@ -635,7 +635,7 @@ export default function VendedorCotizacionCrearPage() {
 
           {/* Recomendaciones IA */}
           <RecomendacionesPanel
-            cartItems={detalles.map((d, i) => ({ id: String(i), id_producto: d.id_producto, codigo: d.codigo, descripcion: d.descripcion }))}
+            cartItems={detalles.map((d, i) => ({ id: String(i), id_producto: d.id_producto, codigo: d.codigo, descripcion: d.descripcion, tipo_venta: d.tipo_venta }))}
             selectedItemId={selectedDetalleIndex !== null ? String(selectedDetalleIndex) : null}
             tipoPrecioCliente={formData.tipo_precio === 'distribuidor' ? 'DISTRIBUIDOR' : 'TIENDA'}
             idCliente={formData.id_cliente ? Number(formData.id_cliente) : undefined}

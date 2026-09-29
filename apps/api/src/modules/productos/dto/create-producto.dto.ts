@@ -46,6 +46,12 @@ export class CreateProductoDto {
   @MinLength(1)
   presentacion!: string;
 
+  @ApiPropertyOptional({ example: 'Verde', maxLength: 100 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  follaje?: string;
+
   @ApiProperty({ example: 10, minimum: 1 })
   @IsInt()
   @Min(1)
@@ -81,10 +87,15 @@ export class CreateProductoDto {
   @Type(() => Number)
   stock_minimo!: number;
 
-  @ApiProperty({ example: 'Ramo Rosas Seda x 10 cabezas (10x20)', minLength: 5 })
+  @ApiPropertyOptional({
+    example: 'RYG9-J-02 ROSA MATERIAL TELA SEDA COMPOSICION PLASTICO 9 CABEZAS 40 CM',
+    description:
+      'Descripción estructurada (generada por el cliente con el helper compartido). Si no viene, la API la genera con el mismo formato.',
+  })
+  @IsOptional()
   @IsString()
-  @MinLength(5)
-  descripcion!: string;
+  @MaxLength(500)
+  descripcion?: string;
 
   @ApiPropertyOptional({ example: 'https://example.com/foto.jpg', maxLength: 500 })
   @IsOptional()

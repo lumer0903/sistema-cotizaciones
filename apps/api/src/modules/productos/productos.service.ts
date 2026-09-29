@@ -5,6 +5,21 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { Prisma } from '@prisma/client';
 import { UpdatePreciosDto } from './dto/update-precios.dto';
 import { CreateProductoDto } from './dto/create-producto.dto';
+import { AiCacheRefreshService } from '../ai/infrastructure/ai-cache-refresh.service';
+import { generarDescripcionProducto } from '@goldcontinent/shared/constants/descripcion';
+
+/** Atributos que alimentan la descripción estructurada (TF-IDF). */
+const ATRIBUTOS_DESCRIPCION = [
+  'codigo',
+  'tipo_flor',
+  'material',
+  'composicion',
+  'presentacion',
+  'follaje',
+  'numero_cabezas',
+  'tamano',
+  'unidades_por_caja',
+] as const;
 
 function jsonToStringArray(value: Prisma.JsonValue | null): string[] | null {
   if (value === null || value === undefined) return null;
@@ -35,6 +50,7 @@ export interface ProductoResponse {
   presentacion: string | null;
   numero_cabezas: number | null;
   tamano: string | null;
+  follaje: string | null;
   colores_surtido: string[] | null;
   foto_url: string | null;
   activo: boolean;
@@ -97,6 +113,7 @@ interface ProductoWithRelations {
   presentacion: string | null;
   numero_cabezas: number | null;
   tamano: string | null;
+  follaje: string | null;
   colores_surtido: Prisma.JsonValue | null;
   foto_url: string | null;
   activo: boolean;
@@ -144,6 +161,7 @@ function mapProducto(item: ProductoWithRelations): ProductoResponse {
     presentacion: item.presentacion,
     numero_cabezas: item.numero_cabezas,
     tamano: item.tamano,
+    follaje: item.follaje,
     colores_surtido: jsonToStringArray(item.colores_surtido),
     foto_url: item.foto_url,
     activo: item.activo,
@@ -175,6 +193,7 @@ export class ProductosService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly minio: MinioService,
+    private readonly aiCacheRefresh: AiCacheRefreshService,
   ) { }
 
   async findAll(
@@ -258,6 +277,7 @@ export class ProductosService {
             material: true,
             composicion: true,
             presentacion: true,
+            follaje: true,
             numero_cabezas: true,
             tamano: true,
             colores_surtido: true,
@@ -338,20 +358,21 @@ export class ProductosService {
         tipo_flor: true,
         material: true,
         composicion: true,
-        presentacion: true,
-        numero_cabezas: true,
-        tamano: true,
-        colores_surtido: true,
-        foto_url: true,
-        activo: true,
-        stock_principal: true,
-        stock_total: true,
-        stock_minimo: true,
-        unidades_por_caja: true,
-        id_categoria: true,
-        created_at: true,
-        updated_at: true,
-        ...include,
+          presentacion: true,
+          follaje: true,
+          numero_cabezas: true,
+          tamano: true,
+          colores_surtido: true,
+          foto_url: true,
+          activo: true,
+          stock_principal: true,
+          stock_total: true,
+          stock_minimo: true,
+          unidades_por_caja: true,
+          id_categoria: true,
+          created_at: true,
+          updated_at: true,
+          ...include,
       },
     });
 
@@ -361,19 +382,25 @@ export class ProductosService {
   }
 
   async create(data: CreateProductoDto): Promise<ProductoResponse> {
-    const partes = [
-      data.presentacion,
-      data.material ? `de ${data.material}` : null,
-      data.numero_cabezas ? `${data.numero_cabezas} cabezas` : null,
-      data.composicion,
-      data.colores_surtido?.length ? `colores: ${(data.colores_surtido as string[]).join(', ')}` : null,
-    ].filter(Boolean);
-
-    const descripcionGenerada = partes.join(', ');
+    // Descripción estructurada: la enviada por el cliente (generada con el mismo
+    // helper) o, si no viene, la calcula aquí para garantizar el formato del TF-IDF.
+    const descripcionGenerada = data.descripcion?.trim()
+      ? data.descripcion.trim()
+      : generarDescripcionProducto({
+          codigo: data.codigo,
+          tipo_flor: data.tipo_flor,
+          material: data.material,
+          composicion: data.composicion,
+          presentacion: data.presentacion,
+          follaje: data.follaje,
+          numero_cabezas: data.numero_cabezas,
+          tamano: data.tamano,
+          unidades_por_caja: data.unidades_por_caja,
+        });
     const stockTotal = data.stock_principal;
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const creado = await this.prisma.$transaction(async (tx) => {
         let almacenPrincipal = await tx.almacen.findFirst({
           where: { codigo: 'ALM-001' },
         });
@@ -396,6 +423,7 @@ export class ProductosService {
             material: data.material,
             composicion: data.composicion,
             presentacion: data.presentacion,
+            follaje: data.follaje,
             numero_cabezas: data.numero_cabezas,
             tamano: data.tamano,
             colores_surtido: data.colores_surtido,
@@ -415,6 +443,7 @@ export class ProductosService {
             material: true,
             composicion: true,
             presentacion: true,
+            follaje: true,
             numero_cabezas: true,
             tamano: true,
             colores_surtido: true,
@@ -495,6 +524,10 @@ export class ProductosService {
           stock_actual: null,
         });
       });
+
+      // Reentrenar TF-IDF con la nueva descripción (fire-and-forget, no bloquea)
+      this.aiCacheRefresh.refreshCache(`create:${creado.id_producto}`);
+      return creado;
     } catch (error: any) {
       if (error.code === 'P2002') {
         throw new ConflictException('El código del producto ya existe');
@@ -532,9 +565,43 @@ export class ProductosService {
 
       const productoActual = await this.prisma.producto.findUnique({
         where: { id_producto: id },
-        select: { stock_principal: true },
+        select: {
+          stock_principal: true,
+          codigo: true,
+          tipo_flor: true,
+          material: true,
+          composicion: true,
+          presentacion: true,
+          follaje: true,
+          numero_cabezas: true,
+          tamano: true,
+          unidades_por_caja: true,
+        },
       });
       if (!productoActual) throw new NotFoundException('Producto no encontrado');
+
+      // 1b. Si cambió algún atributo que alimenta la descripción, regenerarla con
+      //     el mismo helper del formulario (formato estructurado del TF-IDF).
+      const cambioAtributo = ATRIBUTOS_DESCRIPCION.some((campo) => {
+        const nuevo = (productoData as Record<string, unknown>)[campo];
+        return (
+          nuevo !== undefined &&
+          String(nuevo ?? '') !== String((productoActual as Record<string, unknown>)[campo] ?? '')
+        );
+      });
+      if (cambioAtributo) {
+        productoData.descripcion = generarDescripcionProducto({
+          codigo: productoData.codigo ?? productoActual.codigo,
+          tipo_flor: productoData.tipo_flor ?? productoActual.tipo_flor,
+          material: productoData.material ?? productoActual.material,
+          composicion: productoData.composicion ?? productoActual.composicion,
+          presentacion: productoData.presentacion ?? productoActual.presentacion,
+          follaje: productoData.follaje ?? productoActual.follaje,
+          numero_cabezas: productoData.numero_cabezas ?? productoActual.numero_cabezas,
+          tamano: productoData.tamano ?? productoActual.tamano,
+          unidades_por_caja: productoData.unidades_por_caja ?? productoActual.unidades_por_caja,
+        });
+      }
 
       const stockAnterior = productoActual.stock_principal;
       const stockNuevo = productoData.stock_principal !== undefined
@@ -563,6 +630,7 @@ export class ProductosService {
             material: true,
             composicion: true,
             presentacion: true,
+            follaje: true,
             numero_cabezas: true,
             tamano: true,
             colores_surtido: true,
@@ -632,6 +700,9 @@ export class ProductosService {
 
         return updated;
       });
+
+      // Reentrenar TF-IDF con la descripción actualizada (fire-and-forget)
+      this.aiCacheRefresh.refreshCache(`update:${id}`);
 
       return mapProducto({
         ...item,

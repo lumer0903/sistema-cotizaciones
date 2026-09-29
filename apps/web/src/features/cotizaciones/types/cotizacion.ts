@@ -70,6 +70,9 @@ export interface RecomendarItemRequest {
     id_almacen?: number;
     /** 'normal' = tienda, 'distribuidor' = distribuidor. Tiene prioridad sobre el tipo del cliente. */
     tipo_precio?: 'normal' | 'distribuidor';
+    /** Tipo de venta del ítem base (UNIDAD | DOCENA | MAYOR): define el esquema de
+     *  precio de las recomendaciones (uno de los 6 de precios_actuales). */
+    tipo_venta?: 'UNIDAD' | 'DOCENA' | 'MAYOR' | string;
 }
 
 export interface RecomendarItemResponse {

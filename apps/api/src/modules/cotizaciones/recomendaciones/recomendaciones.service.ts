@@ -3,6 +3,7 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 import { IAiService, AiRecommendationResponse, AiRecommendationItem } from '../../ai/domain/contracts/ai-service.interface';
 import { RecomendarItemDto } from './dto/recomendar-item.dto';
 import { TipoPrecio } from '@goldcontinent/shared/constants/enums';
+import { resolverEsquemaPrecio } from '@goldcontinent/shared/constants/descripcion';
 
 export interface RecomendacionItemResponse {
   id_producto: number;
@@ -46,16 +47,27 @@ export class RecomendacionesService {
       throw new NotFoundException(`Producto base con ID ${dto.id_producto_base} no encontrado`);
     }
 
+    // Esquema de precio exacto (1 de los 6) según tipo de precio del cliente/
+    // cotización + tipo de venta del ítem base. Fallback: precio_unidad_normal.
+    const esquemaPrecio = resolverEsquemaPrecio(dto.tipo_precio, dto.tipo_venta);
+
     try {
-      // 2. Obtener recomendaciones del servicio de IA
+      // 2. Obtener recomendaciones del servicio de IA (FastAPI exige el esquema de 6)
       const aiResponse = await this.aiService.recommendItem({
         id_producto: dto.id_producto_base,
         id_cliente: dto.id_cliente,
         id_almacen: dto.id_almacen,
+        tipo_precio: esquemaPrecio,
       });
 
-      // 3. Enriquecer con precios y stock en paralelo
-      const enriched = await this.enrichRecommendations(aiResponse, dto.id_cliente, dto.id_almacen, dto.tipo_precio);
+      // 3. Enriquecer con precios y stock en paralelo (mismo esquema de precio)
+      const enriched = await this.enrichRecommendations(
+        aiResponse,
+        dto.id_cliente,
+        dto.id_almacen,
+        dto.tipo_precio,
+        dto.tipo_venta,
+      );
 
       // 4. Auditoría asíncrona
       this.logIaInteraccion(id_usuario, dto.id_producto_base, dto, enriched);
@@ -72,6 +84,7 @@ export class RecomendacionesService {
     id_cliente?: number,
     id_almacen?: number,
     tipoPrecioOverride?: TipoPrecio,
+    tipoVenta?: string,
   ): Promise<RecomendarItemResponse> {
     let tipoPrecio: TipoPrecio = tipoPrecioOverride ?? 'normal';
 
@@ -82,6 +95,10 @@ export class RecomendacionesService {
       });
       if (cliente) tipoPrecio = cliente.tipo as TipoPrecio;
     }
+
+    // Mismo esquema enviado a la IA: el precio mostrado en el panel debe ser el
+    // que eligió el usuario (tienda/distribuidor x unidad/docena/mayor).
+    const esquemaPrecio = resolverEsquemaPrecio(tipoPrecio, tipoVenta);
 
     // Cargar productos reales de la BD (una sola consulta) para anclar código/descripción/datos
     const idsSolicitados = [...(aiResponse.similar ?? []), ...(aiResponse.upsell ?? []), ...(aiResponse.equilibrio ?? [])]
@@ -134,16 +151,20 @@ export class RecomendacionesService {
               where: { id_producto: item.id },
               select: {
                 precio_unidad_normal: true,
+                precio_docena_normal: true,
+                precio_mayor_normal: true,
                 precio_unidad_dist: true,
+                precio_docena_dist: true,
+                precio_mayor_dist: true,
               },
             }),
           ]);
 
           const stockReal = stockRow?.cantidad ?? item.stock ?? 0;
-          const precioNormal = precios?.precio_unidad_normal ? Number(precios.precio_unidad_normal) : item.precio;
-          const precioDist = precios?.precio_unidad_dist ? Number(precios.precio_unidad_dist) : item.precio;
-
-          const precioFinal = tipoPrecio === 'distribuidor' ? precioDist : precioNormal;
+          const precioEsquema = precios
+            ? Number((precios as Record<string, any>)[esquemaPrecio] ?? 0)
+            : 0;
+          const precioFinal = precioEsquema > 0 ? precioEsquema : item.precio;
 
           return {
             id_producto: item.id,

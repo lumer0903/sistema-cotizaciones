@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CloudUpload, Trash2 } from "lucide-react";
 import { z } from "zod";
 import { CrearProductoSchema } from "@goldcontinent/shared/schemas/productos";
+import { generarDescripcionProducto } from "@goldcontinent/shared/constants/descripcion";
 import { ColorConfigModal, ColorItem, resolveColorHex } from "@/features/inventario/components/ColorConfigModal";
 import { apiClient, uploadFile } from "@/lib/apiClient";
 import { getImageUrl, handleImageError } from "@/lib/imageUtils";
@@ -59,6 +60,7 @@ const DEFAULT_FORM_VALUES = {
   material: "",
   composicion: "",
   presentacion: "",
+  follaje: "",
   numero_cabezas: undefined,
   tamano: "",
   unidades_por_caja: 1,
@@ -124,6 +126,7 @@ export function ProductoModal({
         material: inv.material || "",
         composicion: inv.composicion || "",
         presentacion: inv.presentacion || "",
+        follaje: inv.follaje || "",
         numero_cabezas: inv.numero_cabezas ?? undefined,
         tamano: inv.tamano || "",
         unidades_por_caja: inv.unidades_por_caja || 1,
@@ -145,44 +148,72 @@ export function ProductoModal({
 
   const coloresSurtidos = watch("colores_surtido") || [];
 
+  const codigo = watch("codigo");
   const tipoFlor = watch("tipo_flor");
   const composicion = watch("composicion");
   const material = watch("material");
   const presentacion = watch("presentacion");
+  const follaje = watch("follaje");
   const numeroCabezas = watch("numero_cabezas");
   const tamano = watch("tamano");
   const unidadesPorCaja = watch("unidades_por_caja");
 
-  useEffect(() => {
-    if (!isEditing) {
-      const tieneAtributos = Boolean(
-        composicion || tipoFlor || material || presentacion || tamano || (numeroCabezas && Number(numeroCabezas) > 0)
-      );
+  // Atributos al abrir en modo edición: solo se regenera la descripción si el
+  // usuario modifica algún atributo (no se pisa una descripción intacta).
+  const atributosInicialesRef = useRef<Record<string, unknown> | null>(null);
 
-      if (!tieneAtributos) {
-        setValue("descripcion", "", { shouldValidate: true });
+  useEffect(() => {
+    if (!open) {
+      atributosInicialesRef.current = null;
+      return;
+    }
+
+    const atributosActuales: Record<string, unknown> = {
+      codigo,
+      tipo_flor: tipoFlor,
+      material,
+      composicion,
+      presentacion,
+      follaje,
+      numero_cabezas: numeroCabezas,
+      tamano,
+      unidades_por_caja: unidadesPorCaja,
+    };
+
+    if (isEditing) {
+      if (!atributosInicialesRef.current) {
+        atributosInicialesRef.current = atributosActuales;
         return;
       }
-
-      const partes = [
-        composicion,
-        tipoFlor ? `DE ${tipoFlor}` : null,
-        material,
-        presentacion,
-        numeroCabezas && Number(numeroCabezas) > 0 ? `DE ${numeroCabezas} CABEZAS` : null,
-        tamano,
-        unidadesPorCaja && Number(unidadesPorCaja) > 1 ? `(CAJA X ${unidadesPorCaja} UNID)` : null,
-      ].filter(Boolean);
-
-      const descripcionGenerada = partes.join(" ").toUpperCase().replace(/\s+/g, " ").trim();
-      setValue("descripcion", descripcionGenerada, { shouldValidate: true });
+      const iniciales = atributosInicialesRef.current;
+      const huboCambio = Object.entries(atributosActuales).some(
+        ([clave, valor]) => String(valor ?? "") !== String(iniciales[clave] ?? ""),
+      );
+      if (!huboCambio) return;
     }
+
+    const descripcionGenerada = generarDescripcionProducto({
+      codigo,
+      tipo_flor: tipoFlor,
+      material,
+      composicion,
+      presentacion,
+      follaje,
+      numero_cabezas: numeroCabezas,
+      tamano,
+      unidades_por_caja: unidadesPorCaja,
+    });
+
+    setValue("descripcion", descripcionGenerada, { shouldValidate: true });
   }, [
+    open,
     isEditing,
+    codigo,
     tipoFlor,
     composicion,
     material,
     presentacion,
+    follaje,
     numeroCabezas,
     tamano,
     unidadesPorCaja,
@@ -313,6 +344,7 @@ export function ProductoModal({
     if (data.material?.trim()) payload.material = data.material.trim();
     if (data.composicion?.trim()) payload.composicion = data.composicion.trim();
     if (data.presentacion?.trim()) payload.presentacion = data.presentacion.trim();
+    if (data.follaje?.trim()) payload.follaje = data.follaje.trim();
     if (data.tamano?.trim()) payload.tamano = data.tamano.trim();
     if (data.numero_cabezas) payload.numero_cabezas = Number(data.numero_cabezas);
 
@@ -423,6 +455,12 @@ export function ProductoModal({
                     placeholder="Ramo"
                     error={errors.presentacion?.message as string}
                     {...register("presentacion")}
+                  />
+                  <Input
+                    label="FOLLAJE"
+                    placeholder="Verde"
+                    error={errors.follaje?.message as string}
+                    {...register("follaje")}
                   />
                   <Input
                     label="Nº CABEZAS"

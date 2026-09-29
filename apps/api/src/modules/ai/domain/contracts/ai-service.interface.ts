@@ -23,5 +23,8 @@ export interface IAiService {
     id_producto: number;
     id_cliente?: number;
     id_almacen?: number;
+    /** Esquema de precio exacto exigido por FastAPI /suggest (los 6 de precios_actuales),
+     *  p.ej. 'precio_unidad_normal', 'precio_docena_dist'. */
+    tipo_precio?: string;
   }): Promise<AiRecommendationResponse>;
 }

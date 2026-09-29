@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, Min, IsIn } from 'class-validator';
+import { IsInt, IsOptional, Min, IsIn, IsString, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class RecomendarItemDto {
@@ -18,4 +18,12 @@ export class RecomendarItemDto {
   @ApiPropertyOptional({ example: 'distribuidor', description: 'Tipo de precio explícito (normal/distribuidor). Tiene prioridad sobre el tipo del cliente.' })
   @IsOptional() @IsIn(['normal', 'distribuidor'])
   tipo_precio?: 'normal' | 'distribuidor';
+
+  @ApiPropertyOptional({
+    example: 'DOCENA',
+    description:
+      'Tipo de venta del ítem base (UNIDAD | DOCENA | MAYOR). Con tipo_precio define el esquema de precio enviado a FastAPI. Si falta, fallback a precio_unidad_normal.',
+  })
+  @IsOptional() @IsString() @MaxLength(20)
+  tipo_venta?: string;
 }
