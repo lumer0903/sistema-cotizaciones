@@ -138,6 +138,10 @@ pnpm docker:logs        # compose logs -f
 
 Seed: `pnpm --filter=@goldcontinent/database db:seed`.
 
+> **PDFs en dev local:** requieren Redis en `localhost:6379` (`docker compose up -d redis`).
+> Sin Redis, los endpoints de PDF responden **503** con mensaje accionable (fail-fast de
+> `PdfExportService`) y el FE aborta los fetch a los 15 s — no se cuelgan los spinners.
+
 ---
 
 ## Performance (medido)

@@ -325,9 +325,30 @@ export async function getCotizacionDetalle(id: string | number): Promise<Cotizac
 
 const PDF_POLL_INTERVAL_MS = 2000;
 const PDF_POLL_MAX_RETRIES = 10;
+/** Timeout de los fetch del PDF: sin él, si la API se cuelga (p.ej. sin Redis)
+ *  los spinners "Generando..." / "Cargando documento..." quedan infinitos. */
+const PDF_FETCH_TIMEOUT_MS = 15_000;
+const PDF_STATUS_TIMEOUT_MS = 8_000;
 
 export interface PdfExportProgress {
   estado: 'generando' | 'descargando' | 'listo';
+}
+
+/** fetch con tope por AbortController: aborta y lanza error amigable si la
+ *  respuesta no llega antes de `ms`. */
+async function fetchConTimeout(url: string, init: RequestInit, ms: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (e: any) {
+    if (controller.signal.aborted || e?.name === 'AbortError') {
+      throw new Error('El servidor de PDF no responde. Intente nuevamente.');
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function getTokenForPdf(): string | null {
@@ -367,10 +388,11 @@ export async function getCotizacionPdfBlob(
   const token = getTokenForPdf();
   const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
-  const primera = await fetch(`${base}/api/cotizaciones/${id}/export-pdf`, {
-    headers,
-    credentials: 'include',
-  });
+  const primera = await fetchConTimeout(
+    `${base}/api/cotizaciones/${id}/export-pdf`,
+    { headers, credentials: 'include' },
+    PDF_FETCH_TIMEOUT_MS,
+  );
 
   if (primera.status === 200) return primera.blob();
   if (primera.status !== 202) throw new Error('No se pudo generar el PDF');
@@ -380,20 +402,22 @@ export async function getCotizacionPdfBlob(
   for (let intento = 0; intento < PDF_POLL_MAX_RETRIES; intento++) {
     await sleep(PDF_POLL_INTERVAL_MS);
 
-    const statusRes = await fetch(`${base}/api/cotizaciones/${id}/pdf-status`, {
-      headers,
-      credentials: 'include',
-    });
+    const statusRes = await fetchConTimeout(
+      `${base}/api/cotizaciones/${id}/pdf-status`,
+      { headers, credentials: 'include' },
+      PDF_STATUS_TIMEOUT_MS,
+    );
     if (!statusRes.ok) continue;
 
     const status = (await statusRes.json()) as { estado?: string };
     if (status.estado !== 'listo') continue; // 'generando' | 'pendiente'
 
     onProgress?.({ estado: 'descargando' });
-    const finalRes = await fetch(`${base}/api/cotizaciones/${id}/export-pdf`, {
-      headers,
-      credentials: 'include',
-    });
+    const finalRes = await fetchConTimeout(
+      `${base}/api/cotizaciones/${id}/export-pdf`,
+      { headers, credentials: 'include' },
+      PDF_FETCH_TIMEOUT_MS,
+    );
     if (finalRes.status === 200) {
       onProgress?.({ estado: 'listo' });
       return finalRes.blob();

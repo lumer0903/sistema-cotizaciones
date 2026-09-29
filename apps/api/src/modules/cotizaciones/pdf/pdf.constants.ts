@@ -2,7 +2,14 @@ export const PDF_QUEUE = 'cotizacion-pdfs';
 export const PDF_JOB_NAME = 'generate-pdf';
 export const PDF_WAIT_TIMEOUT_MS = 15_000;
 export const PDF_POLL_INTERVAL_MS = 300;
+/** Tope para la conexión a Redis (waitUntilReady/getJob): sin él, con Redis caído
+ *  las promesas de BullMQ se cuelgan indefinidamente y la API nunca responde. */
+export const PDF_REDIS_TIMEOUT_MS = 3_000;
 export const PDF_BUCKET = 'cotizacion-pdfs';
+
+/** Mensaje de 503 cuando Redis no responde. */
+export const MSJ_SIN_REDIS =
+  'PDF no disponible: sin conexión con Redis. Inicie Redis (docker compose up -d redis) e intente de nuevo.';
 
 export function pdfJobId(idCotizacion: number, hash: string): string {
   return `cotizo-pdf:${idCotizacion}:${hash}`;

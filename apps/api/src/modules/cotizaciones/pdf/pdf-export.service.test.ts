@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { InternalServerErrorException } from '@nestjs/common';
+import { InternalServerErrorException, ServiceUnavailableException } from '@nestjs/common';
 import { PdfExportService } from './pdf-export.service';
 import { computePdfHash } from './pdf-hash';
 import { PDF_WAIT_TIMEOUT_MS, pdfJobId } from './pdf.constants';
@@ -44,6 +44,7 @@ function makeExport(cot: CotState) {
     save: vi.fn(),
   };
   const queue = {
+    waitUntilReady: vi.fn(() => Promise.resolve()),
     add: vi.fn(() => Promise.resolve({})),
     getJob: vi.fn(() => Promise.resolve(null)),
   };
@@ -143,6 +144,33 @@ describe('PdfExportService.exportar', () => {
 
     await expect(service.exportar(1)).rejects.toBeInstanceOf(InternalServerErrorException);
   });
+
+  it('responde 503 con Redis caído: waitUntilReady nunca se resuelve', async () => {
+    vi.useFakeTimers();
+    const { service, queue } = makeExport(makeCot());
+    queue.waitUntilReady.mockImplementation(() => new Promise(() => {})); // nunca listo
+
+    const promise = service.exportar(1);
+    promise.catch(() => {}); // evita unhandled rejection mientras corren los timers
+    await vi.runAllTimersAsync();
+
+    await expect(promise).rejects.toBeInstanceOf(ServiceUnavailableException);
+    expect(queue.add).not.toHaveBeenCalled();
+    expect(queue.waitUntilReady).toHaveBeenCalled();
+  });
+
+  it('responde 503 si queue.add() no resuelve (Redis caído tras haber estado listo)', async () => {
+    vi.useFakeTimers();
+    const { service, queue } = makeExport(makeCot());
+    queue.add.mockImplementation(() => new Promise(() => {})); // offline queue de ioredis
+
+    const promise = service.exportar(1);
+    promise.catch(() => {});
+    await vi.runAllTimersAsync();
+
+    await expect(promise).rejects.toBeInstanceOf(ServiceUnavailableException);
+    expect(queue.add).toHaveBeenCalled();
+  });
 });
 
 describe('PdfExportService.status', () => {
@@ -171,5 +199,30 @@ describe('PdfExportService.status', () => {
   it('reporta pendiente si no hay PDF ni job', async () => {
     const { service } = makeExport(makeCot());
     await expect(service.status(1)).resolves.toEqual({ estado: 'pendiente' });
+  });
+
+  it('status responde 503 con Redis caído', async () => {
+    vi.useFakeTimers();
+    const { service, queue } = makeExport(makeCot());
+    queue.waitUntilReady.mockImplementation(() => new Promise(() => {}));
+
+    const promise = service.status(1);
+    promise.catch(() => {});
+    await vi.runAllTimersAsync();
+
+    await expect(promise).rejects.toBeInstanceOf(ServiceUnavailableException);
+  });
+
+  it('status responde 503 si getJob() no resuelve (Redis caído tras haber estado listo)', async () => {
+    vi.useFakeTimers();
+    const { service, queue } = makeExport(makeCot());
+    queue.getJob.mockImplementation(() => new Promise(() => {}));
+
+    const promise = service.status(1);
+    promise.catch(() => {});
+    await vi.runAllTimersAsync();
+
+    await expect(promise).rejects.toBeInstanceOf(ServiceUnavailableException);
+    expect(queue.getJob).toHaveBeenCalled();
   });
 });

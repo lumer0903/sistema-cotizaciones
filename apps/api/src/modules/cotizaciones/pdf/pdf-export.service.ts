@@ -2,15 +2,18 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
-import type { Queue } from 'bullmq';
+import type { Queue, Job } from 'bullmq';
 import { CotizacionesService } from '../cotizaciones.service';
 import { PdfStorageService } from './pdf-storage.service';
 import {
+  MSJ_SIN_REDIS,
   PDF_JOB_NAME,
   PDF_POLL_INTERVAL_MS,
   PDF_QUEUE,
+  PDF_REDIS_TIMEOUT_MS,
   PDF_WAIT_TIMEOUT_MS,
   pdfJobId,
 } from './pdf.constants';
@@ -55,20 +58,26 @@ export class PdfExportService {
       this.logger.warn(`PDF cacheado no legible (${cot.pdf_key}); se regenera`);
     }
 
-    await this.pdfQueue.add(
-      PDF_JOB_NAME,
-      { id_cotizacion: id },
-      {
-        jobId,
-        attempts: 2,
-        backoff: { type: 'exponential', delay: 3000 },
-      },
+    // Fail-fast: con Redis caído, queue.add() nunca resuelve y la petición se
+    // cuelga (spinner infinito en el FE). Verificamos la cola con tope de 3s.
+    await this.assertColaLista();
+
+    await this.conTope(
+      this.pdfQueue.add(
+        PDF_JOB_NAME,
+        { id_cotizacion: id },
+        {
+          jobId,
+          attempts: 2,
+          backoff: { type: 'exponential', delay: 3000 },
+        },
+      ),
     );
 
     const deadline = Date.now() + PDF_WAIT_TIMEOUT_MS;
     while (Date.now() < deadline) {
-      const job = await this.pdfQueue.getJob(jobId);
-      if (!job) break; // job eliminado/olvidado: tratamos como pendiente
+      const job = await this.getJobSeguro(jobId);
+      if (!job) break; // job eliminado/olvidado (o Redis no responde): pendiente
       const state = await job.getState();
 
       if (state === 'completed') {
@@ -98,7 +107,9 @@ export class PdfExportService {
       return { estado: 'listo', pdf_generado_en: cot.pdf_generado_en };
     }
 
-    const job = await this.pdfQueue.getJob(pdfJobId(id, hash));
+    await this.assertColaLista();
+
+    const job = await this.conTope(this.pdfQueue.getJob(pdfJobId(id, hash)));
     if (job) {
       const state = await job.getState();
       if (state !== 'completed' && state !== 'failed') {
@@ -111,6 +122,64 @@ export class PdfExportService {
       if (almacenado) return { estado: 'listo', pdf_generado_en: cot.pdf_generado_en };
     }
     return { estado: 'pendiente' };
+  }
+
+  /**
+   * Fail-fast de Redis: espera `waitUntilReady()` con tope de PDF_REDIS_TIMEOUT_MS.
+   * Sin Redis, BullMQ reintenta la conexión para siempre y add()/getJob() se
+   * cuelgan — aquí se responde 503 con un mensaje accionable en su lugar.
+   */
+  private async assertColaLista(): Promise<void> {
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      await Promise.race([
+        this.pdfQueue.waitUntilReady(),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error('redis-timeout')), PDF_REDIS_TIMEOUT_MS);
+        }),
+      ]);
+    } catch {
+      throw new ServiceUnavailableException(MSJ_SIN_REDIS);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  /** Cualquier operación de cola (add/getJob) con tope de PDF_REDIS_TIMEOUT_MS.
+   *  Nota: waitUntilReady() puede resolver si la cola ya estuvo lista antes de la
+   *  caída, por lo que add()/getJob() también necesitan su propio tope — si no,
+   *  quedan en la offline queue de ioredis y la petición se cuelga igual. */
+  private async conTope<T>(operacion: Promise<T>): Promise<T> {
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      return await Promise.race([
+        operacion,
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new ServiceUnavailableException(MSJ_SIN_REDIS)), PDF_REDIS_TIMEOUT_MS);
+        }),
+      ]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  /** getJob con tope: si Redis no responde en PDF_REDIS_TIMEOUT_MS, tratamos el
+   *  job como inexistente (la respuesta sale "processing" en vez de colgar). */
+  private async getJobSeguro(jobId: string): Promise<Job | null> {
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      const job = await Promise.race([
+        this.pdfQueue.getJob(jobId),
+        new Promise<null>((resolve) => {
+          timer = setTimeout(() => resolve(null), PDF_REDIS_TIMEOUT_MS);
+        }),
+      ]);
+      return job ?? null;
+    } catch {
+      return null;
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
   }
 
   private async leerDesdeAlmacen(id: number, hashActual: string): Promise<Buffer | null> {
