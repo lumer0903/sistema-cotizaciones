@@ -28,6 +28,8 @@ export class CategoriasController {
   constructor(private readonly categoriasService: CategoriasService) {}
 
   @Get()
+  // Lectura para todos los roles: el catálogo del vendedor necesita las categorías
+  @Roles(Rol.admin, Rol.gerente, Rol.vendedor)
   @ApiOperation({ summary: 'List all categories' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -43,6 +45,7 @@ export class CategoriasController {
   }
 
   @Get(':id')
+  @Roles(Rol.admin, Rol.gerente, Rol.vendedor)
   @ApiOperation({ summary: 'Get category by ID' })
   async findById(@Param('id', ParseIntPipe) id: number): Promise<{ success: true; data: CategoriaResponse | null }> {
     const categoria = await this.categoriasService.findById(id);

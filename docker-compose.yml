@@ -74,6 +74,8 @@ services:
       MINIO_SECRET_KEY: minioadmin
       # El worker de PDFs corre en su propio servicio (pdf-worker); el API sólo encola
       PDF_ROLE: producer
+      # Holgura para QA/automatización (misma IP); producción: 300
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-600}
     ports:
       - "3001:3001"
     depends_on:
@@ -142,6 +144,10 @@ services:
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:3001
+      # El proxy (src/proxy.ts) verifica el JWT en runtime y falla cerrado sin
+      # estos secretos (el .env nunca entra a la imagen por .dockerignore)
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-in-production}
     ports:
       - "3000:3000"
     depends_on:

@@ -18,6 +18,11 @@ interface Producto {
   precio_mayor_normal: number;
   id_categoria: number | null;
   nombre_categoria: string | null;
+  precios?: {
+    precio_unidad_normal?: number;
+    precio_docena_normal?: number;
+    precio_mayor_normal?: number;
+  };
 }
 
 interface Categoria {
@@ -145,11 +150,18 @@ export default function CatalogoPage() {
     const fetchData = async () => {
       try {
         const [prodData, catData] = await Promise.all([
-          apiClient('/productos?limit=500'),
+          apiClient('/productos?limit=500&include=precios'),
           apiClient('/categorias'),
         ]);
         if (prodData.success) {
-          setProductos(prodData.data);
+          // La API entrega los precios anidados en `precios`; la vista usa el
+          // shape aplanado (sin esto precio_*.toFixed() crasheaba con undefined)
+          setProductos(prodData.data.map((p: Producto) => ({
+            ...p,
+            precio_unidad_normal: p.precio_unidad_normal ?? p.precios?.precio_unidad_normal ?? 0,
+            precio_docena_normal: p.precio_docena_normal ?? p.precios?.precio_docena_normal ?? 0,
+            precio_mayor_normal: p.precio_mayor_normal ?? p.precios?.precio_mayor_normal ?? 0,
+          })));
         }
         if (catData.success) {
           setCategorias(catData.data);
