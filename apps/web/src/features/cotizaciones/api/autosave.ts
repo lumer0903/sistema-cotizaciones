@@ -128,6 +128,7 @@ export async function autosaveCotizacion(
     observaciones,
     incluye_carreta: params.incluyeCarreta,
     costo_carreta: params.costoCarreta ?? (params.incluyeCarreta ? 15 : 0),
+    fecha_vencimiento: params.fechaVencimiento || null,
     detalle,
   };
 

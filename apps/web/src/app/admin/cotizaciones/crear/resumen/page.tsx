@@ -120,6 +120,7 @@ export default function ResumenCotizacionPage() {
         observaciones: observaciones || `Vencimiento: ${fechaVencimiento || '-'} | Pago: ${tipoPago || '-'}`,
         incluye_carreta: incluyeCarreta,
         costo_carreta: costoCarreta,
+        fecha_vencimiento: fechaVencimiento || null,
         detalle: detallePayload,
       };
       let cot: any;
@@ -180,6 +181,7 @@ export default function ResumenCotizacionPage() {
         observaciones: observaciones || `Vencimiento: ${fechaVencimiento || '-'} | Pago: ${tipoPago || '-'}`,
         incluye_carreta: incluyeCarreta,
         costo_carreta: costoCarreta,
+        fecha_vencimiento: fechaVencimiento || null,
         detalle: detallePayload,
       });
 

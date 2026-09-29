@@ -1,25 +1,34 @@
 ﻿'use client';
 
-import { Package, FileText, DollarSign, TrendingUp } from 'lucide-react';
+import { Package, FileText, DollarSign, TrendingUp, Clock, Target, Percent } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { DashboardStats } from '@/types';
 
+interface KpisTesis {
+  tiempoPromedioCotizacion: number;
+  eficacia: number;
+  rendimientoMonetario: number;
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [kpis, setKpis] = useState<KpisTesis | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [productos, cotizaciones, aprobadas, cobranza] = await Promise.all([
+        const [productos, cotizaciones, aprobadas, cobranza, kpisRes] = await Promise.all([
           apiClient('/productos?limit=1'),
           apiClient('/cotizaciones?limit=1'),
           apiClient('/cotizaciones?estado=aprobada&limit=1'),
           apiClient('/cobranza?limit=100'),
+          apiClient('/dashboard/kpis').catch(() => null),
         ]);
 
+        setKpis(kpisRes?.data ?? null);
         setStats({
           totalProductos: productos.total || 0,
           totalCotizaciones: cotizaciones.total || 0,
@@ -41,6 +50,30 @@ export default function DashboardPage() {
 
     fetchStats();
   }, []);
+
+  const fmtPct = (v: number | undefined) =>
+    `${(v ?? 0).toLocaleString('es-PE', { maximumFractionDigits: 2 })}%`;
+
+  const indicadoresTesis = [
+    {
+      label: 'Tiempo promedio de generación',
+      value: `${(kpis?.tiempoPromedioCotizacion ?? 0).toLocaleString('es-PE', { maximumFractionDigits: 2 })} min`,
+      icon: Clock,
+      color: 'bg-brand-primary',
+    },
+    {
+      label: 'Eficacia (cotizaciones aceptadas)',
+      value: fmtPct(kpis?.eficacia),
+      icon: Target,
+      color: 'bg-estado-aprobado',
+    },
+    {
+      label: 'Rendimiento monetario',
+      value: fmtPct(kpis?.rendimientoMonetario),
+      icon: Percent,
+      color: 'bg-distribuidor',
+    },
+  ];
 
   const statCards = [
     { label: 'Productos', value: stats?.totalProductos || 0, icon: Package, color: 'bg-estado-enviado', href: '/admin/productos' },
@@ -76,6 +109,28 @@ export default function DashboardPage() {
                 </div>
               </Link>
             ))}
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">Indicadores de la tesis</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Tiempo, eficacia y rendimiento de las cotizaciones
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {indicadoresTesis.map((ind) => (
+                <div key={ind.label} className="rounded-xl border border-gray-200 p-4 sm:p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">{ind.label}</p>
+                      <p className="text-2xl font-bold text-gray-900 mt-1">{ind.value}</p>
+                    </div>
+                    <div className={`p-3 rounded-xl ${ind.color}`}>
+                      <ind.icon className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">

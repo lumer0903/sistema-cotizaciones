@@ -216,6 +216,8 @@ export interface CrearCotizacionPayload {
   incluye_carreta?: boolean;
   costo_carreta?: number;
   numero?: string;
+  /** La fija el asesor de ventas (habilita cobranza 'vencida'); null = sin vencer */
+  fecha_vencimiento?: string | null;
   detalle: Array<{
     id_producto: number;
     tipo_venta?: string;
@@ -250,6 +252,7 @@ export interface ActualizarCotizacionPayload {
   observaciones?: string;
   incluye_carreta?: boolean;
   costo_carreta?: number;
+  fecha_vencimiento?: string | null;
   detalle?: Array<{
     id_producto: number;
     tipo_venta?: string;

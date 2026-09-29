@@ -23,7 +23,9 @@ function inferirTipoDoc(doc: string): 'DNI' | 'CE' | 'RUC' {
 function hidratarDesdeServidor(cot: CotizacionDetalle, id: number) {
   const obs = String(cot.observaciones || '');
   const m = /Vencimiento:\s*([^|]+?)\s*\|\s*Pago:\s*(.+)$/.exec(obs);
-  const fechaVencimiento = m && m[1].trim() !== '-' ? m[1].trim() : '';
+  // Fuente de verdad: la columna fecha_vencimiento; fallback (datos viejos) = texto de observaciones
+  const fechaColumna = cot.fecha_vencimiento ? String(cot.fecha_vencimiento).slice(0, 10) : '';
+  const fechaVencimiento = fechaColumna || (m && m[1].trim() !== '-' ? m[1].trim() : '');
   const tipoPago = m && m[2].trim() !== '-' ? m[2].trim() : '';
 
   const items: ProductoCarrito[] = (cot.detalle || []).map((l, idx) => {
