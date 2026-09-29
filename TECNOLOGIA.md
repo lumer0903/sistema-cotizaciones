@@ -148,7 +148,7 @@ Seed: `pnpm --filter=@goldcontinent/database db:seed`.
 | 4 | ~~Sin tests~~ | **Resuelto:** 84 specs vitest en API (41 cotizaciones + 14 PDF + 8 integración + 16 RBAC + 5 JWT). **Frontend sin tests** |
 | 5 | ~~Secrets con fallback~~ | **Resuelto:** `jwt.ts` sin fallback (throw si faltan); `load-env.ts` en API y dotenv en `next.config.mjs` |
 | 6 | ~~Mismatch `IA_URL` vs `AI_SERVICE_URL`~~ | **Resuelto:** código lee `AI_SERVICE_URL \|\| IA_URL`; compose inyecta `AI_SERVICE_URL` |
-| 7 | **`ai-service` fuera de pnpm** | `dev:ai` no funciona |
+| 7 | ~~`ai-service` fuera de pnpm~~ | **Resuelto:** `pnpm dev` lo orquesta (venv/PATH + sonda `:8000/health`) y `pnpm dev:ai` existe |
 | 8 | ~~CI/CD stale~~ | **Resuelto:** `deploy.yml` reescrito + `fly-api.toml`/`fly-web.toml` (dos apps Fly) |
 | 9 | ~~`init-scripts/` no existe~~ | **Resuelto:** volumen/dependencia muerta eliminada del compose |
 | 10 | **Campos huérfanos** (`fecha_vencimiento`, `tiempo_fin`) | Cobranza "vencida" y KPI tiempo muertos |

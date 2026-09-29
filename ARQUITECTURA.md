@@ -216,7 +216,7 @@ features/<nombre>/
 - **TF-IDF en memoria** (scikit-learn, stop-words español, ngrams 1-2) + `cosine_similarity`.
 - Endpoints: `GET /health`, `POST /suggest` (buckets `similar` / `upsell` / `equilibrio`), `POST /admin/refresh-cache`.
 - Consumido por `HttpAiService` (Nest) con fallback a **mock**.
-- **No es paquete pnpm** → `pnpm dev:ai` no funciona; solo Docker.
+- **No es paquete pnpm**, pero sí integrado en el dev: `pnpm dev` lo orquesta junto a API/web (sonda a `:8000/health`, opcional con fallback mock) y `pnpm dev:ai` lo arranca solo (`scripts/dev-ai.js`, venv local o PATH).
 - **Env resuelta:** el código lee `AI_SERVICE_URL || IA_URL` (fallback a `localhost:8000`) y compose inyecta `AI_SERVICE_URL=http://ai-service:8000`.
 
 ---

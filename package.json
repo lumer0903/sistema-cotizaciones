@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "node scripts/dev.js",
+    "dev:ai": "node scripts/dev-ai.js",
     "dev:api": "turbo run dev --filter=@goldcontinent/api",
     "dev:web": "turbo run dev --filter=@goldcontinent/web",
     "build": "turbo run build",
