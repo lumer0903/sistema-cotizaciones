@@ -37,7 +37,7 @@
 - devDeps: `turbo`, `typescript`
 - deps: `clsx`, `tailwind-merge`
 
-> `dev:ai` filtra `@goldcontinent/ai-service`, pero **ai-service no tiene package.json** → el script no resuelve nada (solo Docker).
+> `dev` y `dev:ai` levantan `ai-service` vía `scripts/dev-ai.js` (venv/PATH + sonda `:8000/health`); el servicio no está en el workspace pnpm (sin package.json).
 
 ### `apps/api` — `@goldcontinent/api`
 
@@ -47,15 +47,15 @@
 
 **devDeps:** `@nestjs/cli`, `@nestjs/testing`, `vitest`, `tsx`, `ts-node`, `typescript`, tipos varios.
 
-**Scripts:** `dev` (nest start --watch), `build`, `start`, `lint` (eslint 9 flat config — `eslint.config.mjs`, verde), `typecheck`, `test` (vitest run, 55 specs), `db:*`.
+**Scripts:** `dev` (nest start --watch), `build`, `start`, `lint` (eslint 9 flat config — `eslint.config.mjs`, verde), `typecheck`, `test` (vitest run, 93 specs), `db:*`.
 
 ### `apps/web` — `@goldcontinent/web`
 
 **Runtime:** `next`, `react`, `react-dom`, `@goldcontinent/shared`, `react-hook-form`, `@hookform/resolvers`, `zod`, `zustand`, `lucide-react`, `sonner`.
 
-**devDeps:** `tailwindcss` v4 + `@tailwindcss/postcss`, `postcss`, `eslint` + `eslint-config-next` (flat config, verde), tipos React/Node, `typescript`.
+**devDeps:** `tailwindcss` v4 + `@tailwindcss/postcss`, `postcss`, `eslint` + `eslint-config-next` (flat config, verde), tipos React/Node, `typescript`, `vitest` + `@vitejs/plugin-react` + `jsdom` + `@testing-library/{react,jest-dom,user-event}`.
 
-**Scripts:** `dev` (next dev -p 3000), `build`, `start`, `lint`, `typecheck`.
+**Scripts:** `dev` (next dev -p 3000), `build`, `start`, `lint`, `typecheck`, `test` (vitest run, 19 specs — `vitest.config.mts`, jsdom, alias `@` → `src`).
 
 ### `packages/shared` — `@goldcontinent/shared`
 
@@ -126,7 +126,7 @@ pnpm dev:web            # solo Next :3000
 pnpm build              # build turbo de todos
 pnpm lint               # eslint (flat config en apps/api y apps/web)
 pnpm typecheck          # tsc de todos
-pnpm test               # vitest — 55 specs (solo API)
+pnpm test               # vitest — 112 specs (93 API + 19 web)
 pnpm db:generate        # prisma generate
 pnpm db:push            # sincronizar schema sin migración
 pnpm db:migrate         # migración dev
@@ -145,9 +145,9 @@ Seed: `pnpm --filter=@goldcontinent/database db:seed`.
 | # | Gap | Impacto |
 |---|-----|---------|
 | 1 | ~~Sin RolesGuard en API~~ | **Resuelto:** `RolesGuard` por controller (junto a JWT) + `@Roles` en usuarios, categorías, almacenes, dashboard, config PUT |
-| 2 | ~~helmet y rate-limit sin usar~~ | **Resuelto:** `helmet()` + `express-rate-limit` (300 req/15 min) globales en `main.ts` |
+| 2 | ~~helmet y rate-limit sin usar~~ | **Resuelto:** `helmet()` global; límite duro 20/15 min solo en `/api/auth/login` + `/api/auth/refresh` (no `/auth/me`), global `RATE_LIMIT_MAX` (default 300/15 min, configurable), CORS aplicado antes de los limiters |
 | 3 | ~~Sin config ESLint~~ | **Resuelto:** flat config (`eslint.config.mjs`) en `apps/api` y `apps/web`; `pnpm lint` verde |
-| 4 | ~~Sin tests~~ | **Resuelto:** 84 specs vitest en API (41 cotizaciones + 14 PDF + 8 integración + 16 RBAC + 5 JWT). **Frontend sin tests** |
+| 4 | ~~Sin tests~~ | **Resuelto:** 112 specs vitest — 93 API (44 cotizaciones + 14 PDF + 8 integración + 16 RBAC + 5 JWT + 6 rol PDF) + 19 FE (formatters, useDebounce, Button, Badge con jsdom/testing-library) |
 | 5 | ~~Secrets con fallback~~ | **Resuelto:** `jwt.ts` sin fallback (throw si faltan); `load-env.ts` en API y dotenv en `next.config.mjs` |
 | 6 | ~~Mismatch `IA_URL` vs `AI_SERVICE_URL`~~ | **Resuelto:** código lee `AI_SERVICE_URL \|\| IA_URL`; compose inyecta `AI_SERVICE_URL` |
 | 7 | ~~`ai-service` fuera de pnpm~~ | **Resuelto:** `pnpm dev` lo orquesta (venv/PATH + sonda `:8000/health`) y `pnpm dev:ai` existe |
