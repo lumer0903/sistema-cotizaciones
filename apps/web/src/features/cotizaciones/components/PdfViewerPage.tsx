@@ -1,9 +1,7 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import {
-  ArrowLeft,
   FileText,
   Loader2
 } from 'lucide-react';
@@ -12,10 +10,9 @@ import { getCotizacionPdfObjectUrl } from '../api/cotizacionApi';
 interface PdfViewerPageProps {
   cotizacionId: string | number;
   filename?: string;
-  backHref: string;
 }
 
-export function PdfViewerPage({ cotizacionId, filename: _filename, backHref }: PdfViewerPageProps) {
+export function PdfViewerPage({ cotizacionId, filename: _filename }: PdfViewerPageProps) {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,20 +47,9 @@ export function PdfViewerPage({ cotizacionId, filename: _filename, backHref }: P
   }, [cotizacionId]);
 
   return (
-    <div className="flex flex-col min-h-[calc(100dvh-4rem)] font-['DM_Sans']">
+    <div className="flex flex-col min-h-[calc(100dvh-4rem)] font-sans">
       {/* ÁREA PRINCIPAL DEL VISOR */}
       <div className="flex-1 flex flex-col justify-between gap-4">
-        {/* VOLVER (visible en todos los breakpoints; en móvil el breadcrumb oculta ancestros) */}
-        <div className="w-full max-w-5xl mx-auto">
-          <Link
-            href={backHref}
-            className="inline-flex items-center gap-1.5 min-h-11 px-3 rounded-lg text-sm font-semibold text-brand-ink hover:bg-brand-soft transition-colors"
-          >
-            <ArrowLeft className="size-4" aria-hidden="true" />
-            Volver al listado
-          </Link>
-        </div>
-
         <div className="w-full max-w-5xl mx-auto h-[60vh] lg:h-[calc(100dvh-180px)] bg-white rounded-xl border border-neutral-200 shadow-md overflow-hidden">
           {loading && (
             <div className="h-full flex flex-col items-center justify-center gap-3 text-neutral-500">

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search } from 'lucide-react';
@@ -9,6 +9,8 @@ import { CotizacionItem, EstadoCotizacion } from '@/features/cotizaciones/types/
 import { CotizacionesTable } from '@/features/cotizaciones/components/CotizacionesTable';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Select } from '@/components/ui/Select';
+import { Input } from '@/components/ui/Input';
+import { FilterCard } from '@/components/ui/FilterCard';
 import { Pagination } from '@/components/ui/Pagination';
 
 const ESTADO_OPTIONS = [
@@ -102,73 +104,63 @@ export default function MisCotizacionesPage() {
   );
 
   return (
-    <div className="min-h-screen bg-stone-50 max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 py-3 font-['DM_Sans']">
-      {/* Barra de Filtros */}
-      <div className="w-full bg-white rounded-2xl shadow-sm border-l-4 border-brand-primary p-4 mb-8 flex flex-col md:flex-row md:flex-wrap items-stretch md:items-end justify-between gap-x-6 gap-y-4">
-        {/* BUSCAR */}
-        <div className="flex-1 flex flex-col gap-1.5">
-          <label className="text-xs font-black tracking-wider text-brand-ink uppercase">
-            BUSCAR
-          </label>
-          <div className="relative flex items-center">
-            <Search className="w-5 h-5 text-brand-ink absolute left-3.5 pointer-events-none" />
-            <input
+    <div className="min-h-screen bg-stone-50 max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 py-3 font-sans">
+      {/* Barra de Filtros (contenedor base FilterCard — sin bordes amarillos) */}
+      <FilterCard className="mb-8">
+        <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-end gap-x-6 gap-y-4">
+          {/* BUSCAR */}
+          <div className="flex-1 min-w-[220px]">
+            <Input
+              label="Buscar"
               type="text"
+              icon={<Search className="w-4 h-4" />}
               value={buscar}
               onChange={(e) => {
                 setBuscar(e.target.value);
               }}
-              placeholder="Buscar por código o cliente"
-              className="w-full h-11 pl-11 pr-4 rounded-xl border border-brand-primary focus:border-brand-hover focus:ring-2 focus:ring-brand-soft outline-none text-brand-subtitle text-sm placeholder:text-brand-options transition-all"
+              placeholder="Buscar"
+            />
+          </div>
+
+          {/* FECHA */}
+          <div className="w-full md:w-40">
+            <Input
+              label="Fecha"
+              type="date"
+              value={fecha}
+              onChange={(e) => {
+                setFecha(e.target.value);
+              }}
+            />
+          </div>
+
+          {/* ESTADO */}
+          <div className="w-full md:w-40">
+            <Select
+              label="Estado"
+              value={estadoFilter}
+              onChange={(e) => {
+                setEstadoFilter(String(e.target.value) as EstadoCotizacion | 'TODOS');
+              }}
+              options={ESTADO_OPTIONS}
+              className="w-full"
+            />
+          </div>
+
+          {/* TIPO DE CLIENTE */}
+          <div className="w-full md:w-40">
+            <Select
+              label="Tipo de cliente"
+              value={tipoFilter}
+              onChange={(e) => {
+                setTipoFilter(String(e.target.value) as 'TODOS' | 'DISTRIBUIDOR' | 'TIENDA');
+              }}
+              options={TIPO_OPTIONS}
+              className="w-full"
             />
           </div>
         </div>
-
-        {/* FECHA */}
-        <div className="w-full md:w-56 flex flex-col gap-1.5">
-          <label className="text-xs font-black tracking-wider text-brand-ink uppercase">
-            FECHA
-          </label>
-          <input
-            type="date"
-            value={fecha}
-            onChange={(e) => {
-              setFecha(e.target.value);
-            }}
-            className="w-full h-11 px-3.5 rounded-xl border border-brand-primary focus:border-brand-hover focus:ring-2 focus:ring-brand-soft outline-none text-brand-subtitle text-sm bg-white cursor-pointer transition-all"
-          />
-        </div>
-
-        {/* ESTADO */}
-        <div className="w-full md:w-56 flex flex-col gap-1.5">
-          <label className="text-xs font-black tracking-wider text-brand-ink uppercase">
-            ESTADO
-          </label>
-          <Select
-            value={estadoFilter}
-            onChange={(e) => {
-              setEstadoFilter(String(e.target.value) as EstadoCotizacion | 'TODOS');
-            }}
-            options={ESTADO_OPTIONS}
-            className="w-full"
-          />
-        </div>
-
-        {/* TIPO DE CLIENTE */}
-        <div className="w-full md:w-56 flex flex-col gap-1.5">
-          <label className="text-xs font-black tracking-wider text-brand-ink uppercase">
-            TIPO DE CLIENTE
-          </label>
-          <Select
-            value={tipoFilter}
-            onChange={(e) => {
-              setTipoFilter(String(e.target.value) as 'TODOS' | 'DISTRIBUIDOR' | 'TIENDA');
-            }}
-            options={TIPO_OPTIONS}
-            className="w-full"
-          />
-        </div>
-      </div>
+      </FilterCard>
 
       {/* Tabla */}
       <CotizacionesTable

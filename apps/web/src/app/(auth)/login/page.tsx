@@ -127,9 +127,8 @@ function LoginForm() {
                   aria-describedby={errors.email ? 'email-error' : undefined}
                   className="w-full h-11 pl-12 pr-4 rounded-xl border border-gray-200 text-sm text-gray-900 bg-white outline-none transition-colors
                     placeholder:text-gray-500
-                    focus:border-[#f8b602] focus:ring-2 focus:ring-[#f8b602]/20
                     disabled:bg-gray-50 disabled:cursor-not-allowed
-                    error:border-red-300 error:focus:border-red-500 error:focus:ring-red-200"
+                    error:border-red-300 error:focus:border-red-500"
                   placeholder="correo@ejemplo.com"
                 />
               </div>
@@ -161,9 +160,8 @@ function LoginForm() {
                   aria-describedby={errors.password ? 'password-error' : undefined}
                   className="w-full h-11 pl-12 pr-14 rounded-xl border border-gray-200 text-sm text-gray-900 bg-white outline-none transition-colors
                     placeholder:text-gray-500
-                    focus:border-[#f8b602] focus:ring-2 focus:ring-[#f8b602]/20
                     disabled:bg-gray-50 disabled:cursor-not-allowed
-                    error:border-red-300 error:focus:border-red-500 error:focus:ring-red-200"
+                    error:border-red-300 error:focus:border-red-500"
                   placeholder="••••••••"
                 />
                 <button
@@ -191,7 +189,7 @@ function LoginForm() {
                 flex items-center justify-center gap-2
                 hover:bg-[#e0a400] active:scale-[0.98] transition-all
                 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#f8b602] disabled:active:scale-100
-                focus:outline-none focus:ring-2 focus:ring-[#f8b602] focus:ring-offset-2"
+                focus:outline-none"
             >
               {loading ? (
                 <>

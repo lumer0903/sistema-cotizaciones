@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from '@/components/ui/Sidebar';
@@ -9,6 +9,7 @@ import { PerfilModal } from '@/features/usuarios/components/PerfilModal';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/lib/authProvider';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
+import { lockBodyScroll, unlockBodyScroll } from '@/lib/scrollLock';
 import Link from 'next/link';
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -32,15 +33,21 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     const interval = setInterval(() => {
       fetchAlertasCount().then((count) => setAlertasCount(count));
     }, 60000);
+
+    // Abrir menú por defecto en pantallas grandes
+    if (window.innerWidth >= 1024) {
+      setSidebarOpen(true);
+    }
+
     return () => clearInterval(interval);
   }, [fetchAlertasCount]);
 
   // Bloquea el scroll del body mientras el menú móvil está abierto
+  // (helper compartido con Modal: conserva el valor original y compensa el scrollbar)
   useEffect(() => {
-    document.body.style.overflow = sidebarOpen ? 'hidden' : 'unset';
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
+    if (!sidebarOpen) return;
+    lockBodyScroll();
+    return unlockBodyScroll;
   }, [sidebarOpen]);
 
   // Escape cierra el drawer del menú móvil
@@ -54,7 +61,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   }, [sidebarOpen]);
 
   return (
-    <div className="min-h-screen bg-neutral-50/50 flex font-['DM_Sans']">
+    <div className="min-h-screen bg-neutral-50/50 flex font-sans">
       {/* BACKDROP MÓVIL */}
       {sidebarOpen && (
         <div
@@ -68,17 +75,17 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* ÁREA PRINCIPAL */}
-      <div className="flex-1 lg:pl-64 min-w-0 flex flex-col min-h-screen">
+      <div className={`flex-1 min-w-0 flex flex-col min-h-screen transition-[padding] duration-300 ease-in-out ${sidebarOpen ? 'lg:pl-64' : 'pl-0'}`}>
         {/* NAVBAR DINÁMICO */}
         <header className="w-full h-16 px-4 sm:px-6 lg:px-8 bg-white border-b border-gray-200 flex items-center justify-between gap-3 sticky top-0 z-30">
 
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            {/* BOTÓN MENÚ MÓVIL */}
+            {/* BOTÓN MENÚ MÓVIL Y ESCRITORIO */}
             <button
               type="button"
-              onClick={() => setSidebarOpen(true)}
-              className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-md text-neutral-600 hover:text-black hover:bg-gray-100 transition-colors lg:hidden shrink-0"
-              aria-label="Abrir menú"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-md text-neutral-600 hover:text-black hover:bg-gray-100 transition-colors shrink-0"
+              aria-label="Alternar menú"
               aria-expanded={sidebarOpen}
               aria-controls="menu-lateral"
             >
@@ -91,14 +98,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
           {/* ICONOS / AVATAR */}
           <div className="flex items-center gap-3">
-            <Avatar
-              src={usuario?.avatar_url}
-              nombre={usuario?.nombre}
-              size="md"
-              onClick={() => setIsPerfilOpen(true)}
-              title="Mi perfil"
-            />
-
             <button
               type="button"
               onClick={() => setIsAlertasOpen(true)}
@@ -122,6 +121,15 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             >
               <Settings className="w-5 h-5 stroke-[2]" />
             </Link>
+            <Avatar
+              src={usuario?.avatar_url}
+              nombre={usuario?.nombre}
+              size="md"
+              onClick={() => setIsPerfilOpen(true)}
+              title="Mi perfil"
+            />
+
+
           </div>
         </header>
 

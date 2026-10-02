@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import {
   Search,
   RotateCw,
@@ -16,6 +16,7 @@ import { FilterCard } from '@/components/ui/FilterCard';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
+import { DropdownMenu, DropdownMenuItem } from '@/components/ui/DropdownMenu';
 
 interface InventarioFiltersProps {
   categorias?: Categoria[];
@@ -56,20 +57,7 @@ export function InventarioFilters({
   metaLoading = false,
   alertasCount = 0,
 }: InventarioFiltersProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
   const metaDisabled = loading || metaLoading;
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const categoriaOptions = categorias.map((cat) => ({
     label: cat.nombre_categoria,
@@ -81,6 +69,59 @@ export function InventarioFilters({
     value: alm.id_almacen.toString(),
   }));
 
+  const menuItems: DropdownMenuItem[] = [
+    {
+      key: 'refresh',
+      label: 'Actualizar lista',
+      icon: <RotateCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />,
+      onClick: () => onRefresh?.(),
+      disabled: loading,
+    },
+    ...(onMovimiento
+      ? [
+          {
+            key: 'movimiento',
+            label: 'Nuevo Movimiento',
+            icon: <PackagePlus className="w-4 h-4" />,
+            onClick: onMovimiento,
+          },
+        ]
+      : []),
+    ...(onTransferencia
+      ? [
+          {
+            key: 'transferencia',
+            label: 'Transferencia Global',
+            icon: <ArrowLeftRight className="w-4 h-4" />,
+            onClick: onTransferencia,
+          },
+        ]
+      : []),
+    ...(onKardex
+      ? [
+          {
+            key: 'kardex',
+            label: 'Kárdex Global',
+            icon: <ClipboardList className="w-4 h-4" />,
+            onClick: onKardex,
+          },
+        ]
+      : []),
+    ...(onAlertas
+      ? [
+          {
+            key: 'alertas',
+            label: 'Ver Alertas',
+            icon: <Bell className="w-4 h-4" />,
+            onClick: onAlertas,
+            danger: true,
+            dividerBefore: true,
+            badge: alertasCount,
+          },
+        ]
+      : []),
+  ];
+
   return (
     <FilterCard>
       <div className="flex flex-wrap items-end justify-between gap-3 w-full">
@@ -89,18 +130,19 @@ export function InventarioFilters({
           {/* BUSCADOR */}
           <div className="flex-1 min-w-[180px] sm:min-w-[220px]">
             <Input
-              label="BUSCAR"
-              icon={<Search className="w-4 h-4 text-[#8E8E8E]" />}
+              label="Buscar"
+              icon={<Search className="w-4 h-4" />}
               placeholder="Buscar..."
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
+              aria-label="Buscar productos"
             />
           </div>
 
           {/* CATEGORÍA */}
           <div className="w-full sm:w-44">
             <Select
-              label="CATEGORÍA"
+              label="Categoría"
               value={selectedCategoria}
               onChange={(e) => onCategoriaChange(String(e.target.value))}
               options={[{ label: 'Seleccionar', value: '' }, ...categoriaOptions]}
@@ -111,7 +153,7 @@ export function InventarioFilters({
           {/* UBICACIÓN */}
           <div className="w-full sm:w-44">
             <Select
-              label="UBICACIÓN"
+              label="Ubicación"
               value={selectedUbicacion}
               onChange={(e) => onUbicacionChange(String(e.target.value))}
               options={[{ label: 'Seleccionar', value: '' }, ...almacenOptions]}
@@ -120,115 +162,31 @@ export function InventarioFilters({
           </div>
         </div>
 
-        {/* BOTONES Y ACCIONES (ALINEADOS A LA MISMA ALTURA EXACTA h-10) */}
-        <div className="flex items-center gap-2 sm:ml-auto h-10">
-
-          {/* BOTÓN PRINCIPAL (+ AGREGAR PRODUCTO) */}
+        {/* BOTONES Y ACCIONES (MISMA ALTURA EXACTA h-10) */}
+        <div className="flex items-center gap-2 sm:ml-auto h-9">
           <Button
             variant="primary"
             onClick={onAgregarProducto}
-            className="h-10 px-4 gap-1.5 whitespace-nowrap shadow-sm text-white font-bold"
+            className="gap-1.5 whitespace-nowrap shadow-sm"
           >
-            <Plus className="w-5 h-5 stroke-[2.5] text-white" />
-            <span className="text-white">Agregar Producto</span>
+            <Plus className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
+            <span>Agregar Producto</span>
           </Button>
 
-          {/* BOTÓN DESPLEGABLE TRES PUNTOS (SIN BORDE / GHOST) */}
-          <div className="relative" ref={menuRef}>
-            <button
-              type="button"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              title="Más opciones"
-              className="h-10 w-10 flex items-center justify-center rounded-xl bg-transparent text-[#414141] hover:bg-[#FFF8E7] hover:text-[#F8B602] active:scale-95 transition-all focus:outline-none relative"
-            >
-              <MoreVertical className="w-5 h-5" />
-              {alertasCount > 0 && (
-                <span className="absolute top-1 right-1 bg-[#7B1C1C] w-2.5 h-2.5 rounded-full border-2 border-white" />
-              )}
-            </button>
-
-            {/* MENÚ FLOTANTE */}
-            {isMenuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-[#E4E4E4] py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-                {onRefresh && (
-                  <button
-                    onClick={() => {
-                      onRefresh();
-                      setIsMenuOpen(false);
-                    }}
-                    disabled={loading}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-semibold text-[#414141] hover:bg-[#FFF8E7] hover:text-[#F8B602] transition-colors disabled:opacity-50"
-                  >
-                    <RotateCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    <span>Actualizar lista</span>
-                  </button>
+          <DropdownMenu
+            items={menuItems}
+            label="Acciones de inventario"
+            triggerAriaLabel="Más opciones"
+            trigger={
+              <span className="relative flex items-center justify-center">
+                <MoreVertical className="w-5 h-5" aria-hidden="true" />
+                {alertasCount > 0 && (
+                  <span className="absolute top-1 right-1 bg-danger w-2.5 h-2.5 rounded-full border-2 border-white" />
                 )}
-
-                {onMovimiento && (
-                  <button
-                    onClick={() => {
-                      onMovimiento();
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-semibold text-[#414141] hover:bg-[#FFF8E7] hover:text-[#F8B602] transition-colors"
-                  >
-                    <PackagePlus className="w-4 h-4" />
-                    <span>Nuevo Movimiento</span>
-                  </button>
-                )}
-
-                {onTransferencia && (
-                  <button
-                    onClick={() => {
-                      onTransferencia();
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-semibold text-[#414141] hover:bg-[#FFF8E7] hover:text-[#F8B602] transition-colors"
-                  >
-                    <ArrowLeftRight className="w-4 h-4" />
-                    <span>Transferencia Global</span>
-                  </button>
-                )}
-
-                {onKardex && (
-                  <button
-                    onClick={() => {
-                      onKardex();
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-semibold text-[#414141] hover:bg-[#FFF8E7] hover:text-[#F8B602] transition-colors"
-                  >
-                    <ClipboardList className="w-4 h-4" />
-                    <span>Kárdex Global</span>
-                  </button>
-                )}
-
-                {onAlertas && (
-                  <>
-                    <div className="my-1.5 border-t border-[#E4E4E4]" />
-                    <button
-                      onClick={() => {
-                        onAlertas();
-                        setIsMenuOpen(false);
-                      }}
-                      className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-[#7B1C1C] hover:bg-red-50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Bell className="w-4 h-4 text-[#7B1C1C]" />
-                        <span>Ver Alertas</span>
-                      </div>
-                      {alertasCount > 0 && (
-                        <span className="bg-[#7B1C1C] text-white text-[10px] font-bold h-4 px-1.5 rounded-full flex items-center justify-center">
-                          {alertasCount > 9 ? '9+' : alertasCount}
-                        </span>
-                      )}
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-
+              </span>
+            }
+            triggerClassName="h-9 w-9 flex items-center justify-center rounded-xl bg-transparent text-brand-subtitle hover:bg-gray-100 hover:text-brand-ink transition-colors"
+          />
         </div>
       </div>
     </FilterCard>

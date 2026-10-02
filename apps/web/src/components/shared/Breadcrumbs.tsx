@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -259,13 +259,13 @@ export function Breadcrumbs({ accent = 'amber' }: BreadcrumbsProps) {
             {href ? (
               <Link
                 href={href}
-                className={`text-neutral-700 ${size} font-extrabold font-['DM_Sans'] hover:text-neutral-900 transition-colors ${ancestorClass}`}
+                className={`text-neutral-700 ${size} font-extrabold font-sans hover:text-neutral-900 transition-colors ${ancestorClass}`}
               >
                 {item.label}
               </Link>
             ) : (
               <span
-                className={`${size} font-extrabold font-['DM_Sans'] ${
+                className={`${size} font-extrabold font-sans ${
                   isLast ? lastAccent : 'text-neutral-700'
                 } ${isLast ? 'truncate min-w-0' : ancestorClass}`}
               >

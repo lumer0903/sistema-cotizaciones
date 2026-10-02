@@ -1,5 +1,4 @@
-﻿import React from 'react';
-import Image from 'next/image';
+import React from 'react';
 import { History } from 'lucide-react';
 import { ProductoConsulta } from '../types/precio';
 import { handleImageError } from '@/lib/imageUtils';
@@ -21,11 +20,11 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
             {/* Imagen & Botón Historial */}
             <div className="w-full h-28 bg-brand-primary/10 rounded-xl relative flex items-center justify-center overflow-hidden">
                 {producto.imagenUrl ? (
-                        <Image
+                        <img
                             src={producto.imagenUrl}
                             alt={producto.descripcion}
-                            width={150}
-                            height={150}
+                            
+                            
                             className="w-full h-full object-cover object-center"
                             onError={(e) => handleImageError(e, '200')}
                         />
@@ -38,7 +37,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
                     onClick={() => onVerHistorial?.(producto.id)}
                     title="Ver historial de precios"
                     aria-label={`Ver historial de precios de ${producto.codigo}`}
-                    className="absolute top-1 right-1 min-h-11 min-w-11 inline-flex items-center justify-center text-brand-ink hover:text-brand-ink bg-white/80 rounded-lg backdrop-blur-sm transition-colors z-10"
+                    className="absolute top-1 right-1 min-h-11 min-w-11 inline-flex items-center justify-center text-brand-ink hover:text-brand-ink transition-colors z-10"
                 >
                     <History className="size-5" />
                 </button>

@@ -1,9 +1,9 @@
-﻿'use client';
+'use client';
 
-import { FileText, Plus, Search, Filter, ChevronDown, Eye, Edit, Download } from 'lucide-react';
+import { FileText, Plus, Search, ChevronDown, Eye, Edit, Download } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Badge, ESTADO_BADGE, Pagination } from '@/components/ui';
+import { Badge, ESTADO_BADGE, Input, Pagination } from '@/components/ui';
 import {
   exportarPdfCotizacion,
   getCotizaciones,
@@ -22,7 +22,7 @@ export default function CotizacionesPage() {
   const [tipoFilter, setTipoFilter] = useState<'TODOS' | 'DISTRIBUIDOR' | 'TIENDA'>('TODOS');
   const [currentPage, setCurrentPage] = useState(1);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [itemsPerPage, setItemsPerPage] = useState(16);
 
   const handleDescargarPdf = async (cot: CotizacionItem) => {
     setDownloadingId(cot.id_cotizacion);
@@ -97,7 +97,7 @@ export default function CotizacionesPage() {
         </div>
         <Link
           href="/vendedor/cotizaciones/crear"
-          className="min-h-11 px-4 bg-brand-primary text-white rounded-xl hover:bg-brand-hover transition-colors inline-flex items-center gap-2 font-medium"
+          className="min-h-11 px-4 bg-brand-primary text-on-brand rounded-xl hover:bg-brand-hover transition-colors inline-flex items-center gap-2 font-medium"
         >
           <Plus className="h-4 w-4" />
           Nueva Cotización
@@ -105,22 +105,19 @@ export default function CotizacionesPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200">
-        <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:flex-wrap gap-4">
-          <div className="relative flex-1 min-w-[200px] max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" aria-hidden="true" />
-            <input
-              type="text"
-              placeholder="Buscar por número o cliente..."
-              aria-label="Buscar por número o cliente"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value.toUpperCase());
-                setCurrentPage(1);
-              }}
-              className="w-full h-11 pl-10 pr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
-            />
-          </div>
-          <div className="w-full sm:w-48">
+        <div className="p-4 border-b border-gray-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+          <Input
+            label="Buscar"
+            icon={<Search className="h-4 w-4" />}
+            placeholder="Buscar por número o cliente..."
+            aria-label="Buscar por número o cliente"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value.toUpperCase());
+              setCurrentPage(1);
+            }}
+          />
+          <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">FECHA</label>
             <input
               type="date"
@@ -129,44 +126,49 @@ export default function CotizacionesPage() {
                 setFecha(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full h-11 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
+              className="w-full h-9 px-3 border border-gray-300 rounded-lg focus-visible:outline-none text-sm"
             />
           </div>
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" aria-hidden="true" />
-            <select
-              value={estadoFilter}
-              aria-label="Filtrar por estado"
-              onChange={(e) => {
-                setEstadoFilter(e.target.value as EstadoCotizacion | 'TODOS');
-                setCurrentPage(1);
-              }}
-              className="h-11 pl-10 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm appearance-none"
-            >
-              <option value="TODOS">Todos los estados</option>
-              <option value="BORRADOR">Borrador</option>
-              <option value="ENVIADO">Enviado</option>
-              <option value="PARCIALMENTE_PAGADA">Parcialmente Pagada</option>
-              <option value="APROBADO">Aprobado</option>
-              <option value="RECHAZADO">Rechazado</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" aria-hidden="true" />
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">ESTADO</label>
+            <div className="relative">
+              <select
+                value={estadoFilter}
+                aria-label="Filtrar por estado"
+                onChange={(e) => {
+                  setEstadoFilter(e.target.value as EstadoCotizacion | 'TODOS');
+                  setCurrentPage(1);
+                }}
+                className="w-full h-9 pl-3 pr-10 border border-gray-300 rounded-lg focus-visible:outline-none text-sm appearance-none"
+              >
+                <option value="TODOS">Todos los estados</option>
+                <option value="BORRADOR">Borrador</option>
+                <option value="ENVIADO">Enviado</option>
+                <option value="PARCIALMENTE_PAGADA">Parcialmente Pagada</option>
+                <option value="APROBADO">Aprobado</option>
+                <option value="RECHAZADO">Rechazado</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" aria-hidden="true" />
+            </div>
           </div>
-          <div className="relative">
-            <select
-              value={tipoFilter}
-              onChange={(e) => {
-                setTipoFilter(e.target.value as 'TODOS' | 'DISTRIBUIDOR' | 'TIENDA');
-                setCurrentPage(1);
-              }}
-              aria-label="Tipo de cliente"
-              className="h-11 px-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm appearance-none"
-            >
-              <option value="TODOS">Todos los tipos</option>
-              <option value="DISTRIBUIDOR">Distribuidor</option>
-              <option value="TIENDA">Tienda</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" aria-hidden="true" />
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">TIPO DE CLIENTE</label>
+            <div className="relative">
+              <select
+                value={tipoFilter}
+                onChange={(e) => {
+                  setTipoFilter(e.target.value as 'TODOS' | 'DISTRIBUIDOR' | 'TIENDA');
+                  setCurrentPage(1);
+                }}
+                aria-label="Tipo de cliente"
+                className="w-full h-9 pl-3 pr-10 border border-gray-300 rounded-lg focus-visible:outline-none text-sm appearance-none"
+              >
+                <option value="TODOS">Todos los tipos</option>
+                <option value="DISTRIBUIDOR">Distribuidor</option>
+                <option value="TIENDA">Tienda</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" aria-hidden="true" />
+            </div>
           </div>
         </div>
 

@@ -11,7 +11,6 @@ export default function AdminCotizacionPdfPage() {
     <PdfViewerPage
       cotizacionId={id}
       filename={`COT-${id}`}
-      backHref="/admin/cotizaciones"
     />
   );
 }

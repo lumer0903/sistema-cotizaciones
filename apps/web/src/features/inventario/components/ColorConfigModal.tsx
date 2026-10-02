@@ -199,14 +199,21 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
           </div>
 
           {isAdding && (
-            <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg">
-              <input
-                type="color"
-                value={newHex}
-                aria-label="Seleccionar color"
-                onChange={(e) => setNewHex(e.target.value)}
-                className="w-8 h-8 rounded-md cursor-pointer border border-gray-300 bg-transparent p-0.5 overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded [&::-moz-color-swatch]:border-none [&::-moz-color-swatch]:rounded"
-              />
+            <div className="flex items-center gap-2 bg-white border border-gray-200 shadow-sm rounded-xl p-2">
+              {/* Selector circular: muestra el color actual y abre el picker nativo */}
+              <label
+                className="relative w-7 h-7 shrink-0 rounded-full border border-gray-200 shadow-sm cursor-pointer overflow-hidden transition-shadow"
+                style={{ backgroundColor: newHex }}
+                title="Elegir color"
+              >
+                <input
+                  type="color"
+                  value={newHex}
+                  aria-label="Seleccionar color"
+                  onChange={(e) => setNewHex(e.target.value)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+              </label>
               <input
                 ref={inputRef}
                 type="text"
@@ -215,13 +222,15 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
                 onKeyDown={(e) => e.key === 'Enter' && addColor()}
                 placeholder="Color"
                 aria-label="Nombre del color"
+                autoComplete="off"
                 autoFocus
-                className="w-24 min-h-11 px-2 text-xs border border-gray-400 rounded-lg outline-none focus:border-brand-primary"
+                className="w-28 min-h-9 px-3 text-xs rounded-lg border border-gray-200 bg-white outline-none transition-all"
               />
-              <button onClick={addColor} className="min-h-11 px-3 text-xs font-bold text-brand-subtitle hover:text-black">
+              <Button type="button" variant="primary" size="sm" onClick={addColor}>
                 OK
-              </button>
+              </Button>
               <button
+                type="button"
                 onClick={() => setIsAdding(false)}
                 aria-label="Cancelar alta de color"
                 className="min-h-8 min-w-8 inline-flex items-center justify-center text-brand-options hover:text-brand-subtitle"

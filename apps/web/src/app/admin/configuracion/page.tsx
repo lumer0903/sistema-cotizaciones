@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { Settings, Bell, Database, CreditCard, Save, FileText, CheckCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -164,7 +164,7 @@ export default function ConfiguracionPage() {
         </nav>
       </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 font-['DM_Sans']">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 font-sans">
         {loading ? (
           <div className="animate-pulse space-y-6">
             {[1, 2, 3].map((i) => (
@@ -310,7 +310,7 @@ export default function ConfiguracionPage() {
                           type="checkbox"
                           checked={config.incluir_carreta_default}
                           onChange={(e) => handleChange('incluir_carreta_default', e.target.checked)}
-                          className="h-5 w-5 text-brand-ink border-gray-300 rounded focus:ring-brand-primary"
+                          className="h-5 w-5 text-brand-ink border-gray-300 rounded"
                         />
                         <span className="text-sm font-medium text-gray-700">Incluir carreta por defecto</span>
                       </label>
@@ -340,7 +340,7 @@ export default function ConfiguracionPage() {
                             onChange={(e) => handleChange(key as keyof Configuracion, e.target.checked)}
                             className="sr-only peer"
                           />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+                          <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
                         </label>
                       </div>
                     ))}
@@ -376,7 +376,7 @@ export default function ConfiguracionPage() {
                           type="checkbox"
                           checked={config.backup_automatico}
                           onChange={(e) => handleChange('backup_automatico', e.target.checked)}
-                          className="h-5 w-5 text-brand-ink border-gray-300 rounded focus:ring-brand-primary"
+                          className="h-5 w-5 text-brand-ink border-gray-300 rounded"
                         />
                         <span className="text-sm font-medium text-gray-700">Backup automático diario</span>
                       </label>

@@ -21,7 +21,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
 }) => {
     if (loading) {
         return (
-            <div className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-neutral-500 font-['DM_Sans']">
+            <div className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-neutral-500 font-sans">
                 Cargando cotizaciones...
             </div>
         );
@@ -29,7 +29,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
 
     if (!data || data.length === 0) {
         return (
-            <div className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-neutral-500 font-['DM_Sans']">
+            <div className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-neutral-500 font-sans">
                 No se encontraron cotizaciones.
             </div>
         );
@@ -96,15 +96,15 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                             </TableCell>
 
                             {/* ACCIONES */}
-                            <TableCell className="w-32 text-right whitespace-nowrap sticky right-0 bg-white group-hover:bg-amber-50/40 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]">
+                            <TableCell className="w-32 text-right whitespace-nowrap sticky right-0 bg-white group-hover:bg-gray-50 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]">
                                 <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                                     {/* Lápiz (Editar): Activo solo en BORRADOR */}
                                     <button
                                         type="button"
                                         disabled={!isBorrador}
                                         onClick={() => onEdit?.(item.id_cotizacion || item.id)}
-                                        className={`min-h-11 min-w-11 inline-flex items-center justify-center rounded-lg transition-colors ${isBorrador
-                                                ? 'text-brand-ink hover:bg-brand-soft cursor-pointer'
+                                        className={`min-h-11 min-w-11 inline-flex items-center justify-center transition-colors ${isBorrador
+                                                ? 'text-brand-ink hover:text-brand-primary cursor-pointer'
                                                 : 'text-gray-300 cursor-not-allowed'
                                             }`}
                                         title={isBorrador ? 'Editar (borrador)' : 'No editable'}
@@ -118,8 +118,8 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                                         type="button"
                                         disabled={isBorrador}
                                         onClick={() => onView?.(item.id_cotizacion || item.id)}
-                                        className={`min-h-11 min-w-11 inline-flex items-center justify-center rounded-lg transition-colors ${!isBorrador
-                                                ? 'text-brand-ink hover:bg-brand-soft cursor-pointer'
+                                        className={`min-h-11 min-w-11 inline-flex items-center justify-center transition-colors ${!isBorrador
+                                                ? 'text-brand-ink hover:text-brand-primary cursor-pointer'
                                                 : 'text-gray-300 cursor-not-allowed'
                                             }`}
                                         title={!isBorrador ? 'Ver documento (solo lectura)' : 'No disponible en borrador'}

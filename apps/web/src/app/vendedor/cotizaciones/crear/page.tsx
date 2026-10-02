@@ -1,10 +1,9 @@
 'use client';
 
-import { Plus, Search, X, FileText, ArrowLeft, Save, Send, MessageSquare } from 'lucide-react';
+import { Plus, Search, X, FileText, Save, Send, MessageSquare } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { showToast } from '@/lib/toast';
 import { RecomendacionesPanel } from '@/features/cotizaciones/components/RecomendacionesPanel';
 import { formatCode } from '@/lib/formatters';
@@ -417,10 +416,6 @@ export default function VendedorCotizacionCrearPage() {
           <h1 className="text-2xl font-bold text-gray-900">Nueva Cotización</h1>
           <p className="text-gray-500">Complete los datos y agregue productos</p>
         </div>
-        <Link href="/vendedor/cotizaciones" className="min-h-11 inline-flex items-center gap-1.5 px-2 -mr-2 text-sm font-semibold text-brand-ink hover:text-brand-ink rounded-lg hover:bg-brand-soft transition-colors" aria-label="Volver al listado de cotizaciones">
-          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
-          <span className="hidden sm:inline">Volver</span>
-        </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3 pb-24 lg:pb-0">
@@ -495,7 +490,7 @@ export default function VendedorCotizacionCrearPage() {
                   type="checkbox"
                   checked={formData.incluye_carreta}
                   onChange={(e) => setFormData({ ...formData, incluye_carreta: e.target.checked })}
-                  className="h-5 w-5 text-brand-ink border-gray-300 rounded focus:ring-brand-primary"
+                  className="h-5 w-5 text-brand-ink border-gray-300 rounded"
                 />
                 <span className="text-sm text-gray-700">Incluye carreta (S/ {formData.costo_carreta})</span>
               </label>
@@ -507,7 +502,7 @@ export default function VendedorCotizacionCrearPage() {
               <h2 className="text-lg font-semibold text-gray-900">Productos</h2>
               <button
                 onClick={() => setShowProductModal(true)}
-                className="inline-flex items-center gap-2 min-h-11 px-4 bg-brand-primary text-white text-sm font-medium rounded-lg hover:bg-brand-hover transition-colors"
+                className="inline-flex items-center gap-2 min-h-11 px-4 bg-brand-primary text-on-brand text-sm font-medium rounded-lg hover:bg-brand-hover transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 Agregar
@@ -625,7 +620,7 @@ export default function VendedorCotizacionCrearPage() {
               <button
                 onClick={() => handleSubmit('enviada')}
                 disabled={loading || detalles.length === 0 || !formData.id_cliente}
-                className="w-full min-h-11 px-4 bg-brand-primary text-white font-medium rounded-lg hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full min-h-11 px-4 bg-brand-primary text-on-brand font-medium rounded-lg hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Send className="h-4 w-4 inline mr-2" aria-hidden="true" />
                 Enviar Cotización
@@ -671,7 +666,7 @@ export default function VendedorCotizacionCrearPage() {
           type="button"
           onClick={() => handleSubmit('enviada')}
           disabled={loading || detalles.length === 0 || !formData.id_cliente}
-          className="min-h-11 px-5 bg-brand-primary text-white text-sm font-semibold rounded-xl hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-2 shrink-0"
+          className="min-h-11 px-5 bg-brand-primary text-on-brand text-sm font-semibold rounded-xl hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-2 shrink-0"
         >
           <Send className="h-4 w-4" aria-hidden="true" />
           Enviar

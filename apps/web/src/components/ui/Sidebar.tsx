@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -79,38 +79,40 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     return (
         <aside
             id="menu-lateral"
-            className={`w-64 h-screen bg-white border-r border-zinc-200/80 flex flex-col justify-between fixed left-0 top-0 z-50 font-['DM_Sans'] select-none transition-[transform,visibility] duration-300 ease-in-out lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full invisible lg:visible'}`}
+            className={`w-64 h-screen bg-white border-r border-zinc-200/80 flex flex-col justify-between fixed left-0 top-0 z-50 font-sans select-none transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'}`}
         >
             <div className="flex flex-col w-full flex-1 min-h-0">
-                {/* BOTÓN CERRAR (solo móvil) */}
-                <div className="flex items-center justify-end px-3 pt-3 lg:hidden">
+
+
+                {/* LOGO SUPERIOR */}
+                <div className="w-full px-1 py-4 flex items-center justify-between  min-h-[64px] overflow-hidden">
+                    <Link
+                        href="/admin/dashboard"
+                        className="w-full flex justify-center items-center group overflow-hidden py-1"
+                        onClick={onClose}
+                    >
+                        <Image
+                            src="/LOGO_GRANDE.svg"
+                            alt="Import & Export Gold Continent"
+                            width={200}
+                            height={60}
+                            priority
+                            className="w-full h-12 object-contain scale-[4] transition-transform duration-200 group-hover:scale-[3]"
+                            onError={(e) => {
+                                (e.target as HTMLElement).style.visibility = 'hidden';
+                            }}
+                        />
+                    </Link>
+
                     <button
                         type="button"
                         onClick={onClose}
-                        className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-lg text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 transition-colors"
+                        className="lg:hidden p-1 text-zinc-500 hover:text-zinc-800 z-10 ml-1"
                         aria-label="Cerrar menú"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
-
-                {/* LOGO SUPERIOR: Espaciado refinado y texto minimalista */}
-                <div className="w-full pt-4 pb-6 flex justify-center items-center px-4">
-                    <Link href="/admin/dashboard" className="text-center group" onClick={onClose}>
-                        <Image
-                            src="/LOGO_GRANDE.svg"
-                            alt="Import & Export Gold Continent"
-                            width={55}
-                            height={55}
-                            className="h-12 w-12 object-contain mx-auto transition-transform duration-200 group-hover:scale-[1.02]"
-                            onError={(e) => {
-                                // Oculta sin colapsar el espacio: evita CLS al fallar
-                                (e.target as HTMLElement).style.visibility = 'hidden';
-                            }}
-                        />
-                    </Link>
-                </div>
-
                 {/* MENÚ DE NAVEGACIÓN: Con paddings internos dinámicos y bordes redondeados modernos */}
                 <nav className="w-full flex flex-col flex-1 overflow-y-auto px-3.5 space-y-1 py-1">
                     {menuItems.map((item) => {

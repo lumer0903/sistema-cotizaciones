@@ -1,8 +1,8 @@
-﻿'use client';
+'use client';
 
 import { useMemo, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { ArrowLeft, ChevronDown, FileText, Download, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, FileText, Download, Save, Loader2 } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import {
   Table,
@@ -12,6 +12,7 @@ import {
   TableHead,
   TableCell,
   Button,
+  Select,
   Textarea,
 } from '@/components/ui';
 import { useCrearCotizacionStore } from '@/features/cotizaciones/store/useCrearCotizacionStore';
@@ -24,12 +25,6 @@ import {
   exportarPdfCotizacion,
 } from '@/features/cotizaciones/api/cotizacionApi';
 import { formatCode } from '@/lib/formatters';
-
-// Paleta de la cápsula-select de estado (misma que Badge size="estado")
-const ESTADO_SELECT_CLASES: Record<string, string> = {
-  borrador: 'bg-estado-borrador text-estado-borrador-text border-estado-borrador/60',
-  enviada: 'bg-estado-enviado-soft text-estado-enviado-text border-estado-enviado/40',
-};
 
 export default function ResumenCotizacionPage() {
   const router = useRouter();
@@ -262,7 +257,7 @@ export default function ResumenCotizacionPage() {
   }
 
   return (
-    <div className="w-full max-w-[1100px] mx-auto space-y-6 font-['DM_Sans'] pb-10">
+    <div className="w-full max-w-[1100px] mx-auto space-y-6 font-sans pb-10">
       {/* Header con Select global (cápsula de estado) */}
       <div className="flex justify-between items-center px-1">
         <div className="flex items-center gap-2.5">
@@ -270,17 +265,17 @@ export default function ResumenCotizacionPage() {
           <span className="text-xl font-bold text-zinc-800 tracking-tight">{numeroCotizacion}</span>
         </div>
 
-        <div className="relative inline-flex">
-          <select
+        <div className="w-44">
+          <Select
             value={estadoActual}
             onChange={(e) => handleCambiarEstadoSelect(e.target.value as 'borrador' | 'enviada')}
             aria-label="Estado de la cotización"
-            className={`appearance-none cursor-pointer rounded-full border px-4 py-1.5 pr-8 text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-brand-soft transition-colors ${ESTADO_SELECT_CLASES[estadoActual] ?? 'bg-neutral-200 text-neutral-700 border-neutral-300/60'}`}
-          >
-            <option value="borrador">BORRADOR</option>
-            <option value="enviada">ENVIADO</option>
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 opacity-60" />
+            options={[
+              { label: 'BORRADOR', value: 'borrador' },
+              { label: 'ENVIADO', value: 'enviada' },
+            ]}
+            className="w-full"
+          />
         </div>
       </div>
 
@@ -421,7 +416,7 @@ export default function ResumenCotizacionPage() {
           variant="primary"
           onClick={handleExportarClick}
           disabled={exportando || guardando}
-          className="px-5 rounded-xl font-medium bg-brand-primary hover:bg-brand-hover text-white shadow-sm"
+          className="px-5 rounded-xl font-medium bg-brand-primary hover:bg-brand-hover text-on-brand shadow-sm"
         >
           {exportando || guardando ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4 mr-1.5" />}
           {exportando ? 'Generando...' : 'Exportar PDF'}

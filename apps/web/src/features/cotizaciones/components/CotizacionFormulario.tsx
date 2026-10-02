@@ -9,11 +9,10 @@ import {
   Loader2,
   FileText,
   Trash2,
-  ArrowLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
 import { useCrearCotizacionStore } from '@/features/cotizaciones/store/useCrearCotizacionStore';
 
 import {
@@ -441,19 +440,11 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
   };
 
   return (
-      <div className="w-full max-w-[1700px] mx-auto space-y-6 font-['DM_Sans']">
+      <div className="w-full max-w-[1700px] mx-auto space-y-6 font-sans">
 
       {/* Encabezado */}
       <div className="flex flex-wrap justify-between items-center w-full gap-2 px-1">
         <div className="flex items-center gap-2.5 min-w-0">
-          <Link
-            href={base}
-            aria-label="Volver al listado de cotizaciones"
-            className="inline-flex items-center gap-1.5 min-h-11 min-w-11 justify-center px-2 -ml-2 rounded-lg text-sm font-semibold text-brand-ink hover:bg-brand-soft transition-colors shrink-0"
-          >
-            <ArrowLeft className="w-5 h-5" aria-hidden="true" />
-            <span className="hidden sm:inline">Volver</span>
-          </Link>
           <FileText className="w-5 h-5 text-brand-ink" aria-hidden="true" />
           <span className="text-xl font-black text-zinc-700 tracking-tight truncate">
             {numeroCotizacion}
@@ -625,28 +616,27 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
                         <div
                           key={prod.id || prod.codigo || index}
                           onClick={() => handleSeleccionarProducto(prod)}
-                          className="p-3 hover:bg-brand-soft/60 cursor-pointer transition-colors flex items-center justify-between gap-3"
+                          className="group p-3 hover:bg-gray-50 cursor-pointer transition-colors flex items-center justify-between gap-3"
                         >
-                          <div className="flex items-center gap-3">
-                            <span className="font-bold text-xs bg-stone-100 px-2 py-1 rounded text-zinc-700 border border-stone-200 uppercase">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="font-bold text-xs bg-stone-100 px-2 py-1 rounded text-zinc-700 border border-stone-200 uppercase shrink-0">
                               {String(prod.codigo).toUpperCase()}
                             </span>
-                            <div>
-                              <p className="text-xs font-medium text-zinc-700 leading-tight">
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-zinc-700 leading-tight truncate">
                                 {prod.descripcion}
                               </p>
-                              <p className="text-xs text-zinc-500 mt-0.5">
-                                Stock Total: {prod.stockTotal ?? 'N/A'} | {prod.estante || 'Sin estante'}
-                              </p>
+                              {typeof prod.stockTotal === 'number' && (
+                                <p className="text-xs text-zinc-500 mt-0.5 tnum">
+                                  Stock: {prod.stockTotal}
+                                </p>
+                              )}
                             </div>
                           </div>
-                          <Button
-                            variant="primary"
-                            size="xs"
-                            className="shrink-0"
-                          >
-                            Seleccionar
-                          </Button>
+                          <ChevronRight
+                            className="size-4 shrink-0 text-zinc-300 group-hover:text-brand-primary transition-colors"
+                            aria-hidden="true"
+                          />
                         </div>
                       ))
                     ) : (

@@ -1,83 +1,62 @@
 ﻿'use client';
 
-import { forwardRef, TextareaHTMLAttributes } from 'react';
+import { forwardRef, TextareaHTMLAttributes, ReactNode, useId } from 'react';
+import { cn } from '@/lib/cn';
+import {
+  FIELD_BASE,
+  FIELD_ERROR,
+  FIELD_ERROR_TEXT,
+  FIELD_LABEL,
+} from './fieldStyles';
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
-  icon?: React.ReactNode;
-  variant?: 'default' | 'modal';
+  icon?: ReactNode;
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  (
-    {
-      label,
-      error,
-      icon,
-      className = '',
-      disabled,
-      required,
-      variant = 'default',
-      ...props
-    },
-    ref
-  ) => {
-    const isModal = variant === 'modal';
-    const borderColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-primary)';
-    const focusColor = isModal ? 'var(--color-brand-modalFocus)' : 'var(--color-brand-primary)';
-    const textColor = 'var(--color-brand-subtitle)';
-    const labelColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-ink)';
-    const iconColor = isModal ? 'var(--color-brand-options)' : 'var(--color-brand-ink)';
-
-    const baseStyles =
-      'w-full bg-white border rounded-xl outline-none transition-colors placeholder:text-zinc-500 disabled:bg-gray-50 disabled:cursor-not-allowed';
-    const errorStyles = error
-      ? 'border-red-300 focus:border-red-500 focus:ring-red-200 focus:ring-2'
-      : 'focus:ring-2';
-    const paddingStyles = icon ? 'pl-11 pr-4' : 'px-4';
-    const sizeStyles = 'h-24 py-3 text-sm';
+  ({ label, error, icon, className, disabled, required, id, ...props }, ref) => {
+    const autoId = useId();
+    const textareaId = id ?? autoId;
+    const errorId = `${textareaId}-error`;
 
     return (
-      <div className="w-full">
+      <div className="w-full space-y-1.5">
         {label && (
-          <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: labelColor }}>
+          <label htmlFor={textareaId} className={FIELD_LABEL}>
             {label}
-            {required && <span className="text-red-500 ml-1">*</span>}
+            {required && <span className="text-danger ml-1" aria-hidden="true">*</span>}
           </label>
         )}
         <div className="relative">
           {icon && (
-            <div className="absolute left-3 top-3 pointer-events-none" style={{ color: iconColor }}>
+            <div
+              className="absolute left-3 top-3 pointer-events-none text-brand-options"
+              aria-hidden="true"
+            >
               {icon}
             </div>
           )}
           <textarea
             ref={ref}
+            id={textareaId}
             disabled={disabled}
             required={required}
-            className={`${baseStyles} ${errorStyles} ${paddingStyles} ${sizeStyles} ${className}`}
-            style={{
-              borderColor: error ? undefined : borderColor,
-              color: textColor,
-            }}
-            onFocus={(e) => {
-              if (!error) {
-                e.currentTarget.style.borderColor = focusColor;
-                e.currentTarget.style.boxShadow = `0 0 0 2px color-mix(in srgb, ${focusColor} 20%, transparent)`;
-              }
-            }}
-            onBlur={(e) => {
-              if (!error) {
-                e.currentTarget.style.borderColor = borderColor;
-                e.currentTarget.style.boxShadow = 'none';
-              }
-            }}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? errorId : undefined}
+            className={cn(
+              'w-full min-h-24 py-2 resize-y',
+              icon ? 'pl-11 pr-3' : 'px-3',
+              FIELD_BASE,
+              error && FIELD_ERROR,
+              className
+            )}
             {...props}
           />
         </div>
         {error && (
-          <p className="mt-1.5 text-xs text-red-600" role="alert">
+          <p id={errorId} className={FIELD_ERROR_TEXT} role="alert">
             {error}
           </p>
         )}

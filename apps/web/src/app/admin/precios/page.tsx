@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { Search } from 'lucide-react';
@@ -96,7 +96,7 @@ export default function ConsultaPrecioPage() {
   )?.codigo;
 
   return (
-    <div className="w-full max-w-[1700px] mx-auto space-y-6 font-['DM_Sans']">
+    <div className="w-full max-w-[1700px] mx-auto space-y-6 font-sans">
       {/* Filtros */}
       <FilterCard>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">

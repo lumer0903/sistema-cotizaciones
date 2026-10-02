@@ -10,6 +10,17 @@ export class MinioService implements OnModuleInit {
   private readonly bucketImages = 'product-images';
   private readonly isMinioEnabled: boolean;
 
+  /** Buckets garantizados. Si falla, se reintenta en la próxima operación. */
+  private bucketsEnsured = false;
+  /** Timestamp mínimo para re-inicializar el cliente tras un fallo (cooldown). */
+  private nextRetryAt = 0;
+  /** Tope por operación: evita que una petición se cuelgue indefinidamente. */
+  private static readonly OP_TIMEOUT_MS = 8_000;
+  /** Cooldown entre reintentos de reconexión. */
+  private static readonly RETRY_COOLDOWN_MS = 10_000;
+  /** Tope para verificar/crear buckets en la inicialización. */
+  private static readonly BUCKET_TIMEOUT_MS = 5_000;
+
   constructor(private config: ConfigService) {
     this.isMinioEnabled = this.config.get('MINIO_ENABLED') !== 'false';
   }
@@ -32,37 +43,49 @@ export class MinioService implements OnModuleInit {
         accessKey: this.config.get('MINIO_ACCESS_KEY') || 'minioadmin',
         secretKey: this.config.get('MINIO_SECRET_KEY') || 'minioadmin',
       });
+      this.bucketsEnsured = false;
 
-      // Don't await - let buckets be created lazily on first use
-      // Add a timeout to prevent hanging on connection attempts
-      const bucketPromise = this.ensureBuckets();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Bucket creation timeout')), 5000)
-      );
-      
-      Promise.race([bucketPromise, timeoutPromise])
-        .catch((error) => {
-          this.logger.warn(`Bucket creation failed or timed out: ${error instanceof Error ? error.message : 'Unknown error'}. Buckets will be created on first operation.`);
-          this.client = null;
-        });
+      // Buckets en segundo plano: un fallo aquí NO invalida el cliente
+      // (antes se nulaba el cliente para siempre si MinIO aún no estaba listo).
+      void this.tryEnsureBuckets('inicialización');
     } catch (error) {
       this.client = null;
-      this.logger.warn(`MinIO client initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}. Storage operations will be disabled.`);
+      this.nextRetryAt = Date.now() + MinioService.RETRY_COOLDOWN_MS;
+      this.logger.warn(`MinIO client initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}. Se reintentará automáticamente.`);
     }
   }
 
-  private async ensureBuckets(): Promise<void> {
+  /** Verifica/crea buckets con tope. Nunca nula el cliente; solo deja la
+   *  bandera en false para reintentar en la próxima operación. */
+  private async tryEnsureBuckets(contexto: string): Promise<void> {
+    if (!this.client || this.bucketsEnsured) return;
+
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      await Promise.race([
+        this.doEnsureBuckets(),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error('Bucket creation timeout')), MinioService.BUCKET_TIMEOUT_MS);
+        }),
+      ]);
+      this.bucketsEnsured = true;
+    } catch (error) {
+      this.logger.warn(
+        `Bucket ensure falló (${contexto}): ${error instanceof Error ? error.message : 'Unknown error'}. Se reintentará en la próxima operación.`,
+      );
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  private async doEnsureBuckets(): Promise<void> {
     if (!this.client) return;
 
     for (const bucket of [this.bucketPdfs, this.bucketImages]) {
-      try {
-        const exists = await this.client.bucketExists(bucket);
-        if (!exists) {
-          await this.client.makeBucket(bucket, 'us-east-1');
-          // Sin política anónima: los objetos se sirven vía presigned URLs
-        }
-      } catch (error) {
-        this.logger.warn(`Failed to ensure bucket ${bucket}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const exists = await this.client.bucketExists(bucket);
+      if (!exists) {
+        await this.client.makeBucket(bucket, 'us-east-1');
+        // Sin política anónima: los objetos se sirven vía presigned URLs
       }
     }
   }
@@ -82,18 +105,66 @@ export class MinioService implements OnModuleInit {
     );
   }
 
+  /** Objeto inexistente (NoSuchKey/NotFound): no es un error de conexión,
+   *  tampoco un fallo del sistema → se devuelve el fallback. */
+  private isMissingObjectError(error: unknown): boolean {
+    const code = (error as { code?: string })?.code;
+    return code === 'NoSuchKey' || code === 'NotFound';
+  }
+
+  /** Tope por operación: si MinIO no responde, se trata como fallo de
+   *  conexión (fallback) en vez de colgar la petición. */
+  private async withTimeout<T>(operacion: Promise<T>): Promise<T> {
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      return await Promise.race([
+        operacion,
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(
+            () => reject(new Error('MinIO operation timeout')),
+            MinioService.OP_TIMEOUT_MS,
+          );
+        }),
+      ]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  /** Marca al cliente como caído y programa un re-intento con cooldown. */
+  private markUnhealthy(contexto: string): void {
+    this.client = null;
+    this.bucketsEnsured = false;
+    this.nextRetryAt = Date.now() + MinioService.RETRY_COOLDOWN_MS;
+    this.logger.warn(`MinIO marcado como no disponible (${contexto}); se reintentará en ${MinioService.RETRY_COOLDOWN_MS / 1000}s.`);
+  }
+
   private async safeExecute<T>(operation: () => Promise<T>, fallback: T, operationName: string): Promise<T> {
+    if (!this.isMinioEnabled) return fallback;
+
     if (!this.client) {
-      this.logger.debug(`MinIO not available, skipping ${operationName}`);
-      return fallback;
+      if (Date.now() >= this.nextRetryAt) {
+        this.logger.log(`MinIO: re-conectando para ${operationName}...`);
+        this.initializeClient();
+      }
+      if (!this.client) {
+        this.logger.debug(`MinIO not available, skipping ${operationName}`);
+        return fallback;
+      }
     }
 
     try {
-      return await operation();
+      if (!this.bucketsEnsured) await this.tryEnsureBuckets(operationName);
+      return await this.withTimeout(Promise.resolve().then(operation));
     } catch (error) {
+      if (this.isMissingObjectError(error)) {
+        return fallback;
+      }
       if (this.isConnectionError(error)) {
-        this.logger.warn(`MinIO connection failed during ${operationName}: ${error instanceof Error ? error.message : 'Unknown error'}. Returning fallback.`);
-        this.client = null; // Mark client as dead to avoid repeated attempts
+        this.logger.warn(
+          `MinIO connection failed during ${operationName}: ${error instanceof Error ? error.message : 'Unknown error'}. Returning fallback.`,
+        );
+        this.markUnhealthy(operationName);
         return fallback;
       }
       // Re-throw non-connection errors
@@ -103,10 +174,10 @@ export class MinioService implements OnModuleInit {
 
   async uploadProductImage(file: Express.Multer.File): Promise<string | null> {
     const fallbackUrl = `/images/placeholder-${Date.now()}.png`;
-    
+
     return this.safeExecute(async () => {
       if (!this.client) throw new Error('MinIO client not initialized');
-      
+
       const key = `productos/${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`;
       await this.client.putObject(this.bucketImages, key, file.buffer, file.size, {
         'Content-Type': file.mimetype,
@@ -117,10 +188,10 @@ export class MinioService implements OnModuleInit {
 
   async uploadPdf(quoteId: number, pdfBuffer: Buffer): Promise<string | null> {
     const fallbackUrl = `/pdfs/placeholder-${quoteId}-${Date.now()}.pdf`;
-    
+
     return this.safeExecute(async () => {
       if (!this.client) throw new Error('MinIO client not initialized');
-      
+
       const key = `cotizaciones/${quoteId}-${Date.now()}.pdf`;
       await this.client.putObject(this.bucketPdfs, key, pdfBuffer, pdfBuffer.length, {
         'Content-Type': 'application/pdf',
@@ -146,7 +217,7 @@ export class MinioService implements OnModuleInit {
   ): Promise<string | null> {
     return this.safeExecute(async () => {
       if (!this.client) throw new Error('MinIO client not initialized');
-      
+
       await this.client.putObject(bucket, key, buffer, buffer.length, {
         'Content-Type': contentType,
       });
@@ -157,7 +228,7 @@ export class MinioService implements OnModuleInit {
   async deleteFile(bucket: string, key: string): Promise<boolean> {
     return this.safeExecute(async () => {
       if (!this.client) throw new Error('MinIO client not initialized');
-      
+
       await this.client.removeObject(bucket, key);
       return true;
     }, false, 'deleteFile');
@@ -179,7 +250,7 @@ export class MinioService implements OnModuleInit {
   async fileExists(bucket: string, key: string): Promise<boolean> {
     return this.safeExecute(async () => {
       if (!this.client) throw new Error('MinIO client not initialized');
-      
+
       await this.client.statObject(bucket, key);
       return true;
     }, false, 'fileExists');

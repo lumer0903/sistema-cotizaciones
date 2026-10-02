@@ -28,7 +28,7 @@ export const Pagination: React.FC<PaginationProps> = ({
     const startItem = totalItems === 0 ? 0 : (currentPage - 1) * limit + 1;
     const endItem = Math.min(currentPage * limit, totalItems);
 
-    const limitOptions = [8, 16, 24, 32, 48, 64].map((n) => ({
+    const limitOptions = [8, 16, 24].map((n) => ({
         label: String(n),
         value: n,
     }));
@@ -59,7 +59,7 @@ export const Pagination: React.FC<PaginationProps> = ({
     };
 
     return (
-        <div className="px-5 py-3 bg-gray-50/80 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500">
+        <div className="px-5 py-3 bg-gray-50/80 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500 tnum">
             <div className="flex items-center gap-2 whitespace-nowrap">
                 <span>Mostrar</span>
                 <Select
@@ -106,7 +106,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                             aria-label={`Página ${item}`}
                             aria-current={currentPage === item ? 'page' : undefined}
                             className={`min-h-11 min-w-11 flex items-center justify-center rounded-lg text-xs font-bold transition-colors ${currentPage === item
-                                ? 'bg-brand-primary text-white'
+                                ? 'bg-brand-primary text-on-brand'
                                 : 'border border-gray-200 text-zinc-600 hover:bg-gray-100'
                             }`}
                         >

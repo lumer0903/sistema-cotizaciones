@@ -179,7 +179,7 @@ export function DetalleProductoModal({
                                         </div>
 
                                         <div className="flex flex-col items-center">
-                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Caja / Mayor</span>
+                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Mayor</span>
                                             <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(distribuidor.mayor)}
                                             </span>
@@ -211,7 +211,7 @@ export function DetalleProductoModal({
                                         </div>
 
                                         <div className="flex flex-col items-center">
-                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Caja / Mayor</span>
+                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Mayor</span>
                                             <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(tienda.mayor)}
                                             </span>

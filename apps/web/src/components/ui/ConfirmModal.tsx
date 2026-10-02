@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { Modal } from './Modal';
+import { Modal, ModalFooter } from './Modal';
 import { Button } from './Button';
 
 export interface ConfirmModalProps {
@@ -29,20 +29,26 @@ export const ConfirmModal = ({
 }: ConfirmModalProps) => (
   <Modal
     open={open}
-    onClose={loading ? () => undefined : onClose}
+    onClose={onClose}
+    closeDisabled={loading}
     title={title}
     maxWidth="sm"
-  >
-    <div className="space-y-5">
-      <div className="text-sm text-brand-subtitle leading-relaxed">{message}</div>
-      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2 border-t border-gray-100">
+    footer={
+      <ModalFooter>
         <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
           {cancelLabel}
         </Button>
-        <Button type="button" variant={variant} onClick={() => void onConfirm()} loading={loading}>
+        <Button
+          type="button"
+          variant={variant}
+          onClick={() => void onConfirm()}
+          loading={loading}
+        >
           {confirmLabel}
         </Button>
-      </div>
-    </div>
+      </ModalFooter>
+    }
+  >
+    <div className="text-sm text-brand-subtitle leading-relaxed">{message}</div>
   </Modal>
 );

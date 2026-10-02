@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -168,15 +168,9 @@ export default function CobranzaDetallePage() {
   const saldoCero = saldo <= 0.009;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 font-['DM_Sans']">
+    <div className="max-w-5xl mx-auto space-y-6 font-sans">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Link
-            href="/admin/cobranza"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600 hover:text-brand-ink"
-          >
-            <ArrowLeft className="size-4" /> Cobranza
-          </Link>
           <span className="text-xl font-black text-zinc-700 tracking-tight">{cuenta.numero}</span>
           <Badge variant={ESTADO_BADGE[cuenta.estado_cobranza] || 'neutral'}>
             {ESTADO_LABELS[cuenta.estado_cobranza] || cuenta.estado_cobranza}

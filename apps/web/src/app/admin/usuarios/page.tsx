@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, Pencil, Power, PowerOff, Users, ShieldCheck } from 'lucide-react';
@@ -160,7 +160,7 @@ export default function UsuariosPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-stone-50 max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 py-3 font-['DM_Sans']">
+    <div className="min-h-screen bg-stone-50 max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 py-3 font-sans">
       {activeTab === 'usuarios' && (
         <FilterCard className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-start gap-4">
@@ -269,7 +269,7 @@ export default function UsuariosPage() {
                                 onClick={() => openEdit(user)}
                                 title="Editar usuario"
                                 aria-label="Editar usuario"
-                                className="min-h-11 min-w-11 inline-flex items-center justify-center text-gray-500 hover:text-brand-ink hover:bg-brand-soft rounded-lg transition-colors"
+                                className="min-h-11 min-w-11 inline-flex items-center justify-center text-gray-500 hover:text-brand-primary transition-colors"
                               >
                                 <Pencil className="h-5 w-5" aria-hidden="true" />
                               </button>
@@ -285,11 +285,11 @@ export default function UsuariosPage() {
                                       : 'Activar usuario'
                                 }
                                 aria-label={user.activo ? 'Desactivar usuario' : 'Activar usuario'}
-                                className={`min-h-11 min-w-11 inline-flex items-center justify-center rounded-lg transition-colors ${statusDisabled
+                                className={`min-h-11 min-w-11 inline-flex items-center justify-center transition-colors ${statusDisabled
                                     ? 'text-gray-300 cursor-not-allowed'
                                     : user.activo
-                                      ? 'text-danger hover:bg-estado-rechazado-soft'
-                                      : 'text-estado-aprobado-text hover:bg-estado-aprobado-soft'
+                                      ? 'text-danger hover:text-danger-hover'
+                                      : 'text-estado-aprobado-text hover:text-status-aprobado'
                                   }`}
                               >
                                 {user.activo ? (

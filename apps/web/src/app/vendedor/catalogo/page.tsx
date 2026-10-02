@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { Search, Filter, Grid, List, Package, Tag, ChevronDown, Eye } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
@@ -113,7 +113,7 @@ function renderTableRows({ productos }: { productos: Producto[] }) {
           <TableCell className="text-sm text-gray-600">S/ ${producto.precio_docena_normal.toFixed(2)}</TableCell>
           <TableCell className="text-sm text-gray-600">S/ ${producto.precio_mayor_normal.toFixed(2)}</TableCell>
           <TableCell>
-            <button className="min-h-11 min-w-11 inline-flex items-center justify-center text-gray-500 hover:text-brand-ink hover:bg-brand-soft rounded-lg transition-colors" title="Ver detalle" aria-label="Ver detalle">
+            <button className="min-h-11 min-w-11 inline-flex items-center justify-center text-gray-500 hover:text-brand-primary transition-colors" title="Ver detalle" aria-label="Ver detalle">
               <Eye className="h-4 w-4" />
             </button>
           </TableCell>
@@ -209,7 +209,7 @@ export default function CatalogoPage() {
               aria-label="Buscar por código o descripción"
               value={search}
               onChange={(e) => setSearch(e.target.value.toUpperCase())}
-              className="w-full h-11 pl-10 pr-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm"
+              className="w-full h-9 pl-10 pr-4 border border-gray-300 rounded-lg focus-visible:outline-none text-sm"
             />
           </div>
           <div className="relative">
@@ -218,7 +218,7 @@ export default function CatalogoPage() {
               value={categoriaFilter}
               aria-label="Filtrar por categoría"
               onChange={(e) => setCategoriaFilter(e.target.value === 'todos' ? 'todos' : Number(e.target.value))}
-              className="h-11 pl-10 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-sm appearance-none"
+              className="h-9 pl-10 pr-10 border border-gray-300 rounded-lg focus-visible:outline-none text-sm appearance-none"
             >
               <option value="todos">Todas las categorías</option>
               {categorias.map((cat) => (

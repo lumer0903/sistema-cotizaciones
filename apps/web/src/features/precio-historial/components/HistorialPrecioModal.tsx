@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import { Modal } from "@/components/ui/Modal";
@@ -31,7 +31,7 @@ export function HistorialPrecioModal({
         <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 bg-gray-200/60 rounded-full" />
             <div className="px-3 py-1 bg-gray-200/20 rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-center items-center gap-2.5">
-                <span className="justify-center text-brand-ink text-sm font-bold font-['DM_Sans']">
+                <span className="justify-center text-brand-ink text-sm font-bold font-sans">
                     {codigoProducto}
                 </span>
             </div>
@@ -46,15 +46,18 @@ export function HistorialPrecioModal({
             headerExtra={badgeCodigo}
             maxWidth="xl"
         >
-            <div className="mt-1">
-                <Table className="text-xs text-center">
+            <div className="mt-1 -mx-4 px-4 sm:-mx-5 sm:px-5">
+                <Table
+                    className="text-xs text-center"
+                    scrollLabel="Historial de precios"
+                >
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="text-left">CAMPO MODIFICADO</TableHead>
-                            <TableHead>FECHA DE CAMBIO</TableHead>
-                            <TableHead>USUARIO</TableHead>
-                            <TableHead>VALOR ANTERIOR</TableHead>
-                            <TableHead>VALOR NUEVO</TableHead>
+                            <TableHead className="text-left whitespace-nowrap">CAMPO MODIFICADO</TableHead>
+                            <TableHead className="whitespace-nowrap">FECHA DE CAMBIO</TableHead>
+                            <TableHead className="whitespace-nowrap">USUARIO</TableHead>
+                            <TableHead className="whitespace-nowrap">VALOR ANTERIOR</TableHead>
+                            <TableHead className="whitespace-nowrap">VALOR NUEVO</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody className="text-stone-600">

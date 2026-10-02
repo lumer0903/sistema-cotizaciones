@@ -283,14 +283,14 @@ export default function AgregarProductoModal({
                                     ...(producto.coloresDisponibles?.map((c) => ({ label: c.nombre, value: c.nombre })) ||
                                         producto.colores_surtido?.map((c) => ({ label: c, value: c })) || []),
                                 ]}
-                                className="w-full h-11 rounded-xl"
+                                className="w-full"
                             />
                             <Input
                                 label="Estado de stock"
                                 readOnly
                                 value={`${stockColorSeleccionado} un.`}
                                 error={sinStock ? 'Sin stock disponible para el color seleccionado.' : undefined}
-                                className={`h-11 font-semibold ${!sinStock ? '!bg-zinc-50' : ''}`}
+                                className={`font-semibold ${!sinStock ? '!bg-zinc-50' : ''}`}
                             />
                         </div>
                     </div>
@@ -309,7 +309,7 @@ export default function AgregarProductoModal({
                             { label: 'Docena', value: 'DOCENA' },
                             { label: 'Por Mayor', value: 'MAYOR' },
                         ]}
-                        className="w-full h-11 rounded-xl"
+                        className="w-full"
                     />
                     <Input
                         label="Cantidad"
@@ -317,7 +317,7 @@ export default function AgregarProductoModal({
                         min={1}
                         value={cantidad}
                         onChange={(e) => setCantidad(Math.max(1, Number(e.target.value)))}
-                        className="h-11 font-semibold"
+                        className="font-semibold"
                     />
                 </div>
 
@@ -330,14 +330,14 @@ export default function AgregarProductoModal({
                         icon={<span className="text-xs font-semibold">S/</span>}
                         value={precioInput}
                         onChange={(e) => setPrecioInput(e.target.value)}
-                        className="h-11 font-semibold"
+                        className="font-semibold"
                     />
                     <Input
                         label="Subtotal"
                         readOnly
                         icon={<span className="text-xs font-semibold">S/</span>}
                         value={subtotal.toFixed(2)}
-                        className="h-11 !bg-zinc-50 font-bold"
+                        className="!bg-zinc-50 font-bold"
                     />
                 </div>
 
@@ -395,7 +395,7 @@ export default function AgregarProductoModal({
                         onClick={handleGuardar}
                         className={`px-8 py-2.5 text-sm font-bold rounded-xl shadow-none transition-colors ${sinStock
                             ? 'bg-zinc-200 text-zinc-500 cursor-not-allowed'
-                            : 'bg-brand-primary hover:bg-brand-hover text-white'
+                            : 'bg-brand-primary hover:bg-brand-hover text-on-brand'
                             }`}
                     >
                         {confirmLabel}

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
@@ -273,7 +273,7 @@ export function RecomendacionesPanel({
     const activeConfig = TIPO_CONFIG[activeTab];
 
     return (
-        <div className="w-full max-w-sm bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden transition-all duration-300 font-['DM_Sans']">
+        <div className="w-full max-w-sm bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden transition-all duration-300 font-sans">
             {/* CABECERA PRINCIPAL */}
             <div className={`p-4 flex items-center justify-between ${!isMinimized ? 'border-b border-gray-100' : ''}`}>
                 <div className="flex items-center gap-2">
@@ -281,7 +281,7 @@ export function RecomendacionesPanel({
                         <Sparkles className="w-5 h-5 text-amber-500" />
                     </div>
                     <div>
-                        <h3 className="text-base font-extrabold text-zinc-700 tracking-wide font-['DM_Sans']">
+                        <h3 className="text-base font-extrabold text-zinc-700 tracking-wide font-sans">
                             RECOMENDACIONES
                         </h3>
                         {productoBase && !isMinimized && (
@@ -325,7 +325,7 @@ export function RecomendacionesPanel({
                                     type="button"
                                     onClick={() => setActiveTab(tipo)}
                                     aria-pressed={isActive}
-                                    className={`flex-1 min-h-11 px-2 rounded-lg text-xs font-extrabold font-['DM_Sans'] tracking-wider transition-all flex items-center justify-center gap-1 ${isActive ? cfg.activeTabBg : cfg.inactiveTabBg
+                                    className={`flex-1 min-h-11 px-2 rounded-lg text-xs font-extrabold font-sans tracking-wider transition-all flex items-center justify-center gap-1 ${isActive ? cfg.activeTabBg : cfg.inactiveTabBg
                                         }`}
                                 >
                                     <span>{cfg.label}</span>
@@ -458,15 +458,15 @@ export function RecomendacionCardSection({
 
                 {/* CONTENIDO */}
                 <div className="flex-1 min-w-0 space-y-1">
-                    <div className="inline-block px-1.5 py-0.5 bg-zinc-50 rounded text-zinc-600 font-medium text-xs font-['DM_Sans'] border border-zinc-200/80">
+                    <div className="inline-block px-1.5 py-0.5 bg-zinc-50 rounded text-zinc-600 font-medium text-xs font-sans border border-zinc-200/80">
                         {formatCode(item.codigo)}
                     </div>
 
-                    <p className="text-xs font-semibold text-zinc-900 line-clamp-2 leading-tight font-['DM_Sans']" title={item.descripcion}>
+                    <p className="text-xs font-semibold text-zinc-900 line-clamp-2 leading-tight font-sans" title={item.descripcion}>
                         {item.descripcion}
                     </p>
 
-                    <div className="flex flex-wrap items-center gap-1 text-xs pt-0.5 font-['DM_Sans']">
+                    <div className="flex flex-wrap items-center gap-1 text-xs pt-0.5 font-sans">
                         {ubicacion && (
                             <span className="px-1.5 py-0.5 bg-neutral-100 text-neutral-700 border border-neutral-200/80 rounded font-semibold flex items-center gap-1">
                                 <Archive className="w-3 h-3 text-neutral-500" aria-hidden="true" />
@@ -494,7 +494,7 @@ export function RecomendacionCardSection({
                 <button
                     type="button"
                     onClick={onAgregar}
-                    className="min-h-9 px-3 py-2 text-xs font-semibold font-['DM_Sans'] text-zinc-600 hover:text-zinc-900 border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors uppercase tracking-wider inline-flex items-center gap-1.5"
+                    className="min-h-9 px-3 py-2 text-xs font-semibold font-sans text-zinc-600 hover:text-zinc-900 border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors uppercase tracking-wider inline-flex items-center gap-1.5"
                 >
                     <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                     AGREGAR
@@ -504,7 +504,7 @@ export function RecomendacionCardSection({
                     <button
                         type="button"
                         onClick={onReemplazar}
-                        className="min-h-9 px-3 py-2 text-xs font-semibold font-['DM_Sans'] text-amber-700 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-300/70 rounded-lg transition-colors uppercase tracking-wider inline-flex items-center gap-1.5"
+                        className="min-h-9 px-3 py-2 text-xs font-semibold font-sans text-amber-700 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-300/70 rounded-lg transition-colors uppercase tracking-wider inline-flex items-center gap-1.5"
                     >
                         REEMPLAZAR
                     </button>

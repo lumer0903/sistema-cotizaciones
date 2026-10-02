@@ -373,16 +373,16 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                     </div>
                 ) : (
                     <>
-                        <Table>
+                        <Table className="min-w-[48rem]" scrollLabel="Movimientos de kárdex">
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>FECHA</TableHead>
-                                    <TableHead>TIPO</TableHead>
-                                    <TableHead>ALMACÉN</TableHead>
-                                    <TableHead>MOTIVO</TableHead>
-                                    <TableHead className="text-right">CANTIDAD</TableHead>
-                                    <TableHead className="text-right">STOCK</TableHead>
-                                    <TableHead>USUARIO</TableHead>
+                                    <TableHead className="whitespace-nowrap">FECHA</TableHead>
+                                    <TableHead className="whitespace-nowrap">TIPO</TableHead>
+                                    <TableHead className="whitespace-nowrap">ALMACÉN</TableHead>
+                                    <TableHead className="whitespace-nowrap">MOTIVO</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">CANTIDAD</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">STOCK</TableHead>
+                                    <TableHead className="whitespace-nowrap">USUARIO</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

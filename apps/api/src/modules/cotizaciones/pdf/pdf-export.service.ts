@@ -7,6 +7,8 @@ import {
 import { InjectQueue } from '@nestjs/bullmq';
 import type { Queue, Job } from 'bullmq';
 import { CotizacionesService } from '../cotizaciones.service';
+import { CotizacionesPdfService } from './cotizaciones-pdf.service';
+import { PrismaService } from '../../../common/prisma/prisma.service';
 import { PdfStorageService } from './pdf-storage.service';
 import {
   MSJ_SIN_REDIS,
@@ -39,7 +41,26 @@ export class PdfExportService {
     @InjectQueue(PDF_QUEUE) private readonly pdfQueue: Queue,
     private readonly storage: PdfStorageService,
     private readonly cotizacionesService: CotizacionesService,
+    // Inyectados al final: fallback en memoria cuando MinIO/Redis no responden.
+    private readonly pdfService?: CotizacionesPdfService,
+    private readonly prisma?: PrismaService,
   ) {}
+
+  /**
+   * Genera el PDF en el proceso actual (in-memory), lo almacena (con fallback
+   * local si MinIO está caído) y actualiza la caché en BD. Se usa cuando la
+   * lectura del cache falla (MinIO no disponible) o la cola Redis no responde,
+   * para no bloquear la petición ni devolver timeout.
+   */
+  private async generarEnMemoria(id: number): Promise<Extract<PdfExportResult, { type: 'buffer' }>> {
+    const { buffer, filename, hash } = await this.pdfService!.generarPdfBuffer(id);
+    const { key } = await this.storage.save(id, hash, buffer);
+    await this.prisma!.cotizacion.update({
+      where: { id_cotizacion: id },
+      data: { pdf_key: key, pdf_hash: hash, pdf_generado_en: new Date() },
+    });
+    return { type: 'buffer', buffer, filename, cached: false };
+  }
 
   /**
    * Flujo híbrido:
@@ -55,24 +76,45 @@ export class PdfExportService {
     if (cot.pdf_key && cot.pdf_hash === hash) {
       const buffer = await this.storage.read(cot.pdf_key);
       if (buffer) return { type: 'buffer', buffer, filename: filenameFor(cot), cached: true };
-      this.logger.warn(`PDF cacheado no legible (${cot.pdf_key}); se regenera`);
+      this.logger.warn(`PDF cacheado no legible (${cot.pdf_key}); intentando regeneración en memoria`);
+      // Fallback: si MinIO no responde, generamos el PDF al vuelo (in-memory)
+      // en vez de depender de la cola; si falla, seguimos con el flujo normal.
+      try {
+        return await this.generarEnMemoria(id);
+      } catch (error) {
+        this.logger.error(
+          `Regeneración en memoria falló para cotización ${id}: ${error instanceof Error ? error.message : 'error desconocido'}; se encola el trabajo`,
+        );
+      }
     }
 
     // Fail-fast: con Redis caído, queue.add() nunca resuelve y la petición se
     // cuelga (spinner infinito en el FE). Verificamos la cola con tope de 3s.
-    await this.assertColaLista();
+    // Si Redis no responde, fallback a generación en memoria antes del 503.
+    try {
+      await this.assertColaLista();
 
-    await this.conTope(
-      this.pdfQueue.add(
-        PDF_JOB_NAME,
-        { id_cotizacion: id },
-        {
-          jobId,
-          attempts: 2,
-          backoff: { type: 'exponential', delay: 3000 },
-        },
-      ),
-    );
+      await this.conTope(
+        this.pdfQueue.add(
+          PDF_JOB_NAME,
+          { id_cotizacion: id },
+          {
+            jobId,
+            attempts: 2,
+            backoff: { type: 'exponential', delay: 3000 },
+          },
+        ),
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Cola PDF no disponible (${error instanceof Error ? error.message : 'error desconocido'}); intentando generación en memoria`,
+      );
+      try {
+        return await this.generarEnMemoria(id);
+      } catch {
+        throw error; // se preserva el 503 original (Redis caído)
+      }
+    }
 
     const deadline = Date.now() + PDF_WAIT_TIMEOUT_MS;
     while (Date.now() < deadline) {

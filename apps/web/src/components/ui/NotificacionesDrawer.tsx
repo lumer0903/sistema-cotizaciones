@@ -1,10 +1,11 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Package, FileText, CreditCard, CalendarClock, Loader2 } from 'lucide-react';
 import { inventarioApi, AlertaStockResponse } from '@/features/inventario/api/inventario.api';
 import { showToast } from '@/lib/toast';
+import { lockBodyScroll, unlockBodyScroll } from '@/lib/scrollLock';
 import { formatCode, formatText } from '@/lib/formatters';
 
 interface NotificacionesDrawerProps {
@@ -93,10 +94,10 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
     window.addEventListener('keydown', onKeyDown);
     return () => {
-      document.body.style.overflow = 'unset';
+      unlockBodyScroll();
       window.removeEventListener('keydown', onKeyDown);
     };
   }, [open, onClose]);
@@ -196,7 +197,7 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
               >
                 {label}
                 <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                  active ? 'bg-brand-primary text-white' : 'bg-gray-100 text-gray-600'
+                  active ? 'bg-brand-primary text-on-brand' : 'bg-gray-100 text-gray-600'
                 }`}>
                   {count}
                 </span>

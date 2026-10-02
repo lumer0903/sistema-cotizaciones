@@ -1,49 +1,71 @@
 ﻿'use client';
 
-import { forwardRef, InputHTMLAttributes, ReactNode } from 'react';
+import { forwardRef, InputHTMLAttributes, ReactNode, useId } from 'react';
+import { cn } from '@/lib/cn';
+import {
+  FIELD_BASE,
+  FIELD_ERROR,
+  FIELD_ERROR_TEXT,
+  FIELD_HEIGHT,
+  FIELD_LABEL,
+} from './fieldStyles';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-    label?: string;
-    error?: string;
-    icon?: ReactNode;
+  label?: string;
+  error?: string;
+  icon?: ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-    ({ label, error, icon, className = '', disabled, ...props }, ref) => {
-        return (
-            <div className="w-full space-y-1.5">
-                {label && (
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#414141]">
-                        {label}
-                    </label>
-                )}
-                <div className="relative flex items-center">
-                    {icon && (
-                        <div className="absolute left-3 pointer-events-none flex items-center justify-center text-[#8E8E8E]">
-                            {icon}
-                        </div>
-                    )}
-                    <input
-                        ref={ref}
-                        disabled={disabled}
-                        className={`
-              w-full h-10 text-xs sm:text-sm rounded-xl border border-[#E4E4E4] bg-white 
-              font-medium text-[#414141] transition-all 
-              placeholder:text-[#8E8E8E] 
-              hover:border-[#8E8E8E]
-              focus:bg-white focus:outline-none focus:border-[#F8B602] focus:ring-2 focus:ring-[#F8B602]/25
-              disabled:bg-[#E4E4E4]/40 disabled:text-[#8E8E8E] disabled:border-[#E4E4E4] disabled:cursor-not-allowed
-              ${icon ? 'pl-9 pr-3.5' : 'px-3.5'} 
-              ${error ? '!border-[#7B1C1C] focus:!ring-red-100' : ''} 
-              ${className}
-            `.trim()}
-                        {...props}
-                    />
-                </div>
-                {error && <p className="text-xs text-[#7B1C1C] font-medium">{error}</p>}
+  ({ label, error, icon, className, disabled, id, required, ...props }, ref) => {
+    const autoId = useId();
+    const inputId = id ?? autoId;
+    const errorId = `${inputId}-error`;
+
+    return (
+      <div className="w-full space-y-1.5">
+        {label && (
+          <label htmlFor={inputId} className={FIELD_LABEL}>
+            {label}
+            {required && <span className="text-danger ml-1" aria-hidden="true">*</span>}
+          </label>
+        )}
+        <div className="relative flex items-center">
+          {icon && (
+            <div
+              className="absolute left-3 pointer-events-none flex items-center justify-center text-brand-options"
+              aria-hidden="true"
+            >
+              {icon}
             </div>
-        );
-    }
+          )}
+          <input
+            ref={ref}
+            id={inputId}
+            disabled={disabled}
+            required={required}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? errorId : undefined}
+            className={cn(
+              'w-full',
+              FIELD_HEIGHT,
+              'px-3',
+              FIELD_BASE,
+              icon ? 'pl-9' : undefined,
+              error && FIELD_ERROR,
+              className
+            )}
+            {...props}
+          />
+        </div>
+        {error && (
+          <p id={errorId} className={FIELD_ERROR_TEXT} role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  }
 );
 
 Input.displayName = 'Input';

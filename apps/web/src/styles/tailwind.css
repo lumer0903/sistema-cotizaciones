@@ -1,113 +1,105 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /*
   ============================================================
-  PALETA GLOBAL — Fuente única de verdad
-  Cambia un hex aquí y cambia en todo el sistema.
+  PALETA GLOBAL — Fuente única de verdad (Guía de marca oficial)
   ============================================================
-  Brand:      #F8B602   (principal)
-  Soft:       #FFF2D6   (selección / highlight)
-  Subtítulo:  #414141
-  Neutro:     #8E8E8E
-  Tienda:     #1F41AF
+  Brand:        #F8B602   (principal)
+  Selection:    #FFF5D6   (selección / highlight)
+  Subtítulo:    #414141
+  Muted:        #8E8E8E
+  Tienda:       #1F41AF
   Distribuidor: #9D3A19
-  Estados:    Borrador / Aprobado / Rechazado / Enviado
-  Danger:     #7B1C1C   (solo acciones destructivas)
+  Estados:      Borrador / Aprobado / Rechazado / Enviado
+  Danger:       #7B1C1C   (solo acciones destructivas)
+
+  Regla de contraste: el texto SOBRE amarillo (#F8B602) usa
+  --color-on-brand (#18181B) → 10.1:1 WCAG AA.
 */
 
-:root {
-  /* Brand */
-  --brand-primary: #f8b602;
-  --brand-hover: #e0a300;
-  --brand-soft: #fff2d6;
-  --brand-subtitle: #414141;
-  --brand-options: #6b7280;
-  --brand-modal-focus: #c9a962;
-  --brand-background: #f9fafb;
-  /* Amarillo de marca apto para texto/iconos sobre blanco (≈6.2:1, WCAG AA) */
-  --brand-ink: #7d5b00;
-
-  /* Tipos de cliente */
-  --tienda: #1f41af;
-  --tienda-soft: #e8edfa;
-  --tienda-hover: #18368f;
-  --distribuidor: #9d3a19;
-  --distribuidor-soft: #f7ebe6;
-  --distribuidor-hover: #7d2e14;
-
-  /* Estados de cotización */
-  --estado-borrador: #e4e4e4;
-  --estado-borrador-text: #414141;
-  --estado-aprobado: #0dc300;
-  --estado-aprobado-text: #048200;
-  --estado-aprobado-soft: #e6f9e6;
-  --estado-rechazado: #7b1c1c;
-  --estado-rechazado-text: #7b1c1c;
-  --estado-rechazado-soft: #f5e8e8;
-  --estado-enviado: #1f41af;
-  --estado-enviado-text: #1f41af;
-  --estado-enviado-soft: #e8edfa;
-
-  /* Danger (solo destructivo) */
-  --danger: #7b1c1c;
-  --danger-hover: #5f1515;
-}
-
 @theme {
+  /* ── Tipografía: DM Sans universal (texto, mono y números) ── */
   --font-sans: var(--font-dm-sans), 'DM Sans', sans-serif;
   --font-mono: var(--font-dm-sans), 'DM Sans', sans-serif;
 
-  /* ── Brand ── */
-  --color-brand: #f8b602;
+  /* ── Marca ── */
   --color-brand-primary: #f8b602;
+  --color-brand: #f8b602;
   --color-brand-hover: #e0a300;
-  --color-brand-soft: #fff2d6;
-  --color-brand-selection: #fff2d6;
-  --color-brand-subtitle: #414141;
-  --color-brand-options: #6b7280;
+  --color-brand-selection: #fff5d6;
+  --color-brand-soft: #fff5d6;
   --color-brand-ink: #7d5b00;
-  --color-brand-modalFocus: #c9a962;
+  --color-on-brand: #18181b;
+  --color-brand-subtitle: #414141;
+  --color-brand-options: #8e8e8e;
   --color-brand-background: #f9fafb;
+  --color-brand-focus: #c9a962;
+  --color-brand-modalFocus: #c9a962;
 
-  /* ── Primary (amarillo marca; reemplaza el rojo legacy) ── */
-  --color-primary-50: #fff9e6;
-  --color-primary-100: #fff2d6;
-  --color-primary-200: #fee7a8;
-  --color-primary-300: #fddba0;
-  --color-primary-400: #fcbc4a;
-  --color-primary-500: #f8b602;
-  --color-primary-600: #e0a300;
-  --color-primary-700: #c79200;
-  --color-primary-800: #a37600;
-  --color-primary-900: #7d5b00;
-  --color-primary-950: #4a3600;
+  /* ── Superficies ── */
+  --color-surface: #ffffff;
+  --color-surface-muted: #f9fafb;
 
-  /* ── Danger (solo acciones destructivas) ── */
+  /* ── Roles / Segmentación ── */
+  --color-role-tienda: #1f41af;
+  --color-role-tienda-soft: #e8edfa;
+  --color-role-tienda-hover: #18368f;
+  --color-role-distribuidor: #9d3a19;
+  --color-role-distribuidor-soft: #f7ebe6;
+  --color-role-distribuidor-hover: #7d2e14;
+
+  /* Aliases legacy (retrocompatibilidad) */
+  --color-tienda: var(--color-role-tienda);
+  --color-tienda-soft: var(--color-role-tienda-soft);
+  --color-tienda-hover: var(--color-role-tienda-hover);
+  --color-distribuidor: var(--color-role-distribuidor);
+  --color-distribuidor-soft: var(--color-role-distribuidor-soft);
+  --color-distribuidor-hover: var(--color-role-distribuidor-hover);
+
+  /* ── Estados (Status Badges) ── */
+  --color-status-borrador: #e4e4e4;
+  --color-status-borrador-text: #414141;
+  --color-status-aprobado: #0dc300;
+  --color-status-aprobado-text: #048200;
+  --color-status-aprobado-soft: #e6f9e6;
+  --color-status-rechazado: #7b1c1c;
+  --color-status-rechazado-text: #7b1c1c;
+  --color-status-rechazado-soft: #f5e8e8;
+  --color-status-enviado: #1f41af;
+  --color-status-enviado-text: #1f41af;
+  --color-status-enviado-soft: #e8edfa;
+  --color-status-advertencia-text: #a16207;
+  --color-status-advertencia-soft: #fef9c3;
+
+  /* Aliases legacy (retrocompatibilidad) */
+  --color-estado-borrador: var(--color-status-borrador);
+  --color-estado-borrador-text: var(--color-status-borrador-text);
+  --color-estado-aprobado: var(--color-status-aprobado);
+  --color-estado-aprobado-text: var(--color-status-aprobado-text);
+  --color-estado-aprobado-soft: var(--color-status-aprobado-soft);
+  --color-estado-rechazado: var(--color-status-rechazado);
+  --color-estado-rechazado-text: var(--color-status-rechazado-text);
+  --color-estado-rechazado-soft: var(--color-status-rechazado-soft);
+  --color-estado-enviado: var(--color-status-enviado);
+  --color-estado-enviado-text: var(--color-status-enviado-text);
+  --color-estado-enviado-soft: var(--color-status-enviado-soft);
+
+  /* ── Peligro ── */
   --color-danger: #7b1c1c;
   --color-danger-hover: #5f1515;
 
-  /* ── Tienda ── */
-  --color-tienda: #1f41af;
-  --color-tienda-soft: #e8edfa;
-  --color-tienda-hover: #18368f;
+  /* ── Escala de sombras ── */
+  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-popover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-modal: 0 25px 50px -12px rgb(0 0 0 / 0.25);
 
-  /* ── Distribuidor ── */
-  --color-distribuidor: #9d3a19;
-  --color-distribuidor-soft: #f7ebe6;
-  --color-distribuidor-hover: #7d2e14;
-
-  /* ── Estados ── */
-  --color-estado-borrador: #e4e4e4;
-  --color-estado-borrador-text: #414141;
-  --color-estado-aprobado: #0dc300;
-  --color-estado-aprobado-text: #048200;
-  --color-estado-aprobado-soft: #e6f9e6;
-  --color-estado-rechazado: #7b1c1c;
-  --color-estado-rechazado-text: #7b1c1c;
-  --color-estado-rechazado-soft: #f5e8e8;
-  --color-estado-enviado: #1f41af;
-  --color-estado-enviado-text: #1f41af;
-  --color-estado-enviado-soft: #e8edfa;
+  /* ── Z-index ── (namespace correcto de Tailwind v4: --z-index-*) */
+  --z-index-header: 30;
+  --z-index-drawer: 45;
+  --z-index-menu: 50;
+  --z-index-modal: 60;
+  --z-index-select: 70;
 }
 
 * {
@@ -122,6 +114,61 @@ body {
 
 code, kbd, samp, pre {
   font-family: var(--font-dm-sans), 'DM Sans', sans-serif;
+}
+
+/*
+  Cifras tabulares: números, precios y códigos del ERP con
+  alineación vertical perfecta en tablas y campos numéricos.
+*/
+@utility tnum {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+table,
+thead,
+tbody,
+tfoot,
+th,
+td,
+input[type="number"],
+input[inputmode="decimal"],
+[data-tnum] {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* Autofill de Chrome: conserva el fondo y el color de texto del campo */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  -webkit-text-fill-color: currentColor;
+}
+
+/* Scroll-lock global mientras hay un modal/drawer abierto (clase en scrollLock.ts) */
+body.modal-open,
+html.modal-open {
+  overflow: hidden !important;
+  height: 100vh !important;
+}
+
+/* Selección de texto con la paleta de marca */
+::selection {
+  background: var(--color-brand-selection);
+  color: var(--color-brand-subtitle);
+}
+
+/* Accesibilidad: respeta preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @layer utilities {

@@ -19,6 +19,7 @@ import { PermisoModulo } from '@goldcontinent/shared/auth';
 import { PerfilModal } from '@/features/usuarios/components/PerfilModal';
 import { Avatar } from '@/components/ui/Avatar';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
+import { lockBodyScroll, unlockBodyScroll } from '@/lib/scrollLock';
 
 const VENDEDOR_NAV_ITEMS: {
   href: string;
@@ -62,12 +63,11 @@ export function VendedorLayout({ children }: { children: React.ReactNode }) {
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
-  // Bloquea el scroll del body con el drawer abierto (igual que AdminLayout)
+  // Bloquea el scroll del body con el drawer abierto (helper compartido)
   useEffect(() => {
-    document.body.style.overflow = sidebarOpen ? 'hidden' : 'unset';
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
+    if (!sidebarOpen) return;
+    lockBodyScroll();
+    return unlockBodyScroll;
   }, [sidebarOpen]);
 
   // Escape cierra el drawer (accesibilidad)
@@ -104,7 +104,7 @@ export function VendedorLayout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
           <div className="flex h-16 shrink-0 items-center justify-between px-6 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="h-7 w-7 rounded-md bg-brand-primary flex items-center justify-center text-white font-bold text-sm">G</div>
+              <div className="h-7 w-7 rounded-md bg-brand-primary flex items-center justify-center text-on-brand font-bold text-sm">G</div>
               <span className="font-semibold text-sm tracking-tight text-gray-900">Gold Continent</span>
             </div>
             <button
@@ -132,7 +132,7 @@ export function VendedorLayout({ children }: { children: React.ReactNode }) {
                       className={`
                         w-full flex items-center justify-between rounded-xl px-4 py-3 text-base font-semibold transition-all duration-150
                         ${isItemActive
-                          ? 'bg-brand-primary text-white shadow-lg'
+                          ? 'bg-brand-primary text-on-brand shadow-lg'
                           : 'text-gray-700 hover:bg-gray-100 hover:text-brand-ink'
                         }`}
                     >
@@ -155,7 +155,7 @@ export function VendedorLayout({ children }: { children: React.ReactNode }) {
                       className={`
                         flex items-center justify-between rounded-xl px-4 py-3 text-base font-semibold transition-all duration-150
                         ${isItemActive
-                          ? 'bg-brand-primary text-white shadow-lg'
+                          ? 'bg-brand-primary text-on-brand shadow-lg'
                           : 'text-gray-700 hover:bg-gray-100 hover:text-brand-ink'
                         }`}
                     >
@@ -234,7 +234,7 @@ export function VendedorLayout({ children }: { children: React.ReactNode }) {
               size="sm"
               onClick={() => setIsPerfilOpen(true)}
               title="Mi perfil"
-              className="bg-brand-primary text-white border-transparent"
+              className="bg-brand-primary text-on-brand border-transparent"
             />
           </div>
         </header>

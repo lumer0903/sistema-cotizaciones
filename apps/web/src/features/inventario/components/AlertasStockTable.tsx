@@ -144,16 +144,16 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
                             </p>
                         </div>
                     ) : (
-                        <Table>
+                        <Table className="min-w-[48rem]" scrollLabel="Alertas de stock">
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>PRODUCTO</TableHead>
-                                    <TableHead>ALMACÉN</TableHead>
-                                    <TableHead className="text-center">STOCK ACTUAL</TableHead>
-                                    <TableHead className="text-center">STOCK MÍNIMO</TableHead>
-                                    <TableHead className="text-center">ESTADO</TableHead>
-                                    <TableHead>DETECTADA</TableHead>
-                                    <TableHead className="text-right">ACCIÓN</TableHead>
+                                    <TableHead className="whitespace-nowrap">PRODUCTO</TableHead>
+                                    <TableHead className="whitespace-nowrap">ALMACÉN</TableHead>
+                                    <TableHead className="text-center whitespace-nowrap">STOCK ACTUAL</TableHead>
+                                    <TableHead className="text-center whitespace-nowrap">STOCK MÍNIMO</TableHead>
+                                    <TableHead className="text-center whitespace-nowrap">ESTADO</TableHead>
+                                    <TableHead className="whitespace-nowrap">DETECTADA</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">ACCIÓN</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

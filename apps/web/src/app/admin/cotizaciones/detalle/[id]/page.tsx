@@ -1,10 +1,10 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, ChevronDown, FileText, Loader2 } from 'lucide-react';
+import { useParams } from 'next/navigation';
+import { FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ConfirmModal } from '@/components/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, ConfirmModal, Select } from '@/components/ui';
 import { showToast } from '@/lib/toast';
 import {
   cambiarEstadoCotizacion,
@@ -31,15 +31,6 @@ const TRANSICIONES_UI: Record<string, string[]> = {
 
 // Transiciones que cierran o rechazan el negocio → piden confirmación.
 const TRANSICIONES_SENSIBLES = new Set(['aprobada', 'parcialmente_pagada', 'rechazada']);
-
-// Paleta de la cápsula-select de estado (misma que Badge size="estado")
-const ESTADO_SELECT_CLASES: Record<string, string> = {
-  borrador: 'bg-estado-borrador text-estado-borrador-text border-estado-borrador/60',
-  enviada: 'bg-estado-enviado-soft text-estado-enviado-text border-estado-enviado/40',
-  aprobada: 'bg-estado-aprobado-soft text-estado-aprobado-text border-estado-aprobado/40',
-  rechazada: 'bg-estado-rechazado-soft text-estado-rechazado-text border-estado-rechazado/40',
-  parcialmente_pagada: 'bg-amber-50 text-amber-600 border-amber-500/40',
-};
 
 function money(n: number | string | null | undefined): string {
   const v = Number(n || 0);
@@ -105,7 +96,6 @@ interface ItemRow {
  */
 export default function CotizacionDetallePage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const id = params?.id;
 
   const [loading, setLoading] = useState(true);
@@ -238,14 +228,14 @@ export default function CotizacionDetallePage() {
 
   if (loading && !numero) {
     return (
-      <div className="flex items-center justify-center min-h-[40vh] text-zinc-500 font-['DM_Sans']">
+      <div className="flex items-center justify-center min-h-[40vh] text-zinc-500 font-sans">
         <Loader2 className="size-5 animate-spin mr-2" /> Cargando cotización...
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 font-['DM_Sans'] pb-10">
+    <div className="max-w-6xl mx-auto space-y-6 font-sans pb-10">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -255,21 +245,18 @@ export default function CotizacionDetallePage() {
           </div>
         </div>
 
-        <div className="relative inline-flex">
-          <select
+        <div className="w-44">
+          <Select
             value={estado}
             disabled={savingEstado || opcionesEstado.length <= 1}
-            onChange={(e) => handleEstadoChange(e.target.value)}
+            onChange={(e) => handleEstadoChange(String(e.target.value))}
             aria-label="Estado de la cotización"
-            className={`appearance-none rounded-full border px-4 py-1.5 pr-8 text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-brand-soft transition-colors ${ESTADO_SELECT_CLASES[estado] ?? 'bg-neutral-200 text-neutral-700 border-neutral-300/60'} ${opcionesEstado.length <= 1 ? 'cursor-default' : 'cursor-pointer'} ${savingEstado ? 'opacity-60' : ''}`}
-          >
-            {opcionesEstado.map((op) => (
-              <option key={op} value={op}>
-                {ESTADO_DISPLAY[op] || op.toUpperCase()}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 opacity-60" />
+            options={opcionesEstado.map((op) => ({
+              label: ESTADO_DISPLAY[op] || op.toUpperCase(),
+              value: op,
+            }))}
+            className="w-full"
+          />
         </div>
       </div>
 
@@ -383,13 +370,6 @@ export default function CotizacionDetallePage() {
 
       {/* Acciones */}
       <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => router.push('/admin/cotizaciones')}
-        >
-          <ArrowLeft className="size-4" /> Volver
-        </Button>
         <Button
           variant="primary"
           size="sm"

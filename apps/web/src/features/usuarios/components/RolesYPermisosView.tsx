@@ -261,7 +261,7 @@ export function RolesYPermisosView() {
                     >
                       <span
                         className={`mt-0.5 p-1.5 rounded-lg ${
-                          active ? 'bg-brand-primary text-white' : 'bg-gray-100 text-gray-500'
+                          active ? 'bg-brand-primary text-on-brand' : 'bg-gray-100 text-gray-500'
                         }`}
                       >
                         <Shield className="h-4 w-4" />
@@ -370,7 +370,7 @@ export function RolesYPermisosView() {
                               key={nivel.value}
                               className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
                                 checked
-                                  ? 'border-brand-primary bg-brand-primary text-white shadow-sm'
+                                  ? 'border-brand-primary bg-brand-primary text-on-brand shadow-sm'
                                   : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                               } ${disabled ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >

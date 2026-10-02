@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { FileText, Minus, Plus } from 'lucide-react';
@@ -54,7 +54,7 @@ export function ResumenCotizacionCard({
   const [isMinimized, setIsMinimized] = useState(false);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 p-6 space-y-5 font-['DM_Sans'] transition-all">
+    <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 p-6 space-y-5 font-sans transition-all">
       {/* Encabezado con botón de minimizar */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">

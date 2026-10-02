@@ -120,7 +120,7 @@ export function PerfilModal({ open, onClose }: PerfilModalProps) {
             <span className="block text-xs font-semibold text-gray-500 tracking-wider">
               NOMBRE COMPLETO
             </span>
-            <div className="w-full h-10 px-3 rounded-xl border border-gray-100 bg-gray-50 flex items-center text-sm font-medium text-gray-700 select-none">
+            <div className="w-full h-9 px-3 rounded-xl border border-gray-100 bg-gray-50 flex items-center text-sm font-medium text-gray-700 select-none">
               {usuario?.nombre || '—'}
             </div>
           </div>
@@ -129,7 +129,7 @@ export function PerfilModal({ open, onClose }: PerfilModalProps) {
             <span className="block text-xs font-semibold text-gray-500 tracking-wider">
               CORREO ELECTRÓNICO
             </span>
-            <div className="w-full h-10 px-3 rounded-xl border border-gray-100 bg-gray-50 flex items-center text-sm font-medium text-gray-700 select-none">
+            <div className="w-full h-9 px-3 rounded-xl border border-gray-100 bg-gray-50 flex items-center text-sm font-medium text-gray-700 select-none">
               {usuario?.email || '—'}
             </div>
           </div>
