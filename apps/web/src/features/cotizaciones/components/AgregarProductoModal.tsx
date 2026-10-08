@@ -344,8 +344,8 @@ export default function AgregarProductoModal({
                 {/* Escala de Precios Dinámica (Distribuidor vs. Tienda) */}
                 <div
                     className={`w-full rounded-2xl border p-3 transition-colors ${esTienda
-                        ? 'bg-[#EFF6FF] border-[#BFDBFE] text-[#1D4ED8]'
-                        : 'bg-[#FAF3F0] border-[#E8D8CE] text-[#A13A17]'
+                        ? 'bg-role-tienda-soft border-role-tienda/30 text-role-tienda'
+                        : 'bg-role-distribuidor-soft border-role-distribuidor/30 text-role-distribuidor'
                         }`}
                 >
                     <span className="text-center text-xs font-extrabold uppercase tracking-wide block mb-2">

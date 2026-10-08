@@ -72,6 +72,7 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<UsuarioFormInput>({
     resolver: zodResolver(buildSchema(isEdit)),
@@ -196,7 +197,7 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {isEdit && (
-          <div className="flex items-center gap-4 bg-gray-50 rounded-xl p-4">
+          <div className="flex items-center gap-4 bg-zinc-50 rounded-xl p-4">
             <div className="relative">
               <Avatar src={avatarPreview} nombre={usuario?.nombre} size="lg" />
               <button
@@ -210,8 +211,8 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
               </button>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{usuario?.nombre}</p>
-              <p className="text-xs text-gray-500 truncate">{usuario?.email}</p>
+              <p className="text-sm font-medium text-zinc-900 truncate">{usuario?.nombre}</p>
+              <p className="text-xs text-zinc-500 truncate">{usuario?.email}</p>
               <div className="flex gap-2 mt-2">
                 <button
                   type="button"
@@ -266,10 +267,11 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
             placeholder="Seleccionar rol"
             error={errors.rol?.message}
             {...register('rol')}
+            value={watch('rol')}
           />
         </div>
 
-        <div className="border-t border-gray-100 pt-4">
+        <div className="border-t border-zinc-100 pt-4">
           <p className="text-xs font-black uppercase tracking-wider text-brand-options mb-3">
             {isEdit ? 'Cambiar contraseña (opcional)' : 'Contraseña'}
           </p>
@@ -293,7 +295,7 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
           </div>
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2 border-t border-gray-100">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2 border-t border-zinc-100">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Cancelar
           </Button>

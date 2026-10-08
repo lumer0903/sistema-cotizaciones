@@ -25,13 +25,13 @@ export default function GlobalError({
           }}
         >
           <div style={{ textAlign: 'center', maxWidth: 420 }}>
-            <p style={{ fontSize: 48, fontWeight: 700, color: '#414141', margin: 0 }}>
+            <p style={{ fontSize: 48, fontWeight: 700, color: 'var(--color-brand-subtitle, #414141)', margin: 0 }}>
               ¡Ups!
             </p>
-            <h1 style={{ fontSize: 20, color: '#414141', marginTop: 12 }}>
+            <h1 style={{ fontSize: 20, color: 'var(--color-brand-subtitle, #414141)', marginTop: 12 }}>
               No pudimos cargar la aplicación
             </h1>
-            <p style={{ fontSize: 14, color: '#6b7280', marginTop: 8 }}>
+            <p style={{ fontSize: 14, color: 'var(--color-zinc-500, #71717a)', marginTop: 8 }}>
               Ocurrió un error inesperado.
               {error.digest ? ` (ref: ${error.digest})` : ''}
             </p>
@@ -44,7 +44,7 @@ export default function GlobalError({
                 padding: '0 20px',
                 borderRadius: 6,
                 border: 'none',
-                background: '#414141',
+                background: 'var(--color-brand-subtitle, #414141)',
                 color: '#fff',
                 fontSize: 14,
                 cursor: 'pointer',

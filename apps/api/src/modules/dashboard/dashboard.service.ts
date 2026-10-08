@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EstadoCotizacion } from '@goldcontinent/shared/constants/enums';
 
@@ -11,6 +12,8 @@ export interface KpiResponse {
   eficacia: number;
   /** Indicador de tesis: % de ingresos (suma de aprobadas / suma total × 100). */
   rendimientoMonetario: number;
+  /** Monto total de las cotizaciones aprobadas dentro del alcance del usuario. */
+  ventasTotales: number;
 }
 
 export interface AlertaStockDetalle {
@@ -50,20 +53,24 @@ export interface DetalleKpisResponse {
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getKpis(): Promise<KpiResponse> {
+  /**
+   * `alcance` = alcance de datos del usuario (null = admin, ve todo;
+   * número = sólo sus cotizaciones). Las alertas de stock son globales.
+   */
+  async getKpis(alcance: number | null = null): Promise<KpiResponse> {
     const [cotizacionesStats, itemsStats, tiempoStats, alertasCount, rendimientoMonetario] =
       await Promise.all([
-        this.getCotizacionesStats(),
-        this.getItemsStats(),
-        this.getTiempoPromedioStats(),
+        this.getCotizacionesStats(alcance),
+        this.getItemsStats(alcance),
+        this.getTiempoPromedioStats(alcance),
         this.getAlertasStockActivas(),
-        this.getRendimientoMonetarioStats(),
+        this.getRendimientoMonetarioStats(alcance),
       ]);
 
     return this.buildKpis(cotizacionesStats, itemsStats, tiempoStats, alertasCount, rendimientoMonetario);
   }
 
-  async getDetalleKpis(): Promise<DetalleKpisResponse> {
+  async getDetalleKpis(alcance: number | null = null): Promise<DetalleKpisResponse> {
     const [
       cotizacionesStats,
       itemsStats,
@@ -74,13 +81,13 @@ export class DashboardService {
       graficoCotizadoVendido,
       graficoAlertasPorAlmacen,
     ] = await Promise.all([
-      this.getCotizacionesStats(),
-      this.getItemsStats(),
-      this.getTiempoPromedioStats(),
+      this.getCotizacionesStats(alcance),
+      this.getItemsStats(alcance),
+      this.getTiempoPromedioStats(alcance),
       this.getAlertasStockActivas(),
-      this.getRendimientoMonetarioStats(),
+      this.getRendimientoMonetarioStats(alcance),
       this.getAlertasStockDetalle(),
-      this.getGraficoCotizadoVsVendido(),
+      this.getGraficoCotizadoVsVendido(alcance),
       this.getGraficoAlertasPorAlmacen(),
     ]);
 
@@ -112,7 +119,7 @@ export class DashboardService {
     itemsStats: Awaited<ReturnType<DashboardService['getItemsStats']>>,
     tiempoStats: number,
     alertasCount: number,
-    rendimientoMonetario: number,
+    rendimiento: { pct: number; ventasTotales: number },
   ): KpiResponse {
     const tasaConversion = cotizacionesStats.totalEnviadasAprobadasRechazadas > 0
       ? (cotizacionesStats.aprobada / cotizacionesStats.totalEnviadasAprobadasRechazadas) * 100
@@ -133,11 +140,12 @@ export class DashboardService {
       tiempoPromedioCotizacion: Math.round(tiempoStats * 100) / 100,
       alertasStockActivas: alertasCount,
       eficacia: Math.round(eficacia * 100) / 100,
-      rendimientoMonetario,
+      rendimientoMonetario: rendimiento.pct,
+      ventasTotales: rendimiento.ventasTotales,
     };
   }
 
-  private async getCotizacionesStats(): Promise<{
+  private async getCotizacionesStats(alcance: number | null = null): Promise<{
     total: number;
     borrador: number;
     enviada: number;
@@ -148,6 +156,7 @@ export class DashboardService {
     // 1 consulta groupBy en vez de 5 counts separados
     const grupos = await this.prisma.cotizacion.groupBy({
       by: ['estado'],
+      where: alcance !== null ? { id_usuario: alcance } : undefined,
       _count: { _all: true },
     });
 
@@ -168,34 +177,38 @@ export class DashboardService {
     };
   }
 
-  private async getItemsStats(): Promise<{
+  private async getItemsStats(alcance: number | null = null): Promise<{
     totalItemsAprobados: number;
     itemsSugeridosIA: number;
   }> {
+    const cotizacionWhere: Prisma.CotizacionWhereInput = {
+      estado: EstadoCotizacion.aprobada,
+      ...(alcance !== null ? { id_usuario: alcance } : {}),
+    };
+
     const [totalItemsAprobados, itemsSugeridosIA] = await Promise.all([
       this.prisma.cotizacionDetalle.count({
-        where: {
-          cotizacion: { estado: EstadoCotizacion.aprobada },
-        },
+        where: { cotizacion: cotizacionWhere },
       }),
       this.prisma.cotizacionDetalle.count({
-        where: {
-          cotizacion: { estado: EstadoCotizacion.aprobada },
-          es_sugerido_ia: true,
-        },
+        where: { cotizacion: cotizacionWhere, es_sugerido_ia: true },
       }),
     ]);
 
     return { totalItemsAprobados, itemsSugeridosIA };
   }
 
-  private async getTiempoPromedioStats(): Promise<number> {
+  private async getTiempoPromedioStats(alcance: number | null = null): Promise<number> {
     // AVG en SQL: antes cargaba TODAS las cotizaciones finalizadas en memoria
-    const rows = await this.prisma.$queryRaw<Array<{ avg_min: number | string | null }>>`
-      SELECT AVG(EXTRACT(EPOCH FROM (tiempo_fin - tiempo_inicio)) / 60) AS avg_min
-      FROM cotizaciones
-      WHERE estado IN ('enviada', 'aprobada', 'rechazada')
-        AND tiempo_fin IS NOT NULL`;
+    const alcanceSql =
+      alcance !== null ? Prisma.sql`AND id_usuario = ${alcance}` : Prisma.sql``;
+    const rows = await this.prisma.$queryRaw<Array<{ avg_min: number | string | null }>>(
+      Prisma.sql`
+        SELECT AVG(EXTRACT(EPOCH FROM (tiempo_fin - tiempo_inicio)) / 60) AS avg_min
+        FROM cotizaciones
+        WHERE estado IN ('enviada', 'aprobada', 'rechazada')
+          AND tiempo_fin IS NOT NULL ${alcanceSql}`,
+    );
 
     return Number(rows[0]?.avg_min ?? 0);
   }
@@ -204,17 +217,26 @@ export class DashboardService {
    * Rendimiento monetario de la tesis:
    * X1 = ventas de cotizaciones (suma del total de APROBADAS, que equivalen a
    *      pago completo) / X2 = ventas totales (suma del total de TODAS) × 100.
+   * `ventasTotales` es X1 en dinero (tarjeta "Ventas" del dashboard).
    */
-  private async getRendimientoMonetarioStats(): Promise<number> {
-    const rows = await this.prisma.$queryRaw<Array<{ aprobadas: number | string; total: number | string }>>`
-      SELECT COALESCE(SUM(total) FILTER (WHERE estado = 'aprobada'), 0) AS aprobadas,
-             COALESCE(SUM(total), 0) AS total
-      FROM cotizaciones`;
+  private async getRendimientoMonetarioStats(
+    alcance: number | null = null,
+  ): Promise<{ pct: number; ventasTotales: number }> {
+    const alcanceSql = alcance !== null ? Prisma.sql`WHERE id_usuario = ${alcance}` : Prisma.sql``;
+    const rows = await this.prisma.$queryRaw<Array<{ aprobadas: number | string; total: number | string }>>(
+      Prisma.sql`
+        SELECT COALESCE(SUM(total) FILTER (WHERE estado = 'aprobada'), 0) AS aprobadas,
+               COALESCE(SUM(total), 0) AS total
+        FROM cotizaciones ${alcanceSql}`,
+    );
 
     const aprobadas = Number(rows[0]?.aprobadas ?? 0);
     const total = Number(rows[0]?.total ?? 0);
-    if (total <= 0) return 0;
-    return Math.round((aprobadas / total) * 10000) / 100;
+    if (total <= 0) return { pct: 0, ventasTotales: aprobadas };
+    return {
+      pct: Math.round((aprobadas / total) * 10000) / 100,
+      ventasTotales: aprobadas,
+    };
   }
 
   private async getAlertasStockActivas(): Promise<number> {
@@ -253,24 +275,29 @@ export class DashboardService {
     }));
   }
 
-  private async getGraficoCotizadoVsVendido(): Promise<Array<{ mes: string; cotizado: number; vendido: number }>> {
+  private async getGraficoCotizadoVsVendido(
+    alcance: number | null = null,
+  ): Promise<Array<{ mes: string; cotizado: number; vendido: number }>> {
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const alcanceSql = alcance !== null ? Prisma.sql`AND id_usuario = ${alcance}` : Prisma.sql``;
 
     // 1 consulta con FILTER en vez de 12 aggregates en loop
     const rows = await this.prisma.$queryRaw<
       Array<{ anio: number; mes_num: number; cotizado: number | string | null; vendido: number | string | null }>
-    >`
+    >(
+      Prisma.sql`
       SELECT
         EXTRACT(YEAR FROM created_at)::int AS anio,
         EXTRACT(MONTH FROM created_at)::int AS mes_num,
         SUM(total) FILTER (WHERE estado IN ('enviada', 'aprobada')) AS cotizado,
         SUM(total) FILTER (WHERE estado IN ('aprobada', 'parcialmente_pagada')) AS vendido
       FROM cotizaciones
-      WHERE created_at >= ${start} AND created_at < ${end}
+      WHERE created_at >= ${start} AND created_at < ${end} ${alcanceSql}
       GROUP BY 1, 2
-      ORDER BY 1, 2`;
+      ORDER BY 1, 2`,
+    );
 
     const byMonth = new Map(rows.map((r) => [`${r.anio}-${r.mes_num}`, r]));
     const months: Array<{ mes: string; cotizado: number; vendido: number }> = [];

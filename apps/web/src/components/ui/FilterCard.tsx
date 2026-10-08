@@ -20,7 +20,7 @@ export const FilterCard: React.FC<FilterCardProps> = ({
         min-w-0
         bg-white 
         rounded-2xl 
-        border border-gray-100 
+        border border-zinc-100 
         ${accentBorder ? 'border-l-4 border-l-brand-primary' : ''}
         p-4 sm:p-5 
         shadow-sm 

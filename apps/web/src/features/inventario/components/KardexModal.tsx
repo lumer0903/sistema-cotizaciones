@@ -237,7 +237,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                                     <button
                                         key={p.id_producto}
                                         type="button"
-                                        className="w-full text-left px-4 py-2.5 hover:bg-stone-50 transition-colors flex items-center justify-between border-b last:border-b-0 border-stone-100"
+                                        className="w-full text-left px-4 py-2.5 hover:bg-surface-muted transition-colors flex items-center justify-between border-b last:border-b-0 border-stone-100"
                                         onClick={() => handleSelectProducto(p)}
                                     >
                                         <div>
@@ -248,7 +248,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                                                 {formatText(p.descripcion)}
                                             </span>
                                         </div>
-                                        <span className="text-xs bg-stone-100 px-2 py-0.5 rounded font-medium text-stone-600">
+                                        <span className="text-xs bg-surface-muted px-2 py-0.5 rounded font-medium text-stone-600">
                                             Stock: {p.stock_total ?? p.stock_actual?.[0]?.cantidad ?? 0} u.
                                         </span>
                                     </button>
@@ -263,7 +263,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                 </div>
 
                 {/* BARRA DE FILTROS DE MOVIMIENTOS */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end bg-gray-50/80 p-3 rounded-xl border border-gray-200/80">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end bg-zinc-50/80 p-3 rounded-xl border border-zinc-200/80">
                     <Select
                         label="Tipo Movimiento"
                         value={filtroTipo}
@@ -319,7 +319,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                 {selectedProducto && (
                     <div className="bg-brand-selection/40 border border-brand-primary/40 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 animate-in fade-in duration-200">
                         <div className="flex items-center gap-3">
-                            <div className="w-14 h-14 shrink-0 bg-stone-100 rounded-lg border border-stone-200 flex items-center justify-center overflow-hidden">
+                            <div className="w-14 h-14 shrink-0 bg-surface-muted rounded-lg border border-stone-200 flex items-center justify-center overflow-hidden">
                                 {selectedProducto.foto_url ? (
                                     <Image
                                         src={getImageUrl(selectedProducto.foto_url, '115')}
@@ -337,14 +337,14 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                                 <h4 className="font-bold text-brand-ink text-xl text-outline">
                                     {formatText(selectedProducto.codigo)}
                                 </h4>
-                                <h4 className="font-medium text-brand-text text-gray-700 text-sm">
+                                <h4 className="font-medium text-brand-text text-zinc-700 text-sm">
                                     {formatText(selectedProducto.descripcion)}
                                 </h4>
                             </div>
                         </div>
                         <div className="flex items-center gap-3 border-t md:border-t-0 md:border-l border-brand-primary/40 pt-2 md:pt-0 md:pl-4">
                             <div className="text-center">
-                                <span className="block text-xs font-bold text-gray-700 uppercase">Stock Actual</span>
+                                <span className="block text-xs font-bold text-zinc-700 uppercase">Stock Actual</span>
                                 <span className="text-lg font-bold text-estado-aprobado-text text-outline">
                                     {selectedProducto.stock_total ?? selectedProducto.stock_actual?.[0]?.cantidad ?? 0} u.
                                 </span>
@@ -355,7 +355,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
 
                 {/* TABLA DE MOVIMIENTOS */}
                 {!selectedProducto ? (
-                    <div className="p-12 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                    <div className="p-12 text-center bg-zinc-50/50 rounded-xl border border-dashed border-zinc-200">
                         <p className="text-xs font-medium text-stone-500">
                             Selecciona un producto para cargar el historial de movimientos.
                         </p>
@@ -366,7 +366,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                         Cargando historial de movimientos del Kárdex...
                     </div>
                 ) : movimientos.length === 0 ? (
-                    <div className="p-6 sm:p-8 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-300">
+                    <div className="p-6 sm:p-8 text-center bg-zinc-50/50 rounded-xl border border-dashed border-zinc-300">
                         <p className="text-xs font-semibold text-brand-options">
                             No se registraron movimientos con los filtros seleccionados.
                         </p>
@@ -410,7 +410,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
 
                         {/* PAGINACIÓN */}
                         {totalPages > 1 && (
-                            <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-3 border-t border-gray-100">
+                            <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-3 border-t border-zinc-100">
                                 <div className="text-xs text-brand-options">
                                     Mostrando {((page - 1) * limit) + 1} - {Math.min(page * limit, total)} de {total} movimientos
                                 </div>
@@ -467,7 +467,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                 )}
 
                 {/* PIE Y BOTONES */}
-                <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 pt-3 border-t border-gray-100">
+                <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 pt-3 border-t border-zinc-100">
                     <Button
                         variant="outline"
                         onClick={handleExportCSV}

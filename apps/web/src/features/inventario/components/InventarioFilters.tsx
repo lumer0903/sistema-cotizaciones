@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import {
@@ -185,7 +185,7 @@ export function InventarioFilters({
                 )}
               </span>
             }
-            triggerClassName="h-9 w-9 flex items-center justify-center rounded-xl bg-transparent text-brand-subtitle hover:bg-gray-100 hover:text-brand-ink transition-colors"
+            triggerClassName="h-9 w-9 flex items-center justify-center rounded-xl bg-transparent text-brand-subtitle hover:bg-zinc-100 hover:text-brand-ink transition-colors"
           />
         </div>
       </div>

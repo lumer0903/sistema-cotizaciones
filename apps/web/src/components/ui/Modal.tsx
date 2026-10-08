@@ -126,7 +126,7 @@ export const Modal = ({
         )}
       >
         {(title || headerExtra) && (
-          <div className="flex-none p-4 sm:p-5 border-b border-gray-100 bg-white flex items-center justify-between gap-3">
+          <div className="flex-none px-4 sm:px-6 py-3 border-b border-zinc-100 bg-white flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
               {title && (
                 <h3 id={titleId} className="text-base font-bold text-brand-subtitle truncate">
@@ -148,10 +148,10 @@ export const Modal = ({
         )}
 
         {/* Único contenedor de scroll del modal */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 custom-scrollbar">{children}</div>
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-4 custom-scrollbar">{children}</div>
 
         {footer && (
-          <div className="flex-none p-4 sm:p-5 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl flex items-center justify-between gap-3">
+          <div className="flex-none px-4 sm:px-6 py-3 border-t border-zinc-100 bg-zinc-50/50 rounded-b-2xl flex items-center justify-between gap-3">
             {footer}
           </div>
         )}

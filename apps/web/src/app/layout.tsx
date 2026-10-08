@@ -1,11 +1,16 @@
 import type { Metadata } from 'next';
-import { DM_Sans } from 'next/font/google';
+import localFont from 'next/font/local';
 import '../styles/tailwind.css';
 import { Providers } from './providers';
 
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800', '900'],
+const dmSans = localFont({
+  src: [
+    {
+      path: './fonts/dmsans-latin.woff2',
+      weight: '300 900',
+      style: 'normal',
+    },
+  ],
   variable: '--font-dm-sans',
   display: 'swap',
 });
@@ -22,7 +27,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`${dmSans.variable} ${dmSans.className} font-sans antialiased`}>
-      <body className={`${dmSans.className} min-h-screen bg-gray-50 text-gray-900 font-sans`}>
+      <body className={`${dmSans.className} min-h-screen bg-zinc-50 text-zinc-900 font-sans`}>
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -10,6 +10,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
+  /** Actualiza parcialmente el usuario en sesión (p.ej. avatar_url) sin recargar. */
+  updateUsuario: (patch: Partial<UsuarioAutenticado>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -107,8 +109,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateUsuario = useCallback((patch: Partial<UsuarioAutenticado>) => {
+    setUsuario((prev) => (prev ? { ...prev, ...patch } : prev));
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ usuario, loading, login, logout, refresh }}>
+    <AuthContext.Provider value={{ usuario, loading, login, logout, refresh, updateUsuario }}>
       {children}
     </AuthContext.Provider>
   );

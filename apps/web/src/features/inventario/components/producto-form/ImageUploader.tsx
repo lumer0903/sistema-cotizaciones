@@ -65,7 +65,7 @@ export function ImageUploader({
         <div className="w-full max-w-[515px] max-h-24 inline-flex justify-between items-center gap-3">
           <label
             htmlFor="producto-imagen-input"
-            className="h-12 w-12 relative rounded-lg border border-gray-200 overflow-hidden shrink-0 cursor-pointer hover:opacity-80 transition-opacity bg-white"
+            className="h-12 w-12 relative rounded-lg border border-zinc-200 overflow-hidden shrink-0 cursor-pointer hover:opacity-80 transition-opacity bg-white"
             title="Cambiar imagen"
           >
             <img
@@ -105,7 +105,7 @@ export function ImageUploader({
             handleFiles(e.dataTransfer.files);
           }}
           className={cn(
-            'w-full h-20 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center gap-2 text-brand-options',
+            'w-full h-20 border-2 border-dashed border-zinc-300 rounded-xl flex items-center justify-center gap-2 text-brand-options',
             'hover:border-brand-hover hover:text-brand-ink cursor-pointer transition-colors',
             disabled && 'opacity-50 cursor-not-allowed'
           )}

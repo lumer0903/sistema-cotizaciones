@@ -3,11 +3,12 @@
 import React, { useState } from 'react';
 import { Eye, Pencil, Trash2, PackageSearch, Loader2 } from 'lucide-react';
 import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Button } from '@/components/ui';
 import { DetalleProductoModal } from './DetalleProductoModal';
 import { StockBadge } from './StockBadge';
 import { formatCode, formatText } from '@/lib/formatters';
 import { inventarioApi } from '@/features/inventario/api/inventario.api';
+import { Can } from '@/components/shared/Can';
 
 interface InventarioTableProps {
   productos: ProductoInventario[];
@@ -21,7 +22,6 @@ interface InventarioTableProps {
 
 const COLUMNS = ['CÓDIGO', 'CATEGORÍA', 'UBICACIÓN', 'STOCK', 'ACCIONES'];
 
-/** Estado de carga coherente con la tabla (mismo esqueleto de filas). */
 function TableSkeleton() {
   return (
     <div
@@ -30,18 +30,18 @@ function TableSkeleton() {
       aria-live="polite"
       aria-label="Cargando inventario"
     >
-      <div className="flex items-center gap-2 px-4 py-3 bg-gray-50/80 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+      <div className="flex items-center gap-2 px-4 py-3 bg-zinc-50/80 border-b border-zinc-200 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
         <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
         Cargando inventario...
       </div>
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-zinc-100">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="flex items-center gap-4 px-4 py-3.5 animate-pulse">
-            <div className="h-4 w-24 bg-gray-200 rounded" />
-            <div className="h-4 w-32 bg-gray-200 rounded" />
-            <div className="h-4 w-28 bg-gray-200 rounded" />
-            <div className="h-6 w-12 bg-gray-200 rounded-full" />
-            <div className="h-4 w-20 bg-gray-200 rounded ml-auto" />
+            <div className="h-4 w-24 bg-zinc-200 rounded" />
+            <div className="h-4 w-32 bg-zinc-200 rounded" />
+            <div className="h-4 w-28 bg-zinc-200 rounded" />
+            <div className="h-6 w-12 bg-zinc-200 rounded-full" />
+            <div className="h-4 w-20 bg-zinc-200 rounded ml-auto" />
           </div>
         ))}
       </div>
@@ -49,7 +49,6 @@ function TableSkeleton() {
   );
 }
 
-/** Estado vacío con icono y texto claro. */
 function TableEmpty() {
   return (
     <div className="w-full p-8 sm:p-16 text-center text-brand-options">
@@ -69,9 +68,7 @@ export function InventarioTable({
   const [detalleProducto, setDetalleProducto] = useState<ProductoInventario | null>(null);
 
   const handleVerDetalle = async (prod: ProductoInventario) => {
-    // Apertura optimista con lo que hay en la lista
     setDetalleProducto(prod);
-    // Si la fila no trae precios (lista sin include), traer el detalle completo
     const p = prod as ProductoInventario & {
       precios_actuales?: unknown;
       precios?: unknown;
@@ -110,7 +107,7 @@ export function InventarioTable({
                 key={col}
                 className={
                   col === 'ACCIONES'
-                    ? 'text-center sticky right-0 bg-gray-50 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]'
+                    ? 'text-center sticky right-0 bg-zinc-50 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]'
                     : col === 'STOCK'
                       ? 'text-center'
                       : undefined
@@ -131,7 +128,7 @@ export function InventarioTable({
 
             return (
               <TableRow key={id ?? prod.codigo}>
-                <TableCell className="font-bold text-neutral-900 font-mono text-sm whitespace-nowrap">
+                <TableCell className="font-bold text-zinc-900 font-mono text-sm whitespace-nowrap">
                   {formatCode(prod.codigo)}
                 </TableCell>
                 <TableCell
@@ -149,35 +146,41 @@ export function InventarioTable({
                 <TableCell className="text-center">
                   <StockBadge stock={stockVal} minimo={stockMinimo} />
                 </TableCell>
-                <TableCell className="text-center sticky right-0 bg-white group-hover:bg-gray-50 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]">
+                <TableCell className="text-center sticky right-0 bg-white group-hover:bg-zinc-50 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]">
                   <div className="flex items-center justify-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                    <button
-                      type="button"
-                      onClick={() => handleVerDetalle(prod)}
-                      className="min-h-11 min-w-11 inline-flex items-center justify-center text-brand-ink hover:text-brand-primary transition-colors"
-                      title="Ver detalle"
-                      aria-label={`Ver detalle de ${formatCode(prod.codigo)}`}
-                    >
-                      <Eye className="w-5 h-5" aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onEditar(prod)}
-                      className="min-h-11 min-w-11 inline-flex items-center justify-center text-brand-ink hover:text-brand-primary transition-colors"
-                      title="Editar"
-                      aria-label={`Editar ${formatCode(prod.codigo)}`}
-                    >
-                      <Pencil className="w-5 h-5" aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => id !== undefined && onEliminar(id)}
-                      className="min-h-11 min-w-11 inline-flex items-center justify-center text-brand-ink hover:text-danger transition-colors"
-                      title="Eliminar"
-                      aria-label={`Eliminar ${formatCode(prod.codigo)}`}
-                    >
-                      <Trash2 className="w-5 h-5" aria-hidden="true" />
-                    </button>
+                    <Can modulo="productos" nivel="edicion">
+                      <Button
+                        variant="ghost"
+                        onClick={() => onEditar(prod)}
+                        className="min-h-11 min-w-11 p-0 text-brand-ink hover:text-brand-primary"
+                        title="Editar"
+                        aria-label={`Editar ${formatCode(prod.codigo)}`}
+                      >
+                        <Pencil className="w-5 h-5" aria-hidden="true" />
+                      </Button>
+                    </Can>
+                    <Can modulo="productos" nivel="lectura">
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleVerDetalle(prod)}
+                        className="min-h-11 min-w-11 p-0 text-brand-ink hover:text-brand-primary"
+                        title="Ver detalle"
+                        aria-label={`Ver detalle de ${formatCode(prod.codigo)}`}
+                      >
+                        <Eye className="w-5 h-5" aria-hidden="true" />
+                      </Button>
+                    </Can>
+                    <Can modulo="productos" nivel="edicion">
+                      <Button
+                        variant="ghost"
+                        onClick={() => id !== undefined && onEliminar(id)}
+                        className="min-h-11 min-w-11 p-0 text-brand-ink hover:text-danger"
+                        title="Eliminar"
+                        aria-label={`Eliminar ${formatCode(prod.codigo)}`}
+                      >
+                        <Trash2 className="w-5 h-5" aria-hidden="true" />
+                      </Button>
+                    </Can>
                   </div>
                 </TableCell>
               </TableRow>
@@ -191,7 +194,6 @@ export function InventarioTable({
         onClose={() => setDetalleProducto(null)}
         producto={detalleProducto}
         onEditar={onEditar}
-        canEdit
       />
     </>
   );

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import {
   forwardRef,
@@ -280,7 +280,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
               FIELD_DISABLED,
               icon ? 'pl-9' : 'px-3.5',
               isOpen
-                ? 'border-gray-300 focus-visible:outline-none'
+                ? 'border-zinc-300 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring'
                 : FIELD_FOCUS,
               error && FIELD_ERROR,
               className
@@ -317,7 +317,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 id={listboxId}
                 role="listbox"
                 aria-label={typeof label === 'string' ? label : placeholder}
-                className="fixed z-select bg-white border border-[#E4E4E4] rounded-xl shadow-popover py-1 max-h-56 overflow-y-auto animate-in fade-in-50 zoom-in-95 duration-100"
+                className="fixed z-select bg-white border border-border-default rounded-2xl shadow-popover py-1 max-h-56 overflow-y-auto animate-in fade-in-50 zoom-in-95 duration-100"
                 style={{ top: menuPos.top, left: menuPos.left, width: menuPos.width }}
                 onMouseDown={(e) => e.stopPropagation()}
               >
@@ -338,7 +338,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                         onMouseEnter={() => setActiveIndex(index)}
                         className={cn(
                           'w-full text-left px-3.5 py-2 text-xs font-medium transition-colors flex items-center justify-between cursor-pointer',
-                          index === activeIndex && 'bg-gray-100',
+                          index === activeIndex && 'bg-zinc-100',
                           isSelected
                             ? 'text-brand-ink font-bold'
                             : 'text-brand-subtitle'

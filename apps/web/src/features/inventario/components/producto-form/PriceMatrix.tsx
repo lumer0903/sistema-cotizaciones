@@ -67,7 +67,7 @@ function PriceCell({
             data-field={field}
             className={`
               w-24 text-left bg-transparent outline-none py-1 rounded px-1 tnum
-              focus:bg-white focus:border focus:border-gray-300
+              focus:bg-white focus:border focus:border-zinc-300
               [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
               ${error ? 'text-danger focus:!border-danger' : accentClass}
             `.trim()}

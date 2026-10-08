@@ -150,7 +150,7 @@ export const DropdownMenu = ({
           aria-label={label}
           onKeyDown={onMenuKeyDown}
           className={cn(
-            'absolute mt-2 w-56 bg-white rounded-2xl shadow-popover border border-[#E4E4E4] px-1.5 py-1.5 z-menu',
+            'absolute mt-2 w-56 bg-white rounded-2xl shadow-popover border border-border-default px-1.5 py-1.5 z-menu',
             'animate-in fade-in zoom-in-95 duration-100',
             align === 'right' ? 'right-0' : 'left-0'
           )}
@@ -158,7 +158,7 @@ export const DropdownMenu = ({
           {children ??
             items.map((item, index) => (
               <React.Fragment key={item.key}>
-                {item.dividerBefore && <div className="my-1 border-t border-gray-100" />}
+                {item.dividerBefore && <div className="my-1 border-t border-zinc-100" />}
                 <button
                   type="button"
                   role="menuitem"
@@ -173,9 +173,9 @@ export const DropdownMenu = ({
                     'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left',
                     item.danger
                       ? 'text-danger hover:bg-status-rechazado-soft'
-                      : 'text-brand-subtitle hover:bg-gray-100 hover:text-brand-ink',
+                      : 'text-brand-subtitle hover:bg-zinc-100 hover:text-brand-ink',
                     item.disabled && 'opacity-50 cursor-not-allowed',
-                    index === activeIndex && !item.disabled && 'bg-gray-100'
+                    index === activeIndex && !item.disabled && 'bg-zinc-100'
                   )}
                 >
                   {item.icon && <span aria-hidden="true">{item.icon}</span>}

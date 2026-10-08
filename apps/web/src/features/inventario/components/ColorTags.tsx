@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { X } from 'lucide-react';
 import { resolveColorHex } from './ColorConfigModal';
@@ -47,7 +47,7 @@ export function ColorTags({
           className={`inline-flex items-center ${sizeClasses[size]} bg-brand-selection text-brand-subtitle border border-brand-primary/40 rounded-full font-medium`}
         >
           <span
-            className="rounded-full border border-gray-200 shrink-0"
+            className="rounded-full border border-zinc-200 shrink-0"
             style={{
               backgroundColor: resolveColorHex(color),
               width: size === 'sm' ? 8 : 10,
@@ -67,7 +67,7 @@ export function ColorTags({
         </span>
       ))}
       {showCount && remainingCount > 0 && (
-        <span className={`inline-flex items-center justify-center ${sizeClasses[size]} bg-gray-100 text-brand-options border border-gray-200 rounded-full font-medium`}>
+        <span className={`inline-flex items-center justify-center ${sizeClasses[size]} bg-zinc-100 text-brand-options border border-zinc-200 rounded-full font-medium`}>
           +{remainingCount}
         </span>
       )}

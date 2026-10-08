@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import Image from 'next/image';
@@ -25,7 +25,7 @@ function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirectTo') || '/admin/inventario';
+  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
 
   const {
     register,
@@ -71,7 +71,7 @@ function LoginForm() {
 
         {/* TARJETA DE LOGIN (Derecha) */}
         <section
-          className="relative w-full max-w-[468px] lg:min-h-[558px] bg-white rounded-2xl border border-gray-200 shadow-xl p-6 sm:p-10 flex flex-col justify-center"
+          className="relative w-full max-w-[468px] lg:min-h-[558px] bg-white rounded-2xl border border-zinc-200 shadow-xl p-6 sm:p-10 flex flex-col justify-center"
           aria-labelledby="login-heading"
         >
           {/* ISOTIPO SECUNDARIO */}
@@ -101,7 +101,7 @@ function LoginForm() {
               >
                 Bienvenido,
               </h1>
-              <p className="font-medium text-gray-700 text-base sm:text-lg leading-normal m-0 mt-2">
+              <p className="font-medium text-zinc-700 text-base sm:text-lg leading-normal m-0 mt-2">
                 Ingresa tu correo y contraseña
               </p>
             </div>
@@ -110,12 +110,12 @@ function LoginForm() {
             <div className="w-full flex flex-col gap-2 mb-6">
               <label
                 htmlFor="email"
-                className="font-medium text-gray-600 text-sm"
+                className="font-medium text-zinc-600 text-sm"
               >
                 Correo electrónico
               </label>
               <div className="relative w-full">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" aria-hidden="true" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500" aria-hidden="true" />
                 <input
                   id="email"
                   type="email"
@@ -125,9 +125,9 @@ function LoginForm() {
                   aria-label="Correo electrónico"
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? 'email-error' : undefined}
-                  className="w-full h-11 pl-12 pr-4 rounded-xl border border-gray-200 text-sm text-gray-900 bg-white outline-none transition-colors
-                    placeholder:text-gray-500
-                    disabled:bg-gray-50 disabled:cursor-not-allowed
+                  className="w-full h-11 pl-12 pr-4 rounded-xl border border-zinc-200 text-sm text-zinc-900 bg-white outline-none transition-colors
+                    placeholder:text-zinc-500
+                    disabled:bg-zinc-50 disabled:cursor-not-allowed
                     error:border-red-300 error:focus:border-red-500"
                   placeholder="correo@ejemplo.com"
                 />
@@ -143,12 +143,12 @@ function LoginForm() {
             <div className="w-full flex flex-col gap-2 mb-8">
               <label
                 htmlFor="password"
-                className="font-medium text-gray-600 text-sm"
+                className="font-medium text-zinc-600 text-sm"
               >
                 Contraseña
               </label>
               <div className="relative w-full">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" aria-hidden="true" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500" aria-hidden="true" />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -158,16 +158,16 @@ function LoginForm() {
                   aria-label="Contraseña"
                   aria-invalid={!!errors.password}
                   aria-describedby={errors.password ? 'password-error' : undefined}
-                  className="w-full h-11 pl-12 pr-14 rounded-xl border border-gray-200 text-sm text-gray-900 bg-white outline-none transition-colors
-                    placeholder:text-gray-500
-                    disabled:bg-gray-50 disabled:cursor-not-allowed
+                  className="w-full h-11 pl-12 pr-14 rounded-xl border border-zinc-200 text-sm text-zinc-900 bg-white outline-none transition-colors
+                    placeholder:text-zinc-500
+                    disabled:bg-zinc-50 disabled:cursor-not-allowed
                     error:border-red-300 error:focus:border-red-500"
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 min-h-11 min-w-11 flex items-center justify-center text-gray-500 hover:text-gray-700 cursor-pointer transition-colors"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 min-h-11 min-w-11 flex items-center justify-center text-zinc-500 hover:text-zinc-700 cursor-pointer transition-colors"
                   aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   aria-pressed={showPassword}
                 >
@@ -185,11 +185,11 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 bg-[#f8b602] rounded-xl shadow-md text-white font-bold text-sm tracking-wide
+              className="w-full h-11 bg-brand-primary rounded-xl shadow-md text-on-brand font-bold text-sm tracking-wide
                 flex items-center justify-center gap-2
-                hover:bg-[#e0a400] active:scale-[0.98] transition-all
-                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#f8b602] disabled:active:scale-100
-                focus:outline-none"
+                hover:bg-brand-hover active:scale-[0.98] transition-all
+                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-primary disabled:active:scale-100
+                focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
             >
               {loading ? (
                 <>
@@ -221,7 +221,7 @@ export default function LoginPage() {
               height={500}
             />
           </div>
-          <section className="relative w-full max-w-[468px] min-h-[558px] bg-white rounded-2xl border border-gray-200 shadow-xl p-6 sm:p-10 flex flex-col justify-center">
+          <section className="relative w-full max-w-[468px] min-h-[558px] bg-white rounded-2xl border border-zinc-200 shadow-xl p-6 sm:p-10 flex flex-col justify-center">
             <Image
               className="absolute top-8 right-8 w-[120px] h-[120px] object-contain opacity-50"
               alt="Gold Continent Icon"
@@ -230,11 +230,11 @@ export default function LoginPage() {
               height={120}
             />
             <div className="w-full flex flex-col mt-10 sm:mt-12 animate-pulse space-y-6">
-              <div className="h-8 bg-gray-200 rounded w-3/4" />
-              <div className="h-4 bg-gray-200 rounded w-1/2" />
-              <div className="h-11 bg-gray-200 rounded" />
-              <div className="h-11 bg-gray-200 rounded" />
-              <div className="h-11 bg-gray-200 rounded" />
+              <div className="h-8 bg-zinc-200 rounded w-3/4" />
+              <div className="h-4 bg-zinc-200 rounded w-1/2" />
+              <div className="h-11 bg-zinc-200 rounded" />
+              <div className="h-11 bg-zinc-200 rounded" />
+              <div className="h-11 bg-zinc-200 rounded" />
             </div>
           </section>
         </div>

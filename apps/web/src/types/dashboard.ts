@@ -27,3 +27,9 @@ export interface DashboardStats {
   productosBajoStock: number;
   cotizacionesEsteMes: number;
 }
+
+export interface KpisTesis {
+  tiempoPromedioCotizacion: number;
+ eficacia: number;
+  rendimientoMonetario: number;
+}

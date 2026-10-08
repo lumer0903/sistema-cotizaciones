@@ -10,7 +10,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const BASE_STYLES =
-  'inline-flex items-center justify-center font-bold rounded-xl transition-all duration-150 focus:outline-none disabled:cursor-not-allowed select-none shrink-0';
+  'inline-flex items-center justify-center font-bold rounded-xl transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed select-none shrink-0';
 
 const VARIANT_STYLES: Record<NonNullable<ButtonProps['variant']>, string> = {
   // Primary: amarillo de marca con texto on-brand (#18181B) → 10.1:1 WCAG AA
@@ -27,9 +27,9 @@ const VARIANT_STYLES: Record<NonNullable<ButtonProps['variant']>, string> = {
   ].join(' '),
 
   outline: [
-    'bg-white text-brand-subtitle border border-[#E4E4E4]',
+    'bg-white text-brand-subtitle border border-border-default',
     'hover:bg-surface-muted hover:border-brand-options active:bg-status-borrador/60',
-    'disabled:bg-surface-muted disabled:text-brand-options disabled:border-[#E4E4E4]',
+    'disabled:bg-surface-muted disabled:text-brand-options disabled:border-border-default',
   ].join(' '),
 
   ghost: [
@@ -38,9 +38,9 @@ const VARIANT_STYLES: Record<NonNullable<ButtonProps['variant']>, string> = {
   ].join(' '),
 
   icon: [
-    'bg-white text-brand-subtitle border border-[#E4E4E4]',
+    'bg-white text-brand-subtitle border border-border-default',
     'hover:bg-brand-selection hover:border-brand-primary active:bg-brand-primary/20',
-    'disabled:bg-surface-muted disabled:text-brand-options disabled:border-[#E4E4E4]',
+    'disabled:bg-surface-muted disabled:text-brand-options disabled:border-border-default',
     '[&>svg]:w-5 [&>svg]:h-5 [&>svg]:stroke-[2]',
   ].join(' '),
 

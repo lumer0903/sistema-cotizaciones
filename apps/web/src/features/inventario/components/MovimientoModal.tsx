@@ -273,7 +273,7 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                                         <button
                                             key={p.id_producto}
                                             type="button"
-                                            className="w-full text-left px-3.5 py-2.5 hover:bg-stone-50 transition-colors flex items-center justify-between border-b last:border-b-0 border-stone-100 gap-2"
+                                            className="w-full text-left px-3.5 py-2.5 hover:bg-surface-muted transition-colors flex items-center justify-between border-b last:border-b-0 border-stone-100 gap-2"
                                             onClick={() => handleSelectProducto(p)}
                                         >
                                             <div className="min-w-0 flex-1">
@@ -284,7 +284,7 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                                                     {p.descripcion}
                                                 </span>
                                             </div>
-                                            <span className="text-xs bg-stone-100 px-2 py-0.5 rounded font-medium text-stone-600 shrink-0">
+                                            <span className="text-xs bg-surface-muted px-2 py-0.5 rounded font-medium text-stone-600 shrink-0">
                                                 Stock: {p.stock_total} u.
                                             </span>
                                         </button>
@@ -305,6 +305,7 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                         {...register('id_almacen', {
                             setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
                         })}
+                        value={watch('id_almacen') ?? ''}
                         variant="modal"
                     >
                         <option value="">Seleccionar</option>
@@ -331,7 +332,7 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                                     onClick={() => setValue('tipo', opt.value)}
                                     className={`relative p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${isSelected
                                             ? 'border-brand-primary bg-brand-primary/5 shadow-sm'
-                                            : 'border-gray-200 hover:border-brand-primary/50'
+                                            : 'border-zinc-200 hover:border-brand-primary/50'
                                         }`}
                                 >
                                     <Icon className={`w-5 h-5 ${opt.color}`} />
@@ -350,6 +351,7 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                         label="MOTIVO"
                         error={errors.origen?.message}
                         {...register('origen')}
+                        value={watch('origen') ?? ''}
                         variant="modal"
                     >
                         {getAllowedOrigenes().map((o) => (
@@ -402,7 +404,7 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                     {...register('observaciones')}
                 />
 
-                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-zinc-100">
                     <Button type="button" variant="ghost" onClick={handleLimpiar} disabled={isSubmitting}>
                         Limpiar
                     </Button>

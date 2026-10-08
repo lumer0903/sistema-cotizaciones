@@ -1,4 +1,7 @@
 import { PrismaClient } from '@prisma/client';
+// Fuente única de verdad de los permisos por rol (misma que usa el backend
+// y el frontend). Editar ahí, no duplicar el mapa aquí.
+import { DEFAULT_ROLE_PERMISSIONS } from '../../shared/src/auth/rbac';
 
 const prisma = new PrismaClient();
 
@@ -43,50 +46,7 @@ async function main() {
     { codigo: 'vendedor', nombre: 'Vendedor', es_sistema: true, orden: 2 },
   ];
 
-  const defaultPermisos: Record<string, Record<string, string>> = {
-    admin: {
-      dashboard: 'edicion',
-      productos: 'edicion',
-      importacion: 'edicion',
-      consulta_precios: 'edicion',
-      cotizaciones: 'edicion',
-      recomendaciones: 'edicion',
-      pdf: 'edicion',
-      usuarios: 'edicion',
-      cobranza: 'edicion',
-      ventas: 'edicion',
-      reportes: 'edicion',
-      configuracion: 'edicion',
-    },
-    gerente: {
-      dashboard: 'edicion',
-      productos: 'edicion',
-      importacion: 'edicion',
-      consulta_precios: 'edicion',
-      cotizaciones: 'edicion',
-      recomendaciones: 'edicion',
-      pdf: 'edicion',
-      usuarios: 'edicion',
-      cobranza: 'edicion',
-      ventas: 'edicion',
-      reportes: 'edicion',
-      configuracion: 'lectura',
-    },
-    vendedor: {
-      dashboard: 'lectura',
-      productos: 'lectura',
-      importacion: 'sin_acceso',
-      consulta_precios: 'lectura',
-      cotizaciones: 'edicion',
-      recomendaciones: 'edicion',
-      pdf: 'edicion',
-      usuarios: 'sin_acceso',
-      cobranza: 'sin_acceso',
-      ventas: 'edicion',
-      reportes: 'lectura',
-      configuracion: 'sin_acceso',
-    },
-  };
+  const defaultPermisos: Record<string, Record<string, string>> = DEFAULT_ROLE_PERMISSIONS;
 
   for (const r of rolesData) {
     const rol = await prisma.rol.upsert({

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
@@ -85,17 +85,17 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
     return (
         <>
         <Modal open={open} onClose={onClose} title="Centro de Notificaciones" maxWidth="xl">
-            <div className="flex border-b border-gray-200 mb-4">
+            <div className="flex border-b border-zinc-200 mb-4">
                 <button
                     type="button"
-                    className={`pb-2 px-4 text-sm font-semibold transition-colors ${activeTab === 'inventario' ? 'border-b-2 border-brand-primary text-brand-ink' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`pb-2 px-4 text-sm font-semibold transition-colors ${activeTab === 'inventario' ? 'border-b-2 border-brand-primary text-brand-ink' : 'text-zinc-500 hover:text-zinc-700'}`}
                     onClick={() => setActiveTab('inventario')}
                 >
                     Inventario
                 </button>
                 <button
                     type="button"
-                    className={`pb-2 px-4 text-sm font-semibold transition-colors ${activeTab === 'cobranzas' ? 'border-b-2 border-brand-primary text-brand-ink' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`pb-2 px-4 text-sm font-semibold transition-colors ${activeTab === 'cobranzas' ? 'border-b-2 border-brand-primary text-brand-ink' : 'text-zinc-500 hover:text-zinc-700'}`}
                     onClick={() => setActiveTab('cobranzas')}
                 >
                     Cobranzas
@@ -137,8 +137,8 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
                             Cargando alertas...
                         </div>
                     ) : alertas.length === 0 ? (
-                        <div className="p-6 sm:p-8 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-300">
-                            <AlertCircle className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                        <div className="p-6 sm:p-8 text-center bg-zinc-50/50 rounded-xl border border-dashed border-zinc-300">
+                            <AlertCircle className="w-12 h-12 mx-auto text-zinc-300 mb-3" />
                             <p className="text-xs font-semibold text-brand-options">
                                 {estadoFiltro === 'activa' ? 'No hay alertas activas' : 'No hay alertas en este filtro'}
                             </p>
@@ -211,7 +211,7 @@ export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTabl
             )}
 
             {activeTab === 'cobranzas' && (
-                <div className="p-6 sm:p-8 text-center text-gray-500">
+                <div className="p-6 sm:p-8 text-center text-zinc-500">
                     No hay alertas de cobranzas
                 </div>
             )}

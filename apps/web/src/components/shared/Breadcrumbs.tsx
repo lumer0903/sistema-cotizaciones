@@ -22,103 +22,73 @@ interface RouteDef {
 }
 
 /**
- * Registro completo de rutas → migas de pan (admin + vendedor).
+ * Registro completo de rutas → migas de pan (unificado en /dashboard).
  * Ordenar implícitamente por especificidad en `matchRoute` (más segmentos fijos primero).
  */
 const ROUTES: RouteDef[] = [
-  // ── Admin ──────────────────────────────────────────────
-  { pattern: '/admin/dashboard', items: [{ label: 'Dashboard' }] },
-  { pattern: '/admin/inventario', items: [{ label: 'Inventario' }] },
-  { pattern: '/admin/precios', items: [{ label: 'Precio & Historial' }] },
-  { pattern: '/admin/reportes', items: [{ label: 'Reportes' }] },
-  { pattern: '/admin/usuarios', items: [{ label: 'Usuarios' }] },
-  { pattern: '/admin/configuracion', items: [{ label: 'Configuración' }] },
-  { pattern: '/admin/productos', items: [{ label: 'Productos' }] },
+  // ── Dashboard unificado ──────────────────────────────────────────────
+  { pattern: '/dashboard', items: [{ label: 'Dashboard' }] },
+  { pattern: '/inventario', items: [{ label: 'Inventario' }] },
+  { pattern: '/precios', items: [{ label: 'Precio & Historial' }] },
+  { pattern: '/reportes', items: [{ label: 'Reportes' }] },
+  { pattern: '/usuarios', items: [{ label: 'Usuarios' }] },
+  { pattern: '/configuracion', items: [{ label: 'Configuración' }] },
+  { pattern: '/productos', items: [{ label: 'Productos' }] },
   {
-    pattern: '/admin/productos/crear',
+    pattern: '/cotizaciones',
     items: [
-      { label: 'Productos', href: '/admin/productos' },
-      { label: 'Crear producto' },
-    ],
-  },
-  {
-    pattern: '/admin/cotizaciones',
-    items: [
-      { label: 'Cotizaciones', href: '/admin/cotizaciones' },
+      { label: 'Cotizaciones', href: '/cotizaciones' },
       { label: 'Mis Cotizaciones' },
     ],
   },
   {
-    pattern: '/admin/cotizaciones/crear',
+    pattern: '/cotizaciones/crear',
     items: [
-      { label: 'Cotizaciones', href: '/admin/cotizaciones' },
+      { label: 'Cotizaciones', href: '/cotizaciones' },
       { label: 'Crear Cotización' },
     ],
   },
   {
-    pattern: '/admin/cotizaciones/crear/resumen',
+    pattern: '/cotizaciones/crear/resumen',
     items: [
-      { label: 'Cotizaciones', href: '/admin/cotizaciones' },
-      { label: 'Crear Cotización', href: '/admin/cotizaciones/crear' },
+      { label: 'Cotizaciones', href: '/cotizaciones' },
+      { label: 'Crear Cotización', href: '/cotizaciones/crear' },
       { label: 'Resumen' },
     ],
   },
   {
-    pattern: '/admin/cotizaciones/editar/[id]',
+    pattern: '/cotizaciones/editar/[id]',
     items: [
-      { label: 'Cotizaciones', href: '/admin/cotizaciones' },
-      { label: 'Mis Cotizaciones', href: '/admin/cotizaciones' },
+      { label: 'Cotizaciones', href: '/cotizaciones' },
+      { label: 'Mis Cotizaciones', href: '/cotizaciones' },
     ],
     resolve: { resolver: 'cotizacion', fallback: 'Cotización' },
   },
   {
-    pattern: '/admin/cotizaciones/detalle/[id]',
+    pattern: '/cotizaciones/detalle/[id]',
     items: [
-      { label: 'Cotizaciones', href: '/admin/cotizaciones' },
-      { label: 'Mis Cotizaciones', href: '/admin/cotizaciones' },
+      { label: 'Cotizaciones', href: '/cotizaciones' },
+      { label: 'Mis Cotizaciones', href: '/cotizaciones' },
     ],
     resolve: { resolver: 'cotizacion', fallback: 'Cotización' },
   },
   {
-    pattern: '/admin/cotizaciones/pdf/[id]',
+    pattern: '/cotizaciones/pdf/[id]',
     items: [
-      { label: 'Cotizaciones', href: '/admin/cotizaciones' },
-      { label: 'Mis Cotizaciones', href: '/admin/cotizaciones' },
+      { label: 'Cotizaciones', href: '/cotizaciones' },
+      { label: 'Mis Cotizaciones', href: '/cotizaciones' },
     ],
     resolve: { resolver: 'cotizacion', fallback: 'Cotización' },
   },
-  { pattern: '/admin/cobranza', items: [{ label: 'Cobranza' }] },
+  { pattern: '/cobranza', items: [{ label: 'Cobranza' }] },
   {
-    pattern: '/admin/cobranza/[id]',
-    items: [{ label: 'Cobranza', href: '/admin/cobranza' }],
+    pattern: '/cobranza/[id]',
+    items: [{ label: 'Cobranza', href: '/cobranza' }],
     resolve: { resolver: 'cobranza', fallback: 'Cobranza' },
   },
 
-  // ── Vendedor ───────────────────────────────────────────
-  { pattern: '/vendedor/catalogo', items: [{ label: 'Catálogo' }] },
-  {
-    pattern: '/vendedor/cotizaciones',
-    items: [
-      { label: 'Cotizaciones', href: '/vendedor/cotizaciones' },
-      { label: 'Mis Cotizaciones' },
-    ],
-  },
-  {
-    pattern: '/vendedor/cotizaciones/crear',
-    items: [
-      { label: 'Cotizaciones', href: '/vendedor/cotizaciones' },
-      { label: 'Mis Cotizaciones', href: '/vendedor/cotizaciones' },
-      { label: 'Crear Cotización' },
-    ],
-  },
-  {
-    pattern: '/vendedor/cotizaciones/pdf/[id]',
-    items: [
-      { label: 'Cotizaciones', href: '/vendedor/cotizaciones' },
-      { label: 'Mis Cotizaciones', href: '/vendedor/cotizaciones' },
-    ],
-    resolve: { resolver: 'cotizacion', fallback: 'Cotización' },
-  },
+  // ── Vendedor (mantener como fallback, pero rutas principales son unificadas)
+  { pattern: '/catalogo', items: [{ label: 'Catálogo' }] },
 ];
 
 interface RouteMatch {
@@ -181,7 +151,7 @@ async function fetchDynamicLabel(resolver: Resolver, id: string): Promise<string
 
 interface BreadcrumbsProps {
   /** Color de la última miga cuando hay más de un nivel. */
-  accent?: 'amber' | 'brand';
+  accent?: 'amber' | 'brand' | 'vendedor';
 }
 
 // Tamaño decreciente por nivel: el módulo principal (índice 0) es el más grande
@@ -231,8 +201,10 @@ export function Breadcrumbs({ accent = 'amber' }: BreadcrumbsProps) {
     items.length > 1
       ? accent === 'brand'
         ? 'text-brand-ink'
-        : 'text-amber-700'
-      : 'text-neutral-700';
+        : accent === 'vendedor'
+          ? 'text-vendedor-primary'
+          : 'text-amber-700'
+      : 'text-zinc-700';
 
   const sizeFor = (index: number) =>
     LEVEL_SIZES[Math.min(index, LEVEL_SIZES.length - 1)];
@@ -252,21 +224,21 @@ export function Breadcrumbs({ accent = 'amber' }: BreadcrumbsProps) {
           <React.Fragment key={`${item.label}-${index}`}>
             {index > 0 && (
               <ChevronRight
-                className={`${separatorFor(index)} text-neutral-700 stroke-[2.5] shrink-0 ${index < items.length - 1 ? 'hidden sm:inline-flex' : ''}`}
-              />
+                className={`${separatorFor(index)} text-zinc-700 stroke-[2.5] shrink-0 ${index < items.length - 1 ? 'hidden sm:inline-flex' : ''}`}
+                />
             )}
 
             {href ? (
               <Link
                 href={href}
-                className={`text-neutral-700 ${size} font-extrabold font-sans hover:text-neutral-900 transition-colors ${ancestorClass}`}
+                className={`text-zinc-700 ${size} font-extrabold font-sans hover:text-zinc-900 transition-colors ${ancestorClass}`}
               >
                 {item.label}
               </Link>
             ) : (
               <span
                 className={`${size} font-extrabold font-sans ${
-                  isLast ? lastAccent : 'text-neutral-700'
+                  isLast ? lastAccent : 'text-zinc-700'
                 } ${isLast ? 'truncate min-w-0' : ancestorClass}`}
               >
                 {item.label}

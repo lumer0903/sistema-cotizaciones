@@ -16,24 +16,10 @@ import {
   permisosEfectivos,
   overridesDiferentes,
   tieneOverrides,
+  MODULO_LABELS,
   MapaPermisos,
   OverridesPermisos,
 } from '@goldcontinent/shared/auth';
-
-const MODULO_LABELS: Record<PermisoModulo, string> = {
-  dashboard: 'Dashboard',
-  productos: 'Productos',
-  importacion: 'Importación',
-  consulta_precios: 'Consulta de precios',
-  cotizaciones: 'Cotizaciones',
-  recomendaciones: 'Recomendaciones',
-  pdf: 'PDF',
-  usuarios: 'Usuarios',
-  cobranza: 'Cobranza',
-  ventas: 'Ventas',
-  reportes: 'Reportes',
-  configuracion: 'Configuración',
-};
 
 const NIVEL_OPTIONS = [
   { label: 'Sin acceso', value: NivelPermiso.sin_acceso },
@@ -132,7 +118,7 @@ export function PermisosModal({ open, onClose, onSuccess, usuario }: PermisosMod
       {loading || !efectivos ? (
         <div className="space-y-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-12 animate-pulse bg-gray-100 rounded-lg" />
+            <div key={i} className="h-12 animate-pulse bg-zinc-100 rounded-lg" />
           ))}
         </div>
       ) : (
@@ -147,13 +133,13 @@ export function PermisosModal({ open, onClose, onSuccess, usuario }: PermisosMod
             </Button>
           </div>
 
-          <div className="border border-gray-100 rounded-xl overflow-hidden divide-y divide-gray-100">
+          <div className="border border-zinc-100 rounded-xl overflow-hidden divide-y divide-zinc-100">
             {MODULOS.map((modulo) => (
               <div
                 key={modulo}
                 className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-3 hover:bg-brand-soft/50"
               >
-                <span className="text-sm font-medium text-gray-800">
+                <span className="text-sm font-medium text-zinc-800">
                   {MODULO_LABELS[modulo]}
                 </span>
                 <Select
@@ -168,7 +154,7 @@ export function PermisosModal({ open, onClose, onSuccess, usuario }: PermisosMod
             ))}
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2 border-t border-gray-100">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2 border-t border-zinc-100">
             <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
               Cancelar
             </Button>

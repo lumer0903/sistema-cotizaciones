@@ -380,10 +380,35 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  *   y solo llama a `export-pdf` cuando el estado es 'listo'.
  * - Se agota el polling o error → lanza Error (el caller muestra el toast).
  */
+/**
+ * Validates that the user has permission to access the PDF for this cotization.
+ * Performs IDOR check by fetching the cotization and verifying ownership.
+ * Returns true if access is allowed, throws Error if not.
+ */
+function validarAccesoPDF(id: number | string, idUsuario: number): Promise<void> {
+  return fetchConTimeout(
+    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/cotizaciones/${id}`,
+    { credentials: 'include' },
+    5000,
+  ).then(async res => {
+    const cotizacion = await res.json();
+    if (cotizacion.vendedor?.id_usuario !== idUsuario && res.headers.get('x-rol') !== 'admin') {
+      throw new Error('No tiene permisos para acceder a este PDF');
+    }
+  });
+}
+
+/** Obtiene el blob del PDF de una cotización con polling y validación de permisos */
 export async function getCotizacionPdfBlob(
   id: number | string,
   onProgress?: (progress: PdfExportProgress) => void,
+  idUsuario?: number,
 ): Promise<Blob> {
+  // IDOR: Validar permisos si se proporciona idUsuario
+  if (idUsuario) {
+    await validarAccesoPDF(id, idUsuario);
+  }
+  
   const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
   const token = getTokenForPdf();
   const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
@@ -430,8 +455,8 @@ export async function getCotizacionPdfBlob(
 }
 
 /** URL de objeto para vista previa del PDF (revocar al cerrar) */
-export async function getCotizacionPdfObjectUrl(id: number | string): Promise<string> {
-  const blob = await getCotizacionPdfBlob(id);
+export async function getCotizacionPdfObjectUrl(id: number | string, idUsuario?: number): Promise<string> {
+  const blob = await getCotizacionPdfBlob(id, undefined, idUsuario);
   return URL.createObjectURL(blob);
 }
 
@@ -440,8 +465,9 @@ export async function exportarPdfCotizacionConPolling(
   id: number | string,
   filename?: string,
   onProgress?: (progress: PdfExportProgress) => void,
+  idUsuario?: number,
 ): Promise<void> {
-  const blob = await getCotizacionPdfBlob(id, onProgress);
+  const blob = await getCotizacionPdfBlob(id, onProgress, idUsuario);
   downloadPdfBlob(blob, filename || `COT-${id}.pdf`);
 }
 

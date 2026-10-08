@@ -12,7 +12,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { showToast } from '@/lib/toast';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useCrearCotizacionStore } from '@/features/cotizaciones/store/useCrearCotizacionStore';
 
 import {
@@ -63,8 +63,7 @@ interface CotizacionFormularioProps {
 
 export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
   const router = useRouter();
-  const pathname = usePathname() || '';
-  const base = pathname.startsWith('/vendedor') ? '/vendedor/cotizaciones' : '/admin/cotizaciones';
+  const base = '/cotizaciones';
 
   const esNueva =
     modo === 'crear' &&
@@ -446,9 +445,9 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
       <div className="flex flex-wrap justify-between items-center w-full gap-2 px-1">
         <div className="flex items-center gap-2.5 min-w-0">
           <FileText className="w-5 h-5 text-brand-ink" aria-hidden="true" />
-          <span className="text-xl font-black text-zinc-700 tracking-tight truncate">
+          <h1 className="text-xl font-black text-zinc-700 tracking-tight truncate">
             {numeroCotizacion}
-          </span>
+          </h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -616,10 +615,10 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
                         <div
                           key={prod.id || prod.codigo || index}
                           onClick={() => handleSeleccionarProducto(prod)}
-                          className="group p-3 hover:bg-gray-50 cursor-pointer transition-colors flex items-center justify-between gap-3"
+                          className="group p-3 hover:bg-zinc-50 cursor-pointer transition-colors flex items-center justify-between gap-3"
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <span className="font-bold text-xs bg-stone-100 px-2 py-1 rounded text-zinc-700 border border-stone-200 uppercase shrink-0">
+                            <span className="font-bold text-xs bg-surface-muted px-2 py-1 rounded text-zinc-700 border border-stone-200 uppercase shrink-0">
                               {String(prod.codigo).toUpperCase()}
                             </span>
                             <div className="min-w-0">
@@ -654,7 +653,7 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
             {items.length === 0 ? (
               <div
                 onClick={() => searchInputRef.current?.focus()}
-                className="h-44 border-2 border-dashed border-zinc-200 rounded-xl flex flex-col justify-center items-center gap-2 cursor-pointer hover:bg-stone-50/80 transition-colors"
+                className="h-44 border-2 border-dashed border-zinc-200 rounded-xl flex flex-col justify-center items-center gap-2 cursor-pointer hover:bg-surface-muted/80 transition-colors"
               >
                 <ShoppingCart className="size-8 text-zinc-300" />
                 <span className="text-zinc-500 font-medium text-xs">

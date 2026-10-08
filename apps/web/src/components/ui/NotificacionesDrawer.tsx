@@ -118,7 +118,7 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
     
     // Navegación
     if (item.type === 'STOCK_BAJO') {
-      router.push('/admin/inventario');
+      router.push('/inventario');
       onClose();
     }
     // Añadir navegación para otras categorías
@@ -161,11 +161,11 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
         role="dialog"
         aria-modal="true"
         aria-label="Notificaciones"
-        className={`absolute right-4 sm:right-8 top-16 w-[90vw] sm:w-[420px] max-h-[calc(100dvh-5rem)] bg-white shadow-2xl rounded-2xl border border-gray-100 transition-all duration-200 flex flex-col ${open ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-4 opacity-0 scale-95 origin-top-right'}`}
+        className={`absolute right-4 sm:right-8 top-16 w-[90vw] sm:w-[420px] max-h-[calc(100dvh-5rem)] bg-white shadow-2xl rounded-2xl border border-zinc-100 transition-all duration-200 flex flex-col ${open ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-4 opacity-0 scale-95 origin-top-right'}`}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-5 pb-2 shrink-0">
-          <h2 className="text-xl font-bold text-gray-900">Notificaciones</h2>
+          <h2 className="text-xl font-bold text-zinc-900">Notificaciones</h2>
           <button
             onClick={onClose}
             aria-label="Cerrar notificaciones"
@@ -176,7 +176,7 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
         </div>
 
         {/* Tabs */}
-        <div className="px-5 py-2 border-b border-gray-100 flex items-center gap-2 overflow-x-auto scrollbar-hide shrink-0">
+        <div className="px-5 py-2 border-b border-zinc-100 flex items-center gap-2 overflow-x-auto scrollbar-hide shrink-0">
           {(['todas', 'inventario', 'cobranzas'] as TabType[]).map((tab) => {
             const count = tab === 'todas' 
               ? notifications.length 
@@ -192,12 +192,12 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
                 onClick={() => setActiveTab(tab)}
                 aria-pressed={active}
                 className={`min-h-11 px-3 inline-flex items-center gap-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-                  active ? 'text-brand-ink bg-brand-soft' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  active ? 'text-brand-ink bg-brand-soft' : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50'
                 }`}
               >
                 {label}
                 <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                  active ? 'bg-brand-primary text-on-brand' : 'bg-gray-100 text-gray-600'
+                  active ? 'bg-brand-primary text-on-brand' : 'bg-zinc-100 text-zinc-600'
                 }`}>
                   {count}
                 </span>
@@ -209,12 +209,12 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
         {/* Lista */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white rounded-b-2xl">
           {loading ? (
-            <div className="flex flex-col items-center justify-center h-40 text-gray-500">
+            <div className="flex flex-col items-center justify-center h-40 text-zinc-500">
               <Loader2 className="w-6 h-6 animate-spin mb-2" />
               <span className="text-sm">Cargando...</span>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 text-gray-500">
+            <div className="flex flex-col items-center justify-center h-40 text-zinc-500">
               <span className="text-sm">No hay notificaciones</span>
             </div>
           ) : (
@@ -226,21 +226,21 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
                   onClick={() => handleCardClick(item)}
                   className={`relative p-4 rounded-xl cursor-pointer transition-all border ${
                     isUnread
-                      ? 'bg-[#FFFDF9] border-brand-primary/30 shadow-sm hover:bg-brand-soft'
-                      : 'bg-white border-gray-100 hover:bg-gray-50'
+                      ? 'bg-brand-soft/40 border-brand-primary/30 shadow-sm hover:bg-brand-soft'
+                      : 'bg-white border-zinc-100 hover:bg-zinc-50'
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-gray-50 text-gray-500 border border-gray-100 shrink-0">
+                    <div className="p-2 rounded-lg bg-zinc-50 text-zinc-500 border border-zinc-100 shrink-0">
                       {renderIcon(item.type)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <h3 className={`text-sm font-semibold truncate ${isUnread ? 'text-gray-900' : 'text-gray-600'}`}>
+                        <h3 className={`text-sm font-semibold truncate ${isUnread ? 'text-zinc-900' : 'text-zinc-600'}`}>
                           {item.title}
                         </h3>
                         <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                          <span className="text-xs font-medium text-gray-500 whitespace-nowrap">
+                          <span className="text-xs font-medium text-zinc-500 whitespace-nowrap">
                             {getRelativeTime(item.createdAt)}
                           </span>
                           {isUnread && (
@@ -248,7 +248,7 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
                           )}
                         </div>
                       </div>
-                      <div className={`text-xs text-gray-500 leading-snug ${isUnread ? '' : 'opacity-80'}`}>
+                      <div className={`text-xs text-zinc-500 leading-snug ${isUnread ? '' : 'opacity-80'}`}>
                         {renderBody(item)}
                       </div>
                     </div>

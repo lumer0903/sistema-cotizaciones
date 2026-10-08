@@ -46,7 +46,7 @@ export function StatCard({ label, value, icon: Icon, tone = 'brand', href, class
   );
 
   const baseClass = cn(
-    'bg-white rounded-xl border border-gray-200 p-4 sm:p-6 flex items-center justify-between gap-3',
+    'bg-white rounded-xl border border-zinc-200 p-4 sm:p-6 flex items-center justify-between gap-3',
     'transition-all duration-200 hover:shadow-md hover:border-brand-primary/50',
     href && 'cursor-pointer',
     className
@@ -66,13 +66,13 @@ export function StatCard({ label, value, icon: Icon, tone = 'brand', href, class
 /** Skeleton de carga para StatCard. */
 export function StatCardSkeleton() {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 animate-pulse">
+    <div className="bg-white rounded-xl border border-zinc-200 p-4 sm:p-6 animate-pulse">
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1">
-          <div className="h-4 w-24 bg-gray-200 rounded mb-2" />
-          <div className="h-8 w-16 bg-gray-200 rounded" />
+          <div className="h-4 w-24 bg-zinc-200 rounded mb-2" />
+          <div className="h-8 w-16 bg-zinc-200 rounded" />
         </div>
-        <div className="h-12 w-12 bg-gray-200 rounded-xl" />
+        <div className="h-12 w-12 bg-zinc-200 rounded-xl" />
       </div>
     </div>
   );

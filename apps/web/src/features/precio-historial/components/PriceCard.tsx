@@ -3,6 +3,7 @@ import { History } from 'lucide-react';
 import { ProductoConsulta } from '../types/precio';
 import { handleImageError } from '@/lib/imageUtils';
 import { formatPrice, formatCode, obtenerPreciosEstandarizados } from '@/lib/formatters';
+import { Button } from '@/components/ui';
 
 interface PriceCardProps {
     producto: ProductoConsulta;
@@ -16,7 +17,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
     const { tienda, distribuidor } = obtenerPreciosEstandarizados(producto);
 
     return (
-        <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
+        <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-100 p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
             {/* Imagen & Botón Historial */}
             <div className="w-full h-28 bg-brand-primary/10 rounded-xl relative flex items-center justify-center overflow-hidden">
                 {producto.imagenUrl ? (
@@ -32,15 +33,18 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
                     <div className="text-brand-ink/50 font-bold text-xs uppercase tracking-wider">Sin imagen</div>
                 )}
 
-                <button
-                    type="button"
-                    onClick={() => onVerHistorial?.(producto.id)}
-                    title="Ver historial de precios"
-                    aria-label={`Ver historial de precios de ${producto.codigo}`}
-                    className="absolute top-1 right-1 min-h-11 min-w-11 inline-flex items-center justify-center text-brand-ink hover:text-brand-ink transition-colors z-10"
-                >
-                    <History className="size-5" />
-                </button>
+                {/* Historial de variaciones: sólo admin/gerente (no se pasa la callback). */}
+                {onVerHistorial && (
+                    <Button
+                        variant="ghost"
+                        onClick={() => onVerHistorial(producto.id)}
+                        title="Ver historial de precios"
+                        aria-label={`Ver historial de precios de ${producto.codigo}`}
+                        className="absolute top-1 right-1 min-h-11 min-w-11 p-0 text-brand-ink hover:text-brand-ink hover:bg-transparent z-10"
+                    >
+                        <History className="size-5" />
+                    </Button>
+                )}
             </div>
 
             {/* Cabecera del producto */}
@@ -75,19 +79,19 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
                     </span>
                     <div className="w-full grid grid-cols-3 gap-x-1 text-center">
                         <div className="flex flex-col items-center">
-                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Unidad</span>
+                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Unidad</span>
                             <span className="text-distribuidor text-xs font-black">
                                 {formatPrice(distribuidor.unidad)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Docena</span>
+                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Docena</span>
                             <span className="text-distribuidor text-xs font-black">
                                 {formatPrice(distribuidor.docena)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Mayor</span>
+                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Mayor</span>
                             <span className="text-distribuidor text-xs font-black">
                                 {formatPrice(distribuidor.mayor)}
                             </span>
@@ -104,19 +108,19 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
                     </span>
                     <div className="w-full grid grid-cols-3 gap-x-1 text-center">
                         <div className="flex flex-col items-center">
-                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Unidad</span>
+                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Unidad</span>
                             <span className="text-tienda text-xs font-black">
                                 {formatPrice(tienda.unidad)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Docena</span>
+                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Docena</span>
                             <span className="text-tienda text-xs font-black">
                                 {formatPrice(tienda.docena)}
                             </span>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Mayor</span>
+                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Mayor</span>
                             <span className="text-tienda text-xs font-black">
                                 {formatPrice(tienda.mayor)}
                             </span>

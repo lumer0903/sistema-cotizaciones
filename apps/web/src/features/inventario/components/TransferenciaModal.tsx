@@ -251,7 +251,7 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                                         <button
                                             key={p.id_producto}
                                             type="button"
-                                            className="w-full text-left px-4 py-2.5 hover:bg-stone-50 transition-colors flex items-center justify-between border-b last:border-b-0 border-stone-100"
+                                            className="w-full text-left px-4 py-2.5 hover:bg-surface-muted transition-colors flex items-center justify-between border-b last:border-b-0 border-stone-100"
                                             onClick={() => handleSelectProducto(p)}
                                         >
                                             <div>
@@ -262,7 +262,7 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                                                     {p.descripcion}
                                                 </span>
                                             </div>
-                                            <span className="text-xs bg-stone-100 px-2 py-0.5 rounded font-medium text-stone-600">
+                                            <span className="text-xs bg-surface-muted px-2 py-0.5 rounded font-medium text-stone-600">
                                                 Stock: {stockTotal} u.
                                             </span>
                                         </button>
@@ -286,6 +286,7 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                         {...register('id_almacen_origen', {
                             setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
                         })}
+                        value={watch('id_almacen_origen') ?? ''}
                         variant="modal"
                     >
                         <option value="">Seleccionar</option>
@@ -314,6 +315,7 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                         {...register('id_almacen_destino', {
                             setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
                         })}
+                        value={watch('id_almacen_destino') ?? ''}
                         variant="modal"
                     >
                         <option value="">Seleccionar</option>
@@ -363,7 +365,7 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                     </p>
                 )}
 
-                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-zinc-100">
                     <Button type="button" variant="ghost" onClick={handleLimpiar} disabled={isSubmitting}>
                         Limpiar
                     </Button>

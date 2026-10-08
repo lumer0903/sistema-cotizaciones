@@ -60,12 +60,15 @@ function clearSessionAndRedirect(): void {
 async function parseError(response: Response): Promise<Error> {
   try {
     const errorData = await response.clone().json();
-    const message = Array.isArray(errorData.message)
-      ? errorData.message.join(', ')
-      : errorData.message || errorData.error || response.statusText;
+    // SEGURIDAD: Sanitizar mensaje de error - nunca exponer stack traces internos
+    let message = errorData.message || errorData.error || response.statusText;
+    // Remover posibles rutas de archivo internas del stack trace
+    message = message.replace(/at\s+\w+\s+[\w$<>]+\([^)]*\)/g, 'at internal function');
+    message = message.replace(/^\s+at\s+/m, '');
+    message = message.substring(0, 200); // Limitar longitud
     return new Error(message || 'API Error');
   } catch {
-    return new Error(response.statusText || 'API Error');
+    return new Error('API Error');
   }
 }
 

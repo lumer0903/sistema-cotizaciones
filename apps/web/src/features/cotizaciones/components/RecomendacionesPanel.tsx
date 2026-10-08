@@ -65,7 +65,7 @@ export const TIPO_CONFIG = {
         icon: Zap,
         badgeBg: 'bg-blue-600',
         activeTabBg: 'bg-blue-600 text-white shadow-sm',
-        inactiveTabBg: 'bg-gray-100 text-zinc-600 hover:bg-gray-200',
+        inactiveTabBg: 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',
         containerBg: 'bg-blue-50/30',
         borderColor: 'border-blue-200',
         textColor: 'text-blue-800',
@@ -76,7 +76,7 @@ export const TIPO_CONFIG = {
         icon: Scale,
         badgeBg: 'bg-emerald-600',
         activeTabBg: 'bg-emerald-600 text-white shadow-sm',
-        inactiveTabBg: 'bg-gray-100 text-zinc-600 hover:bg-gray-200',
+        inactiveTabBg: 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',
         containerBg: 'bg-emerald-50/30',
         borderColor: 'border-emerald-200',
         textColor: 'text-emerald-700',
@@ -87,7 +87,7 @@ export const TIPO_CONFIG = {
         icon: TrendingUp,
         badgeBg: 'bg-amber-500',
         activeTabBg: 'bg-amber-500 text-white shadow-sm',
-        inactiveTabBg: 'bg-gray-100 text-zinc-600 hover:bg-gray-200',
+        inactiveTabBg: 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',
         containerBg: 'bg-amber-50/30',
         borderColor: 'border-amber-200',
         textColor: 'text-amber-600',
@@ -273,9 +273,9 @@ export function RecomendacionesPanel({
     const activeConfig = TIPO_CONFIG[activeTab];
 
     return (
-        <div className="w-full max-w-sm bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden transition-all duration-300 font-sans">
+        <div className="w-full max-w-sm bg-white rounded-xl shadow-md border border-zinc-100 overflow-hidden transition-all duration-300 font-sans">
             {/* CABECERA PRINCIPAL */}
-            <div className={`p-4 flex items-center justify-between ${!isMinimized ? 'border-b border-gray-100' : ''}`}>
+            <div className={`p-4 flex items-center justify-between ${!isMinimized ? 'border-b border-zinc-100' : ''}`}>
                 <div className="flex items-center gap-2">
                     <div className="p-1.5 bg-amber-500/10 rounded-lg">
                         <Sparkles className="w-5 h-5 text-amber-500" />
@@ -293,10 +293,10 @@ export function RecomendacionesPanel({
                 </div>
 
                 {/* BOTÓN MINIMIZAR / MAXIMIZAR (Igual al panel RESUMEN) */}
-                <button
-                    type="button"
+                <Button
+                    variant="ghost"
                     onClick={() => setIsMinimized(!isMinimized)}
-                    className="min-h-11 min-w-11 -mr-2 inline-flex items-center justify-center hover:bg-gray-100 rounded-md transition-colors text-amber-700"
+                    className="min-h-11 min-w-11 -mr-2 p-0 text-amber-700 hover:bg-zinc-100"
                     title={isMinimized ? 'Expandir' : 'Minimizar'}
                     aria-label={isMinimized ? 'Expandir recomendaciones' : 'Minimizar recomendaciones'}
                     aria-expanded={!isMinimized}
@@ -306,14 +306,14 @@ export function RecomendacionesPanel({
                     ) : (
                         <Minus className="w-5 h-5 stroke-[2.5]" />
                     )}
-                </button>
+                </Button>
             </div>
 
             {/* CONTENIDO PRINCIPAL */}
             {!isMinimized && (
                 <>
                     {/* NAVEGACIÓN POR TABS */}
-                    <div className="p-2 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between gap-1">
+                    <div className="p-2 bg-zinc-50/50 border-b border-zinc-100 flex items-center justify-between gap-1">
                         {tipos.map((tipo) => {
                             const cfg = TIPO_CONFIG[tipo];
                             const isActive = activeTab === tipo;
@@ -331,7 +331,7 @@ export function RecomendacionesPanel({
                                     <span>{cfg.label}</span>
                                     {count > 0 && (
                                         <span
-                                            className={`px-1 py-0.2 text-xs rounded-full ${isActive ? 'bg-white/30 text-white' : 'bg-gray-200 text-zinc-700'
+                                            className={`px-1 py-0.2 text-xs rounded-full ${isActive ? 'bg-white/30 text-white' : 'bg-zinc-200 text-zinc-700'
                                                 }`}
                                         >
                                             {count}
@@ -396,7 +396,7 @@ export function RecomendacionesPanel({
                             </div>
                         )}
 
-                        <p className="text-xs text-zinc-500 text-right pt-1 border-t border-gray-100">
+                        <p className="text-xs text-zinc-500 text-right pt-1 border-t border-zinc-100">
                             Precios según: <strong>{tipoPrecioCliente}</strong>
                         </p>
                     </div>
@@ -430,7 +430,7 @@ export function RecomendacionCardSection({
     const empaque = item.unidades_por_caja ?? catalogoItem?.unidades_por_caja ?? catalogoItem?.presentacion ?? null;
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200/80 p-2.5 shadow-sm space-y-2.5">
+        <div className="bg-white rounded-lg border border-zinc-200/80 p-2.5 shadow-sm space-y-2.5">
             {/* DETALLES DE PRODUCTO */}
             <div className="flex gap-2.5 items-start">
                 {/* IMAGEN (64×64 con placeholder elegante por categoría) */}
@@ -468,8 +468,8 @@ export function RecomendacionCardSection({
 
                     <div className="flex flex-wrap items-center gap-1 text-xs pt-0.5 font-sans">
                         {ubicacion && (
-                            <span className="px-1.5 py-0.5 bg-neutral-100 text-neutral-700 border border-neutral-200/80 rounded font-semibold flex items-center gap-1">
-                                <Archive className="w-3 h-3 text-neutral-500" aria-hidden="true" />
+                            <span className="px-1.5 py-0.5 bg-zinc-100 text-zinc-700 border border-zinc-200/80 rounded font-semibold flex items-center gap-1">
+                                <Archive className="w-3 h-3 text-zinc-500" aria-hidden="true" />
                                 {ubicacion}
                             </span>
                         )}
@@ -490,24 +490,26 @@ export function RecomendacionCardSection({
             </div>
 
             {/* ACCIONES */}
-            <div className="flex items-center justify-end gap-2 pt-1 border-t border-gray-100">
-                <button
-                    type="button"
+            <div className="flex items-center justify-end gap-2 pt-1 border-t border-zinc-100">
+                <Button
+                    variant="outline"
+                    size="sm"
                     onClick={onAgregar}
-                    className="min-h-9 px-3 py-2 text-xs font-semibold font-sans text-zinc-600 hover:text-zinc-900 border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors uppercase tracking-wider inline-flex items-center gap-1.5"
+                    className="text-xs uppercase tracking-wider"
                 >
                     <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                     AGREGAR
-                </button>
+                </Button>
 
                 {showReemplazar && (
-                    <button
-                        type="button"
+                    <Button
+                        variant="outline"
+                        size="sm"
                         onClick={onReemplazar}
-                        className="min-h-9 px-3 py-2 text-xs font-semibold font-sans text-amber-700 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-300/70 rounded-lg transition-colors uppercase tracking-wider inline-flex items-center gap-1.5"
+                        className="text-xs uppercase tracking-wider text-amber-700 bg-amber-500/10 hover:bg-amber-500/20 border-amber-300/70"
                     >
                         REEMPLAZAR
-                    </button>
+                    </Button>
                 )}
             </div>
         </div>

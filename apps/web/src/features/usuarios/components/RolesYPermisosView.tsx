@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Shield, Users, Lock } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import {
   GRUPOS_MODULOS,
   GRUPO_LABELS,
+  MODULO_LABELS,
   PermisoModulo,
   NivelPermiso,
   esMatrizBloqueada,
@@ -26,21 +27,6 @@ const NIVELES: { value: NivelPermiso; label: string }[] = [
   { value: 'lectura', label: 'Solo Lectura' },
   { value: 'edicion', label: 'Edición' },
 ];
-
-const MODULO_LABELS: Record<PermisoModulo, string> = {
-  dashboard: 'Dashboard',
-  productos: 'Productos',
-  importacion: 'Importación',
-  consulta_precios: 'Consulta de Precios',
-  cotizaciones: 'Cotizaciones',
-  recomendaciones: 'Recomendaciones',
-  pdf: 'Generación PDF',
-  usuarios: 'Usuarios',
-  cobranza: 'Cobranza',
-  ventas: 'Ventas',
-  reportes: 'Reportes',
-  configuracion: 'Configuración',
-};
 
 function slugify(value: string): string {
   return value
@@ -118,10 +104,10 @@ function NuevoRolModal({ open, onClose, onCreated }: NuevoRolModalProps) {
             setCodigo(e.target.value);
           }}
         />
-        <p className="text-xs text-gray-500 -mt-2">
+        <p className="text-xs text-zinc-500 -mt-2">
           Se usa en JWT y permisos. Minúsculas, números y guion bajo.
         </p>
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2 border-t border-gray-100">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2 border-t border-zinc-100">
           <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
@@ -200,20 +186,87 @@ export function RolesYPermisosView() {
     };
   }, [selectedId]);
 
+  /** Completa el mapa con 'sin_acceso' en los módulos sin nivel asignado,
+   *  para que el PUT sustituya la fila completa en la base de datos. */
+  const completar = useCallback(
+    (mapa: Partial<Record<PermisoModulo, NivelPermiso>>) => {
+      const completo: Partial<Record<PermisoModulo, NivelPermiso>> = { ...mapa };
+      for (const m of Object.values(PermisoModulo)) {
+        if (!completo[m]) completo[m] = 'sin_acceso';
+      }
+      return completo;
+    },
+    [],
+  );
+
+  /** Escribe el mapa de permisos del rol en el backend (PUT /roles/:id/permisos). */
+  const persistir = useCallback(
+    async (rolId: number, mapa: Partial<Record<PermisoModulo, NivelPermiso>>) => {
+      await setRolPermisos(rolId, completar(mapa));
+    },
+    [completar],
+  );
+
+  // Auto-guardado: al alterar cualquier checkbox se agenda un PUT (debounce).
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendienteRef = useRef<{ rolId: number; mapa: Partial<Record<PermisoModulo, NivelPermiso>> } | null>(null);
+
+  const cancelarTimer = useCallback(() => {
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = null;
+    }
+  }, []);
+
+  /** Vuelca inmediatamente cualquier guardado pendiente (p.ej. al cambiar de rol
+   *  o al pulsar "Guardar Cambios") para no perder lo editado. */
+  const flushPendiente = useCallback(() => {
+    const pendiente = pendienteRef.current;
+    cancelarTimer();
+    if (!pendiente) return;
+    pendienteRef.current = null;
+    persistir(pendiente.rolId, pendiente.mapa)
+      .then(() => showToast.success('Permisos guardados'))
+      .catch((error) => {
+        showToast.error(
+          error instanceof Error ? error.message : 'No se pudieron guardar los permisos',
+        );
+      });
+  }, [persistir, cancelarTimer]);
+
+  useEffect(() => flushPendiente, [flushPendiente]);
+
   const setNivel = (modulo: PermisoModulo, nivel: NivelPermiso) => {
-    if (bloqueado) return;
-    setPermisos((prev) => ({ ...prev, [modulo]: nivel }));
+    if (bloqueado || !selected) return;
+    const siguiente: Partial<Record<PermisoModulo, NivelPermiso>> = { ...permisos, [modulo]: nivel };
+    const rolId = selected.id_rol;
+    setPermisos(siguiente);
+
+    if (pendienteRef.current && pendienteRef.current.rolId !== rolId) {
+      flushPendiente(); // hay cambios sin guardar de OTRO rol → volcarlos ya
+    } else {
+      cancelarTimer(); // mismo rol: el mapa pendiente se reemplaza por el nuevo
+    }
+    pendienteRef.current = { rolId, mapa: siguiente };
+
+    // Debounce: agrupa los clics rápidos en una sola petición
+    autoSaveTimer.current = setTimeout(() => {
+      autoSaveTimer.current = null;
+      flushPendiente();
+    }, 900);
   };
 
   const guardar = async () => {
     if (!selected || bloqueado) return;
-    const completo: Partial<Record<PermisoModulo, NivelPermiso>> = { ...permisos };
-    for (const m of Object.values(PermisoModulo)) {
-      if (!completo[m]) completo[m] = 'sin_acceso';
+    if (pendienteRef.current && pendienteRef.current.rolId !== selected.id_rol) {
+      flushPendiente();
+    } else {
+      cancelarTimer();
+      pendienteRef.current = null;
     }
     try {
       setSaving(true);
-      await setRolPermisos(selected.id_rol, completo);
+      await persistir(selected.id_rol, permisos);
       showToast.success('Permisos guardados correctamente');
     } catch (error) {
       showToast.error(error instanceof Error ? error.message : 'No se pudieron guardar los permisos');
@@ -225,26 +278,26 @@ export function RolesYPermisosView() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
       <aside className="lg:col-span-4 xl:col-span-3">
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-3">
+        <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
+          <div className="p-4 border-b border-zinc-100 flex items-center justify-between gap-3">
             <div>
-              <h2 className="font-semibold text-gray-900">Roles</h2>
-              <p className="text-xs text-gray-500">{roles.length} definidos</p>
+              <h2 className="font-semibold text-zinc-900">Roles</h2>
+              <p className="text-xs text-zinc-500">{roles.length} definidos</p>
             </div>
             <Button type="button" variant="primary" size="sm" onClick={() => setNuevoOpen(true)}>
               <Plus className="h-4 w-4 mr-1" />
               Agregar Rol
             </Button>
           </div>
-          <ul className="max-h-[480px] overflow-y-auto divide-y divide-gray-100">
+          <ul className="max-h-[480px] overflow-y-auto divide-y divide-zinc-100">
             {loading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <li key={i} className="p-4">
-                  <div className="h-5 bg-gray-100 rounded animate-pulse" />
+                  <div className="h-5 bg-zinc-100 rounded animate-pulse" />
                 </li>
               ))
             ) : roles.length === 0 ? (
-              <li className="p-6 text-center text-sm text-gray-500">No hay roles</li>
+              <li className="p-6 text-center text-sm text-zinc-500">No hay roles</li>
             ) : (
               roles.map((rol) => {
                 const active = rol.id_rol === selectedId;
@@ -256,29 +309,29 @@ export function RolesYPermisosView() {
                       className={`w-full text-left px-4 py-3 flex items-start gap-3 transition-colors ${
                         active
                           ? 'bg-brand-soft border-l-4 border-brand-primary'
-                          : 'border-l-4 border-transparent hover:bg-gray-50'
+                          : 'border-l-4 border-transparent hover:bg-zinc-50'
                       }`}
                     >
                       <span
                         className={`mt-0.5 p-1.5 rounded-lg ${
-                          active ? 'bg-brand-primary text-on-brand' : 'bg-gray-100 text-gray-500'
+                          active ? 'bg-brand-primary text-on-brand' : 'bg-zinc-100 text-zinc-500'
                         }`}
                       >
                         <Shield className="h-4 w-4" />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
-                          <span className="font-medium text-gray-900 truncate">{rol.nombre}</span>
+                          <span className="font-medium text-zinc-900 truncate">{rol.nombre}</span>
                           {rol.es_sistema && (
-                            <span className="text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                            <span className="text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600">
                               Sistema
                             </span>
                           )}
                         </span>
-                        <span className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                        <span className="flex items-center gap-2 text-xs text-zinc-500 mt-0.5">
                           <Users className="h-3 w-3" />
                           {rol.total_usuarios ?? 0} usuarios
-                          <span className="text-gray-300">·</span>
+                          <span className="text-zinc-300">·</span>
                           <code className="text-xs">{rol.codigo}</code>
                         </span>
                       </span>
@@ -292,116 +345,118 @@ export function RolesYPermisosView() {
       </aside>
 
       <section className="lg:col-span-8 xl:col-span-9">
-        <div className="bg-white rounded-2xl border border-gray-200">
-          <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+        <div className="bg-white rounded-2xl border border-zinc-200">
+          {/* CABECERA ÚNICA: título + selector de grupo + guardar
+              (antes eran dos barras con border-b apiladas) */}
+          <div className="p-4 border-b border-zinc-100 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              <h2 className="font-semibold text-zinc-900 flex items-center gap-2 flex-wrap">
                 Matriz de permisos
                 {selected && (
                   <>
-                    <span className="text-gray-300">·</span>
+                    <span className="text-zinc-300">·</span>
                     <span className="text-brand-ink">{selected.nombre}</span>
                   </>
                 )}
                 {bloqueado && (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold uppercase px-2 py-0.5 rounded bg-gray-100 text-gray-600">
+                  <span className="inline-flex items-center gap-1 text-xs font-bold uppercase px-2 py-0.5 rounded bg-zinc-100 text-zinc-600">
                     <Lock className="h-3 w-3" />
                     Bloqueado
                   </span>
                 )}
               </h2>
-              <p className="text-sm text-gray-500">
-                {bloqueado
-                  ? 'El rol Administrador mantiene Edición en todos los módulos por seguridad.'
-                  : 'Selecciona el nivel de acceso por módulo.'}
-              </p>
+              {bloqueado && (
+                <p className="text-sm text-zinc-500 mt-1">
+                  El rol Administrador mantiene Edición en todos los módulos por seguridad.
+                </p>
+              )}
             </div>
-            {!bloqueado && (
-              <Button type="button" variant="primary" loading={saving} onClick={guardar} disabled={!selected || loadingPermisos}>
-                Guardar Cambios
-              </Button>
-            )}
-          </div>
-
-          <div className="border-b border-gray-200 overflow-x-auto">
-            <nav className="flex -mb-px" aria-label="Grupos de módulos">
-              {(Object.keys(GRUPOS_MODULOS) as Array<keyof typeof GRUPOS_MODULOS>).map((g) => (
-                <button
-                  key={g}
-                  type="button"
-                  onClick={() => setGrupo(g)}
-                  className={`px-6 py-3 text-sm border-b-2 transition-colors whitespace-nowrap ${
-                    grupo === g
-                      ? 'border-[#F8B602] text-brand-ink font-bold'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium'
-                  }`}
-                >
-                  {GRUPO_LABELS[g]}
-                </button>
-              ))}
-            </nav>
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Selector de grupo segmentado */}
+              <div
+                className="inline-flex rounded-lg border border-zinc-200 bg-zinc-50 p-0.5"
+                role="group"
+                aria-label="Grupos de módulos"
+              >
+                {(Object.keys(GRUPOS_MODULOS) as Array<keyof typeof GRUPOS_MODULOS>).map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setGrupo(g)}
+                    aria-pressed={grupo === g}
+                    className={`px-3.5 py-1.5 text-xs rounded-md transition-colors whitespace-nowrap ${
+                      grupo === g
+                        ? 'bg-white text-brand-ink font-semibold shadow-sm'
+                        : 'text-zinc-500 font-medium hover:text-zinc-700'
+                    }`}
+                  >
+                    {GRUPO_LABELS[g]}
+                  </button>
+                ))}
+              </div>
+              {!bloqueado && (
+                <Button type="button" variant="primary" loading={saving} onClick={guardar} disabled={!selected || loadingPermisos}>
+                  Guardar Cambios
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="p-4">
             {!selected || loadingPermisos ? (
               <div className="space-y-3">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />
+                  <div key={i} className="h-12 bg-zinc-100 rounded-xl animate-pulse" />
                 ))}
               </div>
             ) : (
-              <div className="space-y-2">
-                {modulos.map((modulo) => {
-                  const nivelActual = permisos[modulo] ?? 'sin_acceso';
-                  return (
-                    <div
-                      key={modulo}
-                      className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-gray-100 bg-gray-50/50 p-3"
-                    >
-                      <div className="sm:w-56 font-medium text-sm text-gray-800">
-                        {MODULO_LABELS[modulo]}
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {NIVELES.map((nivel) => {
-                          const checked = nivelActual === nivel.value;
-                          const disabled = bloqueado;
-                          return (
-                            <label
-                              key={nivel.value}
-                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
-                                checked
-                                  ? 'border-brand-primary bg-brand-primary text-on-brand shadow-sm'
-                                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                              } ${disabled ? 'opacity-70 cursor-not-allowed' : ''}`}
-                            >
-                              <input
-                                type="checkbox"
-                                className="sr-only"
-                                checked={checked}
-                                disabled={disabled}
-                                onChange={() => setNivel(modulo, nivel.value)}
-                              />
-                              <span
-                                className={`h-3.5 w-3.5 rounded border flex items-center justify-center ${
-                                  checked
-                                    ? 'bg-white border-white'
-                                    : 'bg-white border-gray-300'
-                                }`}
-                              >
-                                {checked && (
-                                  <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 fill-brand-primary">
-                                    <path d="M10 3L4.5 8.5 2 6" stroke="currentColor" strokeWidth="2" fill="none" />
-                                  </svg>
-                                )}
-                              </span>
-                              {nivel.label}
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
+              /* Matriz como tabla: una sola cabecera con los niveles
+                 (antes cada fila repetía las 3 etiquetas como píldoras) */
+              <div className="overflow-x-auto rounded-xl border border-zinc-200">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-zinc-50/70 border-b border-zinc-200">
+                      <th scope="col" className="text-left text-xs font-bold uppercase tracking-wider text-zinc-500 px-4 py-3">
+                        Módulo
+                      </th>
+                      {NIVELES.map((nivel) => (
+                        <th key={nivel.value} scope="col" className="text-center text-xs font-bold uppercase tracking-wider text-zinc-500 px-4 py-3">
+                          {nivel.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100">
+                    {modulos.map((modulo) => {
+                      const nivelActual = permisos[modulo] ?? 'sin_acceso';
+                      return (
+                        <tr key={modulo} className="transition-colors hover:bg-zinc-50/60">
+                          <th scope="row" className="px-4 py-2 text-left font-medium text-zinc-800 whitespace-nowrap">
+                            {MODULO_LABELS[modulo]}
+                          </th>
+                          {NIVELES.map((nivel) => {
+                            const checked = nivelActual === nivel.value;
+                            return (
+                              <td key={nivel.value} className="px-4 py-1 text-center">
+                                {/* Celda completa como área de clic (hit area ≥ 44px) */}
+                                <label className="inline-flex min-h-11 min-w-11 items-center justify-center cursor-pointer align-middle">
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    disabled={bloqueado}
+                                    onChange={() => setNivel(modulo, nivel.value)}
+                                    aria-label={`${nivel.label} — ${MODULO_LABELS[modulo]}`}
+                                    className="h-4.5 w-4.5 rounded border-zinc-300 accent-brand-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                                  />
+                                </label>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>

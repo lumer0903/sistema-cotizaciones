@@ -166,7 +166,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
                 className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-brand-options/30 rounded-lg text-sm text-brand-subtitle shadow-sm"
               >
                 <span
-                  className="w-2.5 h-2.5 rounded-full border border-gray-300"
+                  className="w-2.5 h-2.5 rounded-full border border-zinc-300"
                   style={{ backgroundColor: color.hex || resolveColorHex(color.name) }}
                 />
                 <span>{color.name}</span>
@@ -199,10 +199,10 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
           </div>
 
           {isAdding && (
-            <div className="flex items-center gap-2 bg-white border border-gray-200 shadow-sm rounded-xl p-2">
+            <div className="flex items-center gap-2 bg-white border border-zinc-200 shadow-sm rounded-xl p-2">
               {/* Selector circular: muestra el color actual y abre el picker nativo */}
               <label
-                className="relative w-7 h-7 shrink-0 rounded-full border border-gray-200 shadow-sm cursor-pointer overflow-hidden transition-shadow"
+                className="relative w-7 h-7 shrink-0 rounded-full border border-zinc-200 shadow-sm cursor-pointer overflow-hidden transition-shadow"
                 style={{ backgroundColor: newHex }}
                 title="Elegir color"
               >
@@ -224,7 +224,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
                 aria-label="Nombre del color"
                 autoComplete="off"
                 autoFocus
-                className="w-28 min-h-9 px-3 text-xs rounded-lg border border-gray-200 bg-white outline-none transition-all"
+                className="w-28 min-h-9 px-3 text-xs rounded-lg border border-zinc-200 bg-white outline-none transition-all"
               />
               <Button type="button" variant="primary" size="sm" onClick={addColor}>
                 OK
@@ -262,7 +262,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
           )}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100">
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-zinc-100">
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>

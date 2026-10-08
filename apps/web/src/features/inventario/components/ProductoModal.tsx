@@ -560,6 +560,7 @@ export function ProductoModal({
               {...register("id_categoria", {
                 setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
               })}
+              value={watch("id_categoria") ?? ""}
               disabled={loadingFilters}
             >
               <option value="">Seleccionar</option>
@@ -575,6 +576,7 @@ export function ProductoModal({
               {...register("id_almacen", {
                 setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
               })}
+              value={watch("id_almacen") ?? ""}
               disabled={loadingFilters}
             >
               <option value="">Seleccionar</option>

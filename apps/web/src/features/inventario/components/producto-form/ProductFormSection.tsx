@@ -30,10 +30,10 @@ export function ProductFormSection({
 }: ProductFormSectionProps) {
   return (
     <section
-      className={cn('bg-white border border-gray-200 rounded-xl overflow-hidden', className)}
+      className={cn('bg-white border border-zinc-200 rounded-xl overflow-hidden', className)}
     >
       {title && (
-        <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-gray-200/70 bg-surface-muted/70">
+        <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-zinc-200/70 bg-surface-muted/70">
           <div className="flex items-center gap-2 min-w-0">
             {icon && (
               <span

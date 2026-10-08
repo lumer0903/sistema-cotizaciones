@@ -27,7 +27,7 @@ function ResumenRow({
 }) {
   return (
     <div
-      className={`py-1.5 flex justify-between items-center ${divider ? 'border-b border-gray-100 pb-2 mb-1' : ''
+      className={`py-1.5 flex justify-between items-center ${divider ? 'border-b border-zinc-100 pb-2 mb-1' : ''
         }`}
     >
       <span className="text-sm font-medium text-zinc-600 tracking-tight">
@@ -64,15 +64,15 @@ export function ResumenCotizacionCard({
           </span>
         </div>
 
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           onClick={() => setIsMinimized((prev) => !prev)}
-          className="min-h-11 min-w-11 -mr-2 inline-flex items-center justify-center text-amber-700 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition-colors"
+          className="min-h-11 min-w-11 -mr-2 p-0 text-amber-700 hover:text-amber-800 hover:bg-amber-50"
           aria-label={isMinimized ? 'Expandir resumen' : 'Minimizar resumen'}
           aria-expanded={!isMinimized}
         >
           {isMinimized ? <Plus className="size-5 stroke-[2.5]" /> : <Minus className="size-5 stroke-[2.5]" />}
-        </button>
+        </Button>
       </div>
 
       {/* Contenido colapsable */}

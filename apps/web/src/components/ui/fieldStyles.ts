@@ -14,7 +14,7 @@ export const FIELD_HEIGHT = 'h-9';
 export const FIELD_TEXT = 'text-sm font-medium text-brand-subtitle';
 
 /** Borde base del campo. */
-export const FIELD_BORDER = 'border border-[#E4E4E4] bg-white rounded-xl';
+export const FIELD_BORDER = 'border border-border-default bg-white rounded-xl';
 
 /** Transición + placeholder comunes. */
 export const FIELD_TRANSITION =
@@ -25,15 +25,15 @@ export const FIELD_TRANSITION =
  * El foco no añade nada: solo se ve el borde normal del campo
  * (sin ring, sin outline y sin cambio de color).
  */
-export const FIELD_FOCUS = 'hover:border-brand-options focus-visible:outline-none';
+export const FIELD_FOCUS = 'hover:border-brand-options focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring';
 
 /** Estado deshabilitado. */
 export const FIELD_DISABLED =
-  'disabled:bg-status-borrador/40 disabled:text-brand-options disabled:border-[#E4E4E4] disabled:cursor-not-allowed';
+  'disabled:bg-status-borrador/40 disabled:text-brand-options disabled:border-border-default disabled:cursor-not-allowed';
 
 /** Estado de error (usa !important para ganarle a las reglas base). */
 export const FIELD_ERROR =
-  '!border-danger focus-visible:!outline-none';
+  '!border-danger';
 
 /** Texto de mensaje de error bajo el campo. */
 export const FIELD_ERROR_TEXT = 'mt-1.5 text-xs font-medium text-danger';

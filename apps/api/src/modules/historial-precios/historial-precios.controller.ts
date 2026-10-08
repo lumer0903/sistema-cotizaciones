@@ -1,11 +1,17 @@
 import { Controller, Get, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { Rol } from '@goldcontinent/shared/constants/enums';
 import { HistorialPreciosService, HistorialPrecioResponse, PaginatedHistorialPreciosResponse } from './historial-precios.service';
 
 @ApiTags('HistorialPrecios')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+// Las variaciones de precio sólo las consulta admin/gerente; el vendedor
+// ve la tabla de precios actuales (módulo consulta_precios).
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Rol.admin, Rol.gerente)
 @Controller('historial-precios')
 export class HistorialPreciosController {
   constructor(private readonly historialPreciosService: HistorialPreciosService) {}

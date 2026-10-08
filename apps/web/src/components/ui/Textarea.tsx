@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { forwardRef, TextareaHTMLAttributes, ReactNode, useId } from 'react';
 import { cn } from '@/lib/cn';

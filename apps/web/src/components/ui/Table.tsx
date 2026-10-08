@@ -20,7 +20,7 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
   ) => (
     <div
       className={cn(
-        'w-full rounded-xl border border-gray-100 shadow-card overflow-x-auto select-text bg-white',
+        'w-full rounded-xl border border-zinc-100 shadow-card overflow-x-auto select-text bg-white',
         wrapperClassName
       )}
       role="region"
@@ -51,8 +51,8 @@ export const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeader
     <thead
       ref={ref}
       className={cn(
-        'bg-gray-50/80 border-b border-gray-200 uppercase tracking-wider [&_tr]:hover:bg-transparent',
-        sticky && '[&>tr>th]:sticky [&>tr>th]:top-0 [&>tr>th]:z-10 [&>tr>th]:bg-gray-50',
+        'bg-zinc-50/80 border-b border-zinc-200 uppercase tracking-wider [&_tr]:hover:bg-transparent',
+        sticky && '[&>tr>th]:sticky [&>tr>th]:top-0 [&>tr>th]:z-10 [&>tr>th]:bg-zinc-50',
         className
       )}
       {...props}
@@ -71,7 +71,7 @@ export interface TableBodyProps extends React.HTMLAttributes<HTMLTableSectionEle
 
 export const TableBody = React.forwardRef<HTMLTableSectionElement, TableBodyProps>(
   ({ children, className, ...props }, ref) => (
-    <tbody ref={ref} className={cn('divide-y divide-gray-100', className)} {...props}>
+    <tbody ref={ref} className={cn('divide-y divide-zinc-100', className)} {...props}>
       {children}
     </tbody>
   )
@@ -102,7 +102,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       tabIndex={onClick ? 0 : undefined}
       role={onClick ? 'button' : undefined}
       className={cn(
-        'group transition-colors duration-150 ease-in-out hover:bg-gray-50',
+        'group transition-colors duration-150 ease-in-out hover:bg-zinc-50',
         onClick && 'cursor-pointer',
         className
       )}
@@ -124,7 +124,7 @@ export const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
   ({ children, className, ...props }, ref) => (
     <th
       ref={ref}
-      className={cn('py-3.5 px-4 text-xs font-semibold text-gray-600 align-middle', className)}
+      className={cn('py-3.5 px-4 text-xs font-semibold text-zinc-600 align-middle', className)}
       {...props}
     >
       {children}

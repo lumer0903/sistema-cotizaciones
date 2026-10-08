@@ -3,6 +3,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { EstadoCotizacion } from '@goldcontinent/shared/constants/enums';
 import { Decimal } from '@prisma/client/runtime/library';
 import { Prisma } from '@prisma/client';
+import { verificarAlcance } from '../../common/utils/alcance.util';
 
 interface RawCobranzaRow {
   id_cotizacion: number;
@@ -80,6 +81,8 @@ export class CobranzaService {
       estado?: string;
       estado_cobranza?: string;
       id_cliente?: number;
+      /** Alcance por usuario (null = admin, ve todo). */
+      id_usuario?: number;
       fecha_vencimiento_inicio?: Date;
       fecha_vencimiento_fin?: Date;
       solo_vencidas?: boolean;
@@ -97,6 +100,11 @@ export class CobranzaService {
             ${EstadoCotizacion.parcialmente_pagada}::"EstadoCotizacion"
           )`,
     ];
+
+    // Aislamiento por usuario: sólo el admin ve cobranzas ajenas.
+    if (filters.id_usuario !== undefined) {
+      conditions.push(Prisma.sql`c.id_usuario = ${filters.id_usuario}`);
+    }
 
     if (filters.id_cliente) {
       conditions.push(Prisma.sql`c.id_cliente = ${filters.id_cliente}`);
@@ -207,7 +215,7 @@ export class CobranzaService {
     return { data: mapped, total: countRows[0]?.count ?? 0, page, limit };
   }
 
-  async findById(id: number): Promise<CobranzaDetalleResponse> {
+  async findById(id: number, alcance: number | null = null): Promise<CobranzaDetalleResponse> {
     const cot = await this.prisma.cotizacion.findUnique({
       where: { id_cotizacion: id },
       include: {
@@ -230,6 +238,13 @@ export class CobranzaService {
     });
 
     if (!cot) throw new NotFoundException('Cotización no encontrada');
+
+    verificarAlcance(
+      alcance,
+      cot.id_usuario,
+      'Cotización no encontrada',
+      'No tienes permiso sobre esta cotización',
+    );
 
     const now = new Date();
     const base = this.mapItem(
@@ -258,6 +273,7 @@ export class CobranzaService {
     idCotizacion: number,
     data: { monto: number; metodo_pago: string; referencia?: string | null },
     idUsuario: number,
+    alcance: number | null = null,
   ): Promise<CobranzaDetalleResponse> {
     const monto = Number(data?.monto);
     if (!monto || monto <= 0) {
@@ -272,6 +288,13 @@ export class CobranzaService {
       include: { pagos: { select: { monto: true } } },
     });
     if (!cot) throw new NotFoundException('Cotización no encontrada');
+
+    verificarAlcance(
+      alcance,
+      cot.id_usuario,
+      'Cotización no encontrada',
+      'No tienes permiso sobre esta cotización',
+    );
 
     const estadosValidos: string[] = [
       EstadoCotizacion.enviada,
@@ -316,7 +339,7 @@ export class CobranzaService {
       });
     });
 
-    return this.findById(idCotizacion);
+    return this.findById(idCotizacion, alcance);
   }
 
   private mapItem(

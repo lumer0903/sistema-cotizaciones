@@ -105,7 +105,9 @@ export class RolesService {
     }
 
     if (Object.keys(limpio).length !== validos.size) {
-      throw new BadRequestException('La matriz debe incluir los 12 módulos con un nivel válido');
+      throw new BadRequestException(
+        `La matriz debe incluir los ${validos.size} módulos del catálogo con un nivel válido`,
+      );
     }
 
     await this.prisma.$transaction([

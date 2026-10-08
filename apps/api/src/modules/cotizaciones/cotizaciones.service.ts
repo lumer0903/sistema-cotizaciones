@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateCotizacionDto } from './dto/create-cotizacion.dto';
@@ -6,6 +6,7 @@ import { UpdateCotizacionDto } from './dto/update-cotizacion.dto';
 import { RegistrarPagoDto } from './dto/registrar-pago.dto';
 import { ListarCotizacionesQueryDto } from './dto/listar-cotizaciones.query.dto';
 import { EstadoCotizacion } from '@goldcontinent/shared/constants/enums';
+import { verificarAlcance } from '../../common/utils/alcance.util';
 
 @Injectable()
 export class CotizacionesService {
@@ -103,7 +104,7 @@ export class CotizacionesService {
         }
     }
 
-    async listar(query: ListarCotizacionesQueryDto) {
+    async listar(query: ListarCotizacionesQueryDto, alcance: number | null = null) {
         const page = Math.max(Number(query.page) || 1, 1);
         const limit = Math.min(Math.max(Number(query.limit) || 10, 1), 1000);
         const skip = (page - 1) * limit;
@@ -117,6 +118,8 @@ export class CotizacionesService {
         ];
 
         const where: Prisma.CotizacionWhereInput = {};
+        // Aislamiento por usuario: sólo el admin ve cotizaciones ajenas.
+        if (alcance !== null) where.id_usuario = alcance;
         if (query.estado) {
             const estado = String(query.estado).trim().toLowerCase() as EstadoCotizacion;
             if (ESTADOS_VALIDOS.includes(estado)) where.estado = estado;
@@ -166,7 +169,7 @@ export class CotizacionesService {
         };
     }
 
-    async obtenerPorId(id: number) {
+    async obtenerPorId(id: number, alcance: number | null = null) {
         const cotizacion = await this.prisma.cotizacion.findUnique({
             where: { id_cotizacion: id },
             include: {
@@ -183,7 +186,27 @@ export class CotizacionesService {
             throw new NotFoundException(`Cotización con ID ${id} no encontrada`);
         }
 
+        verificarAlcance(
+            alcance,
+            cotizacion.id_usuario,
+            `Cotización con ID ${id} no encontrada`,
+            'No tienes permiso sobre esta cotización',
+        );
+
         return cotizacion;
+    }
+
+    /** Chequeo ligero de propiedad (exportar PDF / estado del job). */
+    async asegurarAcceso(id: number, alcance: number | null = null): Promise<void> {
+        if (alcance === null) return;
+        const row = await this.prisma.cotizacion.findUnique({
+            where: { id_cotizacion: id },
+            select: { id_usuario: true },
+        });
+        if (!row) throw new NotFoundException(`Cotización con ID ${id} no encontrada`);
+        if (row.id_usuario == null || Number(row.id_usuario) !== alcance) {
+            throw new ForbiddenException('No tienes permiso sobre esta cotización');
+        }
     }
 
     /**
@@ -237,8 +260,8 @@ export class CotizacionesService {
      * El número correlativo NUNCA se modifica.
      * Si se envía `detalle`, reemplaza todas las líneas y recalcula subtotal/total.
      */
-    async actualizar(id: number, data: UpdateCotizacionDto) {
-        const actual = await this.obtenerPorId(id);
+    async actualizar(id: number, data: UpdateCotizacionDto, alcance: number | null = null) {
+        const actual = await this.obtenerPorId(id, alcance);
 
         if (actual.estado !== 'borrador') {
             throw new BadRequestException(
@@ -338,7 +361,7 @@ export class CotizacionesService {
         }
     }
 
-    async cambiarEstado(id: number, estado: string) {
+    async cambiarEstado(id: number, estado: string, alcance: number | null = null) {
         if (!estado) {
             throw new BadRequestException('El campo estado es obligatorio');
         }
@@ -348,7 +371,7 @@ export class CotizacionesService {
             throw new BadRequestException(`Estado inválido: ${estado}`);
         }
 
-        const cot = await this.obtenerPorId(id);
+        const cot = await this.obtenerPorId(id, alcance);
         const actual = String((cot as any).estado || 'borrador');
 
         // Máquina de transiciones: prohíbe saltos arbitrarios (p.ej. borrador → aprobada,
@@ -380,7 +403,7 @@ export class CotizacionesService {
         });
     }
 
-    async registrarPago(id: number, data: RegistrarPagoDto, idUsuario: number) {
+    async registrarPago(id: number, data: RegistrarPagoDto, idUsuario: number, alcance: number | null = null) {
         if (!data || !data.monto || !data.metodo_pago) {
             throw new BadRequestException('Debe proporcionar el monto y el metodo_pago');
         }
@@ -390,7 +413,7 @@ export class CotizacionesService {
             throw new BadRequestException('El monto debe ser mayor a 0');
         }
 
-        const cot = await this.obtenerPorId(id);
+        const cot = await this.obtenerPorId(id, alcance);
         const estado = String((cot as any).estado || '');
         if (!['enviada', 'aprobada', 'parcialmente_pagada'].includes(estado)) {
             throw new BadRequestException(
@@ -431,6 +454,6 @@ export class CotizacionesService {
             });
         });
 
-        return this.obtenerPorId(id);
+        return this.obtenerPorId(id, alcance);
     }
 }

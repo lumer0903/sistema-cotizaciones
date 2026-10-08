@@ -1,7 +1,7 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter, usePathname } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Loader2, ArrowLeft, TriangleAlert } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { Button } from '@/components/ui';
@@ -79,8 +79,7 @@ type EstadoCarga = 'cargando' | 'listo' | 'error' | 'no-borrador';
 export function CotizacionEditarLoader() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const pathname = usePathname() || '';
-  const base = pathname.startsWith('/vendedor') ? '/vendedor/cotizaciones' : '/admin/cotizaciones';
+  const base = '/cotizaciones';
   const id = Number(params.id);
   const [estado, setEstado] = useState<EstadoCarga>('cargando');
   const idInvalido = !Number.isFinite(id) || id <= 0;

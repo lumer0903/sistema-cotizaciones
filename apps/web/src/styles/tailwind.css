@@ -36,10 +36,13 @@
   --color-brand-background: #f9fafb;
   --color-brand-focus: #c9a962;
   --color-brand-modalFocus: #c9a962;
+  /* Anillo de foco: contraste ≥4.5:1 sobre blanco (brand-focus solo da 2.25:1) */
+  --color-focus-ring: #7d5b00;
 
   /* ── Superficies ── */
   --color-surface: #ffffff;
   --color-surface-muted: #f9fafb;
+  --color-border-default: #e4e4e4;
 
   /* ── Roles / Segmentación ── */
   --color-role-tienda: #1f41af;
@@ -57,7 +60,14 @@
   --color-distribuidor-soft: var(--color-role-distribuidor-soft);
   --color-distribuidor-hover: var(--color-role-distribuidor-hover);
 
-  /* ── Estados (Status Badges) ── */
+  /* ── Vendedor (rojo medio) ── */
+  --color-vendedor-primary: #7b1c1c;
+  --color-vendedor-hover: #5f1515;
+  --color-vendedor-soft: #f5e8e8;
+  --color-vendedor-ink: #7b1c1c;
+  --color-vendedor-on: #ffffff;
+
+/* ── Estados (Status Badges) ── */
   --color-status-borrador: #e4e4e4;
   --color-status-borrador-text: #414141;
   --color-status-aprobado: #0dc300;
@@ -101,6 +111,20 @@
   --z-index-modal: 60;
   --z-index-select: 70;
 }
+
+/* ── Variantes por rol (data-role) ── */
+[data-role="admin"] {
+  --color-acento-primario: #F8B602;
+  --color-acento-hover: #E0A300;
+  --color-texto-sobre-acento: #18181B;
+}
+[data-role="vendedor"],
+[data-role="gerente"] {
+  --color-acento-primario: #7B1C1C;
+  --color-acento-hover: #5F1515;
+  --color-fondo-suave: #F5E8E8;
+}
+/* ── Fin variantes por rol ─────────────────────────────────────────────────── */
 
 * {
   box-sizing: border-box;

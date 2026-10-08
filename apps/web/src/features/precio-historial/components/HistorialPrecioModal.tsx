@@ -29,8 +29,8 @@ export function HistorialPrecioModal({
     // Variable JSX aplicando el diseño de ayuda
     const badgeCodigo = (
         <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 bg-gray-200/60 rounded-full" />
-            <div className="px-3 py-1 bg-gray-200/20 rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-center items-center gap-2.5">
+            <div className="w-2.5 h-2.5 bg-zinc-200/60 rounded-full" />
+            <div className="px-3 py-1 bg-zinc-200/20 rounded-lg outline outline-1 outline-offset-[-1px] outline-zinc-200 inline-flex justify-center items-center gap-2.5">
                 <span className="justify-center text-brand-ink text-sm font-bold font-sans">
                     {codigoProducto}
                 </span>

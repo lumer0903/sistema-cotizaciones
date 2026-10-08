@@ -3,7 +3,9 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../../common/config/prisma';
 import { AppError } from '../../common/middleware/errorHandler';
 import { JWT_CONFIG, JWTPayload, TokenPair, createAccessTokenPayload } from '@goldcontinent/shared/auth/jwt';
-import { UsuarioAutenticado } from '@goldcontinent/shared/auth';
+import { UsuarioAutenticado, MapaPermisos, OverridesPermisos } from '@goldcontinent/shared/auth';
+import { PermisoModulo, NivelPermiso, Rol } from '@goldcontinent/shared/constants/enums';
+import { DEFAULT_ROLE_PERMISSIONS, esMatrizBloqueada, matrizSiempreEdicion } from '@goldcontinent/shared/auth/rbac';
 
 const REFRESH_TOKEN_SECRET = JWT_CONFIG.REFRESH_TOKEN_SECRET;
 
@@ -13,11 +15,47 @@ function quitarDatosSensibles(usuario: { password_hash: string; [key: string]: a
   return usuarioSeguro;
 }
 
-async function cargarOverridesPermisos(idUsuario: number) {
+/**
+ * Permisos EFECTIVOS del usuario = matriz del rol en DB (rol_permisos)
+ * sobrescrita por los overrides personalizados (usuario_permisos).
+ * Es lo que viaja en la sesión y alimenta el menú lateral y las vistas.
+ */
+async function cargarPermisosEfectivos(idUsuario: number, rol: string): Promise<MapaPermisos> {
+  if (esMatrizBloqueada(rol)) {
+    return matrizSiempreEdicion();
+  }
+
+  const [rolRow, overrideRows] = await Promise.all([
+    prisma.rol.findUnique({ where: { codigo: rol }, select: { id_rol: true } }),
+    prisma.usuarioPermiso.findMany({ where: { id_usuario: idUsuario } }),
+  ]);
+
+  const defaults = DEFAULT_ROLE_PERMISSIONS[rol as Rol];
+  const efectivos = {} as MapaPermisos;
+
+  const matrizRol = rolRow
+    ? await prisma.rolPermiso.findMany({ where: { id_rol: rolRow.id_rol } })
+    : [];
+
+  for (const modulo of Object.values(PermisoModulo)) {
+    const fila = matrizRol.find((r) => r.modulo === modulo);
+    const override = overrideRows.find((r) => r.modulo === modulo);
+    efectivos[modulo] =
+      (override?.nivel as NivelPermiso) ??
+      (fila?.nivel as NivelPermiso) ??
+      defaults?.[modulo] ??
+      'sin_acceso';
+  }
+
+  return efectivos;
+}
+
+/** Solo los overrides personalizados (para el modal de permisos por usuario). */
+export async function cargarOverridesPermisos(idUsuario: number): Promise<OverridesPermisos> {
   const rows = await prisma.usuarioPermiso.findMany({ where: { id_usuario: idUsuario } });
-  const overrides: Record<string, string> = {};
+  const overrides: OverridesPermisos = {};
   for (const row of rows) {
-    overrides[row.modulo] = row.nivel;
+    overrides[row.modulo as PermisoModulo] = row.nivel as NivelPermiso;
   }
   return overrides;
 }
@@ -48,7 +86,7 @@ export async function login(email: string, password: string): Promise<{ tokenPai
   }
 
   const usuarioSeguro = quitarDatosSensibles(usuario);
-  const permisos = await cargarOverridesPermisos(usuarioSeguro.id_usuario);
+  const permisos = await cargarPermisosEfectivos(usuarioSeguro.id_usuario, usuarioSeguro.rol);
   const usuarioAutenticado: UsuarioAutenticado = {
     id_usuario: usuarioSeguro.id_usuario,
     email: usuarioSeguro.email,
@@ -98,7 +136,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenPai
   }
 
   const usuarioSeguro = quitarDatosSensibles(usuario);
-  const permisos = await cargarOverridesPermisos(usuarioSeguro.id_usuario);
+  const permisos = await cargarPermisosEfectivos(usuarioSeguro.id_usuario, usuarioSeguro.rol);
   const usuarioAutenticado: UsuarioAutenticado = {
     id_usuario: usuarioSeguro.id_usuario,
     email: usuarioSeguro.email,
@@ -136,7 +174,7 @@ export async function obtenerSesion(idUsuario: number): Promise<UsuarioAutentica
   }
 
   const usuarioSeguro = quitarDatosSensibles(usuario);
-  const permisos = await cargarOverridesPermisos(usuarioSeguro.id_usuario);
+  const permisos = await cargarPermisosEfectivos(usuarioSeguro.id_usuario, usuarioSeguro.rol);
   return {
     id_usuario: usuarioSeguro.id_usuario,
     email: usuarioSeguro.email,

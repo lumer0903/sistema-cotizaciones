@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
     LayoutDashboard,
     Package,
@@ -18,35 +19,42 @@ import {
     X,
 } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
+import { usePermissions } from '@/hooks/usePermissions';
+import type { PermisoModulo } from '@goldcontinent/shared/auth';
 
 interface MenuItem {
     name: string;
     href: string;
     icon: React.ElementType;
+    /** Permiso que gobierna la visibilidad del módulo en el menú. */
+    modulo: PermisoModulo;
+    /** Muestra el nombre largo con el historial (sólo admin/gerente). */
+    historial?: boolean;
     subItems?: { name: string; href: string }[];
 }
 
 const menuItems: MenuItem[] = [
-    { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-    { name: 'Inventario', href: '/admin/inventario', icon: Package },
-    { name: 'Precio & Historial', href: '/admin/precios', icon: Search },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, modulo: 'dashboard' },
+    { name: 'Inventario', href: '/inventario', icon: Package, modulo: 'productos' },
+    { name: 'Precios', href: '/precios', icon: Search, modulo: 'consulta_precios', historial: true },
     {
         name: 'Cotizaciones',
-        href: '/admin/cotizaciones',
+        href: '/cotizaciones',
         icon: FileText,
+        modulo: 'cotizaciones',
         subItems: [
-            { name: 'Crear cotización', href: '/admin/cotizaciones/crear?nueva=1' },
-            { name: 'Mis Cotizaciones', href: '/admin/cotizaciones' },
+            { name: 'Crear cotización', href: '/cotizaciones/crear?nueva=1' },
+            { name: 'Mis Cotizaciones', href: '/cotizaciones' },
         ],
     },
-    { name: 'Cobranza', href: '/admin/cobranza', icon: Wallet },
-    { name: 'Reportes', href: '/admin/reportes', icon: BarChart3 },
-    { name: 'Usuarios', href: '/admin/usuarios', icon: Users },
-    { name: 'Configuración', href: '/admin/configuracion', icon: Settings },
+    { name: 'Cobranza', href: '/cobranza', icon: Wallet, modulo: 'cobranza' },
+    { name: 'Reportes', href: '/reportes', icon: BarChart3, modulo: 'reportes' },
+    { name: 'Usuarios', href: '/usuarios', icon: Users, modulo: 'usuarios' },
+    { name: 'Configuración', href: '/configuracion', icon: Settings, modulo: 'configuracion' },
 ];
 
-function findActiveSubmenu(pathname: string): string | null {
-    const activeParent = menuItems.find(
+function findActiveSubmenu(pathname: string, items: MenuItem[]): string | null {
+    const activeParent = items.find(
         (item) => item.subItems && pathname.startsWith(item.href)
     );
     return activeParent ? activeParent.name : null;
@@ -55,17 +63,37 @@ function findActiveSubmenu(pathname: string): string | null {
 interface SidebarProps {
     open?: boolean;
     onClose?: () => void;
+    onToggleLogo?: () => void;
+    sidebarOpen?: boolean;
+    setSidebarOpen?: (open: boolean) => void;
 }
 
-export function Sidebar({ open = false, onClose }: SidebarProps) {
+export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
     const pathname = usePathname();
+    const router = useRouter();
     const { logout } = useAuth();
-    const [openSubmenu, setOpenSubmenu] = useState<string | null>(() => findActiveSubmenu(pathname));
+    const { can, isAdmin, isGerente } = usePermissions();
+
+    // Visibilidad gobernada por la matriz de permisos del rol (pestaña Roles y Permisos).
+    // El menú se actualiza solo cuando el admin cambia permisos.
+    const visibleItems = menuItems.filter((item) => can(item.modulo, 'lectura'));
+
+    // Tema: admin/gerente → ámbar; cualquier otro rol (VENDEDOR) → paleta roja.
+    const temaClaro = isAdmin || isGerente;
+    const activeItemCls = temaClaro
+        ? 'bg-brand-selection text-brand-ink font-bold shadow-sm shadow-brand-modalFocus/5'
+        : 'bg-vendedor-soft text-vendedor-ink font-bold shadow-sm';
+    const activeIconCls = temaClaro ? 'text-brand-ink' : 'text-vendedor-ink';
+    const activeSubCls = temaClaro
+        ? 'text-brand-ink font-bold bg-white shadow-sm shadow-zinc-200/50'
+        : 'text-vendedor-ink font-bold bg-white shadow-sm shadow-zinc-200/50';
+
+    const [openSubmenu, setOpenSubmenu] = useState<string | null>(() => findActiveSubmenu(pathname, visibleItems));
     const [prevPathname, setPrevPathname] = useState(pathname);
 
     if (prevPathname !== pathname) {
         setPrevPathname(pathname);
-        setOpenSubmenu(findActiveSubmenu(pathname));
+        setOpenSubmenu(findActiveSubmenu(pathname, visibleItems));
     }
 
     const handleItemClick = (item: MenuItem) => {
@@ -76,6 +104,15 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         }
     };
 
+    // El menú NO se cierra al navegar en escritorio (sólo con burger/X/Escape).
+    // En móvil (<1024px) es un drawer sobre el contenido, así que sí se cierra
+    // para no tapar la vista.
+    const navegar = () => {
+        if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+            onClose?.();
+        }
+    };
+
     return (
         <aside
             id="menu-lateral"
@@ -83,13 +120,12 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         >
             <div className="flex flex-col w-full flex-1 min-h-0">
 
-
                 {/* LOGO SUPERIOR */}
-                <div className="w-full px-1 py-4 flex items-center justify-between  min-h-[64px] overflow-hidden">
+                <div className="w-full px-3 py-3 flex items-center justify-between gap-2 min-h-[64px] bg-white/80 backdrop-blur-sm border-b border-zinc-200/70">
                     <Link
-                        href="/admin/dashboard"
-                        className="w-full flex justify-center items-center group overflow-hidden py-1"
-                        onClick={onClose}
+                        href="/dashboard"
+                        className="flex-1 min-w-0 flex justify-center items-center group py-1"
+                        onClick={onToggleLogo}
                     >
                         <Image
                             src="/LOGO_GRANDE.svg"
@@ -97,7 +133,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                             width={200}
                             height={60}
                             priority
-                            className="w-full h-12 object-contain scale-[4] transition-transform duration-200 group-hover:scale-[3]"
+                            className="h-12 w-auto max-w-full object-contain transition-transform duration-150 group-hover:scale-105"
                             onError={(e) => {
                                 (e.target as HTMLElement).style.visibility = 'hidden';
                             }}
@@ -115,11 +151,13 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                 </div>
                 {/* MENÚ DE NAVEGACIÓN: Con paddings internos dinámicos y bordes redondeados modernos */}
                 <nav className="w-full flex flex-col flex-1 overflow-y-auto px-3.5 space-y-1 py-1">
-                    {menuItems.map((item) => {
+                    {visibleItems.map((item) => {
                         const isActive = pathname.startsWith(item.href);
                         const Icon = item.icon;
                         const hasSubItems = Boolean(item.subItems && item.subItems.length > 0);
                         const isSubmenuOpen = openSubmenu === item.name;
+                        const etiqueta =
+                            item.historial && (isAdmin || isGerente) ? 'Precio & Historial' : item.name;
 
                         if (hasSubItems) {
                             return (
@@ -128,16 +166,16 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                                         type="button"
                                         onClick={() => handleItemClick(item)}
                                         className={`w-full h-11 px-3.5 py-2 rounded-xl inline-flex items-center justify-between gap-3 transition-all duration-200 ${isActive
-                                            ? 'bg-brand-selection text-brand-ink font-bold shadow-sm shadow-brand-modalFocus/5'
+                                            ? activeItemCls
                                             : 'text-zinc-600 font-medium hover:bg-zinc-50 hover:text-zinc-900'
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <Icon className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-brand-ink' : 'text-zinc-500'}`} />
-                                            <span className="text-xs sm:text-sm">{item.name}</span>
+                                            <Icon className={`w-4.5 h-4.5 transition-colors ${isActive ? activeIconCls : 'text-zinc-500' }`} />
+                                            <span className="text-xs sm:text-sm">{etiqueta}</span>
                                         </div>
                                         <ChevronDown
-                                            className={`w-4 h-4 transition-transform duration-200 ${isActive ? 'text-brand-ink' : 'text-zinc-500'
+                                            className={`w-4 h-4 transition-transform duration-200 ${isActive ? activeIconCls : 'text-zinc-500' 
                                                 } ${isSubmenuOpen ? 'rotate-180' : ''}`}
                                         />
                                     </button>
@@ -151,14 +189,14 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                                                     <Link
                                                         key={sub.name}
                                                         href={sub.href}
-                                                        onClick={onClose}
+                                                        onClick={navegar}
                                                         className={`w-full h-9 pl-9 pr-4 rounded-lg inline-flex items-center text-xs sm:text-sm transition-all duration-150 ${isSubActive
-                                                            ? 'text-brand-ink font-bold bg-white shadow-sm shadow-zinc-200/50'
+                                                            ? activeSubCls
                                                             : 'text-zinc-500 font-medium hover:text-zinc-700 hover:bg-white/60'
                                                             }`}
                                                     >
                                                         <span>{sub.name}</span>
-                                                    </Link>
+                                                        </Link>
                                                 );
                                             })}
                                         </div>
@@ -173,15 +211,15 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                                 href={item.href}
                                 onClick={() => {
                                     handleItemClick(item);
-                                    onClose?.();
+                                    navegar();
                                 }}
                                 className={`w-full h-11 px-3.5 py-2 rounded-xl inline-flex items-center gap-3 text-xs sm:text-sm transition-all duration-200 ${isActive
-                                    ? 'bg-brand-selection text-brand-ink font-bold shadow-sm shadow-brand-modalFocus/5'
+                                    ? activeItemCls
                                     : 'text-zinc-600 font-medium hover:bg-zinc-50 hover:text-zinc-900'
                                     }`}
                             >
-                                <Icon className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-brand-ink' : 'text-zinc-500'}`} />
-                                <span>{item.name}</span>
+                                <Icon className={`w-4.5 h-4.5 transition-colors ${isActive ? activeIconCls : 'text-zinc-500' }`} />
+                                <span>{etiqueta}</span>
                             </Link>
                         );
                     })}
@@ -194,12 +232,9 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                     type="button"
                     onClick={async () => {
                         await logout();
-                        // Recarga completa intencional tras logout: descarta el
-                        // estado de la SPA (datos en memoria de módulos).
-                        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-                        window.location.href = '/login';
+                        router.push('/login');
                     }}
-                    className="w-full h-11 px-4 py-2 rounded-xl inline-flex items-center gap-3 text-xs sm:text-sm text-zinc-500 font-semibold hover:bg-estado-rechazado-soft hover:text-danger active:bg-estado-rechazado-soft/80 transition-all duration-200 focus:outline-none"
+                    className="w-full h-11 px-4 py-2 rounded-xl inline-flex items-center gap-3 text-xs sm:text-sm text-zinc-500 font-semibold hover:bg-estado-rechazado-soft hover:text-danger active:bg-estado-rechazado-soft/80 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                 >
                     <LogOut className="w-4.5 h-4.5 text-zinc-500 transition-colors group-hover:text-danger" />
                     <span>Cerrar sesión</span>

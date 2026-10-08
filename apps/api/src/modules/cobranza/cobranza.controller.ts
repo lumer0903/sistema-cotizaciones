@@ -1,10 +1,16 @@
 import { Controller, Get, Post, Param, Query, Body, UseGuards, ParseIntPipe, Req } from '@nestjs/common';
+import type { Request } from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
 import { CobranzaService } from './cobranza.service';
 import type { CobranzaDetalleResponse, PaginatedCobranzaResponse } from './cobranza.service';
 import { RegistrarPagoDto } from './dto/registrar-pago.dto';
 import { EstadoCotizacion, MetodoPago } from '@goldcontinent/shared/constants/enums';
+import { alcanceDeDatos, UsuarioSesion } from '../../common/utils/alcance.util';
+
+interface AuthedRequest extends Request {
+  user?: UsuarioSesion;
+}
 
 @ApiTags('Cobranza')
 @ApiBearerAuth()
@@ -34,7 +40,9 @@ export class CobranzaController {
     @Query('fecha_vencimiento_inicio') fecha_vencimiento_inicio?: string,
     @Query('fecha_vencimiento_fin') fecha_vencimiento_fin?: string,
     @Query('solo_vencidas') solo_vencidas?: string,
+    @Req() req?: AuthedRequest,
   ): Promise<{ success: true; data: PaginatedCobranzaResponse['data']; total: number; page: number; limit: number }> {
+    const alcance = alcanceDeDatos(req?.user);
     const result = await this.cobranzaService.findAll(
       Math.max(1, Number(page) || 1),
       Math.min(Math.max(1, Number(limit) || 50), 100),
@@ -42,6 +50,7 @@ export class CobranzaController {
       estado,
       estado_cobranza,
       id_cliente: id_cliente ? Number(id_cliente) : undefined,
+      ...(alcance !== null ? { id_usuario: alcance } : {}),
       q,
       fecha_vencimiento_inicio: fecha_vencimiento_inicio ? new Date(fecha_vencimiento_inicio) : undefined,
       fecha_vencimiento_fin: fecha_vencimiento_fin ? new Date(fecha_vencimiento_fin) : undefined,
@@ -52,8 +61,11 @@ export class CobranzaController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Detalle de cobranza por id de cotización (historial de pagos)' })
-  async findById(@Param('id', ParseIntPipe) id: number): Promise<{ success: true; data: CobranzaDetalleResponse }> {
-    const data = await this.cobranzaService.findById(id);
+  async findById(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: AuthedRequest,
+  ): Promise<{ success: true; data: CobranzaDetalleResponse }> {
+    const data = await this.cobranzaService.findById(id, alcanceDeDatos(req.user));
     return { success: true, data };
   }
 
@@ -63,10 +75,15 @@ export class CobranzaController {
   async registrarPago(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: RegistrarPagoDto,
-    @Req() req: any,
+    @Req() req: AuthedRequest,
   ): Promise<{ success: true; data: CobranzaDetalleResponse }> {
     const userId = req.user?.id_usuario || req.user?.id || req.user?.sub;
-    const data = await this.cobranzaService.registrarPago(id, body, Number(userId) || 0);
+    const data = await this.cobranzaService.registrarPago(
+      id,
+      body,
+      Number(userId) || 0,
+      alcanceDeDatos(req.user),
+    );
     return { success: true, data };
   }
 }

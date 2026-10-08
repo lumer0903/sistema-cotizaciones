@@ -2,8 +2,18 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const ADMIN_ROUTES = ['/admin'];
-const VENDEDOR_ROUTES = ['/vendedor'];
+// Rutas de la app (árbol unificado tras la migración de /admin y /vendedor).
+// Todas exigen sesión; la autorización por rol real la exige la API con el JWT.
+const PROTECTED_ROUTES = [
+  '/dashboard',
+  '/cotizaciones',
+  '/cobranza',
+  '/configuracion',
+  '/inventario',
+  '/precios',
+  '/reportes',
+  '/usuarios',
+];
 const PUBLIC_ROUTES = ['/login', '/api/auth/login', '/api/auth/refresh'];
 
 const encoder = new TextEncoder();
@@ -72,9 +82,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     ? accessCheck.rol
     : request.cookies.get('userRole')?.value ?? null;
 
-  const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
-  const isVendedorRoute = VENDEDOR_ROUTES.some((route) => pathname.startsWith(route));
-  const isProtectedArea = isAdminRoute || isVendedorRoute;
+  const isProtectedArea = PROTECTED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 
   // Rutas protegidas: sin sesión o sin rol → login
   if (isProtectedArea && (!hasSession || !userRole)) {
@@ -82,22 +90,14 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(new URL(`/login?redirectTo=${redirectUrl}`, request.url));
   }
 
-  if (isAdminRoute && userRole && !['admin', 'gerente'].includes(userRole)) {
-    return NextResponse.redirect(new URL('/vendedor/cotizaciones', request.url));
-  }
-
-  if (isVendedorRoute && userRole && userRole !== 'vendedor') {
-    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
-  }
-
   if (pathname === '/') {
     if (!hasSession || !userRole) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
     if (userRole === 'vendedor') {
-      return NextResponse.redirect(new URL('/vendedor/cotizaciones', request.url));
+      return NextResponse.redirect(new URL('/cotizaciones', request.url));
     }
-    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next();

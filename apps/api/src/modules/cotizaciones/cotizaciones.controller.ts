@@ -21,9 +21,10 @@ import { UpdateCotizacionDto } from './dto/update-cotizacion.dto';
 import { CambiarEstadoDto } from './dto/cambiar-estado.dto';
 import { RegistrarPagoDto } from './dto/registrar-pago.dto';
 import { ListarCotizacionesQueryDto } from './dto/listar-cotizaciones.query.dto';
+import { alcanceDeDatos, UsuarioSesion } from '../../common/utils/alcance.util';
 
 interface AuthedRequest extends Request {
-    user?: { id_usuario?: number; id?: number; sub?: number };
+    user?: UsuarioSesion;
 }
 
 @ApiTags('Cotizaciones')
@@ -46,8 +47,8 @@ export class CotizacionesController {
 
     @Get()
     @ApiOperation({ summary: 'Listar cotizaciones con paginación y filtros' })
-    async findAll(@Query() query: ListarCotizacionesQueryDto) {
-        return this.cotizacionesService.listar(query);
+    async findAll(@Query() query: ListarCotizacionesQueryDto, @Req() req: AuthedRequest) {
+        return this.cotizacionesService.listar(query, alcanceDeDatos(req.user));
     }
 
     @Get('proximo-numero')
@@ -58,7 +59,8 @@ export class CotizacionesController {
 
     @Get(':id/export-pdf')
     @ApiOperation({ summary: 'Exportar cotización a PDF (cacheado o en cola BullMQ)' })
-    async exportPdf(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+    async exportPdf(@Param('id', ParseIntPipe) id: number, @Res() res: Response, @Req() req: AuthedRequest) {
+        await this.cotizacionesService.asegurarAcceso(id, alcanceDeDatos(req.user));
         const resultado = await this.pdfExportService.exportar(id);
 
         if (resultado.type === 'processing') {
@@ -78,14 +80,15 @@ export class CotizacionesController {
 
     @Get(':id/pdf-status')
     @ApiOperation({ summary: 'Estado del trabajo de generación del PDF' })
-    async pdfStatus(@Param('id', ParseIntPipe) id: number) {
+    async pdfStatus(@Param('id', ParseIntPipe) id: number, @Req() req: AuthedRequest) {
+        await this.cotizacionesService.asegurarAcceso(id, alcanceDeDatos(req.user));
         return this.pdfExportService.status(id);
     }
 
     @Get(':id')
     @ApiOperation({ summary: 'Obtener cotización por ID con detalle' })
-    async findOne(@Param('id', ParseIntPipe) id: number) {
-        return this.cotizacionesService.obtenerPorId(id);
+    async findOne(@Param('id', ParseIntPipe) id: number, @Req() req: AuthedRequest) {
+        return this.cotizacionesService.obtenerPorId(id, alcanceDeDatos(req.user));
     }
 
     @Patch(':id')
@@ -93,8 +96,9 @@ export class CotizacionesController {
     async update(
         @Param('id', ParseIntPipe) id: number,
         @Body() body: UpdateCotizacionDto,
+        @Req() req: AuthedRequest,
     ) {
-        return this.cotizacionesService.actualizar(id, body);
+        return this.cotizacionesService.actualizar(id, body, alcanceDeDatos(req.user));
     }
 
     @Patch(':id/estado')
@@ -102,8 +106,9 @@ export class CotizacionesController {
     async updateState(
         @Param('id', ParseIntPipe) id: number,
         @Body() body: CambiarEstadoDto,
+        @Req() req: AuthedRequest,
     ) {
-        return this.cotizacionesService.cambiarEstado(id, body.estado);
+        return this.cotizacionesService.cambiarEstado(id, body.estado, alcanceDeDatos(req.user));
     }
 
     @Post(':id/pagos')
@@ -114,6 +119,6 @@ export class CotizacionesController {
         @Req() req: AuthedRequest,
     ) {
         const userId = req.user?.id_usuario || req.user?.id || req.user?.sub;
-        return this.cotizacionesService.registrarPago(id, body, Number(userId));
+        return this.cotizacionesService.registrarPago(id, body, Number(userId), alcanceDeDatos(req.user));
     }
 }

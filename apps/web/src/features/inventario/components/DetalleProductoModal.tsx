@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import Image from 'next/image';
@@ -47,7 +47,7 @@ export function DetalleProductoModal({
                 <div className="flex gap-4 items-start">
 
                     {/* Imagen del producto */}
-                    <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 bg-stone-100 rounded-2xl border border-stone-200 flex items-center justify-center overflow-hidden">
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 bg-surface-muted rounded-2xl border border-stone-200 flex items-center justify-center overflow-hidden">
                         {imagenUrl ? (
                             <Image
                                 src={getImageUrl(imagenUrl, '200')}
@@ -67,7 +67,7 @@ export function DetalleProductoModal({
                         {/* Cabecera con Código y Stock */}
                         <div className="flex items-center justify-between gap-2">
                             <div>
-                                <span className="text-xs uppercase font-bold text-gray-500 tracking-wider block">Código Producto</span>
+                                <span className="text-xs uppercase font-bold text-zinc-500 tracking-wider block">Código Producto</span>
                                 <h3 className="text-lg sm:text-xl font-black text-brand-subtitle leading-none mt-0.5">
                                     {formatCode(prod.codigo)}
                                 </h3>
@@ -85,7 +85,7 @@ export function DetalleProductoModal({
 
                         {/* DESCRIPCIÓN DESTACADA */}
                         <div className="pt-1">
-                            <p className="text-sm font-semibold text-gray-800 leading-snug">
+                            <p className="text-sm font-semibold text-zinc-800 leading-snug">
                                 {prod.nombre_producto || prod.descripcion_autogenerada || prod.descripcion || 'Sin descripción disponible'}
                             </p>
                         </div>
@@ -94,7 +94,7 @@ export function DetalleProductoModal({
                         <button
                             type="button"
                             onClick={() => setShowDetails(!showDetails)}
-                            className="flex items-center gap-1.5 text-xs font-bold text-brand-ink hover:text-brand-ink transition-colors mt-2 focus:outline-none"
+                            className="flex items-center gap-1.5 text-xs font-bold text-brand-ink hover:text-brand-ink transition-colors mt-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                         >
                             {showDetails ? (
                                 <>Ocultar <ChevronUp className="w-3.5 h-3.5" /></>
@@ -105,39 +105,39 @@ export function DetalleProductoModal({
 
                         {/* ESPECIFICACIONES TÉCNICAS DESPLEGABLES */}
                         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showDetails ? 'max-h-[500px] opacity-100 mt-3' : 'max-h-0 opacity-0 mt-0'}`}>
-                            <div className="bg-gray-50/80 p-3 rounded-2xl border border-gray-200/80">
+                            <div className="bg-zinc-50/80 p-3 rounded-2xl border border-zinc-200/80">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                     <div>
-                                        <span className="block text-xs text-gray-500 uppercase font-bold">Categoría</span>
+                                        <span className="block text-xs text-zinc-500 uppercase font-bold">Categoría</span>
                                         <span className="text-xs font-semibold text-brand-subtitle truncate block">
                                             {formatText(categoria)}
                                         </span>
                                     </div>
                                     <div>
-                                        <span className="block text-xs text-gray-500 uppercase font-bold">Presentación</span>
+                                        <span className="block text-xs text-zinc-500 uppercase font-bold">Presentación</span>
                                         <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.presentacion || '-'}</span>
                                     </div>
                                     {prod.tipo_flor && prod.tipo_flor !== '-' && (
                                         <div>
-                                            <span className="block text-xs text-gray-500 uppercase font-bold">Tipo Flor</span>
+                                            <span className="block text-xs text-zinc-500 uppercase font-bold">Tipo Flor</span>
                                             <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.tipo_flor}</span>
                                         </div>
                                     )}
                                     {prod.material && prod.material !== '-' && (
                                         <div>
-                                            <span className="block text-xs text-gray-500 uppercase font-bold">Material</span>
+                                            <span className="block text-xs text-zinc-500 uppercase font-bold">Material</span>
                                             <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.material}</span>
                                         </div>
                                     )}
                                     {prod.alto && prod.alto !== '-' && (
                                         <div>
-                                            <span className="block text-xs text-gray-500 uppercase font-bold">Alto</span>
+                                            <span className="block text-xs text-zinc-500 uppercase font-bold">Alto</span>
                                             <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.alto}</span>
                                         </div>
                                     )}
                                     {prod.ancho && prod.ancho !== '-' && (
                                         <div>
-                                            <span className="block text-xs text-gray-500 uppercase font-bold">Ancho</span>
+                                            <span className="block text-xs text-zinc-500 uppercase font-bold">Ancho</span>
                                             <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.ancho}</span>
                                         </div>
                                     )}
@@ -152,7 +152,7 @@ export function DetalleProductoModal({
 
                     {/* COLUMNA IZQUIERDA: PRECIOS */}
                     <div className="flex flex-col gap-2">
-                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
                             Precios y Costos
                         </h4>
                         <div className="flex flex-col gap-2">
@@ -165,21 +165,21 @@ export function DetalleProductoModal({
 
                                     <div className="w-full grid grid-cols-3 gap-1 text-center min-w-0">
                                         <div className="flex flex-col items-center">
-                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Unidad</span>
+                                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Unidad</span>
                                             <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(distribuidor.unidad)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
-                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Docena</span>
+                                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Docena</span>
                                             <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(distribuidor.docena)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
-                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Mayor</span>
+                                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Mayor</span>
                                             <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(distribuidor.mayor)}
                                             </span>
@@ -197,21 +197,21 @@ export function DetalleProductoModal({
 
                                     <div className="w-full grid grid-cols-3 gap-1 text-center min-w-0">
                                         <div className="flex flex-col items-center">
-                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Unidad</span>
+                                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Unidad</span>
                                             <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(tienda.unidad)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
-                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Docena</span>
+                                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Docena</span>
                                             <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(tienda.docena)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
-                                            <span className="text-gray-500 text-xs font-bold uppercase leading-tight">Mayor</span>
+                                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Mayor</span>
                                             <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(tienda.mayor)}
                                             </span>
@@ -226,7 +226,7 @@ export function DetalleProductoModal({
                     <div className="flex flex-col gap-4">
                         {/* ALMACENES */}
                         <div>
-                            <h4 className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">
+                            <h4 className="text-xs text-zinc-500 font-bold uppercase tracking-wider mb-2">
                                 Ubicación y Stock por Almacén
                             </h4>
                             <div className="space-y-1.5">
@@ -234,7 +234,7 @@ export function DetalleProductoModal({
                                     prod.stock_actual.map((st: any) => (
                                         <div
                                             key={st.id_almacen}
-                                            className="flex items-center justify-between px-3.5 py-2 bg-white border border-gray-200/80 rounded-xl"
+                                            className="flex items-center justify-between px-3.5 py-2 bg-white border border-zinc-200/80 rounded-xl"
                                         >
                                             <div className="flex items-center gap-2 min-w-0">
                                                 <Store className="w-4 h-4 text-brand-ink shrink-0" />
@@ -255,7 +255,7 @@ export function DetalleProductoModal({
 
                         {/* COLORES */}
                         <div>
-                            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                            <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
                                 Colores disponibles
                             </h4>
                             {prod.colores_surtido && prod.colores_surtido.length > 0 ? (
@@ -288,7 +288,7 @@ export function DetalleProductoModal({
                                         return (
                                             <div
                                                 key={colorObj.id_color || i}
-                                                className="w-6 h-6 rounded-full border border-gray-200 shadow-sm transition-transform hover:scale-110 cursor-help"
+                                                className="w-6 h-6 rounded-full border border-zinc-200 shadow-sm transition-transform hover:scale-110 cursor-help"
                                                 style={{ backgroundColor: hex }}
                                                 title={nombreColor}
                                             />

@@ -59,7 +59,7 @@ export const Pagination: React.FC<PaginationProps> = ({
     };
 
     return (
-        <div className="px-5 py-3 bg-gray-50/80 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500 tnum">
+        <div className="px-5 py-3 bg-zinc-50/80 border-t border-zinc-100 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500 tnum">
             <div className="flex items-center gap-2 whitespace-nowrap">
                 <span>Mostrar</span>
                 <Select
@@ -85,7 +85,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                     disabled={currentPage === 1 || loading}
                     onClick={() => onPageChange(currentPage - 1)}
                     aria-label="Página anterior"
-                    className="min-h-11 min-w-11 flex items-center justify-center border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    className="min-h-11 min-w-11 flex items-center justify-center border border-zinc-200 rounded-lg hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                     <ChevronLeft className="size-4 text-zinc-600" />
                 </button>
@@ -107,7 +107,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                             aria-current={currentPage === item ? 'page' : undefined}
                             className={`min-h-11 min-w-11 flex items-center justify-center rounded-lg text-xs font-bold transition-colors ${currentPage === item
                                 ? 'bg-brand-primary text-on-brand'
-                                : 'border border-gray-200 text-zinc-600 hover:bg-gray-100'
+                                : 'border border-zinc-200 text-zinc-600 hover:bg-zinc-100'
                             }`}
                         >
                             {item}
@@ -120,7 +120,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                     disabled={currentPage === totalPages || totalItems === 0 || loading}
                     onClick={() => onPageChange(currentPage + 1)}
                     aria-label="Página siguiente"
-                    className="min-h-11 min-w-11 flex items-center justify-center border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    className="min-h-11 min-w-11 flex items-center justify-center border border-zinc-200 rounded-lg hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                     <ChevronRight className="size-4 text-zinc-600" />
                 </button>
