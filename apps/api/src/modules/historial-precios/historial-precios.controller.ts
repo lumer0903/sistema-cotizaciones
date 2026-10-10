@@ -36,7 +36,7 @@ export class HistorialPreciosController {
   ): Promise<{ success: true; data: PaginatedHistorialPreciosResponse['data']; total: number; page: number; limit: number }> {
     const result = await this.historialPreciosService.findAll(
       Math.max(1, Number(page) || 1),
-      Math.min(Math.max(1, Number(limit) || 50), 100),
+      Math.min(Math.max(1, Number(limit) || 50), 1000),
       {
       id_producto: id_producto ? Number(id_producto) : undefined,
       id_usuario: id_usuario ? Number(id_usuario) : undefined,

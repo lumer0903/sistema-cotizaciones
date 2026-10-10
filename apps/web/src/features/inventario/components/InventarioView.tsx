@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/apiClient';
 import { showToast } from '@/lib/toast';
 import { InventarioFilters } from '@/features/inventario/components/InventarioFilters';
@@ -19,7 +20,10 @@ import {
 } from '@/features/inventario/mappers';
 
 export function InventarioView() {
-  const [searchValue, setSearchValue] = useState('');
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams?.get('search') || '';
+  
+  const [searchValue, setSearchValue] = useState(initialSearch);
   const searchDebounced = useDebounce(searchValue, 300);
   const [selectedCategoria, setSelectedCategoria] = useState('');
   const [selectedUbicacion, setSelectedUbicacion] = useState('');

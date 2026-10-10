@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { lockBodyScroll, unlockBodyScroll } from '@/lib/scrollLock';
+import { useSidebarOpen } from '@/hooks/useSidebarOpen';
 import { useAuth } from '@/lib/authProvider';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { Avatar } from '@/components/ui/Avatar';
@@ -10,29 +11,10 @@ import { PerfilModal } from '@/features/usuarios/components/PerfilModal';
 import { Sidebar } from '@/components/ui/Sidebar';
 
 export function VendedorLayout({ children }: { children: React.ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarHydrated, setSidebarHydrated] = useState(false);
+  // Preferencia persistida del sidebar (localStorage) fuera de los efectos
+  const [sidebarOpen, setSidebarOpen] = useSidebarOpen();
   const [isPerfilOpen, setIsPerfilOpen] = useState(false);
   const { usuario } = useAuth();
-
-  // Hidratación desde localStorage: respeta la preferencia guardada
-  // (fallback: abierto en desktop, cerrado en móvil). Estado inicial `false`
-  // para evitar mismatch de hidratación SSR/cliente.
-  useEffect(() => {
-    const stored = localStorage.getItem('sidebarOpen');
-    if (stored !== null) {
-      setSidebarOpen(stored === 'true');
-    } else if (window.innerWidth >= 1024) {
-      setSidebarOpen(true);
-    }
-    setSidebarHydrated(true);
-  }, []);
-
-  // Persiste el estado del sidebar para recordarlo entre sesiones
-  useEffect(() => {
-    if (!sidebarHydrated) return;
-    localStorage.setItem('sidebarOpen', String(sidebarOpen));
-  }, [sidebarOpen, sidebarHydrated]);
 
   // Bloquea el scroll del body sólo cuando el menú es drawer (móvil < lg).
   // En desktop el sidebar vive en flujo y la página scrollea con normalidad.
@@ -50,7 +32,7 @@ export function VendedorLayout({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [sidebarOpen]);
+  }, [sidebarOpen, setSidebarOpen]);
 
   return (
     <div className="min-h-screen flex bg-zinc-50 text-zinc-900" data-role={usuario?.rol}>
@@ -75,7 +57,7 @@ export function VendedorLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3 min-w-0">
             <button
               className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-md text-zinc-500 hover:text-vendedor-primary hover:bg-vendedor-soft shrink-0"
-              onClick={() => setSidebarOpen((open) => !open)}
+              onClick={() => setSidebarOpen(!sidebarOpen)}
               aria-label="Alternar menú"
               aria-expanded={sidebarOpen}
               aria-controls="menu-lateral"

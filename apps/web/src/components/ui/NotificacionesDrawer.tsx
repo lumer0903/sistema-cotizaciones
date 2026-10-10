@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, Package, FileText, CreditCard, CalendarClock, Loader2 } from 'lucide-react';
-import { inventarioApi, AlertaStockResponse } from '@/features/inventario/api/inventario.api';
+import { X, Package, FileText, Wallet, Loader2, ExternalLink } from 'lucide-react';
+import { notificacionesApi, NotificacionItem, TipoNotificacion } from '@/features/notificaciones/api/notificaciones.api';
 import { showToast } from '@/lib/toast';
 import { lockBodyScroll, unlockBodyScroll } from '@/lib/scrollLock';
 import { formatCode, formatText } from '@/lib/formatters';
@@ -14,16 +14,32 @@ interface NotificacionesDrawerProps {
   onSuccess?: () => void;
 }
 
-type TabType = 'todas' | 'inventario' | 'cobranzas';
-type NotificationType = 'STOCK_BAJO' | 'COTIZACION_PENDIENTE' | 'COBRANZA_PENDIENTE' | 'PROXIMO_PAGO_PARCIAL';
+type TabType = 'todas' | 'inventario' | 'cotizaciones' | 'cobranzas';
 
-interface NotificationItem {
-  id: string;
-  type: NotificationType;
-  title: string;
-  isRead: boolean;
-  createdAt: string;
-  data: any;
+/** Tabs visibles: solo los que tienen tipos activos presentes en la lista. */
+const TAB_DEFS: Array<{ id: TabType; label: string; tipos: TipoNotificacion[] }> = [
+  { id: 'todas', label: 'Todas', tipos: ['STOCK_BAJO', 'COTIZACION_VENCIDA', 'COBRANZA_PENDIENTE'] },
+  { id: 'inventario', label: 'Inventario', tipos: ['STOCK_BAJO'] },
+  { id: 'cotizaciones', label: 'Cotizaciones', tipos: ['COTIZACION_VENCIDA'] },
+  { id: 'cobranzas', label: 'Cobranzas', tipos: ['COBRANZA_PENDIENTE'] },
+];
+
+/** Destino de navegación por tipo de notificación. */
+function destinoDe(item: NotificacionItem): string {
+  switch (item.tipo) {
+    case 'STOCK_BAJO':
+      return item.data.codigo 
+        ? `/inventario?search=${item.data.codigo}`
+        : '/inventario';
+    case 'COTIZACION_VENCIDA':
+      return item.data.id_cotizacion
+        ? `/cotizaciones/detalle/${item.data.id_cotizacion}`
+        : '/cotizaciones';
+    case 'COBRANZA_PENDIENTE':
+      return item.data.id_cotizacion
+        ? `/cobranza/${item.data.id_cotizacion}`
+        : '/cobranza';
+  }
 }
 
 function getRelativeTime(dateStr: string) {
@@ -44,7 +60,7 @@ function getRelativeTime(dateStr: string) {
 export function NotificacionesDrawer({ open, onClose, onSuccess }: NotificacionesDrawerProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('todas');
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [notifications, setNotifications] = useState<NotificacionItem[]>([]);
   const [loading, setLoading] = useState(open);
   const [prevOpen, setPrevOpen] = useState(open);
 
@@ -54,25 +70,10 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
   }
 
   const fetchNotifications = useCallback(() => {
-    return inventarioApi.obtenerAlertasStock().then((res) => {
-      const alertas = res.data || [];
-
-      const mapped: NotificationItem[] = alertas.map(a => ({
-        id: `stock_${a.id_alerta}`,
-        type: 'STOCK_BAJO',
-        title: 'Stock crítico',
-        isRead: a.estado === 'resuelta',
-        createdAt: a.created_at,
-        data: a,
-      }));
-
-      // Aquí se sumarían alertas de cotizaciones y cobranzas cuando existan en la API
-
-      return mapped.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    });
+    return notificacionesApi.obtener().then((res) => res.data || []);
   }, []);
 
-  const onNotificationsLoaded = useCallback((mapped: NotificationItem[]) => {
+  const onNotificationsLoaded = useCallback((mapped: NotificacionItem[]) => {
     setNotifications(mapped);
     setLoading(false);
   }, []);
@@ -102,55 +103,66 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
     };
   }, [open, onClose]);
 
-  const handleCardClick = async (item: NotificationItem) => {
-    if (!item.isRead) {
-      if (item.type === 'STOCK_BAJO') {
-        try {
-          await inventarioApi.reconocerAlerta((item.data as AlertaStockResponse).id_alerta);
-          if (onSuccess) onSuccess();
-          setLoading(true);
-          fetchNotifications().then(onNotificationsLoaded, onNotificationsError);
-        } catch {
-          showToast.error('Error al marcar como leída');
-        }
+  const handleCardClick = async (item: NotificacionItem) => {
+    // Marca como vista (queda en historial, no se elimina) según el tipo.
+    try {
+      if (!item.leida && item.tipo === 'STOCK_BAJO' && item.data.id_alerta != null) {
+        await notificacionesApi.reconocerAlertaStock(item.data.id_alerta);
+      } else if (!item.leida && item.data.id_cotizacion != null &&
+                 (item.tipo === 'COTIZACION_VENCIDA' || item.tipo === 'COBRANZA_PENDIENTE')) {
+        await notificacionesApi.marcarLeida(item.tipo, item.data.id_cotizacion);
       }
+      if (onSuccess) onSuccess();
+      setLoading(true);
+      fetchNotifications().then(onNotificationsLoaded, onNotificationsError);
+    } catch {
+      showToast.error('Error al marcar como leída');
     }
-    
-    // Navegación
-    if (item.type === 'STOCK_BAJO') {
-      router.push('/inventario');
-      onClose();
+
+    router.push(destinoDe(item));
+    onClose();
+  };
+
+  const handleMarcarTodos = async () => {
+    try {
+      setLoading(true);
+      await notificacionesApi.marcarTodasComoLeidas();
+      if (onSuccess) onSuccess();
+      await fetchNotifications().then(onNotificationsLoaded, onNotificationsError);
+      showToast.success('Todas marcadas como leídas');
+    } catch {
+      showToast.error('Error al marcar todas como leídas');
+      setLoading(false);
     }
-    // Añadir navegación para otras categorías
   };
 
   const filtered = notifications.filter(n => {
-    if (activeTab === 'inventario') return n.type === 'STOCK_BAJO';
-    if (activeTab === 'cobranzas') return n.type === 'COBRANZA_PENDIENTE' || n.type === 'PROXIMO_PAGO_PARCIAL';
-    return true;
+    const def = TAB_DEFS.find(t => t.id === activeTab);
+    if (!def) return true;
+    return def.tipos.includes(n.tipo);
   });
 
-  const renderIcon = (type: NotificationType) => {
-    switch(type) {
-      case 'STOCK_BAJO': return <Package className="w-5 h-5" />;
-      case 'COTIZACION_PENDIENTE': return <FileText className="w-5 h-5" />;
-      case 'COBRANZA_PENDIENTE': return <CreditCard className="w-5 h-5" />;
-      case 'PROXIMO_PAGO_PARCIAL': return <CalendarClock className="w-5 h-5" />;
+  // Solo muestra tabs cuyo tipo tiene al menos una notificación (además de "Todas").
+  const tabsVisibles = TAB_DEFS.filter(tab =>
+    tab.id === 'todas' || notifications.some(n => tab.tipos.includes(n.tipo))
+  );
+
+  const renderIcon = (tipo: TipoNotificacion) => {
+    switch (tipo) {
+      case 'STOCK_BAJO': return <Package className="w-4 h-4" />;
+      case 'COTIZACION_VENCIDA': return <FileText className="w-4 h-4" />;
+      case 'COBRANZA_PENDIENTE': return <Wallet className="w-4 h-4" />;
     }
   };
 
-  const renderBody = (item: NotificationItem) => {
-    if (item.type === 'STOCK_BAJO') {
-      const data = item.data as AlertaStockResponse;
-      return (
-        <p className="text-sm">
-          El producto <strong>{formatCode(data.producto?.codigo || '')} - {formatText(data.producto?.descripcion || '')}</strong> en 
-          el almacén <strong>{formatText(data.almacen?.nombre || '')}</strong> ha caído a 
-          <strong> {data.stock_actual} u.</strong> (Mínimo: {data.stock_minimo} u.)
-        </p>
-      );
+  const renderDetalle = (item: NotificacionItem): string => {
+    if (item.tipo === 'STOCK_BAJO') {
+      return `${formatCode(item.data.codigo || '')} · ${item.data.stock_actual} u. (mín. ${item.data.stock_minimo}) · ${formatText(item.data.almacen || '')}`;
     }
-    return <p className="text-sm">Notificación de sistema.</p>;
+    const fecha = item.data.fecha_vencimiento
+      ? new Date(item.data.fecha_vencimiento).toLocaleDateString()
+      : '—';
+    return `${formatCode(item.data.numero || '')} · ${formatText(item.data.cliente || '')} · vence ${fecha}`;
   };
 
   return (
@@ -161,99 +173,102 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
         role="dialog"
         aria-modal="true"
         aria-label="Notificaciones"
-        className={`absolute right-4 sm:right-8 top-16 w-[90vw] sm:w-[420px] max-h-[calc(100dvh-5rem)] bg-white shadow-2xl rounded-2xl border border-zinc-100 transition-all duration-200 flex flex-col ${open ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-4 opacity-0 scale-95 origin-top-right'}`}
+        className={`absolute right-4 sm:right-8 top-16 w-[90vw] sm:w-[400px] max-h-[calc(100dvh-5rem)] bg-white shadow-2xl rounded-2xl border border-zinc-100 transition-[transform,opacity] duration-200 flex flex-col ${open ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-4 opacity-0 scale-95 origin-top-right'}`}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-5 pb-2 shrink-0">
-          <h2 className="text-xl font-bold text-zinc-900">Notificaciones</h2>
+        {/* Header compacto */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <h2 className="text-sm font-bold text-zinc-900">Notificaciones</h2>
+            {notifications.some(n => !n.leida) && (
+              <button
+                onClick={handleMarcarTodos}
+                className="text-[11px] font-medium text-brand-primary hover:text-brand-primary/80 transition-colors"
+              >
+                Marcar todas leídas
+              </button>
+            )}
+          </div>
           <button
             onClick={onClose}
             aria-label="Cerrar notificaciones"
-            className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-md text-brand-ink hover:bg-brand-soft transition-colors"
+            className="p-1.5 -m-1.5 min-h-9 min-w-9 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="px-5 py-2 border-b border-zinc-100 flex items-center gap-2 overflow-x-auto scrollbar-hide shrink-0">
-          {(['todas', 'inventario', 'cobranzas'] as TabType[]).map((tab) => {
-            const count = tab === 'todas' 
-              ? notifications.length 
-              : notifications.filter(n => tab === 'inventario' ? n.type === 'STOCK_BAJO' : ['COBRANZA_PENDIENTE', 'PROXIMO_PAGO_PARCIAL'].includes(n.type)).length;
-              
-            const label = tab.charAt(0).toUpperCase() + tab.slice(1);
-            const active = activeTab === tab;
-            
+        {/* Tabs compactos */}
+        <div className="px-3 py-2 border-b border-zinc-100 flex items-center gap-1 overflow-x-auto scrollbar-hide shrink-0">
+          {tabsVisibles.map((tab) => {
+            const count = tab.id === 'todas'
+              ? notifications.filter(n => !n.leida).length
+              : notifications.filter(n => tab.tipos.includes(n.tipo) && !n.leida).length;
+            const active = activeTab === tab.id;
+
             return (
               <button
-                key={tab}
+                key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab)}
+                onClick={() => setActiveTab(tab.id)}
                 aria-pressed={active}
-                className={`min-h-11 px-3 inline-flex items-center gap-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+                className={`min-h-8 px-2.5 inline-flex items-center gap-1 rounded-md text-xs font-semibold whitespace-nowrap transition-colors ${
                   active ? 'text-brand-ink bg-brand-soft' : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50'
                 }`}
               >
-                {label}
-                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                  active ? 'bg-brand-primary text-on-brand' : 'bg-zinc-100 text-zinc-600'
-                }`}>
-                  {count}
-                </span>
+                {tab.label}
+                {count > 0 && (
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
+                    active ? 'bg-brand-primary text-on-brand' : 'bg-zinc-100 text-zinc-600'
+                  }`}>
+                    {count}
+                  </span>
+                )}
               </button>
             );
           })}
         </div>
 
-        {/* Lista */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white rounded-b-2xl">
+        {/* Lista compacta */}
+        <div className="flex-1 overflow-y-auto divide-y divide-zinc-50 bg-white rounded-b-2xl">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-40 text-zinc-500">
-              <Loader2 className="w-6 h-6 animate-spin mb-2" />
-              <span className="text-sm">Cargando...</span>
+              <Loader2 className="w-5 h-5 animate-spin mb-2" />
+              <span className="text-xs">Cargando...</span>
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 text-zinc-500">
-              <span className="text-sm">No hay notificaciones</span>
+              <span className="text-xs">No hay notificaciones</span>
             </div>
           ) : (
             filtered.map((item) => {
-              const isUnread = !item.isRead;
+              const isUnread = !item.leida;
               return (
-                <div
+                <button
                   key={item.id}
+                  type="button"
                   onClick={() => handleCardClick(item)}
-                  className={`relative p-4 rounded-xl cursor-pointer transition-all border ${
-                    isUnread
-                      ? 'bg-brand-soft/40 border-brand-primary/30 shadow-sm hover:bg-brand-soft'
-                      : 'bg-white border-zinc-100 hover:bg-zinc-50'
+                  className={`w-full text-left flex items-start gap-2.5 px-4 py-2.5 transition-[background-color] duration-150 group active:scale-[0.96] ${
+                    isUnread ? 'bg-brand-soft/30 hover:bg-brand-soft/60' : 'hover:bg-zinc-50'
                   }`}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-zinc-50 text-zinc-500 border border-zinc-100 shrink-0">
-                      {renderIcon(item.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <h3 className={`text-sm font-semibold truncate ${isUnread ? 'text-zinc-900' : 'text-zinc-600'}`}>
-                          {item.title}
-                        </h3>
-                        <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                          <span className="text-xs font-medium text-zinc-500 whitespace-nowrap">
-                            {getRelativeTime(item.createdAt)}
-                          </span>
-                          {isUnread && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-brand-primary" />
-                          )}
-                        </div>
-                      </div>
-                      <div className={`text-xs text-zinc-500 leading-snug ${isUnread ? '' : 'opacity-80'}`}>
-                        {renderBody(item)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  <span className={`mt-0.5 shrink-0 ${isUnread ? 'text-brand-primary' : 'text-zinc-400'}`}>
+                    {renderIcon(item.tipo)}
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className={`text-xs font-semibold truncate ${isUnread ? 'text-zinc-900' : 'text-zinc-600'}`}>
+                        {item.titulo}
+                      </span>
+                      <span className="text-[10px] font-medium text-zinc-400 whitespace-nowrap shrink-0">
+                        {getRelativeTime(item.createdAt)}
+                      </span>
+                    </span>
+                    <span className="block text-[11px] text-zinc-500 leading-snug truncate">
+                      {renderDetalle(item)}
+                    </span>
+                  </span>
+                  <ExternalLink className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-400 shrink-0 mt-0.5" />
+                </button>
               );
             })
           )}

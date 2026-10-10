@@ -363,7 +363,7 @@ export default function CotizacionDetallePage() {
             readOnly
             value={observaciones}
             placeholder="Sin observaciones"
-            className="w-full min-h-[72px] rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700 outline-none resize-y"
+            className="w-full min-h-[72px] rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700 resize-y focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring"
           />
         </div>
       </div>

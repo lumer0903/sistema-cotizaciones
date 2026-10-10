@@ -17,14 +17,19 @@
     "db:push": "pnpm --filter=@goldcontinent/database run db:push",
     "db:migrate": "pnpm --filter=@goldcontinent/database run db:migrate",
     "db:studio": "pnpm --filter=@goldcontinent/database run db:studio",
+    "db:seed": "pnpm --filter=@goldcontinent/database run db:seed",
+    "db:backup": "pnpm --filter=@goldcontinent/database run db:backup",
+    "db:restore": "pnpm --filter=@goldcontinent/database run db:restore",
     "db:reset-password": "pnpm --filter=@goldcontinent/database run db:reset-password",
+    "check": "pnpm run typecheck && pnpm run lint && pnpm run build && pnpm run test",
     "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f"
   },
   "devDependencies": {
     "turbo": "^2.11.4",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "xlsx": "^0.18.5"
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {

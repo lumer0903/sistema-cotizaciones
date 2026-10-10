@@ -1,259 +1,127 @@
 'use client';
 
-import { Package, FileText, DollarSign, TrendingUp, Wallet, Clock, Target, Percent } from 'lucide-react';
-import { apiClient } from '@/lib/apiClient';
-import { useEffect, useState, useCallback } from 'react';
-import Link from 'next/link';
-import { DashboardStats } from '@/types';
-import { StatCard, StatCardSkeleton, StatTone } from '@/components/shared/StatCard';
 import { Button } from '@/components/ui';
 import { usePermissions } from '@/hooks/usePermissions';
-
-interface KpisTesis {
-  tiempoPromedioCotizacion: number;
-  eficacia: number;
-  rendimientoMonetario: number;
-  ventasTotales?: number;
-}
-
-interface StatCardConfig {
-  label: string;
-  value: string | number;
-  icon: typeof Package;
-  tone: StatTone;
-  href: string;
-}
+import { useDashboardData } from '../hooks/useDashboardData';
+import {
+  useDashboardStore,
+  type ChartType,
+  type DashboardView as DashboardViewType,
+} from '../store/useDashboardStore';
+import { KPICards, IndicadoresTesis } from './KPICards';
+import { DashboardCustomizer } from './DashboardCustomizer';
+import { WidgetCard } from './WidgetCard';
+import { DashboardFiltersBar } from './DashboardFiltersBar';
 
 export function DashboardView() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [kpis, setKpis] = useState<KpisTesis | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const { isAdmin } = usePermissions();
+  const { isAdmin, isGerente } = usePermissions();
+  const {
+    isCustomizing,
+    adminWidgets,
+    vendedorWidgets,
+    filters,
+    setCustomizing,
+    toggleWidget,
+    setWidgetChartType,
+    resetWidgets,
+    setFilters,
+  } = useDashboardStore();
 
-  const fetchStats = useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    try {
-      const [productos, cotizaciones, aprobadas, cobranza, kpisRes] = await Promise.all([
-        apiClient('/productos?limit=1'),
-        apiClient('/cotizaciones?limit=1'),
-        apiClient('/cotizaciones?estado=aprobada&limit=1'),
-        apiClient('/cobranza?limit=100'),
-        apiClient('/dashboard/kpis').catch(() => null),
-      ]);
+  const { kpis, graficos, stockBajo, isLoading, isError, refetchAll } = useDashboardData(filters);
 
-      setKpis(kpisRes?.data ?? null);
-      setStats({
-        totalProductos: productos.total || 0,
-        totalCotizaciones: cotizaciones.total || 0,
-        cotizacionesAprobadas: aprobadas.total || 0,
-        montoPendiente:
-          cobranza.data?.reduce(
-            (sum: number, c: { saldo?: number; montoPendiente?: number }) =>
-              sum + Number(c.saldo ?? c.montoPendiente ?? 0),
-            0,
-          ) || 0,
-        productosBajoStock: 0,
-        cotizacionesEsteMes: 0,
-      });
-    } catch (err) {
-      console.error('Error fetching stats:', err);
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Vista forzada por rol. El Admin/Gerente usa el filtro de "Vendedor" en la barra superior.
+  const view: DashboardViewType = isAdmin || isGerente ? 'admin' : 'vendedor';
+  const widgets = view === 'admin' ? adminWidgets : vendedorWidgets;
+  const activeWidgets = widgets.filter((w) => w.isActive);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void fetchStats();
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [fetchStats]);
+  const cotizacionesPorEstadoTotal = graficos.data?.cotizacionesPorEstado?.reduce(
+    (s, e) => s + e.cantidad,
+    0
+  );
 
-  const fmtPct = (v: number | undefined) =>
-    `${(v ?? 0).toLocaleString('es-PE', { maximumFractionDigits: 2 })}%`;
-
-  const indicadoresTesis = [
-    {
-      label: 'Tiempo promedio de generación',
-      value: `${(kpis?.tiempoPromedioCotizacion ?? 0).toLocaleString('es-PE', { maximumFractionDigits: 2 })} min`,
-      icon: Clock,
-      tone: 'brand' as const,
-    },
-    {
-      label: 'Eficacia (cotizaciones aceptadas)',
-      value: fmtPct(kpis?.eficacia),
-      icon: Target,
-      tone: 'success' as const,
-    },
-    {
-      label: 'Rendimiento monetario',
-      value: fmtPct(kpis?.rendimientoMonetario),
-      icon: Percent,
-      tone: 'warning' as const,
-    },
-  ];
-
-  const statCards: StatCardConfig[] = [
-    {
-      label: 'Productos',
-      value: stats?.totalProductos || 0,
-      icon: Package,
-      tone: 'info',
-      href: '/inventario',
-    },
-    {
-      label: isAdmin ? 'Cotizaciones' : 'Mis cotizaciones',
-      value: stats?.totalCotizaciones || 0,
-      icon: FileText,
-      tone: 'brand',
-      href: '/cotizaciones',
-    },
-    {
-      label: isAdmin ? 'Aprobadas' : 'Mis aprobadas',
-      value: stats?.cotizacionesAprobadas || 0,
-      icon: TrendingUp,
-      tone: 'success',
-      href: '/cotizaciones',
-    },
-    {
-      label: 'Ventas',
-      value: `S/ ${(kpis?.ventasTotales ?? 0).toLocaleString()}`,
-      icon: DollarSign,
-      tone: 'warning',
-      href: '/cotizaciones',
-    },
-    {
-      label: 'Por Cobrar',
-      value: stats?.montoPendiente ? `S/ ${stats.montoPendiente.toLocaleString()}` : 'S/ 0',
-      icon: Wallet,
-      tone: 'danger',
-      href: '/cobranza',
-    },
-  ];
-
-  const accesosRapidos = [
-    {
-      href: '/inventario',
-      icon: Package,
-      title: 'Gestionar Productos',
-      description: 'Inventario, precios, importación',
-    },
-    {
-      href: '/cotizaciones/crear?nueva=1',
-      icon: FileText,
-      title: 'Nueva Cotización',
-      description: 'Crear cotización para cliente',
-    },
-    {
-      href: '/cobranza',
-      icon: DollarSign,
-      title: 'Cobranza',
-      description: 'Registrar pagos de cotizaciones',
-    },
-  ];
-
-  if (loading) {
-    return (
-      <div role="status" aria-live="polite" aria-label="Cargando dashboard">
-        <span className="sr-only">Cargando métricas del dashboard…</span>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-8">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <StatCardSkeleton key={i} />
-          ))}
-        </div>
-        <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-4 sm:p-6 mb-8">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <StatCardSkeleton key={i} />
-            ))}
-          </div>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <StatCardSkeleton key={i} />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const isAdminOrGerente = isAdmin || isGerente;
 
   return (
     <>
       <h1 className="sr-only">Dashboard</h1>
-      {error && !stats && (
+
+      {/* Filtros globales */}
+      <div className="mb-6">
+        <DashboardFiltersBar
+          filters={filters}
+          onChange={setFilters}
+          isAdmin={isAdminOrGerente}
+        />
+      </div>
+
+      {/* Error banner */}
+      {isError && (
         <div
           role="alert"
-          className="mb-8 bg-estado-rechazado-soft border border-estado-rechazado/30 text-danger p-3.5 rounded-xl text-xs font-semibold flex items-center justify-between"
+          className="mb-6 bg-red-50 border border-red-200 text-red-700 p-3.5 rounded-xl text-xs font-semibold flex items-center justify-between"
         >
           <span>No se pudieron cargar las métricas del dashboard.</span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void fetchStats()}
-            className="ml-4 underline font-bold text-red-700 hover:text-red-800"
-          >
+          <Button variant="outline" size="sm" onClick={() => void refetchAll()} className="ml-4 underline">
             Reintentar
           </Button>
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-8">
-        {statCards.map((stat) => (
-          <StatCard
-            key={stat.label}
-            label={stat.label}
-            value={stat.value}
-            icon={stat.icon}
-            tone={stat.tone}
-            href={stat.href}
-          />
-        ))}
-      </div>
+      {/* KPIs */}
+      <KPICards
+        kpis={kpis.data}
+        cotizacionesPorEstadoTotal={cotizacionesPorEstadoTotal}
+        stockBajo={stockBajo.data}
+        view={view}
+        loading={isLoading}
+      />
 
-      <section className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-4 sm:p-6 mb-8" aria-labelledby="indicadores-tesis">
-        <h2 id="indicadores-tesis" className="text-lg font-semibold text-brand-subtitle mb-1">
-          Indicadores de la tesis
-        </h2>
-        <p className="text-sm text-brand-options mb-4">
-          Tiempo, eficacia y rendimiento {isAdmin ? 'de las cotizaciones' : 'de tus cotizaciones'}
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {indicadoresTesis.map((ind) => (
-            <StatCard
-              key={ind.label}
-              label={ind.label}
-              value={ind.value}
-              icon={ind.icon}
-              tone={ind.tone}
+      {/* Widgets activos */}
+      {activeWidgets.length > 0 && (
+        <div className="grid gap-6 lg:grid-cols-2" aria-label="Widgets del dashboard">
+          {activeWidgets.map((widget) => (
+            <WidgetCard
+              key={widget.id}
+              widget={widget}
+              graficos={graficos.data}
+              stockBajo={stockBajo.data}
+              view={view}
+              onOpenCustomizer={() => setCustomizing(true)}
             />
           ))}
         </div>
-      </section>
+      )}
 
-      <section className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-4 sm:p-6" aria-labelledby="accesos-rapidos">
-        <h2 id="accesos-rapidos" className="text-lg font-semibold text-brand-subtitle mb-4">
-          Accesos rápidos
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {accesosRapidos.map((acceso) => (
-            <Link
-              key={acceso.href}
-              href={acceso.href}
-              className="group p-4 rounded-lg border border-zinc-200 hover:border-brand-primary/50 hover:bg-brand-selection/50 transition-colors cursor-pointer"
-            >
-              <acceso.icon
-                className="h-8 w-8 text-brand-ink mb-2 transition-colors group-hover:text-brand-primary"
-                aria-hidden="true"
-              />
-              <p className="font-medium text-brand-subtitle">{acceso.title}</p>
-              <p className="text-sm text-brand-options mt-1">{acceso.description}</p>
-            </Link>
-          ))}
+      {/* Sin widgets activos */}
+      {activeWidgets.length === 0 && !isLoading && (
+        <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/50 p-10 text-center">
+          <p className="text-sm font-semibold text-zinc-700">No hay widgets activos</p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Personaliza tu dashboard para agregar indicadores y gráficos.
+          </p>
+          <Button variant="primary" size="sm" className="mt-4" onClick={() => setCustomizing(true)}>
+            Personalizar Dashboard
+          </Button>
         </div>
-      </section>
+      )}
+
+      {/* Indicadores de tesis (solo Admin) — al final de la página */}
+      {view === 'admin' && !isLoading && kpis.data && (
+        <div className="mt-6">
+          <IndicadoresTesis kpis={kpis.data} view={view} />
+        </div>
+      )}
+
+      {/* Modal de personalización */}
+      <DashboardCustomizer
+        open={isCustomizing}
+        onClose={() => setCustomizing(false)}
+        view={view}
+        widgets={widgets}
+        onToggleWidget={toggleWidget}
+        onChartTypeChange={(v, id, type: ChartType) => setWidgetChartType(v, id, type)}
+        onReset={resetWidgets}
+      />
     </>
   );
 }

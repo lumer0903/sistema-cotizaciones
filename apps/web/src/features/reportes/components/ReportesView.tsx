@@ -1,0 +1,500 @@
+'use client';
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Download, RefreshCw, FileText, BarChart2, Users } from 'lucide-react';
+import { apiClient } from '@/lib/apiClient';
+import { getUsuarios, type UsuarioLista } from '@/features/usuarios/api/usuariosApi';
+import type { Almacen, Cliente } from '@goldcontinent/shared/types';
+import {
+  fetchRankingProductos,
+  fetchAntiguedadDeuda,
+  fetchAuditoriaIa,
+  toCSV,
+  downloadBlob,
+} from '@/features/reportes/api/reportes';
+import type {
+  FiltrosReporte,
+  RankingProducto,
+  AntiguedadDeuda,
+  AuditoriaIa,
+  TipoReporte,
+} from '@/features/reportes/types';
+import { FilterCard } from '@/components/ui/FilterCard';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
+import { Card } from '@/components/ui/Card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
+import { Pagination } from '@/components/ui/Pagination';
+import { showToast } from '@/lib/toast';
+import { usePermissions } from '@/hooks/usePermissions';
+
+const TAKE = 20;
+
+const REPORTE_CONFIG: Record<TipoReporte, { label: string; icon: React.ReactNode; description: string }> = {
+  'ranking-productos': {
+    label: 'Ranking Productos',
+    icon: <BarChart2 className="w-4 h-4" />,
+    description: 'Productos más vendidos por cantidad e ingreso',
+  },
+  'antiguedad-deuda': {
+    label: 'Antigüedad Deuda',
+    icon: <Users className="w-4 h-4" />,
+    description: 'Cuentas por cobrar agrupadas por rango de días',
+  },
+  'auditoria-ia': {
+    label: 'Auditoría IA',
+    icon: <FileText className="w-4 h-4" />,
+    description: 'Historial de sugerencias IA y acciones del usuario',
+  },
+};
+
+const RANKING_HEADERS: Record<keyof RankingProducto, string> = {
+  idProducto: 'ID',
+  codigo: 'Código',
+  descripcion: 'Producto',
+  cantidadVendida: 'Cant. Vendida',
+  ingresoTotal: 'Ingreso Total (S/)',
+  numeroCotizaciones: 'Nº Cotizaciones',
+};
+
+const DEUDA_HEADERS: Record<keyof AntiguedadDeuda, string> = {
+  idCliente: 'ID',
+  cliente: 'Cliente',
+  rucDni: 'RUC/DNI',
+  totalPendiente: 'Total Pendiente (S/)',
+  d0_30: '0-30 días',
+  d31_60: '31-60 días',
+  d61_90: '61-90 días',
+  d90mas: '90+ días',
+  diasCreditoDefecto: 'Días Crédito',
+  diasGracia: 'Días Gracia',
+};
+
+const IA_HEADERS: Record<keyof AuditoriaIa, string> = {
+  idInteraccion: 'ID',
+  createdAt: 'Fecha',
+  tipoSugerencia: 'Tipo Sugerencia',
+  accionUsuario: 'Acción Usuario',
+  productoOriginal: 'Producto Original',
+  productoSugerido: 'Producto Sugerido',
+  idCotizacion: 'Nº Cotización',
+  vendedor: 'Vendedor',
+};
+
+export function ReportesView() {
+  const { isAdmin } = usePermissions();
+
+  // Estado global
+  const [tipoReporte, setTipoReporte] = useState<TipoReporte>('ranking-productos');
+  const [filtros, setFiltros] = useState<FiltrosReporte>({});
+  const [skip, setSkip] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [loadingMetas, setLoadingMetas] = useState(true);
+
+  // Metadatos para selects
+  const [almacenes, setAlmacenes] = useState<Almacen[]>([]);
+  const [vendedores, setVendedores] = useState<UsuarioLista[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+
+  // Datos de reportes
+  const [rankingData, setRankingData] = useState<{ data: RankingProducto[]; total: number }>({ data: [], total: 0 });
+  const [deudaData, setDeudaData] = useState<{ data: AntiguedadDeuda[]; total: number }>({ data: [], total: 0 });
+  const [iaData, setIaData] = useState<{ data: AuditoriaIa[]; total: number }>({ data: [], total: 0 });
+
+  // Cargar metadatos para filtros
+  const cargarMetadatos = useCallback(async () => {
+    try {
+      const [resAlm, resUsu, resCli] = await Promise.all([
+        apiClient('/almacenes?activo=true&limit=100').catch(() => ({ data: [] })),
+        getUsuarios({ limit: 100 }).catch(() => ({ data: [] })),
+        apiClient('/clientes?activo=true&limit=100').catch(() => ({ data: [] })),
+      ]);
+      setAlmacenes(Array.isArray(resAlm?.data) ? resAlm.data : []);
+      const usuarios = Array.isArray(resUsu?.data) ? resUsu.data : [];
+      setVendedores(usuarios.filter((u) => u.rol === 'vendedor' && u.activo));
+      setClientes(Array.isArray(resCli?.data) ? resCli.data : []);
+    } catch (e) {
+      console.error('Error cargando metadatos:', e);
+    } finally {
+      setLoadingMetas(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial fetch on mount is standard data fetching pattern
+    cargarMetadatos();
+  }, [cargarMetadatos]);
+
+  // Fetch actual según reporte activo
+  const fetchActual = useCallback(async (resetPagination = false) => {
+    if (resetPagination) setSkip(0);
+    setLoading(true);
+    try {
+      switch (tipoReporte) {
+        case 'ranking-productos': {
+          const res = await fetchRankingProductos(filtros, TAKE, skip);
+          setRankingData(res);
+          break;
+        }
+        case 'antiguedad-deuda': {
+          const res = await fetchAntiguedadDeuda(filtros, TAKE, skip);
+          setDeudaData(res);
+          break;
+        }
+        case 'auditoria-ia': {
+          const res = await fetchAuditoriaIa(filtros, TAKE, skip);
+          setIaData(res);
+          break;
+        }
+      }
+    } catch (e) {
+      showToast.error(e instanceof Error ? e.message : 'Error al cargar el reporte');
+    } finally {
+      setLoading(false);
+    }
+  }, [tipoReporte, filtros, skip]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch on mount/dependency change
+    fetchActual(true);
+  }, [fetchActual]);
+
+  // Helpers de paginación
+  const totalActual = useMemo((): number => {
+    switch (tipoReporte) {
+      case 'ranking-productos': return rankingData.total;
+      case 'antiguedad-deuda': return deudaData.total;
+      case 'auditoria-ia': return iaData.total;
+      default: return 0;
+    }
+  }, [tipoReporte, rankingData.total, deudaData.total, iaData.total]);
+
+  const dataActual = useMemo((): (RankingProducto | AntiguedadDeuda | AuditoriaIa)[] => {
+    switch (tipoReporte) {
+      case 'ranking-productos': return rankingData.data;
+      case 'antiguedad-deuda': return deudaData.data;
+      case 'auditoria-ia': return iaData.data;
+      default: return [];
+    }
+  }, [tipoReporte, rankingData.data, deudaData.data, iaData.data]);
+
+  const totalPages = Math.ceil(totalActual / TAKE) || 1;
+  const currentPage = Math.floor(skip / TAKE) + 1;
+
+  const handlePageChange = (page: number) => {
+    setSkip((page - 1) * TAKE);
+  };
+
+  const handleFiltroChange = (key: string, value: string | number | undefined) => {
+    setFiltros((prev: FiltrosReporte) => ({ ...prev, [key]: value as any }));
+  };
+
+  const handleExport = async () => {
+    try {
+      const blob = await (async (): Promise<Blob> => {
+        switch (tipoReporte) {
+          case 'ranking-productos': {
+            const res = await fetchRankingProductos(filtros, 50, 0);
+            return new Blob([toCSV(res.data, RANKING_HEADERS)], { type: 'text/csv;charset=utf-8;' });
+          }
+          case 'antiguedad-deuda': {
+            const res = await fetchAntiguedadDeuda(filtros, 50, 0);
+            return new Blob([toCSV(res.data, DEUDA_HEADERS)], { type: 'text/csv;charset=utf-8;' });
+          }
+          case 'auditoria-ia': {
+            const res = await fetchAuditoriaIa(filtros, 50, 0);
+            return new Blob([toCSV(res.data, IA_HEADERS)], { type: 'text/csv;charset=utf-8;' });
+          }
+          default:
+            return new Blob([''], { type: 'text/csv;charset=utf-8;' });
+        }
+      })();
+
+      const fecha = new Date().toISOString().slice(0, 10);
+      downloadBlob(blob, `${tipoReporte}-${fecha}.csv`);
+      showToast.success('Reporte exportado correctamente');
+    } catch {
+      showToast.error('Error al exportar el reporte');
+    }
+  };
+
+  const almacenOptions = almacenes.map((a) => ({ label: a.nombre, value: a.id_almacen }));
+  const vendedorOptions = vendedores.map((v) => ({ label: v.nombre, value: v.id_usuario }));
+  const clienteOptions = clientes.map((c) => ({ label: c.nombre, value: c.id_cliente }));
+
+  // Render filas según tipo
+  const renderRows = () => {
+    switch (tipoReporte) {
+      case 'ranking-productos':
+        return (dataActual as RankingProducto[]).map((row) => (
+          <TableRow key={row.idProducto}>
+            <TableCell>{row.codigo}</TableCell>
+            <TableCell className="max-w-xs truncate">{row.descripcion}</TableCell>
+            <TableCell className="text-right">{row.cantidadVendida.toLocaleString()}</TableCell>
+            <TableCell className="text-right font-mono">{Number(row.ingresoTotal).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="text-right">{row.numeroCotizaciones}</TableCell>
+          </TableRow>
+        ));
+      case 'antiguedad-deuda':
+        return (dataActual as AntiguedadDeuda[]).map((row) => (
+          <TableRow key={row.idCliente}>
+            <TableCell className="max-w-xs truncate">{row.cliente}</TableCell>
+            <TableCell>{row.rucDni ?? '-'}</TableCell>
+            <TableCell className="text-right font-semibold">{Number(row.totalPendiente).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="text-right">{Number(row.d0_30).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="text-right">{Number(row.d31_60).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="text-right">{Number(row.d61_90).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="text-right text-danger font-medium">{Number(row.d90mas).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+          </TableRow>
+        ));
+      case 'auditoria-ia':
+        return (dataActual as AuditoriaIa[]).map((row) => (
+          <TableRow key={row.idInteraccion}>
+            <TableCell>{new Date(row.createdAt).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</TableCell>
+            <TableCell>{row.tipoSugerencia ?? '-'}</TableCell>
+            <TableCell>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                row.accionUsuario === 'aceptada' ? 'bg-green-100 text-green-800' :
+                row.accionUsuario === 'rechazada' ? 'bg-red-100 text-red-800' :
+                'bg-zinc-100 text-zinc-700'
+              }`}>
+                {row.accionUsuario ?? '-'}
+              </span>
+            </TableCell>
+            <TableCell className="max-w-xs truncate">{row.productoOriginal ?? '-'}</TableCell>
+            <TableCell className="max-w-xs truncate">{row.productoSugerido ?? '-'}</TableCell>
+            <TableCell className="text-right">{row.idCotizacion ?? '-'}</TableCell>
+            <TableCell>{row.vendedor ?? '-'}</TableCell>
+          </TableRow>
+        ));
+    }
+  };
+
+  const renderHeaders = () => {
+    switch (tipoReporte) {
+      case 'ranking-productos':
+        return (
+          <TableHeader>
+            <TableRow>
+              <TableHead>Código</TableHead>
+              <TableHead>Producto</TableHead>
+              <TableHead className="text-right">Cant. Vendida</TableHead>
+              <TableHead className="text-right">Ingreso Total (S/)</TableHead>
+              <TableHead className="text-right">Nº Cotizaciones</TableHead>
+            </TableRow>
+          </TableHeader>
+        );
+      case 'antiguedad-deuda':
+        return (
+          <TableHeader>
+            <TableRow>
+              <TableHead>Cliente</TableHead>
+              <TableHead>RUC/DNI</TableHead>
+              <TableHead className="text-right">Total Pendiente</TableHead>
+              <TableHead className="text-right">0-30 días</TableHead>
+              <TableHead className="text-right">31-60 días</TableHead>
+              <TableHead className="text-right">61-90 días</TableHead>
+              <TableHead className="text-right text-danger">90+ días</TableHead>
+            </TableRow>
+          </TableHeader>
+        );
+      case 'auditoria-ia':
+        return (
+          <TableHeader>
+            <TableRow>
+              <TableHead>Fecha</TableHead>
+              <TableHead>Tipo Sugerencia</TableHead>
+              <TableHead>Acción</TableHead>
+              <TableHead>Producto Original</TableHead>
+              <TableHead>Producto Sugerido</TableHead>
+              <TableHead className="text-right">Nº Cotización</TableHead>
+              <TableHead>Vendedor</TableHead>
+            </TableRow>
+          </TableHeader>
+        );
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <h1 className="sr-only">Reportes</h1>
+
+      {/* Filtros */}
+      <FilterCard accentBorder>
+        <div className="flex flex-wrap items-end justify-between gap-3 w-full">
+          <div className="flex flex-wrap items-end gap-3 flex-1 min-w-[280px]">
+            <div className="w-full sm:w-44">
+              <Input
+                label="Fecha inicio"
+                type="date"
+                value={filtros.fechaInicio ?? ''}
+                onChange={(e) => handleFiltroChange('fechaInicio', e.target.value || undefined)}
+                disabled={loadingMetas}
+              />
+            </div>
+            <div className="w-full sm:w-44">
+              <Input
+                label="Fecha fin"
+                type="date"
+                value={filtros.fechaFin ?? ''}
+                onChange={(e) => handleFiltroChange('fechaFin', e.target.value || undefined)}
+                disabled={loadingMetas}
+              />
+            </div>
+            {isAdmin && (
+              <div className="w-full sm:w-56">
+                <Select
+                  label="Vendedor"
+                  value={filtros.idVendedor ? String(filtros.idVendedor) : ''}
+                  onChange={(e) => handleFiltroChange('idVendedor', e.target.value ? Number(e.target.value) : undefined)}
+                  options={[{ label: 'Todos', value: '' }, ...vendedorOptions]}
+                  disabled={loadingMetas}
+                  placeholder="Todos"
+                />
+              </div>
+            )}
+            <div className="w-full sm:w-56">
+              <Select
+                label="Almacén"
+                value={filtros.idAlmacen ? String(filtros.idAlmacen) : ''}
+                onChange={(e) => handleFiltroChange('idAlmacen', e.target.value ? Number(e.target.value) : undefined)}
+                options={[{ label: 'Todos', value: '' }, ...almacenOptions]}
+                disabled={loadingMetas}
+                placeholder="Todos"
+              />
+            </div>
+            <div className="w-full sm:w-56">
+              <Select
+                label="Cliente"
+                value={filtros.idCliente ? String(filtros.idCliente) : ''}
+                onChange={(e) => handleFiltroChange('idCliente', e.target.value ? Number(e.target.value) : undefined)}
+                options={[{ label: 'Todos', value: '' }, ...clienteOptions]}
+                disabled={loadingMetas}
+                placeholder="Todos"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 sm:ml-auto h-9">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleExport}
+              disabled={dataActual.length === 0}
+              className="gap-1.5 whitespace-nowrap"
+            >
+              <Download className="w-4 h-4" aria-hidden="true" />
+              <span>Exportar CSV</span>
+            </Button>
+          </div>
+        </div>
+      </FilterCard>
+
+      {/* Tabs de reportes */}
+      <Tabs value={tipoReporte} onValueChange={(v: string) => setTipoReporte(v as TipoReporte)} className="w-full">
+        <TabsList className="grid w-full grid-cols-3" aria-label="Tipo de reporte">
+          {(Object.keys(REPORTE_CONFIG) as TipoReporte[]).map((tipo) => (
+            <TabsTrigger key={tipo} value={tipo} className="gap-2">
+              {REPORTE_CONFIG[tipo].icon}
+              {REPORTE_CONFIG[tipo].label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        <TabsContent value="ranking-productos" className="mt-4">
+          <Card>
+            <Table>
+              {renderHeaders()}
+              <TableBody>
+                {dataActual.length > 0 ? renderRows() : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-zinc-500">
+                      No hay datos para los filtros seleccionados
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalActual}
+                limit={TAKE}
+                onPageChange={handlePageChange}
+                onLimitChange={() => {}}
+                itemLabel="registros"
+              />
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="antiguedad-deuda" className="mt-4">
+          <Card>
+            <Table>
+              {renderHeaders()}
+              <TableBody>
+                {dataActual.length > 0 ? renderRows() : (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
+                      No hay datos para los filtros seleccionados
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalActual}
+                limit={TAKE}
+                onPageChange={handlePageChange}
+                onLimitChange={() => {}}
+                itemLabel="clientes"
+              />
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="auditoria-ia" className="mt-4">
+          <Card>
+            <Table>
+              {renderHeaders()}
+              <TableBody>
+                {dataActual.length > 0 ? renderRows() : (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
+                      No hay datos para los filtros seleccionados
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalActual}
+                limit={TAKE}
+                onPageChange={handlePageChange}
+                onLimitChange={() => {}}
+                itemLabel="registros"
+              />
+            )}
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {loading && (
+        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50" role="status" aria-live="polite">
+          <div className="flex items-center gap-2 text-brand-primary">
+            <RefreshCw className="w-6 h-6 animate-spin" aria-hidden="true" />
+            <span>Cargando reporte...</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

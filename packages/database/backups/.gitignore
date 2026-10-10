@@ -1,0 +1,3 @@
+# Backups generados por pnpm db:backup (no versionar los .sql.gz)
+*.sql.gz
+!.gitkeep

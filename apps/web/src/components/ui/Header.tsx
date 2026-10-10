@@ -1,10 +1,10 @@
 'use client';
 
 import { useAuth } from '@/lib/authProvider';
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Avatar } from '@/components/ui/Avatar';
 import { Menu, LogOut } from 'lucide-react';
+import { useSidebarOpen } from '@/hooks/useSidebarOpen';
 
 interface HeaderProps {
   /** Control externo opcional del estado del sidebar. */
@@ -16,30 +16,14 @@ interface HeaderProps {
 export function Header({ sidebarOpen: controlledOpen, onToggleSidebar }: HeaderProps = {}) {
   const { usuario, logout } = useAuth();
   const router = useRouter();
-  const [internalOpen, setInternalOpen] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+  // Preferencia persistida del sidebar (localStorage) fuera de los efectos
+  const [storedOpen, setStoredOpen] = useSidebarOpen();
 
-  // Hidratación desde localStorage: recuerda el estado del sidebar entre sesiones
-  // (fallback: abierto en desktop, cerrado en móvil). Estado inicial `false`
-  // para evitar mismatch de hidratación SSR/cliente.
-  useEffect(() => {
-    const stored = localStorage.getItem('sidebarOpen');
-    if (stored !== null) {
-      setInternalOpen(stored === 'true');
-    } else {
-      setInternalOpen(window.innerWidth >= 1024);
-    }
-    setHydrated(true);
-  }, []);
-
-  const open = controlledOpen ?? internalOpen;
+  const open = controlledOpen ?? storedOpen;
 
   const toggleSidebar = () => {
     const next = !open;
-    if (controlledOpen === undefined) {
-      setInternalOpen(next);
-      if (hydrated) localStorage.setItem('sidebarOpen', String(next));
-    }
+    if (controlledOpen === undefined) setStoredOpen(next);
     onToggleSidebar?.();
   };
 
@@ -59,7 +43,7 @@ export function Header({ sidebarOpen: controlledOpen, onToggleSidebar }: HeaderP
 
         <div className="hidden sm:flex flex-col items-end">
           <span className="text-xs font-semibold text-zinc-900">{usuario?.nombre || 'Usuario'}</span>
-          <span className={`text-xs font-semibold tracking-wider uppercase ${open ? 'text-zinc-500' : 'text-zinc-400'}`}>
+          <span className="text-xs font-semibold tracking-wider uppercase text-zinc-500">
             {usuario?.rol || 'Vendedor'}
           </span>
         </div>

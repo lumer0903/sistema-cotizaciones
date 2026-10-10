@@ -11,10 +11,13 @@
     "db:migrate:add": "prisma migrate dev --name",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset-password": "tsx prisma/reset-password.ts"
+    "db:reset-password": "tsx prisma/reset-password.ts",
+    "db:backup": "tsx scripts/db-backup.ts",
+    "db:restore": "tsx scripts/db-restore.ts"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0"
+    "@prisma/client": "^5.22.0",
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

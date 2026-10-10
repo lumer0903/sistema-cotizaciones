@@ -33,7 +33,7 @@ export function StatCard({ label, value, icon: Icon, tone = 'brand', href, class
   const content = (
     <>
       <div className="min-w-0">
-        <p className="text-sm font-medium text-brand-options truncate">{label}</p>
+        <p className="text-xs font-semibold text-zinc-600 line-clamp-2 leading-tight min-h-[2rem]">{label}</p>
         <p className="text-2xl font-bold text-brand-subtitle mt-1 tnum truncate">{value}</p>
       </div>
       <div
@@ -46,8 +46,8 @@ export function StatCard({ label, value, icon: Icon, tone = 'brand', href, class
   );
 
   const baseClass = cn(
-    'bg-white rounded-xl border border-zinc-200 p-4 sm:p-6 flex items-center justify-between gap-3',
-    'transition-all duration-200 hover:shadow-md hover:border-brand-primary/50',
+    'bg-white rounded-xl border border-zinc-200 p-4 flex items-center justify-between gap-3',
+    'transition-[background-color,border-color,box-shadow] duration-200 hover:shadow-md hover:border-brand-primary/50',
     href && 'cursor-pointer',
     className
   );

@@ -8,7 +8,8 @@
   Brand:        #F8B602   (principal)
   Selection:    #FFF5D6   (selección / highlight)
   Subtítulo:    #414141
-  Muted:        #8E8E8E
+  Muted:        #6E6E6E   (AA sobre blanco 5.1:1; el #8E8E8E del manual
+                          da 3.28:1 y rompe WCAG 1.4.3 en texto pequeño)
   Tienda:       #1F41AF
   Distribuidor: #9D3A19
   Estados:      Borrador / Aprobado / Rechazado / Enviado
@@ -32,7 +33,8 @@
   --color-brand-ink: #7d5b00;
   --color-on-brand: #18181b;
   --color-brand-subtitle: #414141;
-  --color-brand-options: #8e8e8e;
+  /* Muted AA: 5.10:1 sobre blanco, 4.64:1 sobre zinc-100, 4.68:1 sobre brand-soft */
+  --color-brand-options: #6e6e6e;
   --color-brand-background: #f9fafb;
   --color-brand-focus: #c9a962;
   --color-brand-modalFocus: #c9a962;
@@ -215,3 +217,4 @@ html.modal-open {
     border-radius: 20px;
   }
 }
+

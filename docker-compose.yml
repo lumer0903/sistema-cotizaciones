@@ -143,7 +143,11 @@ services:
     container_name: goldcontinent-web
     environment:
       NODE_ENV: development
+      # Solo para URLs de imágenes que el navegador sí alcanza (publicado :3001).
       NEXT_PUBLIC_API_URL: http://localhost:3001
+      # Proxy interno del rewrite de Next.js (corre dentro del contenedor web):
+      # apunta al servicio `api` por la red de compose (no necesita publicarse).
+      API_INTERNAL_URL: http://api:3001
       # El proxy (src/proxy.ts) verifica el JWT en runtime y falla cerrado sin
       # estos secretos (el .env nunca entra a la imagen por .dockerignore)
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}

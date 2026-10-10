@@ -60,6 +60,25 @@ export function isImageFile(file: File): boolean {
   return file.type.startsWith('image/');
 }
 
+/**
+ * Nombre legible de una imagen a partir de su URL o nombre de archivo.
+ * Limpia querystring/hash (URLs firmadas de MinIO), decodifica y quita el
+ * prefijo de timestamp que agrega el backend al subir (`<Date.now()>-nombre.ext`).
+ */
+export function getFileNameFromUrl(url?: string | null): string | null {
+  if (!url) return null;
+  const withoutQuery = url.split(/[?#]/)[0];
+  const lastSegment = withoutQuery.split('/').pop();
+  if (!lastSegment) return null;
+  let decoded = lastSegment;
+  try {
+    decoded = decodeURIComponent(lastSegment);
+  } catch {
+    // nombre con secuencias de escape inválidas: se muestra tal cual
+  }
+  return decoded.replace(/^\d+-/, '') || null;
+}
+
 export function validateAvatarFile(file: File): string | null {
   if (!isImageFile(file)) return 'Selecciona una imagen válida (PNG, JPEG o WebP)';
   if (file.size > 2 * 1024 * 1024) return 'La imagen no debe superar 2 MB';

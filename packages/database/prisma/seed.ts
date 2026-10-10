@@ -291,7 +291,7 @@ async function main() {
       data: {
         nombre: 'Administrador Sistema',
         email: 'admin@goldcontinent.com',
-        password_hash: '$2b$10$EpRvmMG5bWg71f2N.uBf9.k9YkK5Kx/dG1e.7xG.L9k9',
+        password_hash: '$2b$10$eH/dlsJYRHE4tMJxEQt2reSY7yW/y23MT7rRabj0XMqjB4Tbf22ki',
         rol: 'admin',
         activo: true,
       },

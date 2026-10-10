@@ -158,8 +158,8 @@ export const DropdownMenu = ({
           {children ??
             items.map((item, index) => (
               <React.Fragment key={item.key}>
-                {item.dividerBefore && <div className="my-1 border-t border-zinc-100" />}
-                <button
+                {item.dividerBefore && <div role="separator" className="my-1 border-t border-zinc-100" />}
+<button
                   type="button"
                   role="menuitem"
                   disabled={item.disabled}
@@ -170,14 +170,14 @@ export const DropdownMenu = ({
                   }}
                   onMouseEnter={() => setActiveIndex(index)}
                   className={cn(
-                    'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left',
+                    'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-[background-color,color] duration-150 text-left active:scale-[0.96]',
                     item.danger
                       ? 'text-danger hover:bg-status-rechazado-soft'
                       : 'text-brand-subtitle hover:bg-zinc-100 hover:text-brand-ink',
                     item.disabled && 'opacity-50 cursor-not-allowed',
                     index === activeIndex && !item.disabled && 'bg-zinc-100'
                   )}
-                >
+                  >
                   {item.icon && <span aria-hidden="true">{item.icon}</span>}
                   <span className="flex-1 truncate">{item.label}</span>
                   {typeof item.badge === 'number' && item.badge > 0 && (

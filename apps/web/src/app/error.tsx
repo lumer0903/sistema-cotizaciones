@@ -28,7 +28,7 @@ export default function Error({
         <p className="mt-2 text-sm text-zinc-500">
           Ocurrió un error inesperado. Puedes intentar de nuevo.
           {error.digest ? (
-            <span className="block mt-1 text-xs text-zinc-400">
+            <span className="block mt-1 text-xs text-zinc-500">
               Referencia: {error.digest}
             </span>
           ) : null}
@@ -37,13 +37,13 @@ export default function Error({
           <button
             type="button"
             onClick={reset}
-            className="inline-flex h-11 items-center rounded-md bg-brand-subtitle px-5 text-sm font-medium text-white hover:bg-black transition-colors"
+            className="inline-flex h-11 items-center rounded-md bg-brand-subtitle px-5 text-sm font-medium text-white hover:bg-black transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           >
             Reintentar
           </button>
           <a
             href="/login"
-            className="inline-flex h-11 items-center rounded-md border border-border-default px-5 text-sm font-medium text-brand-subtitle hover:bg-zinc-50 transition-colors"
+            className="inline-flex h-11 items-center rounded-md border border-border-default px-5 text-sm font-medium text-brand-subtitle hover:bg-zinc-50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           >
             Ir al inicio de sesión
           </a>

@@ -18,7 +18,7 @@ export const FIELD_BORDER = 'border border-border-default bg-white rounded-xl';
 
 /** Transición + placeholder comunes. */
 export const FIELD_TRANSITION =
-  'transition-all duration-150 placeholder:text-brand-options';
+  'transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-brand-options';
 
 /**
  * Estado hover/focus (versión sin error).

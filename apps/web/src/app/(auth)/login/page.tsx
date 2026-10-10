@@ -125,7 +125,8 @@ function LoginForm() {
                   aria-label="Correo electrónico"
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? 'email-error' : undefined}
-                  className="w-full h-11 pl-12 pr-4 rounded-xl border border-zinc-200 text-sm text-zinc-900 bg-white outline-none transition-colors
+                  className="w-full h-11 pl-12 pr-4 rounded-xl border border-zinc-200 text-sm text-zinc-900 bg-white transition-colors
+                    focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring
                     placeholder:text-zinc-500
                     disabled:bg-zinc-50 disabled:cursor-not-allowed
                     error:border-red-300 error:focus:border-red-500"
@@ -158,7 +159,8 @@ function LoginForm() {
                   aria-label="Contraseña"
                   aria-invalid={!!errors.password}
                   aria-describedby={errors.password ? 'password-error' : undefined}
-                  className="w-full h-11 pl-12 pr-14 rounded-xl border border-zinc-200 text-sm text-zinc-900 bg-white outline-none transition-colors
+                  className="w-full h-11 pl-12 pr-14 rounded-xl border border-zinc-200 text-sm text-zinc-900 bg-white transition-colors
+                    focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring
                     placeholder:text-zinc-500
                     disabled:bg-zinc-50 disabled:cursor-not-allowed
                     error:border-red-300 error:focus:border-red-500"
@@ -167,7 +169,7 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 min-h-11 min-w-11 flex items-center justify-center text-zinc-500 hover:text-zinc-700 cursor-pointer transition-colors"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 min-h-11 min-w-11 flex items-center justify-center text-zinc-500 hover:text-zinc-700 cursor-pointer transition-colors rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                   aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   aria-pressed={showPassword}
                 >
@@ -187,7 +189,7 @@ function LoginForm() {
               disabled={loading}
               className="w-full h-11 bg-brand-primary rounded-xl shadow-md text-on-brand font-bold text-sm tracking-wide
                 flex items-center justify-center gap-2
-                hover:bg-brand-hover active:scale-[0.98] transition-all
+                hover:bg-brand-hover active:scale-[0.96] transition-[scale,background-color,box-shadow] duration-150
                 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-primary disabled:active:scale-100
                 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
             >

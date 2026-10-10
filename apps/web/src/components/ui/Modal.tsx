@@ -106,10 +106,11 @@ export const Modal = ({
 
   return (
     <div
-      className="fixed inset-0 z-modal flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-[1px] overflow-hidden"
-      onMouseDown={(e) => {
+      className="fixed inset-0 z-modal flex items-center justify-center p-4 sm:p-6 bg-black/45 overflow-hidden"
+      onClick={(e) => {
         if (e.target === e.currentTarget) requestClose();
       }}
+      data-testid="modal-overlay"
     >
       <div
         ref={dialogRef}
@@ -126,7 +127,7 @@ export const Modal = ({
         )}
       >
         {(title || headerExtra) && (
-          <div className="flex-none px-4 sm:px-6 py-3 border-b border-zinc-100 bg-white flex items-center justify-between gap-3">
+          <div className="flex-none px-5 py-3.5 border-b border-zinc-100 bg-white flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
               {title && (
                 <h3 id={titleId} className="text-base font-bold text-brand-subtitle truncate">
@@ -139,7 +140,7 @@ export const Modal = ({
               type="button"
               onClick={requestClose}
               disabled={closeDisabled}
-              className="ml-auto p-2 min-h-9 min-w-9 flex items-center justify-center rounded-lg text-brand-options hover:text-brand-subtitle hover:bg-surface-muted transition-colors disabled:opacity-40 shrink-0"
+              className="ml-auto p-2 min-h-9 min-w-9 flex items-center justify-center rounded-lg text-brand-options hover:text-brand-subtitle hover:bg-surface-muted transition-colors disabled:opacity-40 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
               aria-label="Cerrar modal"
             >
               <X className="w-5 h-5" aria-hidden="true" />
@@ -151,7 +152,7 @@ export const Modal = ({
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-4 custom-scrollbar">{children}</div>
 
         {footer && (
-          <div className="flex-none px-4 sm:px-6 py-3 border-t border-zinc-100 bg-zinc-50/50 rounded-b-2xl flex items-center justify-between gap-3">
+          <div className="flex-none px-4 sm:px-6 py-3 border-t border-zinc-100 bg-zinc-50/50 rounded-b-xl flex items-center justify-between gap-3">
             {footer}
           </div>
         )}

@@ -1,4 +1,8 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Las llamadas del cliente van al rewrite de Next.js (/api/* → backend), que
+// funciona igual desde el navegador (localhost:3000) y desde el contenedor web.
+// Así evitamos depender de NEXT_PUBLIC_API_URL (un hostname absoluto como
+// host.docker.internal no resuelve desde el navegador del host en Windows).
+const API_PREFIX = '/api';
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -11,10 +15,9 @@ function getToken(): string | null {
 }
 
 function normalizeUrl(endpoint: string): string {
-  const basePath = API_BASE.endsWith('/api') ? API_BASE.slice(0, -4) : API_BASE;
   const withSlash = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const cleanEndpoint = withSlash.startsWith('/api') ? withSlash : `/api${withSlash}`;
-  return `${basePath}${cleanEndpoint}`;
+  // Prefijo /api una sola vez: si el caller ya lo incluye, no se duplica.
+  return withSlash.startsWith('/api') ? withSlash : `${API_PREFIX}${withSlash}`;
 }
 
 function isAuthPath(path: string): boolean {

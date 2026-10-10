@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { ArrowUpRight, ArrowDownLeft, RefreshCw, Calendar, Download, ChevronLeft, ChevronRight, Image as ImageIcon, Search } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, RefreshCw, Calendar, Download, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import {
     Modal,
@@ -22,6 +22,7 @@ import { inventarioApi, KardexResponse } from '../api/inventario.api';
 import { apiClient } from '@/lib/apiClient';
 import { getImageUrl, handleImageError } from '@/lib/imageUtils';
 import { formatCode, formatText } from '@/lib/formatters';
+import { ProductoSearchField } from './ProductoSearchField';
 
 interface KardexModalProps {
     open: boolean;
@@ -46,9 +47,8 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
     const [selectedProducto, setSelectedProducto] = useState<ProductoInventario | null>(producto);
     const [productos, setProductos] = useState<ProductoInventario[]>([]);
 
-    // Estado para el buscador con autocompletado (3 opciones)
+    // Buscador con autocompletado (el listbox vive en ProductoSearchField)
     const [searchQuery, setSearchQuery] = useState('');
-    const [showSuggestions, setShowSuggestions] = useState(false);
 
     const [prevReset, setPrevReset] = useState({ open, producto });
     if (prevReset.open !== open || prevReset.producto !== producto) {
@@ -82,26 +82,17 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
         }
     }, [open, producto, productos.length]);
 
-    // Filtrar máximo 3 sugerencias coincidente al escribir
-    const sugerencias = useMemo(() => {
-        if (!searchQuery.trim()) return [];
-        const query = searchQuery.toLowerCase();
-        return productos
-            .filter((p) =>
-                p.codigo.toLowerCase().includes(query) ||
-                (p.descripcion && p.descripcion.toLowerCase().includes(query))
-            )
-            .slice(0, 3);
-    }, [productos, searchQuery]);
-
     const handleSelectProducto = (prod: ProductoInventario) => {
         setSelectedProducto(prod);
         setSearchQuery(formatCode(prod.codigo));
-        setShowSuggestions(false);
         setMovimientos([]);
         setTotal(0);
         setPage(1);
     };
+
+    /** Píldora de stock mostrada en cada sugerencia. */
+    const stockPill = (p: ProductoInventario) =>
+        `Stock: ${p.stock_total ?? p.stock_actual?.[0]?.cantidad ?? 0} u.`;
 
     const fetchKardex = useCallback(async (pageNum: number = 1) => {
         if (!selectedProducto) return;
@@ -125,6 +116,15 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
             setLoading(false);
         }
     }, [selectedProducto, filtroAlmacen, filtroTipo, fechaInicio, fechaFin, limit]);
+
+    /** Restablece los filtros manteniendo el producto seleccionado. */
+    const limpiarFiltros = () => {
+        setFiltroTipo('TODOS');
+        setFechaInicio('');
+        setFechaFin('');
+        setFiltroAlmacen('');
+        setPage(1);
+    };
 
     const handleExportCSV = async () => {
         if (!selectedProducto) return;
@@ -210,109 +210,102 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
         <Modal
             open={open}
             onClose={onClose}
-            title={selectedProducto ? `Kárdex de Producto: ${formatCode(selectedProducto.codigo)}` : 'Kárdex Global'}
+            title="Kárdex de producto"
             maxWidth="xl"
+            footer={
+                <>
+                    <Button
+                        variant="outline"
+                        onClick={handleExportCSV}
+                        disabled={!selectedProducto || exportando || loading || movimientos.length === 0}
+                        loading={exportando}
+                    >
+                        <Download className="w-4 h-4" aria-hidden="true" />
+                        Exportar CSV
+                    </Button>
+                    <Button variant="ghost" onClick={onClose}>
+                        Cerrar
+                    </Button>
+                </>
+            }
         >
-            <div className="space-y-5">
-                {/* BUSCADOR CON AUTOCOMPLETADO (MAX 3 OPCIONES) */}
-                <div className="relative mb-4">
-                    <Input
-                        label="SELECCIONAR O BUSCAR PRODUCTO POR CÓDIGO"
-                        placeholder="Escriba el código del producto..."
-                        value={searchQuery}
-                        onChange={(e) => {
-                            setSearchQuery(e.target.value.toUpperCase());
-                            setShowSuggestions(true);
-                            if (selectedProducto) setSelectedProducto(null);
-                        }}
-                        onFocus={() => setShowSuggestions(true)}
-                        icon={<Search className="w-4 h-4 text-brand-options" />}
-                    />
+            <div className="space-y-6">
+                {/* Producto analizado */}
+                <ProductoSearchField
+                    productos={productos}
+                    value={searchQuery}
+                    onValueChange={(value) => {
+                        setSearchQuery(value.toUpperCase());
+                        if (selectedProducto) setSelectedProducto(null);
+                    }}
+                    onSelect={handleSelectProducto}
+                    label="Buscar producto"
+                    placeholder="Escriba el código del producto..."
+                    stockPill={stockPill}
+                />
 
-                    {/* Desplegable de 3 sugerencias */}
-                    {showSuggestions && searchQuery.trim().length > 0 && (
-                        <div className="absolute z-50 w-full bg-white border border-stone-200 rounded-lg shadow-lg mt-1 overflow-hidden">
-                            {sugerencias.length > 0 ? (
-                                sugerencias.map((p) => (
-                                    <button
-                                        key={p.id_producto}
-                                        type="button"
-                                        className="w-full text-left px-4 py-2.5 hover:bg-surface-muted transition-colors flex items-center justify-between border-b last:border-b-0 border-stone-100"
-                                        onClick={() => handleSelectProducto(p)}
-                                    >
-                                        <div>
-                                            <span className="font-bold text-xs text-stone-800 block">
-                                                {formatCode(p.codigo)}
-                                            </span>
-                                            <span className="text-xs text-stone-500 truncate max-w-sm block">
-                                                {formatText(p.descripcion)}
-                                            </span>
-                                        </div>
-                                        <span className="text-xs bg-surface-muted px-2 py-0.5 rounded font-medium text-stone-600">
-                                            Stock: {p.stock_total ?? p.stock_actual?.[0]?.cantidad ?? 0} u.
-                                        </span>
-                                    </button>
-                                ))
-                            ) : (
-                                <div className="p-3 text-xs text-stone-500 text-center">
-                                    No se encontraron productos coincidentes
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
+                {/* Filtros de movimientos */}
+                <div className="space-y-3.5">
+                    <div className="grid grid-cols-1 items-end gap-3 rounded-xl border border-zinc-200/80 bg-zinc-50/80 p-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <Select
+                            label="Tipo de movimiento"
+                            value={filtroTipo}
+                            onChange={(e) => { setFiltroTipo(String(e.target.value)); setPage(1); }}
+                            disabled={!selectedProducto}
+                            options={[
+                                { label: 'Todos', value: 'TODOS' },
+                                { label: 'Entradas', value: 'entrada' },
+                                { label: 'Salidas', value: 'salida' },
+                                { label: 'Ajustes', value: 'ajuste' },
+                                { label: 'Transferencias', value: 'transferencia' },
+                            ]}
+                        />
+                        <Input
+                            label="Inicio"
+                            type="date"
+                            value={fechaInicio}
+                            onChange={(e) => { setFechaInicio(e.target.value); setPage(1); }}
+                            disabled={!selectedProducto}
+                            icon={<Calendar className="w-4 h-4 text-brand-options" />}
+                        />
+                        <Input
+                            label="Hasta"
+                            type="date"
+                            value={fechaFin}
+                            onChange={(e) => { setFechaFin(e.target.value); setPage(1); }}
+                            disabled={!selectedProducto}
+                            icon={<Calendar className="w-4 h-4 text-brand-options" />}
+                        />
+                        <Select
+                            label="Ubicación"
+                            value={filtroAlmacen}
+                            onChange={(e) => { setFiltroAlmacen(String(e.target.value)); setPage(1); }}
+                            disabled={!selectedProducto}
+                            options={[
+                                { label: 'Todos los almacenes', value: '' },
+                                ...(selectedProducto?.stock_actual?.length
+                                    ? selectedProducto.stock_actual.map((s) => ({
+                                        label: `${s.almacen?.codigo} - ${formatText(s.almacen?.nombre || '')}`,
+                                        value: String(s.id_almacen),
+                                    }))
+                                    : almacenesProp.map((a) => ({
+                                        label: `${a.codigo || a.id_almacen} - ${formatText(a.nombre)}`,
+                                        value: String(a.id_almacen),
+                                    }))),
+                            ]}
+                        />
+                    </div>
 
-                {/* BARRA DE FILTROS DE MOVIMIENTOS */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end bg-zinc-50/80 p-3 rounded-xl border border-zinc-200/80">
-                    <Select
-                        label="Tipo Movimiento"
-                        value={filtroTipo}
-                        onChange={(e) => { setFiltroTipo(String(e.target.value)); setPage(1); }}
-                        disabled={!selectedProducto}
-                        options={[
-                            { label: 'Todos', value: 'TODOS' },
-                            { label: 'Entradas', value: 'entrada' },
-                            { label: 'Salidas', value: 'salida' },
-                            { label: 'Ajustes', value: 'ajuste' },
-                            { label: 'Transferencias', value: 'transferencia' },
-                        ]}
-                        variant="modal"
-                    />
-                    <Input
-                        label="Inicio"
-                        type="date"
-                        value={fechaInicio}
-                        onChange={(e) => { setFechaInicio(e.target.value); setPage(1); }}
-                        disabled={!selectedProducto}
-                        icon={<Calendar className="w-4 h-4 text-brand-options" />}
-                    />
-                    <Input
-                        label="Hasta"
-                        type="date"
-                        value={fechaFin}
-                        onChange={(e) => { setFechaFin(e.target.value); setPage(1); }}
-                        disabled={!selectedProducto}
-                        icon={<Calendar className="w-4 h-4 text-brand-options" />}
-                    />
-                    <Select
-                        label="Ubicación"
-                        value={filtroAlmacen}
-                        onChange={(e) => { setFiltroAlmacen(String(e.target.value)); setPage(1); }}
-                        disabled={!selectedProducto}
-                        options={[
-                            { label: 'Todos los almacenes', value: '' },
-                            ...(selectedProducto?.stock_actual?.length
-                                ? selectedProducto.stock_actual.map((s) => ({
-                                    label: `${s.almacen?.codigo} - ${formatText(s.almacen?.nombre || '')}`,
-                                    value: String(s.id_almacen),
-                                }))
-                                : almacenesProp.map((a) => ({
-                                    label: `${a.codigo || a.id_almacen} - ${formatText(a.nombre)}`,
-                                    value: String(a.id_almacen),
-                                }))),
-                        ]}
-                        variant="modal"
-                    />
+                    <div className="flex justify-end">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={limpiarFiltros}
+                            disabled={!selectedProducto}
+                        >
+                            Limpiar filtros
+                        </Button>
+                    </div>
                 </div>
 
                 {/* ENCABEZADO RESUMEN DEL PRODUCTO */}
@@ -334,7 +327,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                                 )}
                             </div>
                             <div>
-                                <h4 className="font-bold text-brand-ink text-xl text-outline">
+                                <h4 className="font-bold text-brand-ink text-xl">
                                     {formatText(selectedProducto.codigo)}
                                 </h4>
                                 <h4 className="font-medium text-brand-text text-zinc-700 text-sm">
@@ -345,7 +338,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                         <div className="flex items-center gap-3 border-t md:border-t-0 md:border-l border-brand-primary/40 pt-2 md:pt-0 md:pl-4">
                             <div className="text-center">
                                 <span className="block text-xs font-bold text-zinc-700 uppercase">Stock Actual</span>
-                                <span className="text-lg font-bold text-estado-aprobado-text text-outline">
+                                <span className="text-lg font-bold tabular-nums text-estado-aprobado-text">
                                     {selectedProducto.stock_total ?? selectedProducto.stock_actual?.[0]?.cantidad ?? 0} u.
                                 </span>
                             </div>
@@ -465,22 +458,6 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                         )}
                     </>
                 )}
-
-                {/* PIE Y BOTONES */}
-                <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 pt-3 border-t border-zinc-100">
-                    <Button
-                        variant="outline"
-                        onClick={handleExportCSV}
-                        disabled={!selectedProducto || exportando || loading || movimientos.length === 0}
-                        loading={exportando}
-                    >
-                        <Download className="w-4 h-4 mr-1" />
-                        Exportar CSV
-                    </Button>
-                    <Button variant="ghost" onClick={onClose}>
-                        Cerrar
-                    </Button>
-                </div>
             </div>
         </Modal>
     );

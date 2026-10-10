@@ -12,7 +12,7 @@ import {
   resolveColorHex,
 } from "@/features/inventario/components/ColorConfigModal";
 import { apiClient, uploadFile } from "@/lib/apiClient";
-import { getImageUrl } from "@/lib/imageUtils";
+import { getImageUrl, getFileNameFromUrl } from "@/lib/imageUtils";
 import {
   Modal,
   Input,
@@ -24,6 +24,7 @@ import {
 import { PriceMatrix, PriceUnit, PriceField } from "./producto-form/PriceMatrix";
 import { ImageUploader } from "./producto-form/ImageUploader";
 import { SurtidoColorsField } from "./producto-form/SurtidoColorsField";
+import { FIELD_LABEL } from "@/components/ui/fieldStyles";
 import { ProductoInventario } from "@goldcontinent/shared/types/inventario";
 import { showToast } from "@/lib/toast";
 import { obtenerPreciosEstandarizados } from "@/lib/formatters";
@@ -529,8 +530,9 @@ export function ProductoModal({
                 form="producto-form"
                 variant="primary"
                 loading={isSubmitting}
+                disabled={isSubmitting}
               >
-                Guardar
+                Guardar Producto
               </Button>
             </div>
           </>
@@ -540,156 +542,177 @@ export function ProductoModal({
           id="producto-form"
           noValidate
           onSubmit={handleSubmit(handleFormSubmit)}
-          className="space-y-5"
+          className="space-y-6"
         >
-          {/* Campos del producto */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Input
-              label="Código"
-              placeholder="Ej: RYG18-NU02"
-              error={errors.codigo?.message}
-              {...register("codigo")}
-              disabled={isEditing}
-              onChange={(e) =>
-                setValue("codigo", e.target.value.toUpperCase(), { shouldValidate: true })
-              }
-            />
-            <Select
-              label="Categoría"
-              error={errors.id_categoria?.message}
-              {...register("id_categoria", {
-                setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
-              })}
-              value={watch("id_categoria") ?? ""}
-              disabled={loadingFilters}
-            >
-              <option value="">Seleccionar</option>
-              {categorias.map((cat) => (
-                <option key={cat.id_categoria} value={cat.id_categoria}>
-                  {cat.nombre_categoria}
-                </option>
-              ))}
-            </Select>
-            <Select
-              label="Ubicación"
-              error={errors.id_almacen?.message}
-              {...register("id_almacen", {
-                setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
-              })}
-              value={watch("id_almacen") ?? ""}
-              disabled={loadingFilters}
-            >
-              <option value="">Seleccionar</option>
-              {almacenes.map((a) => (
-                <option key={a.id_almacen} value={a.id_almacen}>
-                  {a.nombre}
-                </option>
-              ))}
-            </Select>
-            <Input
-              label="Tipo de flor"
-              placeholder="Rosa"
-              autoComplete="off"
-              error={errors.tipo_flor?.message}
-              {...register("tipo_flor")}
-            />
-            <Input
-              label="Material"
-              placeholder="Tela Premium"
-              error={errors.material?.message}
-              {...register("material")}
-            />
-            <Input
-              label="Composición"
-              placeholder="Ramo"
-              error={errors.composicion?.message}
-              {...register("composicion")}
-            />
-            <Input
-              label="Presentación"
-              placeholder="Ramo"
-              error={errors.presentacion?.message}
-              {...register("presentacion")}
-            />
-            <Input
-              label="Follaje"
-              placeholder="Verde"
-              error={errors.follaje?.message}
-              {...register("follaje")}
-            />
-            <Input
-              label="Nº cabezas"
-              type="number"
-              min="1"
-              placeholder="18"
-              error={errors.numero_cabezas?.message}
-              {...cleanNumberInputProps("numero_cabezas")}
-            />
-            <Input
-              label="Tamaño"
-              placeholder="35cm aprox"
-              error={errors.tamano?.message}
-              {...register("tamano")}
-            />
-            <Input
-              label="Unidades por caja"
-              type="number"
-              min="1"
-              placeholder="12"
-              error={errors.unidades_por_caja?.message}
-              {...cleanNumberInputProps("unidades_por_caja")}
-            />
-            <Input
-              label="Stock actual"
-              type="number"
-              min="0"
-              placeholder="10"
-              error={errors.stock_principal?.message}
-              {...cleanNumberInputProps("stock_principal")}
-            />
-            <Input
-              label="Stock mínimo"
-              type="number"
-              min="0"
-              placeholder="10"
-              error={errors.stock_minimo?.message}
-              {...cleanNumberInputProps("stock_minimo")}
-            />
-            <SurtidoColorsField
-              colors={coloresSurtidos}
-              onConfigure={() => setIsColorModalOpen(true)}
+          {/* Información básica */}
+          <div className="space-y-3.5">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <Input
+                label="Código"
+                placeholder="Ej: RYG18-NU02"
+                error={errors.codigo?.message}
+                {...register("codigo")}
+                disabled={isEditing}
+                onChange={(e) =>
+                  setValue("codigo", e.target.value.toUpperCase(), { shouldValidate: true })
+                }
+              />
+              <Select
+                label="Categoría"
+                error={errors.id_categoria?.message}
+                {...register("id_categoria", {
+                  setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
+                })}
+                value={watch("id_categoria") ?? ""}
+                disabled={loadingFilters}
+              >
+                <option value="">Seleccionar</option>
+                {categorias.map((cat) => (
+                  <option key={cat.id_categoria} value={cat.id_categoria}>
+                    {cat.nombre_categoria}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                label="Ubicación"
+                error={errors.id_almacen?.message}
+                {...register("id_almacen", {
+                  setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
+                })}
+                value={watch("id_almacen") ?? ""}
+                disabled={loadingFilters}
+              >
+                <option value="">Seleccionar</option>
+                {almacenes.map((a) => (
+                  <option key={a.id_almacen} value={a.id_almacen}>
+                    {a.nombre}
+                  </option>
+                ))}
+              </Select>
+              <Input
+                label="Tipo de flor"
+                placeholder="Rosa"
+                autoComplete="off"
+                error={errors.tipo_flor?.message}
+                {...register("tipo_flor")}
+              />
+              <Input
+                label="Material"
+                placeholder="Tela Premium"
+                error={errors.material?.message}
+                {...register("material")}
+              />
+              <Input
+                label="Composición"
+                placeholder="Ramo"
+                error={errors.composicion?.message}
+                {...register("composicion")}
+              />
+              <Input
+                label="Presentación"
+                placeholder="Ramo"
+                error={errors.presentacion?.message}
+                {...register("presentacion")}
+              />
+              <Input
+                label="Follaje"
+                placeholder="Verde"
+                error={errors.follaje?.message}
+                {...register("follaje")}
+              />
+              <Input
+                label="Nº cabezas"
+                type="number"
+                min="1"
+                placeholder="18"
+                error={errors.numero_cabezas?.message}
+                {...cleanNumberInputProps("numero_cabezas")}
+              />
+              <Input
+                label="Tamaño"
+                placeholder="35cm aprox"
+                error={errors.tamano?.message}
+                {...register("tamano")}
+              />
+              <Input
+                label="Unidades por caja"
+                type="number"
+                min="1"
+                placeholder="12"
+                error={errors.unidades_por_caja?.message}
+                {...cleanNumberInputProps("unidades_por_caja")}
+              />
+              <Input
+                label="Stock actual"
+                type="number"
+                min="0"
+                placeholder="10"
+                error={errors.stock_principal?.message}
+                {...cleanNumberInputProps("stock_principal")}
+              />
+              <Input
+                label="Stock mínimo"
+                type="number"
+                min="0"
+                placeholder="10"
+                error={errors.stock_minimo?.message}
+                {...cleanNumberInputProps("stock_minimo")}
+              />
+              <Input
+                label="Precio de costo"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                icon={<span className="text-xs font-bold">S/</span>}
+                error={errors.costo_normal?.message}
+                {...cleanNumberInputProps("costo_normal")}
+              />
+              <div className="space-y-1.5">
+                <SurtidoColorsField
+                  colors={coloresSurtidos}
+                  onConfigure={() => setIsColorModalOpen(true)}
+                />
+                {errors.colores_surtido?.message && (
+                  <p className="text-xs font-medium text-danger" role="alert">
+                    {errors.colores_surtido.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Descripción autogenerada */}
+            <Textarea
+              label="Descripción"
+              placeholder="Se autogenera según los atributos físicos completados"
+              error={errors.descripcion?.message}
+              rows={3}
+              {...register("descripcion")}
             />
           </div>
-          {errors.colores_surtido?.message && (
-            <p className="text-xs font-medium text-danger" role="alert">
-              {errors.colores_surtido.message}
-            </p>
-          )}
 
-          {/* Descripción autogenerada */}
-          <Textarea
-            label="Descripción"
-            placeholder="Se autogenera según los atributos físicos completados"
-            error={errors.descripcion?.message}
-            rows={3}
-            {...register("descripcion")}
-          />
+          {/* Precios por tipo de cliente */}
+          <div className="border-t border-zinc-100 pt-6">
+            <PriceMatrix
+              tienda={priceProps.tienda}
+              distribuidor={priceProps.distribuidor}
+              errors={priceErrors}
+            />
+          </div>
 
-          {/* Matriz de precios (tipo de cliente: Tienda / Distribuidor) */}
-          <PriceMatrix
-            tienda={priceProps.tienda}
-            distribuidor={priceProps.distribuidor}
-            errors={priceErrors}
-          />
-
-          {/* Imagen del producto */}
-          <ImageUploader
-            previewUrl={imagePreview}
-            fileName={imageFile?.name || productoInicial?.foto_url?.split("/").pop() || null}
-            onFileSelect={handleImageSelect}
-            onRemove={handleImageRemove}
-            disabled={isSubmitting}
-          />
+          {/* Imagen del producto (al final, luego de precios) */}
+          <div className="border-t border-zinc-100 pt-6">
+            <span className={FIELD_LABEL}>Imagen del producto</span>
+            <div className="mt-2">
+              <ImageUploader
+                previewUrl={imagePreview}
+                fileName={imageFile?.name || getFileNameFromUrl(productoInicial?.foto_url)}
+                onFileSelect={handleImageSelect}
+                onRemove={handleImageRemove}
+                disabled={isSubmitting}
+              />
+            </div>
+          </div>
         </form>
       </Modal>
 

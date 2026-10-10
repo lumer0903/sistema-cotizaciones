@@ -196,6 +196,8 @@ model Cotizacion {
   @@index([id_cliente, created_at])
   @@index([id_usuario])
   @@index([fecha_vencimiento, estado])
+  // Dashboard: agregaciones por fecha + vendedor + estado (KPIs y gráficos)
+  @@index([created_at, id_usuario, estado])
   @@map("cotizaciones")
 }
 
@@ -318,6 +320,8 @@ model alertas_stock {
   @@index([estado])
   @@index([id_producto, id_almacen, estado])
   @@index([estado, created_at])
+  // Dashboard: listado de stock bajo por almacén (take optimizado)
+  @@index([id_almacen, stock_actual, stock_minimo])
 }
 
 enum PermisoModulo {
@@ -400,4 +404,18 @@ enum TipoMovimiento {
   salida
   ajuste
   transferencia
+}
+
+/// Registro de notificaciones vistas por el usuario (cotizaciones/cobranzas).
+/// No se borran al verlas: se conservan como historial y se podan las más
+/// antiguas manteniendo las N más recientes por tipo (ver servicio).
+model notificaciones_leidas {
+  id           Int      @id @default(autoincrement())
+  tipo         String   // 'COTIZACION_VENCIDA' | 'COBRANZA_PENDIENTE'
+  id_referencia Int     // id_cotizacion de la notificación
+  leida_en     DateTime @default(now())
+
+  @@unique([tipo, id_referencia])
+  @@index([tipo, leida_en])
+  @@map("notificaciones_leidas")
 }

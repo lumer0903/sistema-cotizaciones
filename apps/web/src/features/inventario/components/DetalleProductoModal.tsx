@@ -104,7 +104,7 @@ export function DetalleProductoModal({
                         </button>
 
                         {/* ESPECIFICACIONES TÉCNICAS DESPLEGABLES */}
-                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showDetails ? 'max-h-[500px] opacity-100 mt-3' : 'max-h-0 opacity-0 mt-0'}`}>
+                        <div className={`overflow-hidden transition-[max-height,opacity,margin-top] duration-300 ease-in-out ${showDetails ? 'max-h-[500px] opacity-100 mt-3' : 'max-h-0 opacity-0 mt-0'}`}>
                             <div className="bg-zinc-50/80 p-3 rounded-2xl border border-zinc-200/80">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                     <div>

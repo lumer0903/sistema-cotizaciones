@@ -41,9 +41,9 @@ interface Configuracion {
   dias_vencimiento_default: number;
   limite_credito_default: string;
   tasa_mora_default: string;
-  notificaciones_email: boolean;
   notificaciones_stock_bajo: boolean;
   notificaciones_cotizaciones_vencidas: boolean;
+  notificaciones_cobranzas_pendientes: boolean;
   backup_automatico: boolean;
   tema: 'claro' | 'oscuro' | 'sistema';
   idioma: string;
@@ -81,9 +81,9 @@ export function ConfiguracionView() {
     dias_vencimiento_default: 30,
     limite_credito_default: '5000',
     tasa_mora_default: '1.5',
-    notificaciones_email: true,
     notificaciones_stock_bajo: true,
     notificaciones_cotizaciones_vencidas: true,
+    notificaciones_cobranzas_pendientes: true,
     backup_automatico: false,
     tema: 'sistema',
     idioma: 'es',
@@ -327,9 +327,9 @@ export function ConfiguracionView() {
                   <h2 className="text-lg font-semibold text-brand-subtitle">Configuración de Notificaciones</h2>
                   <div className="space-y-4">
                     {[
-                      { key: 'notificaciones_stock_bajo', label: 'Alertas de Stock Bajo', desc: 'Notificar cuando productos alcancen stock mínimo' },
-                      { key: 'notificaciones_cotizaciones_vencidas', label: 'Cotizaciones Vencidas / Pendientes', desc: 'Alertar sobre cotizaciones próximas a vencer' },
-                      { key: 'notificaciones_email', label: 'Resumen Diario de Ventas por Email', desc: 'Enviar un resumen diario de ventas por email' },
+                      { key: 'notificaciones_stock_bajo', label: 'Alertas de Stock Bajo', desc: 'Notificar cuando productos alcancen el stock mínimo' },
+                      { key: 'notificaciones_cotizaciones_vencidas', label: 'Cotizaciones Vencidas', desc: 'Alertar sobre cotizaciones enviadas que ya vencieron' },
+                      { key: 'notificaciones_cobranzas_pendientes', label: 'Cobranzas por Vencer', desc: 'Avisar pagos que vencen en los próximos días o ya vencieron' },
                     ].map(({ key, label, desc }) => (
                       <div key={key} className="flex items-center justify-between p-4 border border-zinc-100 rounded-xl bg-zinc-50/50">
                         <div>
@@ -343,7 +343,7 @@ export function ConfiguracionView() {
                             onChange={(e) => handleChange(key as keyof Configuracion, e.target.checked)}
                             className="sr-only peer"
                           />
-                          <div className="w-11 h-6 bg-zinc-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+                          <div className="w-11 h-6 bg-zinc-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-[transform,background-color] peer-checked:bg-brand-primary"></div>
                         </label>
                       </div>
                     ))}

@@ -124,7 +124,7 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
                 <div className="w-full px-3 py-3 flex items-center justify-between gap-2 min-h-[64px] bg-white/80 backdrop-blur-sm border-b border-zinc-200/70">
                     <Link
                         href="/dashboard"
-                        className="flex-1 min-w-0 flex justify-center items-center group py-1"
+                        className="flex-1 min-w-0 flex justify-center items-center group py-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring rounded-lg"
                         onClick={onToggleLogo}
                     >
                         <Image
@@ -143,7 +143,7 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
                     <button
                         type="button"
                         onClick={onClose}
-                        className="lg:hidden p-1 text-zinc-500 hover:text-zinc-800 z-10 ml-1"
+                        className="lg:hidden p-1 text-zinc-500 hover:text-zinc-800 z-10 ml-1 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                         aria-label="Cerrar menú"
                     >
                         <X className="w-5 h-5" />
@@ -165,7 +165,8 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
                                     <button
                                         type="button"
                                         onClick={() => handleItemClick(item)}
-                                        className={`w-full h-11 px-3.5 py-2 rounded-xl inline-flex items-center justify-between gap-3 transition-all duration-200 ${isActive
+                                        aria-expanded={isSubmenuOpen}
+                                        className={`w-full h-11 px-3.5 py-2 rounded-xl inline-flex items-center justify-between gap-3 transition-[background-color,color] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:scale-[0.96] ${isActive
                                             ? activeItemCls
                                             : 'text-zinc-600 font-medium hover:bg-zinc-50 hover:text-zinc-900'
                                             }`}
@@ -190,7 +191,8 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
                                                         key={sub.name}
                                                         href={sub.href}
                                                         onClick={navegar}
-                                                        className={`w-full h-9 pl-9 pr-4 rounded-lg inline-flex items-center text-xs sm:text-sm transition-all duration-150 ${isSubActive
+                                                        aria-current={isSubActive ? 'page' : undefined}
+                                                        className={`w-full h-9 pl-9 pr-4 rounded-lg inline-flex items-center text-xs sm:text-sm transition-[background-color,color] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:scale-[0.96] ${isSubActive
                                                             ? activeSubCls
                                                             : 'text-zinc-500 font-medium hover:text-zinc-700 hover:bg-white/60'
                                                             }`}
@@ -213,7 +215,8 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
                                     handleItemClick(item);
                                     navegar();
                                 }}
-                                className={`w-full h-11 px-3.5 py-2 rounded-xl inline-flex items-center gap-3 text-xs sm:text-sm transition-all duration-200 ${isActive
+                                aria-current={isActive ? 'page' : undefined}
+                                className={`w-full h-11 px-3.5 py-2 rounded-xl inline-flex items-center gap-3 text-xs sm:text-sm transition-[background-color,color] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:scale-[0.96] ${isActive
                                     ? activeItemCls
                                     : 'text-zinc-600 font-medium hover:bg-zinc-50 hover:text-zinc-900'
                                     }`}
@@ -234,7 +237,7 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
                         await logout();
                         router.push('/login');
                     }}
-                    className="w-full h-11 px-4 py-2 rounded-xl inline-flex items-center gap-3 text-xs sm:text-sm text-zinc-500 font-semibold hover:bg-estado-rechazado-soft hover:text-danger active:bg-estado-rechazado-soft/80 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                    className="w-full h-11 px-4 py-2 rounded-xl inline-flex items-center gap-3 text-xs sm:text-sm text-zinc-500 font-semibold hover:bg-estado-rechazado-soft hover:text-danger active:bg-estado-rechazado-soft/80 transition-[background-color,color] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:scale-[0.96]"
                 >
                     <LogOut className="w-4.5 h-4.5 text-zinc-500 transition-colors group-hover:text-danger" />
                     <span>Cerrar sesión</span>

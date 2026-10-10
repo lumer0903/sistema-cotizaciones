@@ -33,6 +33,16 @@ pnpm-debug.log*
 coverage/
 .nyc_output/
 
+# Runtime artifacts (PDFs generados por la API)
+apps/api/uploads/
+*.pdf
+
+# Playwright
+apps/web/test-results/
+apps/web/playwright-report/
+apps/web/blob-report/
+playwright/.cache/
+
 # Python
 __pycache__/
 *.pyc

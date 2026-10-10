@@ -49,10 +49,16 @@ const nextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   async rewrites() {
+    // El proxy corre DENTRO del contenedor web: en Docker apunta al servicio
+    // `api` (red interna); fuera de Docker (dev nativo) al localhost publicado.
+    const apiTarget =
+      process.env.API_INTERNAL_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      'http://localhost:3001';
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/:path*`,
+        destination: `${apiTarget}/api/:path*`,
       },
     ];
   },

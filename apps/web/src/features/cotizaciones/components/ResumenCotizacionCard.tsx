@@ -54,7 +54,7 @@ export function ResumenCotizacionCard({
   const [isMinimized, setIsMinimized] = useState(false);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 p-6 space-y-5 font-sans transition-all">
+    <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 p-6 space-y-5 font-sans transition-[box-shadow] duration-150">
       {/* Encabezado con botón de minimizar */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
@@ -133,7 +133,7 @@ export function ResumenCotizacionCard({
               variant={continuarDisabled ? 'ghost' : 'primary'}
               disabled={continuarDisabled}
               onClick={onContinuar}
-              className="min-h-11 px-6 !rounded-xl text-sm font-bold transition-all"
+              className="min-h-11 px-6 !rounded-xl text-sm font-bold transition-[background-color,color] active:scale-[0.96]"
             >
               Continuar
             </Button>

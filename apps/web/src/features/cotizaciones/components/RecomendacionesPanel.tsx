@@ -273,7 +273,7 @@ export function RecomendacionesPanel({
     const activeConfig = TIPO_CONFIG[activeTab];
 
     return (
-        <div className="w-full max-w-sm bg-white rounded-xl shadow-md border border-zinc-100 overflow-hidden transition-all duration-300 font-sans">
+        <div className="w-full max-w-sm bg-white rounded-xl shadow-md border border-zinc-100 overflow-hidden transition-[box-shadow,transform,background-color,color] duration-300 font-sans">
             {/* CABECERA PRINCIPAL */}
             <div className={`p-4 flex items-center justify-between ${!isMinimized ? 'border-b border-zinc-100' : ''}`}>
                 <div className="flex items-center gap-2">
@@ -319,26 +319,26 @@ export function RecomendacionesPanel({
                             const isActive = activeTab === tipo;
                             const count = (recomendaciones[tipo] || []).length;
 
-                            return (
-                                <button
-                                    key={tipo}
-                                    type="button"
-                                    onClick={() => setActiveTab(tipo)}
-                                    aria-pressed={isActive}
-                                    className={`flex-1 min-h-11 px-2 rounded-lg text-xs font-extrabold font-sans tracking-wider transition-all flex items-center justify-center gap-1 ${isActive ? cfg.activeTabBg : cfg.inactiveTabBg
-                                        }`}
-                                >
-                                    <span>{cfg.label}</span>
-                                    {count > 0 && (
-                                        <span
-                                            className={`px-1 py-0.2 text-xs rounded-full ${isActive ? 'bg-white/30 text-white' : 'bg-zinc-200 text-zinc-700'
-                                                }`}
-                                        >
-                                            {count}
-                                        </span>
-                                    )}
-                                </button>
-                            );
+return (
+                            <button
+                                key={tipo}
+                                type="button"
+                                onClick={() => setActiveTab(tipo)}
+                                aria-pressed={isActive}
+                                className={`flex-1 min-h-11 px-2 rounded-lg text-xs font-extrabold font-sans tracking-wider transition-[background-color,color] flex items-center justify-center gap-1 active:scale-[0.96] ${isActive ? cfg.activeTabBg : cfg.inactiveTabBg
+                                    }`}
+                            >
+                                <span>{cfg.label}</span>
+                                {count > 0 && (
+                                    <span
+                                        className={`px-1 py-0.2 text-xs rounded-full ${isActive ? 'bg-white/30 text-white' : 'bg-zinc-200 text-zinc-700'
+                                            }`}
+                                    >
+                                        {count}
+                                    </span>
+                                )}
+                            </button>
+                        );
                         })}
                     </div>
 

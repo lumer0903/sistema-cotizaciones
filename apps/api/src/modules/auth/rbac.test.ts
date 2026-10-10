@@ -22,11 +22,13 @@ describe('rbac: matriz de permisos por rol', () => {
     expect(permisos.cotizaciones).toBe('edicion');
   });
 
-  it('vendedor no accede a usuarios/cobranza/configuración', () => {
+  it('vendedor no accede a usuarios/configuración', () => {
     const permisos = permisosPorRol('vendedor');
     expect(permisos.usuarios).toBe('sin_acceso');
-    expect(permisos.cobranza).toBe('sin_acceso');
     expect(permisos.configuracion).toBe('sin_acceso');
+    // Cobranza: lectura a nivel de módulo; el aislamiento de datos (sólo ve las
+    // suyas) se aplica en cobranza.service.ts, no aquí.
+    expect(permisos.cobranza).toBe('lectura');
     expect(permisos.cotizaciones).toBe('edicion');
   });
 

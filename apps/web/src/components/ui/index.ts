@@ -8,6 +8,8 @@ export * from './Badge';
 export * from './Table';
 export * from './FilterCard';
 export * from './Pagination';
+export * from './Tabs';
+export * from './Card';
 export * from './Textarea';
 export * from './Sidebar';
 export * from './Avatar';

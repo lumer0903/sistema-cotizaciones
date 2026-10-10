@@ -20,8 +20,10 @@ import { InventarioModule } from './modules/inventario/inventario.module';
 import { RecomendacionesModule } from './modules/cotizaciones/recomendaciones/recomendaciones.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ConfiguracionModule } from './modules/configuracion/configuracion.module';
+import { ReportesModule } from './modules/reportes/reportes.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { PdfWorkerModule } from './modules/cotizaciones/pdf/pdf-worker.module';
+import { NotificacionesModule } from './modules/notificaciones/notificaciones.module';
 
 @Module({
   imports: [
@@ -49,6 +51,8 @@ import { PdfWorkerModule } from './modules/cotizaciones/pdf/pdf-worker.module';
     RecomendacionesModule,
     DashboardModule,
     ConfiguracionModule,
+    ReportesModule,
+    NotificacionesModule,
   ],
   controllers: [HealthController],
   providers: [],

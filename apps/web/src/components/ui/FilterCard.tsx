@@ -24,11 +24,11 @@ export const FilterCard: React.FC<FilterCardProps> = ({
         ${accentBorder ? 'border-l-4 border-l-brand-primary' : ''}
         p-4 sm:p-5 
         shadow-sm 
-        transition-all duration-200 
+        transition-[background-color,border-color,box-shadow] duration-200 
         ${className}
       `.trim()}
         >
             {children}
         </div>
     );
-};
+  };

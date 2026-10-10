@@ -10,6 +10,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/lib/authProvider';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { lockBodyScroll, unlockBodyScroll } from '@/lib/scrollLock';
+import { useSidebarOpen } from '@/hooks/useSidebarOpen';
 import Link from 'next/link';
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -17,14 +18,14 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isAlertasOpen, setIsAlertasOpen] = useState(false);
   const [alertasCount, setAlertasCount] = useState(0);
   const [isPerfilOpen, setIsPerfilOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarHydrated, setSidebarHydrated] = useState(false);
+  // Preferencia persistida del sidebar (localStorage) fuera de los efectos
+  const [sidebarOpen, setSidebarOpen] = useSidebarOpen();
 
   const fetchAlertasCount = useCallback(() => {
-    return apiClient('/inventario/alertas?estado=activa')
-      .then((res) => (res.data || []).length)
+    return apiClient('/notificaciones')
+      .then((res) => (res.data || []).filter((n: { leida?: boolean }) => !n.leida).length)
       .catch((e) => {
-        console.error('Error cargando contador de alertas:', e);
+        console.error('Error cargando contador de notificaciones:', e);
         return 0;
       });
   }, []);
@@ -37,25 +38,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
     return () => clearInterval(interval);
   }, [fetchAlertasCount]);
-
-  // Hidratación desde localStorage: respeta la preferencia guardada del usuario
-  // (fallback: abierto en desktop, cerrado en móvil). Estado inicial `false`
-  // para evitar mismatch de hidratación SSR/cliente.
-  useEffect(() => {
-    const stored = localStorage.getItem('sidebarOpen');
-    if (stored !== null) {
-      setSidebarOpen(stored === 'true');
-    } else if (window.innerWidth >= 1024) {
-      setSidebarOpen(true);
-    }
-    setSidebarHydrated(true);
-  }, []);
-
-  // Persiste el estado del sidebar para recordarlo entre sesiones
-  useEffect(() => {
-    if (!sidebarHydrated) return;
-    localStorage.setItem('sidebarOpen', String(sidebarOpen));
-  }, [sidebarOpen, sidebarHydrated]);
 
   // Bloquea el scroll del body sólo cuando el menú es drawer (móvil < lg).
   // En desktop el sidebar vive en flujo y la página debe scrollear con normalidad.
@@ -73,7 +55,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [sidebarOpen]);
+  }, [sidebarOpen, setSidebarOpen]);
 
   return (
     <div className="min-h-screen bg-zinc-50/50 flex font-sans">

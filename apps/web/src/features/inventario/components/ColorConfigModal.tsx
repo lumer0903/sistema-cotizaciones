@@ -224,7 +224,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
                 aria-label="Nombre del color"
                 autoComplete="off"
                 autoFocus
-                className="w-28 min-h-9 px-3 text-xs rounded-lg border border-zinc-200 bg-white outline-none transition-all"
+                className="w-28 min-h-9 px-3 text-xs rounded-lg border border-zinc-200 bg-white transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-brand-options focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring"
               />
               <Button type="button" variant="primary" size="sm" onClick={addColor}>
                 OK
