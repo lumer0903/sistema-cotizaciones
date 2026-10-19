@@ -14,8 +14,8 @@ function generar6Precios(esFlor: boolean) {
   const costoNormal = baseUnidad * (0.55 + Math.random() * 0.1);
 
   const precioUnidadNormal = baseUnidad;
-  const precioDocenaNormal = baseUnidad * 10 * (0.85 + Math.random() * 0.05);
-  const precioMayorNormal = baseUnidad * 100 * (0.65 + Math.random() * 0.05);
+  const precioDocenaNormal = baseUnidad * (0.85 + Math.random() * 0.05);
+  const precioMayorNormal = baseUnidad * (0.65 + Math.random() * 0.05);
 
   const factorDist = 0.82 + Math.random() * 0.06;
 
@@ -216,6 +216,25 @@ async function main() {
     },
   ];
 
+  // 4. Usuario Administrador
+  const adminExiste = await prisma.usuario.findFirst({
+    where: { email: 'admin@goldcontinent.com' },
+  });
+
+  if (!adminExiste) {
+    await prisma.usuario.create({
+      data: {
+        nombre: 'Administrador Sistema',
+        email: 'admin@goldcontinent.com',
+        password_hash: '$2b$10$eH/dlsJYRHE4tMJxEQt2reSY7yW/y23MT7rRabj0XMqjB4Tbf22ki',
+        rol: 'admin',
+        activo: true,
+      },
+    });
+    console.log(' Usuario Administrador inicial creado (admin@goldcontinent.com)');
+  }
+
+  const seedActor = await prisma.usuario.findFirstOrThrow({where:{email:'admin@goldcontinent.com',activo:true,deleted_at:null}});
   const distStock = [0.55, 0.20, 0.15, 0.10];
 
   for (const prodData of productosData) {
@@ -237,7 +256,9 @@ async function main() {
     // 3.2 Llenar PreciosActuales (6 Precios por Producto)
     const precios = generar6Precios(esFlor);
 
-    await prisma.preciosActuales.upsert({
+    await prisma.$transaction(async tx=>{
+      await tx.$queryRaw`SELECT set_config('app.actor_id',${String(seedActor.id_usuario)},true),set_config('app.price_reason','Seed',true)`;
+    await tx.preciosActuales.upsert({
       where: { id_producto: prod.id_producto },
       update: precios,
       create: {
@@ -246,15 +267,6 @@ async function main() {
       },
     });
 
-    // 3.3 Generar HistorialPrecios Inicial
-    await prisma.historialPrecios.create({
-      data: {
-        id_producto: prod.id_producto,
-        campo_modificado: 'CREACION_INICIAL_SEED',
-        valor_anterior: 0,
-        valor_nuevo: precios.precio_unidad_normal,
-        id_usuario: null,
-      },
     });
 
     // 3.4 Llenar StockActual repartido en los almacenes
@@ -280,24 +292,6 @@ async function main() {
   }
 
   console.log(` ${productosData.length} Productos sembrados con los 6 tipos de precios y stock por almacén.`);
-
-  // 4. Usuario Administrador
-  const adminExiste = await prisma.usuario.findFirst({
-    where: { email: 'admin@goldcontinent.com' },
-  });
-
-  if (!adminExiste) {
-    await prisma.usuario.create({
-      data: {
-        nombre: 'Administrador Sistema',
-        email: 'admin@goldcontinent.com',
-        password_hash: '$2b$10$eH/dlsJYRHE4tMJxEQt2reSY7yW/y23MT7rRabj0XMqjB4Tbf22ki',
-        rol: 'admin',
-        activo: true,
-      },
-    });
-    console.log(' Usuario Administrador inicial creado (admin@goldcontinent.com)');
-  }
 
   console.log('🎉 Seed completado exitosamente.');
 }

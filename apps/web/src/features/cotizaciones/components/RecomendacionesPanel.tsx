@@ -86,11 +86,11 @@ export const TIPO_CONFIG = {
         label: 'MEJOR OPCIÓN',
         icon: TrendingUp,
         badgeBg: 'bg-amber-500',
-        activeTabBg: 'bg-amber-500 text-white shadow-sm',
+        activeTabBg: 'bg-amber-500 text-on-brand shadow-sm',
         inactiveTabBg: 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',
         containerBg: 'bg-amber-50/30',
         borderColor: 'border-amber-200',
-        textColor: 'text-amber-600',
+        textColor: 'text-accent-ink',
         desc: 'Alternativas de mayor valor/margen',
     },
 } as const;
@@ -277,8 +277,8 @@ export function RecomendacionesPanel({
             {/* CABECERA PRINCIPAL */}
             <div className={`p-4 flex items-center justify-between ${!isMinimized ? 'border-b border-zinc-100' : ''}`}>
                 <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-amber-500/10 rounded-lg">
-                        <Sparkles className="w-5 h-5 text-amber-500" />
+                    <div className="p-1.5 bg-accent-primary/10 rounded-lg">
+                        <Sparkles className="w-5 h-5 text-accent-ink" />
                     </div>
                     <div>
                         <h3 className="text-base font-extrabold text-zinc-700 tracking-wide font-sans">
@@ -296,7 +296,7 @@ export function RecomendacionesPanel({
                 <Button
                     variant="ghost"
                     onClick={() => setIsMinimized(!isMinimized)}
-                    className="min-h-11 min-w-11 -mr-2 p-0 text-amber-700 hover:bg-zinc-100"
+                    className="min-h-11 min-w-11 -mr-2 p-0 text-accent-ink hover:bg-zinc-100"
                     title={isMinimized ? 'Expandir' : 'Minimizar'}
                     aria-label={isMinimized ? 'Expandir recomendaciones' : 'Minimizar recomendaciones'}
                     aria-expanded={!isMinimized}
@@ -325,7 +325,7 @@ return (
                                 type="button"
                                 onClick={() => setActiveTab(tipo)}
                                 aria-pressed={isActive}
-                                className={`flex-1 min-h-11 px-2 rounded-lg text-xs font-extrabold font-sans tracking-wider transition-[background-color,color] flex items-center justify-center gap-1 active:scale-[0.96] ${isActive ? cfg.activeTabBg : cfg.inactiveTabBg
+                                className={`flex-1 min-h-11 px-2 rounded-lg text-xs font-extrabold font-sans tracking-wider transition-[background-color,color,transform] flex items-center justify-center gap-1 active:scale-[0.96] ${isActive ? cfg.activeTabBg : cfg.inactiveTabBg
                                     }`}
                             >
                                 <span>{cfg.label}</span>
@@ -346,12 +346,12 @@ return (
                     <div className="p-4 space-y-4 max-h-[550px] overflow-y-auto">
                         {cartItems.length === 0 ? (
                             <div className="text-center py-10 text-zinc-500 space-y-2">
-                                <Sparkles className="size-7 mx-auto text-amber-500 opacity-80" />
+                                <Sparkles className="size-7 mx-auto text-accent-ink opacity-80" />
                                 <p className="text-xs font-medium">Agrega un producto al carrito para ver sugerencias de IA</p>
                             </div>
                         ) : !baseItem ? (
                             <div className="text-center py-10 text-zinc-500 space-y-2">
-                                <Sparkles className="size-7 mx-auto text-amber-500 opacity-80" />
+                                <Sparkles className="size-7 mx-auto text-accent-ink opacity-80" />
                                 <p className="text-xs font-medium">
                                     Haz clic en el icono de recomendaciones IA de un producto para ver sugerencias
                                 </p>
@@ -369,7 +369,7 @@ return (
                             </div>
                         ) : loading ? (
                             <div className="py-12 text-center text-zinc-500 text-xs animate-pulse">
-                                <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-amber-600" />
+                                <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-accent-ink" />
                                 Analizando con IA y consultando precios/stock...
                             </div>
                         ) : currentList.length === 0 ? (
@@ -447,7 +447,7 @@ export function RecomendacionCardSection({
                             }}
                         />
                     ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-brand-soft/60 text-brand-ink">
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-accent-soft/60 text-accent-ink">
                             <Package className="size-5" aria-hidden="true" />
                             <span className="text-xs font-bold uppercase tracking-wider text-brand-options text-center leading-none px-1 line-clamp-1" title={item.categoria || 'Producto'}>
                                 {item.categoria || 'Producto'}
@@ -506,7 +506,7 @@ export function RecomendacionCardSection({
                         variant="outline"
                         size="sm"
                         onClick={onReemplazar}
-                        className="text-xs uppercase tracking-wider text-amber-700 bg-amber-500/10 hover:bg-amber-500/20 border-amber-300/70"
+                        className="text-xs uppercase tracking-wider text-accent-ink bg-accent-primary/10 hover:bg-accent-primary/20 border-accent-primary/40"
                     >
                         REEMPLAZAR
                     </Button>

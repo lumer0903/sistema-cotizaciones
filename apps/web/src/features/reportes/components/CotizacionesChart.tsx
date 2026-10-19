@@ -28,7 +28,7 @@ export function CotizacionesChart({ cotizaciones, itemsAprobados }: Cotizaciones
               <Badge variant={ESTADO_BADGE[key] ?? 'neutral'} size="estado">{label}</Badge>
               <div className="flex-1 mx-3">
                 <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-brand-primary rounded-full" style={{ width: `${pct}%` }} />
+                  <div className="h-full bg-accent-primary rounded-full" style={{ width: `${pct}%` }} />
                 </div>
               </div>
               <span className="text-sm font-semibold text-zinc-700 w-16 text-right">{value} ({pct}%)</span>

@@ -1,191 +1,57 @@
 'use client';
-
-import React, { useEffect, useState, useMemo } from 'react';
-import { Search } from 'lucide-react';
-import { showToast } from '@/lib/toast';
-
-import { Input, Select, FilterCard, Pagination } from '@/components/ui';
-import { PriceCard } from '@/features/precio-historial/components/PriceCard';
-import { HistorialPrecioModal } from '@/features/precio-historial/components/HistorialPrecioModal';
-import { ProductoConsulta } from '@/features/precio-historial/types/precio';
-import { usePermissions } from '@/hooks/usePermissions';
-import {
-  getProductosConsulta,
-  getHistorialPrecios,
-  HistorialPrecioItem,
-} from '@/features/precio-historial/api/precioApi';
-
-export function PreciosView() {
-  const { isAdmin, isGerente } = usePermissions();
-  /** Las variaciones de precio sólo las consulta admin/gerente. */
-  const puedeVerHistorial = isAdmin || isGerente;
-  const [productos, setProductos] = useState<ProductoConsulta[]>([]);
-  const [busqueda, setBusqueda] = useState('');
-  const [tipoPrecio, setTipoPrecio] = useState<'distribuidor' | 'tienda' | ''>('');
-  const [stockFiltro, setStockFiltro] = useState('');
-  const [vista] = useState<'grid' | 'list'>('grid');
-
-  const [paginaActual, setPaginaActual] = useState(1);
-  const [limit, setLimit] = useState(8);
-
-  const [prevBusqueda, setPrevBusqueda] = useState(busqueda);
-  const [prevStockFiltro, setPrevStockFiltro] = useState(stockFiltro);
-
-  const [productoHistorialId, setProductoHistorialId] = useState<string | null>(null);
-  const [historialData, setHistorialData] = useState<HistorialPrecioItem[]>([]);
-  const [, setLoadingHistorial] = useState(false);
-
-  useEffect(() => {
-    getProductosConsulta().then((data) => setProductos(data));
-  }, []);
-
-  if (prevBusqueda !== busqueda || prevStockFiltro !== stockFiltro) {
-    setPrevBusqueda(busqueda);
-    setPrevStockFiltro(stockFiltro);
-    setPaginaActual(1);
-  }
-
-  const handleVerHistorial = async (id: string) => {
-    setLoadingHistorial(true);
-    try {
-      const data = await getHistorialPrecios(id);
-      setHistorialData(data);
-      setProductoHistorialId(id);
-    } catch (error) {
-      console.error('Error cargando historial:', error);
-      showToast.error('No se pudo cargar el historial de precios');
-      setHistorialData([]);
-      setProductoHistorialId(id);
-    } finally {
-      setLoadingHistorial(false);
-    }
-  };
-
-  const handleCerrarHistorial = () => {
-    setProductoHistorialId(null);
-    setHistorialData([]);
-  };
-
-  const productosFiltrados = useMemo(() => {
-    return productos.filter((p) => {
-      const coincideBusqueda =
-        !busqueda ||
-        p.codigo?.toLowerCase().includes(busqueda.toLowerCase()) ||
-        p.descripcion?.toLowerCase().includes(busqueda.toLowerCase());
-
-      const filtroNormalizado = stockFiltro.toLowerCase();
-      const esFiltroBajo = filtroNormalizado === 'bajo' || filtroNormalizado === 'stock-bajo';
-      const esFiltroDisponible = filtroNormalizado === 'disponible' || filtroNormalizado === 'con-stock';
-
-      const stockMin = (p as any).stockMinimo ?? (p as any).stock_minimo ?? 10;
-
-      const coincideStock =
-        !stockFiltro ||
-        (esFiltroDisponible && p.stock > 0) ||
-        (esFiltroBajo && p.stock <= stockMin);
-
-      return coincideBusqueda && coincideStock;
-    });
-  }, [productos, busqueda, stockFiltro]);
-
-  const totalItems = productosFiltrados.length;
-  const totalPaginas = Math.ceil(totalItems / limit) || 1;
-  const inicio = (paginaActual - 1) * limit;
-  const productosVisibles = productosFiltrados.slice(inicio, inicio + limit);
-
-  const codigoProductoSeleccionado = productos.find(
-    (p) => String(p.id) === String(productoHistorialId)
-  )?.codigo;
-
-  return (
-    <div className="w-full max-w-[1700px] mx-auto space-y-6 font-sans">
-      <h1 className="sr-only">Precios</h1>
-      {/* Filtros */}
-      <FilterCard>
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-          {/* BUSCAR */}
-          <div className="md:col-span-6">
-            <Input
-              label="BUSCAR"
-              type="text"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value.toUpperCase())}
-              placeholder="Buscar"
-              icon={<Search className="size-4" />}
-            />
-          </div>
-
-          {/* TIPO PRECIO */}
-          <div className="md:col-span-3">
-            <Select
-              label="TIPO PRECIO"
-              value={tipoPrecio}
-              onChange={(e) => setTipoPrecio(String(e.target.value) as 'distribuidor' | 'tienda' | '')}
-              options={[
-                { label: 'Seleccionar', value: '' },
-                { label: 'DISTRIBUIDOR', value: 'distribuidor' },
-                { label: 'TIENDA', value: 'tienda' },
-              ]}
-            />
-          </div>
-
-          {/* STOCK */}
-          <div className="md:col-span-3">
-            <Select
-              label="STOCK"
-              value={stockFiltro}
-              onChange={(e) => setStockFiltro(String(e.target.value))}
-              options={[
-                { label: 'Seleccionar', value: '' },
-                { label: 'DISPONIBLE', value: 'disponible' },
-                { label: 'STOCK BAJO', value: 'bajo' },
-              ]}
-            />
-          </div>
-        </div>
-      </FilterCard>
-
-      {/* Grid de PriceCard */}
-      <div
-        className={
-          vista === 'grid'
-            ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4'
-            : 'flex flex-col gap-4'
-        }
-      >
-        {productosVisibles.map((producto, index) => (
-          <PriceCard
-            key={producto.id ?? producto.codigo ?? `prod-${index}`}
-            producto={producto}
-            tipoPrecio={tipoPrecio}
-            onVerHistorial={puedeVerHistorial ? handleVerHistorial : undefined}
-          />
-        ))}
-      </div>
-
-      {/* Paginación */}
-      <Pagination
-        currentPage={paginaActual}
-        totalPages={totalPaginas}
-        totalItems={totalItems}
-        limit={limit}
-        onPageChange={setPaginaActual}
-        onLimitChange={(newLimit) => {
-          setLimit(newLimit);
-          setPaginaActual(1);
-        }}
-        itemLabel="productos"
-      />
-
-      {/* Modal Historial (sólo admin/gerente) */}
-      {puedeVerHistorial && (
-        <HistorialPrecioModal
-          open={productoHistorialId !== null}
-          onClose={handleCerrarHistorial}
-          codigoProducto={codigoProductoSeleccionado}
-          historial={historialData}
-        />
-      )}
-    </div>
-  );
+import {useCallback,useState} from 'react';
+import {Input,Select,FilterCard,Pagination,Button} from '@/components/ui';
+import {useDebounce} from '@/hooks/useDebounce';
+import {usePermissions} from '@/hooks/usePermissions';
+import {apiClient} from '@/lib/apiClient';
+import {BulkPriceModal} from './BulkPriceModal';
+import {PriceCard} from './PriceCard';
+import {HistorialPrecioModal} from './HistorialPrecioModal';
+import {getProductosConsulta} from '../api/precioApi';
+import {usePriceRequest} from '../usePriceRequest';
+export function PreciosView(){
+ const {isAdmin,isGerente,can}=usePermissions();
+ const [bulk,setBulk]=useState(false);
+ const [categorySearch,setCategorySearch]=useState(''),[categoryLabel,setCategoryLabel]=useState('');
+ const categoryQuery=useDebounce(categorySearch,300);
+ const loadCategories=useCallback((signal:AbortSignal)=>apiClient<{data:Array<{id_categoria:number;nombre_categoria:string}>;total:number}>('/precios/categorias?limit=20&search='+encodeURIComponent(categoryQuery),{signal}),[categoryQuery]);
+ const categories=usePriceRequest('categories/'+categoryQuery,loadCategories);
+ const [filters,setFilters]=useState({search:'',tipo_precio:'',stock_status:'',id_categoria:'',activo:'',precio_min:'',precio_max:''});
+ const [page,setPage]=useState(1),[limit,setLimit]=useState(8),[retry,setRetry]=useState(0);
+ const [selected,setSelected]=useState<{id:string;codigo:string}|null>(null);
+ const search=useDebounce(filters.search,300);
+ const min=useDebounce(filters.precio_min,300),max=useDebounce(filters.precio_max,300);
+ const params=new URLSearchParams({page:String(page),limit:String(limit)});
+ Object.entries({...filters,search,precio_min:min,precio_max:max}).forEach(([k,v])=>{if(v!=='')params.set(k,v);});
+ const query=params.toString();
+ const load=useCallback((signal:AbortSignal)=>getProductosConsulta(query,signal),[query]);
+ const state=usePriceRequest(query+'/'+retry,load);
+ const update=(key:keyof typeof filters,value:string)=>{setFilters(old=>({...old,[key]:value,...(key==='tipo_precio'&&!value?{precio_min:'',precio_max:''}:{})}));setPage(1);};
+ const data=state.data;
+ const tipo=filters.tipo_precio.endsWith('_dist')?'distribuidor':filters.tipo_precio?'tienda':'';
+ return <div className="w-full space-y-6">
+ <h1 className="sr-only">Consulta de precios</h1>
+ {(isAdmin||isGerente)&&can('productos','edicion')&&<Button onClick={()=>setBulk(true)}>Ajuste masivo</Button>}
+ <FilterCard><div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+ <Input label="Buscar código o descripción" value={filters.search} onChange={e=>update('search',e.target.value)}/>
+ <Select label="Tarifa" value={filters.tipo_precio} onChange={e=>update('tipo_precio',String(e.target.value))} options={[
+ {label:'Todas',value:''},...['unidad_normal','docena_normal','mayor_normal','unidad_dist','docena_dist','mayor_dist'].map(v=>({value:'precio_'+v,label:v.replaceAll('_',' ')}))]}/>
+ <Select label="Stock" value={filters.stock_status} onChange={e=>update('stock_status',String(e.target.value))} options={[{label:'Todos',value:''},{label:'Agotado',value:'agotado'},{label:'Bajo',value:'bajo'},{label:'Disponible',value:'disponible'}]}/>
+ <div><Input label="Buscar categoría" value={categorySearch} onChange={e=>setCategorySearch(e.target.value)}/>
+ <Select label="Categoría" value={filters.id_categoria} onChange={e=>{const id=String(e.target.value);update('id_categoria',id);setCategoryLabel(categories.data?.data.find(c=>String(c.id_categoria)===id)?.nombre_categoria??'');}} options={[{label:'Todas las categorías',value:''},...(filters.id_categoria&&!categories.data?.data.some(c=>String(c.id_categoria)===filters.id_categoria)?[{label:categoryLabel,value:filters.id_categoria}]:[]),...(categories.data?.data??[]).map(c=>({label:c.nombre_categoria,value:String(c.id_categoria)}))]}/>
+ {categories.loading&&<p role="status">Buscando categorías…</p>}{categories.error&&<p role="alert">{categories.error}</p>}
+ </div>
+ <Select label="Actividad" value={filters.activo} onChange={e=>update('activo',String(e.target.value))} options={[{label:'Todos',value:''},{label:'Activos',value:'true'},{label:'Inactivos',value:'false'}]}/>
+ <div className="flex gap-2"><Input label="Precio mínimo" type="number" min="0" step="0.01" disabled={!filters.tipo_precio} value={filters.precio_min} onChange={e=>update('precio_min',e.target.value)}/><Input label="Precio máximo" type="number" min="0" step="0.01" disabled={!filters.tipo_precio} value={filters.precio_max} onChange={e=>update('precio_max',e.target.value)}/></div>
+ </div></FilterCard>
+ {state.loading?<div role="status" className="animate-pulse p-8 bg-surface-muted rounded-xl">Cargando precios…</div>:
+ state.error?<div role="alert"><p>{state.error}</p><Button onClick={()=>setRetry(v=>v+1)}>Reintentar</Button></div>:
+ !data?.data.length?<p className="p-8 text-center">No se encontraron productos con estos filtros.</p>:
+ <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">{data.data.map(producto=><PriceCard key={producto.id} producto={producto} tipoPrecio={tipo}
+ onVerHistorial={isAdmin||isGerente?()=>setSelected({id:producto.id,codigo:producto.codigo}):undefined}/>)}</div>}
+ <Pagination loading={state.loading} currentPage={page} totalPages={Math.max(1,Math.ceil((data?.total??0)/limit))} totalItems={data?.total??0} limit={limit} onPageChange={setPage}
+ onLimitChange={v=>{setLimit(v);setPage(1);}} itemLabel="productos"/>
+ {bulk&&<BulkPriceModal category={filters.id_categoria} categoryName={categoryLabel} onClose={()=>setBulk(false)} onSaved={()=>{setBulk(false);setRetry(v=>v+1);}}/>}
+ {selected&&<HistorialPrecioModal key={selected.id} open onClose={()=>setSelected(null)} productoId={selected.id} codigoProducto={selected.codigo}/>}
+ </div>;
 }

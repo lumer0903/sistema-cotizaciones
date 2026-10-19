@@ -1,9 +1,8 @@
+import { Permission } from '../../common/decorators/permission.decorator';
 import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiProperty } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { Rol } from '@goldcontinent/shared/constants/enums';
 import { CategoriasService, PaginatedCategoriasResponse, CategoriaResponse } from './categorias.service';
 import { IsString, MaxLength } from 'class-validator';
 
@@ -22,15 +21,14 @@ class UpdateCategoriaDto {
 @ApiTags('Categorias')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Rol.admin, Rol.gerente)
+@Permission('productos')
 @Controller('categorias')
 export class CategoriasController {
   constructor(private readonly categoriasService: CategoriasService) {}
 
   @Get()
   // Lectura para todos los roles: el catálogo del vendedor necesita las categorías
-  @Roles(Rol.admin, Rol.gerente, Rol.vendedor)
-  @ApiOperation({ summary: 'List all categories' })
+    @ApiOperation({ summary: 'List all categories' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async findAll(
@@ -45,8 +43,7 @@ export class CategoriasController {
   }
 
   @Get(':id')
-  @Roles(Rol.admin, Rol.gerente, Rol.vendedor)
-  @ApiOperation({ summary: 'Get category by ID' })
+    @ApiOperation({ summary: 'Get category by ID' })
   async findById(@Param('id', ParseIntPipe) id: number): Promise<{ success: true; data: CategoriaResponse | null }> {
     const categoria = await this.categoriasService.findById(id);
     return { success: true, data: categoria };

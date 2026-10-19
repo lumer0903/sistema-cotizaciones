@@ -79,7 +79,7 @@ export function DashboardCustomizer({
                   type="checkbox"
                   checked={widget.isActive}
                   onChange={() => onToggleWidget(view, widget.id)}
-                  className="size-4 shrink-0 cursor-pointer accent-[#f8b602] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                  className="size-4 shrink-0 cursor-pointer accent-accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                   aria-label={`Activar widget ${widget.title}`}
                 />
               </div>
@@ -96,7 +96,7 @@ export function DashboardCustomizer({
                         'rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors',
                         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
                         widget.chartType === type.value
-                          ? 'border-brand-primary bg-brand-soft text-brand-ink'
+                          ? 'border-accent-primary bg-accent-soft text-accent-ink'
                           : 'border-zinc-200 bg-white text-brand-options hover:border-zinc-300'
                       )}
                     >

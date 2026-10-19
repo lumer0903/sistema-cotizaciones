@@ -1,0 +1,200 @@
+services:
+  minio:
+    # MinIO publica sus imágenes oficiales en quay.io (minio/minio en
+    # Docker Hub fue retirado).
+    image: quay.io/minio/minio:latest
+    container_name: goldcontinent-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: goldcontinent-postgres
+    environment:
+      POSTGRES_USER: goldcontinent
+      POSTGRES_PASSWORD: goldcontinent_dev
+      POSTGRES_DB: goldcontinent
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U goldcontinent"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: goldcontinent-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    container_name: goldcontinent-api
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://goldcontinent:goldcontinent_dev@postgres:5432/goldcontinent?schema=public
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-in-production}
+      JWT_EXPIRES_IN: 8h
+      CLIENT_URL: http://localhost:3000
+      AI_SERVICE_URL: http://ai-service:8000
+      IA_URL: http://ai-service:8000
+      PORT: 3001
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENABLED: "true"
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      # El worker de PDFs corre en su propio servicio (pdf-worker); el API sólo encola
+      PDF_ROLE: producer
+      # Holgura para QA/automatización (misma IP); producción: 300
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-600}
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health', { signal: AbortSignal.timeout(4000) }).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      start_period: 180s
+      retries: 12
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      # Hot-reload del código; los node_modules de estos directorios se
+      # preservan con volúmenes anónimos (puestos en la imagen) para no
+      # perder los symlinks del workspace pnpm.
+      - ./apps/api:/app/apps/api
+      - ./packages:/app/packages
+      - /app/apps/api/node_modules
+      - /app/packages/shared/node_modules
+      - /app/packages/database/node_modules
+    command: sh -c "pnpm --filter @goldcontinent/database db:generate && pnpm --filter @goldcontinent/shared build && pnpm --filter @goldcontinent/api dev"
+
+  pdf-worker:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    container_name: goldcontinent-pdf-worker
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://goldcontinent:goldcontinent_dev@postgres:5432/goldcontinent?schema=public
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-in-production}
+      JWT_EXPIRES_IN: 8h
+      CLIENT_URL: http://localhost:3000
+      AI_SERVICE_URL: http://ai-service:8000
+      IA_URL: http://ai-service:8000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENABLED: "true"
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      PDF_ROLE: consumer
+      PDF_WORKER_PORT: 3002
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./packages:/app/packages
+      - /app/apps/api/node_modules
+      - /app/packages/shared/node_modules
+      - /app/packages/database/node_modules
+    command: sh -c "pnpm --filter @goldcontinent/database db:generate && pnpm --filter @goldcontinent/shared build && pnpm --filter @goldcontinent/api dev:worker"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    container_name: goldcontinent-web
+    environment:
+      NODE_ENV: development
+      # Solo para URLs de imágenes que el navegador sí alcanza (publicado :3001).
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      # Proxy interno del rewrite de Next.js (corre dentro del contenedor web):
+      # apunta al servicio `api` por la red de compose (no necesita publicarse).
+      API_INTERNAL_URL: http://api:3001
+      # El proxy (src/proxy.ts) verifica el JWT en runtime y falla cerrado sin
+      # estos secretos (el .env nunca entra a la imagen por .dockerignore)
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-in-production}
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - ./apps/web:/app/apps/web
+      - ./packages:/app/packages
+      - /app/apps/web/node_modules
+      - /app/packages/shared/node_modules
+      - /app/packages/database/node_modules
+      - /app/apps/web/.next
+
+  ai-service:
+    build:
+      context: ./apps/ai-service
+      dockerfile: Dockerfile.dev
+    container_name: goldcontinent-ai
+    environment:
+      DATABASE_URL: postgresql://goldcontinent:goldcontinent_dev@postgres:5432/goldcontinent?schema=public
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./apps/ai-service:/app
+      - /app/__pycache__
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  default:
+    name: goldcontinent-network

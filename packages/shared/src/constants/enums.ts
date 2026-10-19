@@ -12,6 +12,8 @@ export const EstadoCotizacion = {
   parcialmente_pagada: 'parcialmente_pagada',
   aprobada: 'aprobada',
   rechazada: 'rechazada',
+  expirada: 'expirada',
+  convertida_a_venta: 'convertida_a_venta',
 } as const;
 
 export type EstadoCotizacion = (typeof EstadoCotizacion)[keyof typeof EstadoCotizacion];

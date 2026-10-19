@@ -15,8 +15,8 @@ import { formatCode } from '@/lib/formatters';
 import { cn } from '@/lib/cn';
 
 const ROLE_ACCENT: Record<DashboardView, { accent: string; gradient: string }> = {
-  admin: { accent: '#f8b602', gradient: 'from-amber-500 to-amber-600' },
-  vendedor: { accent: '#7b1c1c', gradient: 'from-red-700 to-red-800' },
+  admin: { accent: 'var(--color-brand-primary)', gradient: 'from-amber-500 to-amber-600' },
+  vendedor: { accent: 'var(--color-vendedor-primary)', gradient: 'from-red-700 to-red-800' },
 };
 
 const CHART_TYPE_LABELS: Record<ChartType, string> = {
@@ -77,7 +77,7 @@ function renderWidget(
   widget: WidgetConfig,
   graficos?: DashboardGraficos,
   stockBajo?: AlertaStockBajo[],
-  accent = '#f8b602'
+  accent = 'var(--color-brand-primary)'
 ) {
   // Tabla de stock bajo (sólo type table)
   if (widget.id === 'stockBajo') {

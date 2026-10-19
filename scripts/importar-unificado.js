@@ -199,6 +199,12 @@ function parsearCsv(texto) {
     return registros;
 }
 
+function precioCsv(valor) {
+    const text=String(valor??'').trim().replace(/,/g,'');
+    if(text==='') return undefined;
+    if(!/^\d+(\.\d{1,2})?$/.test(text) || Number(text)>99999999.99) throw new Error('Importe CSV inválido: '+text);
+    return text;
+}
 function aNumero(valor) {
     const n = parseFloat(String(valor).replace(/,/g, ''));
     return Number.isFinite(n) ? n : 0;
@@ -210,6 +216,9 @@ function valorEn(fila, indice) {
 }
 
 async function main() {
+    const actorId = Number(process.env.IMPORT_ACTOR_ID);
+    if (!Number.isInteger(actorId) || actorId < 1) throw new Error('IMPORT_ACTOR_ID requerido');
+    await prisma.usuario.findFirstOrThrow({where:{id_usuario:actorId,activo:true,deleted_at:null}});
     console.log('Iniciando analisis y carga desde la hoja unificada PRODUCTOS-UNIDOS.csv...\n');
     const inicio = Date.now();
 
@@ -308,14 +317,14 @@ async function main() {
 
         const descripcion = valorEn(fila, cols.colDesc) || 'Sin descripcion';
         const cantidad = Math.round(aNumero(valorEn(fila, cols.colCant)));
-        const costoNormal = aNumero(valorEn(fila, cols.normal.costo));
-        const precioMayorNorm = aNumero(valorEn(fila, cols.normal.mayor));
-        const precioDocNorm = aNumero(valorEn(fila, cols.normal.docena));
-        const precioUniNorm = aNumero(valorEn(fila, cols.normal.unidad));
-        const costoDist = aNumero(valorEn(fila, cols.dist.costo));
-        const precioMayorDist = aNumero(valorEn(fila, cols.dist.mayor));
-        const precioDocDist = aNumero(valorEn(fila, cols.dist.docena));
-        const precioUniDist = aNumero(valorEn(fila, cols.dist.unidad));
+        const costoNormal = precioCsv(valorEn(fila, cols.normal.costo));
+        const precioMayorNorm = precioCsv(valorEn(fila, cols.normal.mayor));
+        const precioDocNorm = precioCsv(valorEn(fila, cols.normal.docena));
+        const precioUniNorm = precioCsv(valorEn(fila, cols.normal.unidad));
+        const costoDist = precioCsv(valorEn(fila, cols.dist.costo));
+        const precioMayorDist = precioCsv(valorEn(fila, cols.dist.mayor));
+        const precioDocDist = precioCsv(valorEn(fila, cols.dist.docena));
+        const precioUniDist = precioCsv(valorEn(fila, cols.dist.unidad));
         const hayBloqueDist = cols.dist.costo !== undefined && cols.dist.unidad !== undefined;
 
         const nombreCategoria = extraerCategoria(descripcion);
@@ -386,6 +395,7 @@ async function main() {
 
         try {
             await prisma.$transaction(async (tx) => {
+                await tx.$queryRaw`SELECT set_config('app.actor_id',${String(actorId)},true),set_config('app.price_reason','Importación CSV',true)`;
                 let catObj = catCache.get(nombreCategoria);
                 if (!catObj) {
                     catObj = await tx.categoria.findFirst({
@@ -461,14 +471,14 @@ async function main() {
                     await tx.preciosActuales.upsert({
                         where: { id_producto: productoExistente.id_producto },
                         update: {
-                            costo_normal: costoNormal > 0 ? costoNormal : undefined,
-                            precio_mayor_normal: precioMayorNorm > 0 ? precioMayorNorm : undefined,
-                            precio_docena_normal: precioDocNorm > 0 ? precioDocNorm : undefined,
-                            precio_unidad_normal: precioUniNorm > 0 ? precioUniNorm : undefined,
-                            costo_distribuidor: hayBloqueDist && costoDist > 0 ? costoDist : undefined,
-                            precio_mayor_dist: hayBloqueDist && precioMayorDist > 0 ? precioMayorDist : undefined,
-                            precio_docena_dist: hayBloqueDist && precioDocDist > 0 ? precioDocDist : undefined,
-                            precio_unidad_dist: hayBloqueDist && precioUniDist > 0 ? precioUniDist : undefined,
+                            costo_normal: costoNormal,
+                            precio_mayor_normal: precioMayorNorm,
+                            precio_docena_normal: precioDocNorm,
+                            precio_unidad_normal: precioUniNorm,
+                            costo_distribuidor: hayBloqueDist ? costoDist : undefined,
+                            precio_mayor_dist: hayBloqueDist ? precioMayorDist : undefined,
+                            precio_docena_dist: hayBloqueDist ? precioDocDist : undefined,
+                            precio_unidad_dist: hayBloqueDist ? precioUniDist : undefined,
                         },
                         create: {
                             id_producto: productoExistente.id_producto,

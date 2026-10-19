@@ -15,6 +15,7 @@ model Usuario {
   nombre            String
   email             String                 @unique
   password_hash     String
+  session_version   Int                    @default(0)
   refresh_token_hash String?               @map("refresh_token_hash")
   rol               String                 @default("vendedor")
   avatar_url        String?                @map("avatar_url")
@@ -27,10 +28,12 @@ model Usuario {
   movimientos       InventarioMovimiento[]
   cotizacionPagos   CotizacionPago[]       @relation("CotizacionPagoUsuario")
   permisos          UsuarioPermiso[]
+  lecturas          NotificacionLectura[]
 
   @@index([nombre(ops: raw("gin_trgm_ops"))], type: Gin)
   @@index([deleted_at, created_at])
   @@map("usuarios")
+  ajustes_precios PrecioAjusteLote[]
 }
 
 model UsuarioPermiso {
@@ -125,23 +128,30 @@ model PreciosActuales {
   producto             Producto @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade)
 
   @@map("precios_actuales")
+  @@index([precio_unidad_normal, id_producto], map: "precios_unidad_normal_idx")
+  @@index([precio_unidad_dist, id_producto], map: "precios_unidad_dist_idx")
 }
 
 model HistorialPrecios {
   id_historial     Int      @id @default(autoincrement())
   id_producto      Int
   id_usuario       Int?
+  evento           String @default("CAMBIO")
+  actor_nombre     String @default("Usuario heredado")
+  motivo           String @default("Edición de precios")
   campo_modificado String
   valor_anterior   Decimal  @db.Decimal(10, 2)
   valor_nuevo      Decimal  @db.Decimal(10, 2)
   fecha_cambio     DateTime @default(now())
-  producto         Producto @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade)
-  usuario          Usuario? @relation(fields: [id_usuario], references: [id_usuario])
+  producto         Producto @relation(fields: [id_producto], references: [id_producto], onDelete: Restrict)
+  usuario          Usuario? @relation(fields: [id_usuario], references: [id_usuario], onDelete: Restrict)
 
   @@index([id_producto, fecha_cambio])
+  @@index([id_producto, fecha_cambio(sort: Desc), id_historial(sort: Desc)], map: "historial_producto_cursor_idx")
   @@index([fecha_cambio])
   @@index([id_usuario])
   @@map("historial_precios")
+  @@index([fecha_cambio(sort: Desc), id_historial(sort: Desc)], map: "historial_cursor_global_idx")
 }
 
 model Cliente {
@@ -181,6 +191,7 @@ model Cotizacion {
   estado            EstadoCotizacion    @default(borrador)
   tiempo_inicio     DateTime            @default(now())
   tiempo_fin        DateTime?
+  convertida_en     DateTime?
   created_at        DateTime            @default(now())
   fecha_vencimiento DateTime?
   pdf_key           String?
@@ -196,8 +207,9 @@ model Cotizacion {
   @@index([id_cliente, created_at])
   @@index([id_usuario])
   @@index([fecha_vencimiento, estado])
-  // Dashboard: agregaciones por fecha + vendedor + estado (KPIs y gráficos)
   @@index([created_at, id_usuario, estado])
+  @@index([id_usuario, estado, created_at], map: "cotizacion_usuario_estado_fecha_idx")
+  @@index([id_usuario, fecha_vencimiento, estado], map: "cotizacion_usuario_vencimiento_estado_idx")
   @@map("cotizaciones")
 }
 
@@ -224,6 +236,7 @@ model CotizacionPago {
   id_cotizacion Int
   monto         Decimal       @db.Decimal(12, 2)
   metodo_pago   MetodoPago
+  clave_idempotencia String?
   referencia    String?
   id_usuario    Int?
   created_at    DateTime      @default(now())
@@ -231,6 +244,7 @@ model CotizacionPago {
   usuario       Usuario?      @relation("CotizacionPagoUsuario", fields: [id_usuario], references: [id_usuario])
 
   @@index([id_cotizacion])
+  @@unique([id_cotizacion, clave_idempotencia])
   @@map("cotizacion_pagos")
 }
 
@@ -282,6 +296,7 @@ model InventarioMovimiento {
 
   @@index([id_almacen, created_at])
   @@index([id_producto, created_at])
+  @@index([id_producto, id_almacen, created_at, id_movimiento], map: "inventario_movimientos_producto_almacen_fecha_id_idx")
   @@index([tipo_referencia, id_referencia])
   @@index([created_at])
   @@index([id_usuario])
@@ -317,6 +332,7 @@ model alertas_stock {
   almacenes     Almacen      @relation(fields: [id_almacen], references: [id_almacen], onDelete: Cascade)
   productos     Producto     @relation(fields: [id_producto], references: [id_producto], onDelete: Cascade)
 
+  @@unique([id_producto, id_almacen])
   @@index([estado])
   @@index([id_producto, id_almacen, estado])
   @@index([estado, created_at])
@@ -351,6 +367,8 @@ enum EstadoCotizacion {
   parcialmente_pagada
   aprobada
   rechazada
+  expirada
+  convertida_a_venta
 }
 
 enum TipoPrecio {
@@ -409,6 +427,17 @@ enum TipoMovimiento {
 /// Registro de notificaciones vistas por el usuario (cotizaciones/cobranzas).
 /// No se borran al verlas: se conservan como historial y se podan las más
 /// antiguas manteniendo las N más recientes por tipo (ver servicio).
+model NotificacionLectura {
+  usuario Usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction)
+  id_usuario    Int
+  tipo          String
+  id_referencia Int
+  leida_en      DateTime @default(now())
+  @@id([id_usuario, tipo, id_referencia])
+  @@index([id_usuario, tipo, leida_en])
+  @@map("notificaciones_lecturas")
+}
+
 model notificaciones_leidas {
   id           Int      @id @default(autoincrement())
   tipo         String   // 'COTIZACION_VENCIDA' | 'COBRANZA_PENDIENTE'
@@ -418,4 +447,14 @@ model notificaciones_leidas {
   @@unique([tipo, id_referencia])
   @@index([tipo, leida_en])
   @@map("notificaciones_leidas")
+}
+
+model PrecioAjusteLote {
+ clave String @id @db.Uuid
+ id_usuario Int
+ solicitud Json
+ resultado Json
+ created_at DateTime @default(now())
+ usuario Usuario @relation(fields:[id_usuario], references:[id_usuario], onDelete:Restrict, onUpdate:NoAction)
+ @@map("precio_ajustes_lotes")
 }

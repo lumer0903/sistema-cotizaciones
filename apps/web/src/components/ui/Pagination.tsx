@@ -68,7 +68,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                     options={limitOptions}
                     sizeVariant="sm"
                     aria-label="Registros por página"
-                    className="w-auto"
+                    className="w-20"
                 />
                 <span>registros por página</span>
             </div>
@@ -106,7 +106,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                             aria-label={`Página ${item}`}
                             aria-current={currentPage === item ? 'page' : undefined}
                             className={`min-h-11 min-w-11 flex items-center justify-center rounded-lg text-xs font-bold transition-colors ${currentPage === item
-                                ? 'bg-brand-primary text-on-brand'
+                                ? 'bg-accent-primary text-on-accent'
                                 : 'border border-zinc-200 text-zinc-600 hover:bg-zinc-100'
                             }`}
                         >

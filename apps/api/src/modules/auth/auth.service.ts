@@ -1,3 +1,4 @@
+import { createHash, randomUUID } from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../../common/config/prisma';
@@ -20,21 +21,21 @@ function quitarDatosSensibles(usuario: { password_hash: string; [key: string]: a
  * sobrescrita por los overrides personalizados (usuario_permisos).
  * Es lo que viaja en la sesión y alimenta el menú lateral y las vistas.
  */
-async function cargarPermisosEfectivos(idUsuario: number, rol: string): Promise<MapaPermisos> {
+export async function cargarPermisosEfectivos(idUsuario: number, rol: string, db = prisma): Promise<MapaPermisos> {
   if (esMatrizBloqueada(rol)) {
     return matrizSiempreEdicion();
   }
 
   const [rolRow, overrideRows] = await Promise.all([
-    prisma.rol.findUnique({ where: { codigo: rol }, select: { id_rol: true } }),
-    prisma.usuarioPermiso.findMany({ where: { id_usuario: idUsuario } }),
+    db.rol.findUnique({ where: { codigo: rol }, select: { id_rol: true } }),
+    db.usuarioPermiso.findMany({ where: { id_usuario: idUsuario } }),
   ]);
 
   const defaults = DEFAULT_ROLE_PERMISSIONS[rol as Rol];
   const efectivos = {} as MapaPermisos;
 
   const matrizRol = rolRow
-    ? await prisma.rolPermiso.findMany({ where: { id_rol: rolRow.id_rol } })
+    ? await db.rolPermiso.findMany({ where: { id_rol: rolRow.id_rol } })
     : [];
 
   for (const modulo of Object.values(PermisoModulo)) {
@@ -60,13 +61,13 @@ export async function cargarOverridesPermisos(idUsuario: number): Promise<Overri
   return overrides;
 }
 
-function crearAccessToken(usuario: UsuarioAutenticado): string {
+function crearAccessToken(usuario: UsuarioAutenticado, version: number): string {
   const payload = createAccessTokenPayload(usuario);
-  return jwt.sign(payload, JWT_CONFIG.ACCESS_TOKEN_SECRET, { expiresIn: JWT_CONFIG.ACCESS_TOKEN_EXPIRY });
+  return jwt.sign({ ...payload, session_version: version }, JWT_CONFIG.ACCESS_TOKEN_SECRET, { expiresIn: JWT_CONFIG.ACCESS_TOKEN_EXPIRY });
 }
 
-function crearRefreshToken(idUsuario: number): string {
-  const payload = { id_usuario: idUsuario, type: 'refresh' as const };
+function crearRefreshToken(idUsuario: number, version: number): string {
+  const payload = { id_usuario: idUsuario, type: 'refresh' as const, session_version: version, jti: randomUUID() };
   return jwt.sign(payload, REFRESH_TOKEN_SECRET, { expiresIn: JWT_CONFIG.REFRESH_TOKEN_EXPIRY });
 }
 
@@ -79,6 +80,8 @@ export async function login(email: string, password: string): Promise<{ tokenPai
     throw new AppError('Credenciales incorrectas', 401);
   }
 
+  const role = await prisma.rol.findUnique({ where: { codigo: usuario.rol } });
+  if (!role?.activo) throw new AppError('Credenciales incorrectas', 401);
   const passwordValido = await bcrypt.compare(password, usuario.password_hash);
 
   if (!passwordValido) {
@@ -96,12 +99,12 @@ export async function login(email: string, password: string): Promise<{ tokenPai
     permisos,
   };
 
-  const accessToken = crearAccessToken(usuarioAutenticado);
-  const refreshToken = crearRefreshToken(usuarioSeguro.id_usuario);
+  const accessToken = crearAccessToken(usuarioAutenticado, usuario.session_version);
+  const refreshToken = crearRefreshToken(usuarioSeguro.id_usuario, usuario.session_version);
 
   await prisma.usuario.update({
     where: { id_usuario: usuarioSeguro.id_usuario },
-    data: { refresh_token_hash: await bcrypt.hash(refreshToken, 10) },
+    data: { refresh_token_hash: createHash('sha256').update(refreshToken).digest('hex') },
   });
 
   return {
@@ -111,9 +114,9 @@ export async function login(email: string, password: string): Promise<{ tokenPai
 }
 
 export async function refreshAccessToken(refreshToken: string): Promise<TokenPair> {
-  let payload: { id_usuario: number; type: string };
+  let payload: { id_usuario: number; type: string; session_version: number };
   try {
-    payload = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as { id_usuario: number; type: string };
+    payload = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as { id_usuario: number; type: string; session_version: number };
   } catch {
     throw new AppError('Refresh token inválido o expirado', 401);
   }
@@ -126,11 +129,11 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenPai
     where: { id_usuario: payload.id_usuario },
   });
 
-  if (!usuario || !usuario.activo || !usuario.refresh_token_hash || usuario.deleted_at) {
+  if (!usuario || !usuario.activo || !usuario.refresh_token_hash || usuario.deleted_at || payload.session_version !== usuario.session_version) {
     throw new AppError('Sesión no válida', 401);
   }
 
-  const refreshTokenValido = await bcrypt.compare(refreshToken, usuario.refresh_token_hash);
+  const refreshTokenValido = createHash('sha256').update(refreshToken).digest('hex') === usuario.refresh_token_hash;
   if (!refreshTokenValido) {
     throw new AppError('Refresh token inválido', 401);
   }
@@ -146,13 +149,14 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenPai
     permisos,
   };
 
-  const newAccessToken = crearAccessToken(usuarioAutenticado);
-  const newRefreshToken = crearRefreshToken(usuarioSeguro.id_usuario);
+  const newAccessToken = crearAccessToken(usuarioAutenticado, usuario.session_version);
+  const newRefreshToken = crearRefreshToken(usuarioSeguro.id_usuario, usuario.session_version);
 
-  await prisma.usuario.update({
-    where: { id_usuario: usuarioSeguro.id_usuario },
-    data: { refresh_token_hash: await bcrypt.hash(newRefreshToken, 10) },
+  const rotated = await prisma.usuario.updateMany({
+    where: { id_usuario: usuarioSeguro.id_usuario, refresh_token_hash: usuario.refresh_token_hash, session_version: usuario.session_version },
+    data: { refresh_token_hash: createHash('sha256').update(newRefreshToken).digest('hex') },
   });
+  if (rotated.count !== 1) throw new AppError('Sesión renovada por otra solicitud', 401);
 
   return { accessToken: newAccessToken, refreshToken: newRefreshToken };
 }
@@ -160,7 +164,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenPai
 export async function logout(idUsuario: number): Promise<void> {
   await prisma.usuario.update({
     where: { id_usuario: idUsuario },
-    data: { refresh_token_hash: null },
+    data: { refresh_token_hash: null, session_version: { increment: 1 } },
   });
 }
 
@@ -252,7 +256,7 @@ export async function changePassword(idUsuario: number, currentPassword: string,
   const newPasswordHash = await bcrypt.hash(newPassword, 10);
   await prisma.usuario.update({
     where: { id_usuario: idUsuario },
-    data: { password_hash: newPasswordHash },
+    data: { password_hash: newPasswordHash, refresh_token_hash: null, session_version: { increment: 1 } },
   });
 }
 

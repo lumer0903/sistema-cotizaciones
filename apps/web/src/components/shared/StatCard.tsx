@@ -8,7 +8,7 @@ import { cn } from '@/lib/cn';
 export type StatTone = 'brand' | 'success' | 'info' | 'warning' | 'danger';
 
 const TONE_STYLES: Record<StatTone, string> = {
-  brand: 'bg-brand-soft text-brand-ink',
+  brand: 'bg-accent-soft text-accent-ink',
   success: 'bg-status-aprobado-soft text-status-aprobado-text',
   info: 'bg-status-enviado-soft text-status-enviado-text',
   warning: 'bg-status-advertencia-soft text-status-advertencia-text',
@@ -47,7 +47,7 @@ export function StatCard({ label, value, icon: Icon, tone = 'brand', href, class
 
   const baseClass = cn(
     'bg-white rounded-xl border border-zinc-200 p-4 flex items-center justify-between gap-3',
-    'transition-[background-color,border-color,box-shadow] duration-200 hover:shadow-md hover:border-brand-primary/50',
+    'transition-[background-color,border-color,box-shadow] duration-200 hover:shadow-md hover:border-accent-primary/50',
     href && 'cursor-pointer',
     className
   );

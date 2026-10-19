@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { apiClient } from '@/lib/apiClient';
+import { apiClient, apiErrorMessage } from '@/lib/apiClient';
 import { showToast } from '@/lib/toast';
 import { InventarioFilters } from '@/features/inventario/components/InventarioFilters';
 import { InventarioTable } from '@/features/inventario/components/InventarioTable';
@@ -10,8 +10,10 @@ import { ProductoModal } from '@/features/inventario/components/ProductoModal';
 import { MovimientoModal } from '@/features/inventario/components/MovimientoModal';
 import { TransferenciaModal } from '@/features/inventario/components/TransferenciaModal';
 import { KardexModal } from '@/features/inventario/components/KardexModal';
+import { AlertasStockTable } from './AlertasStockTable';
 import { Pagination, ConfirmModal, Button } from '@/components/ui';
 import { useDebounce } from '@/hooks/useDebounce';
+import { TableDensityProvider } from '@/hooks/useTableDensity';
 import { Categoria, Almacen, ProductoInventario } from '@goldcontinent/shared/types/inventario';
 import {
   ProductoAPI,
@@ -20,6 +22,14 @@ import {
 } from '@/features/inventario/mappers';
 
 export function InventarioView() {
+  return (
+    <TableDensityProvider>
+      <InventarioViewInner />
+    </TableDensityProvider>
+  );
+}
+
+function InventarioViewInner() {
   const searchParams = useSearchParams();
   const initialSearch = searchParams?.get('search') || '';
   
@@ -27,6 +37,10 @@ export function InventarioView() {
   const searchDebounced = useDebounce(searchValue, 300);
   const [selectedCategoria, setSelectedCategoria] = useState('');
   const [selectedUbicacion, setSelectedUbicacion] = useState('');
+  const [selectedStockEstado, setSelectedStockEstado] = useState('');
+  const [selectedActivo,setSelectedActivo]=useState('');
+  const [isAlertasOpen,setIsAlertasOpen]=useState(false);
+  const requestRef=useRef<AbortController|null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(8);
 
@@ -35,7 +49,7 @@ export function InventarioView() {
   const [almacenes, setAlmacenes] = useState<Almacen[]>([]);
   const [loading, setLoading] = useState(true);
   const [metaLoading, setMetaLoading] = useState(true);
-  const [errorConexion, setErrorConexion] = useState(false);
+  const [errorConexion, setErrorConexion] = useState<string|null>(null);
   const [totalItems, setTotalItems] = useState(0);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -52,32 +66,40 @@ export function InventarioView() {
   const [productoParaKardex, setProductoParaKardex] = useState<ProductoInventario | null>(null);
 
   const fetchProductos = useCallback(async () => {
+    requestRef.current?.abort();
+    const controller=new AbortController();requestRef.current=controller;
     setLoading(true);
-    setErrorConexion(false);
+    setErrorConexion(null);
     try {
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: limit.toString(),
         include: 'precios,categoria,stock',
+        sortBy: 'stock_estado', // Ordenar por estado de stock (stock bajo primero)
+        sortOrder: 'asc', // stock_bajo primero
       });
       if (searchDebounced.trim()) params.append('search', searchDebounced.trim());
       if (selectedCategoria) params.append('id_categoria', selectedCategoria);
       if (selectedUbicacion) params.append('id_almacen', selectedUbicacion);
+      if (selectedStockEstado) params.append('stock_status', selectedStockEstado);
 
-      const data = (await apiClient(`/productos?${params.toString()}`)) as PaginatedResponse<ProductoAPI>;
+      if(selectedActivo)params.set('activo',selectedActivo);
+      const data = (await apiClient(`/productos?${params.toString()}`,{signal:controller.signal})) as PaginatedResponse<ProductoAPI>;
+      if(controller.signal.aborted)return;
       const raw = Array.isArray(data?.data) ? data.data : data?.items || [];
       const mapped = raw.map(mapToProductoInventario);
       setProductos(mapped);
       setTotalItems(data?.total || 0);
     } catch (err) {
       console.error('Error al conectar con la API:', err);
-      setErrorConexion(true);
+      if(controller.signal.aborted)return;
+      setErrorConexion(apiErrorMessage(err));
       setProductos([]);
       setTotalItems(0);
     } finally {
-      setLoading(false);
+      if(!controller.signal.aborted)setLoading(false);
     }
-  }, [searchDebounced, selectedCategoria, selectedUbicacion, currentPage, limit]);
+  }, [searchDebounced, selectedCategoria, selectedUbicacion, selectedStockEstado, selectedActivo, currentPage, limit]);
 
   const handleEliminar = useCallback((id: number) => {
     setConfirmDeleteId(id);
@@ -137,13 +159,13 @@ export function InventarioView() {
     const timer = window.setTimeout(() => {
       fetchProductos();
     }, 0);
-    return () => window.clearTimeout(timer);
+    return () => {window.clearTimeout(timer);requestRef.current?.abort();};
   }, [fetchProductos]);
 
   const totalPages = Math.ceil(totalItems / limit) || 1;
 
   return (
-    <div className="w-full max-w-[1700px] mx-auto space-y-6 font-sans">
+    <div className="w-full max-w-[1700px] mx-auto space-y-6 font-sans overflow-x-hidden min-w-0">
       <h1 className="sr-only">Inventario</h1>
       <InventarioFilters
         categorias={categorias}
@@ -154,6 +176,11 @@ export function InventarioView() {
         onCategoriaChange={(v) => { setSelectedCategoria(v); setCurrentPage(1); }}
         selectedUbicacion={selectedUbicacion}
         onUbicacionChange={(v) => { setSelectedUbicacion(v); setCurrentPage(1); }}
+        selectedActivo={selectedActivo}
+        onActivoChange={(value)=>{setSelectedActivo(value);setCurrentPage(1);}}
+        onAlertas={()=>setIsAlertasOpen(true)}
+        selectedStockEstado={selectedStockEstado}
+        onStockEstadoChange={(v) => { setSelectedStockEstado(v); setCurrentPage(1); }}
         onAgregarProducto={() => { setModoModal('crear'); setProductoSeleccionado(null); setIsModalOpen(true); }}
         onMovimiento={() => handleAbrirMovimiento()}
         onTransferencia={() => handleAbrirTransferencia()}
@@ -168,7 +195,7 @@ export function InventarioView() {
           role="alert"
           className="w-full bg-estado-rechazado-soft border border-estado-rechazado/30 text-danger p-3.5 rounded-xl text-xs font-semibold flex items-center justify-between"
         >
-          <span> Sin conexión con el servidor backend en puerto 3001. Verifica que la API esté encendida.</span>
+          <span>{errorConexion}</span>
           <Button
             variant="outline"
             size="sm"
@@ -182,8 +209,10 @@ export function InventarioView() {
 
       {/* Contenedor principal de la Tabla */}
       <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden">
+        {!errorConexion && <>
         <InventarioTable
           productos={productos}
+          almacenId={selectedUbicacion ? Number(selectedUbicacion) : undefined}
           loading={loading}
           onEditar={(producto) => { setModoModal('editar'); setProductoSeleccionado(producto); setIsModalOpen(true); }}
           onEliminar={handleEliminar}
@@ -205,6 +234,7 @@ export function InventarioView() {
           loading={loading}
           itemLabel="productos"
         />
+        </>}
       </div>
 
       <ProductoModal
@@ -239,6 +269,8 @@ export function InventarioView() {
         producto={productoParaKardex}
         almacenes={almacenes}
       />
+
+      <AlertasStockTable open={isAlertasOpen} onClose={()=>setIsAlertasOpen(false)} />
 
       <ConfirmModal
         open={confirmDeleteId != null}

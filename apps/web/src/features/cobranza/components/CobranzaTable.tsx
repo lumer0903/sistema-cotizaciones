@@ -318,7 +318,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
                         onClick={() => router.push(`/cobranza/${cuenta.id_cotizacion}`)}
                         title="Gestionar"
                         aria-label={`Gestionar pago de ${cuenta.numero}`}
-                        className="p-2 text-brand-ink hover:text-brand-primary"
+                        className="p-2 text-accent-ink hover:text-accent-primary"
                       >
                         <CreditCard className="h-4 w-4" />
                       </Button>

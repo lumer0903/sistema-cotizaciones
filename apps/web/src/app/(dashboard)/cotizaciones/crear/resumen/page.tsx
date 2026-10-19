@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, FileText, Download, Save, Loader2 } from 'lucide-react';
 import { showToast } from '@/lib/toast';
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui';
 import { useCrearCotizacionStore } from '@/features/cotizaciones/store/useCrearCotizacionStore';
 import {
+  getCotizacionDetalle,
   crearCliente,
   actualizarCliente,
   crearCotizacion,
@@ -43,12 +44,34 @@ export default function ResumenCotizacionPage() {
     editandoId,
   } = useCrearCotizacionStore();
 
-  const [estadoActual, setEstadoActual] = useState<'borrador' | 'enviada'>('borrador');
+  const [estadoActual, setEstadoActual] = useState<string>('borrador');
   const [observaciones, setObservaciones] = useState('Enviar por shalom');
   const [guardando, setGuardando] = useState(false);
   const [exportando, setExportando] = useState(false);
 
+  const [estadoServidor, setEstadoServidor] = useState<{ id: number; estado: string } | null>(null);
+  const [errorCarga, setErrorCarga] = useState(false);
+
+  useEffect(() => {
+    if (!idCotizacionGuardada) return;
+    let cancelado = false;
+    getCotizacionDetalle(idCotizacionGuardada).then(cot => {
+      if (cancelado) return;
+      const estado = String(cot.estado || 'borrador').toLowerCase();
+      setEstadoServidor({ id: idCotizacionGuardada, estado });
+      setEstadoActual(estado);
+      setObservaciones(cot.observaciones || '');
+      setErrorCarga(false);
+    }).catch(() => {
+      if (!cancelado) setErrorCarga(true);
+    });
+    return () => { cancelado = true; };
+  }, [idCotizacionGuardada]);
+
   const enModoEdicion = editandoId != null && idCotizacionGuardada === editandoId;
+
+  const estadoVerificado = estadoServidor?.id === idCotizacionGuardada;
+  const editable = !idCotizacionGuardada || (enModoEdicion && estadoVerificado && estadoServidor?.estado === 'borrador');
 
   const asegurarCliente = async (): Promise<number> => {
     let idCliente = cliente.id_cliente;
@@ -133,11 +156,11 @@ export default function ResumenCotizacionPage() {
 
       const numeroFinal = String((cot as any)?.numero ?? numeroCotizacion);
 
+      setCotizacionGuardada(idCot, numeroFinal);
       if (estadoActual === 'enviada') {
         await cambiarEstadoCotizacion(idCot, 'enviada');
       }
-
-      setCotizacionGuardada(idCot, numeroFinal);
+      setEstadoServidor({ id: idCot, estado: estadoActual });
       if (!silent) {
         showToast.success(
           estadoActual === 'enviada'
@@ -156,7 +179,7 @@ export default function ResumenCotizacionPage() {
   };
 
   const handleGuardarCambios = async () => {
-    if (!enModoEdicion || editandoId == null) return null;
+    if (!enModoEdicion || editandoId == null || !editable) return null;
     if (items.length === 0) {
       showToast.error('Agrega al menos un producto');
       return null;
@@ -167,6 +190,12 @@ export default function ResumenCotizacionPage() {
     }
     setGuardando(true);
     try {
+      const vigente = await getCotizacionDetalle(editandoId);
+      if (vigente.estado !== 'borrador') {
+        setEstadoServidor({ id: editandoId, estado: String(vigente.estado) });
+        setEstadoActual(String(vigente.estado));
+        throw new Error('La cotización ya no es un borrador. Puedes descargar su PDF desde el listado.');
+      }
       const idCliente = await asegurarCliente();
       const detallePayload = construirDetalle();
       await actualizarCotizacion(editandoId, {
@@ -183,6 +212,7 @@ export default function ResumenCotizacionPage() {
         await cambiarEstadoCotizacion(editandoId, 'enviada');
       }
 
+      setEstadoServidor({ id: editandoId, estado: estadoActual });
       showToast.success(`Cambios guardados en ${numeroGuardado ?? numeroCotizacion}`);
       return editandoId;
     } catch (e: any) {
@@ -194,17 +224,8 @@ export default function ResumenCotizacionPage() {
     }
   };
 
-  const handleCambiarEstadoSelect = async (nuevoEstado: 'borrador' | 'enviada') => {
-    setEstadoActual(nuevoEstado);
-    if (idCotizacionGuardada) {
-      try {
-        await cambiarEstadoCotizacion(idCotizacionGuardada, nuevoEstado);
-        showToast.success(`Estado actualizado a ${nuevoEstado === 'enviada' ? 'ENVIADO' : 'BORRADOR'}`);
-      } catch {
-        showToast.error('Error al actualizar el estado');
-        setEstadoActual(estadoActual);
-      }
-    }
+  const handleCambiarEstadoSelect = (nuevoEstado: 'borrador' | 'enviada') => {
+    if (editable) setEstadoActual(nuevoEstado);
   };
 
   const executeExport = async (idToExport: number): Promise<boolean> => {
@@ -228,6 +249,9 @@ export default function ResumenCotizacionPage() {
       if (savedId) {
         exported = await executeExport(savedId);
       }
+    } else if (enModoEdicion && editable) {
+      const savedId = await handleGuardarCambios();
+      if (savedId) exported = await executeExport(savedId);
     } else {
       exported = await executeExport(idCotizacionGuardada);
     }
@@ -268,16 +292,24 @@ export default function ResumenCotizacionPage() {
         <div className="w-44">
           <Select
             value={estadoActual}
+            disabled={!editable || guardando || exportando}
             onChange={(e) => handleCambiarEstadoSelect(e.target.value as 'borrador' | 'enviada')}
             aria-label="Estado de la cotización"
             options={[
               { label: 'BORRADOR', value: 'borrador' },
               { label: 'ENVIADO', value: 'enviada' },
+              ...(!['borrador', 'enviada'].includes(estadoActual) ? [{ label: estadoActual.toUpperCase(), value: estadoActual }] : []),
             ]}
             className="w-full"
           />
         </div>
       </div>
+
+      {idCotizacionGuardada && !editable && (
+        <p role="status" className="rounded-xl border border-border-default bg-white px-4 py-3 text-sm text-zinc-600">
+          {errorCarga ? 'No se pudo verificar el estado. Vuelve al listado para abrir la cotización.' : !estadoVerificado ? 'Verificando estado de la cotización…' : 'Cotización guardada. Consulta y descarga disponibles; la edición requiere un borrador desde el listado.'}
+        </p>
+      )}
 
       {/* Información General */}
       <div className="bg-white p-4 sm:p-6 rounded-2xl border border-zinc-200/80 shadow-sm space-y-3">
@@ -370,6 +402,7 @@ export default function ResumenCotizacionPage() {
           <div className="max-w-md">
             <Textarea
               value={observaciones}
+              disabled={!editable || guardando || exportando}
               onChange={(e) => setObservaciones(e.target.value)}
               rows={3}
               className="text-xs"
@@ -393,19 +426,19 @@ export default function ResumenCotizacionPage() {
             type="button"
             variant="secondary"
             onClick={() => handleGuardar(false)}
-            disabled={guardando || items.length === 0}
+            disabled={guardando || exportando || items.length === 0}
           >
             {guardando ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             {guardando ? 'Guardando...' : 'Guardar'}
           </Button>
         )}
 
-        {enModoEdicion && (
+        {enModoEdicion && editable && (
           <Button
             type="button"
             variant="secondary"
             onClick={handleGuardarCambios}
-            disabled={guardando || items.length === 0}
+            disabled={guardando || exportando || items.length === 0}
           >
             {guardando ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             {guardando ? 'Guardando...' : 'Guardar cambios'}
@@ -416,7 +449,7 @@ export default function ResumenCotizacionPage() {
           variant="primary"
           onClick={handleExportarClick}
           disabled={exportando || guardando}
-          className="px-5 rounded-xl font-medium bg-brand-primary hover:bg-brand-hover text-on-brand shadow-sm"
+          className="px-5 rounded-xl font-medium bg-accent-primary hover:bg-accent-hover text-on-accent shadow-sm"
         >
           {exportando || guardando ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4 mr-1.5" />}
           {exportando ? 'Generando...' : 'Exportar PDF'}

@@ -1,5 +1,7 @@
 'use client';
 
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Shield, Users, Lock } from 'lucide-react';
 import { showToast } from '@/lib/toast';
@@ -308,13 +310,13 @@ export function RolesYPermisosView() {
                       onClick={() => setSelectedId(rol.id_rol)}
                       className={`w-full text-left px-4 py-3 flex items-start gap-3 transition-colors ${
                         active
-                          ? 'bg-brand-soft border-l-4 border-brand-primary'
+                          ? 'bg-accent-soft border-l-4 border-accent-primary'
                           : 'border-l-4 border-transparent hover:bg-zinc-50'
                       }`}
                     >
                       <span
                         className={`mt-0.5 p-1.5 rounded-lg ${
-                          active ? 'bg-brand-primary text-on-brand' : 'bg-zinc-100 text-zinc-500'
+                          active ? 'bg-accent-primary text-on-accent' : 'bg-zinc-100 text-zinc-500'
                         }`}
                       >
                         <Shield className="h-4 w-4" />
@@ -355,7 +357,7 @@ export function RolesYPermisosView() {
                 {selected && (
                   <>
                     <span className="text-zinc-300">·</span>
-                    <span className="text-brand-ink">{selected.nombre}</span>
+                    <span className="text-accent-ink">{selected.nombre}</span>
                   </>
                 )}
                 {bloqueado && (
@@ -386,7 +388,7 @@ export function RolesYPermisosView() {
                     aria-pressed={grupo === g}
                     className={`px-3.5 py-1.5 text-xs rounded-md transition-colors whitespace-nowrap ${
                       grupo === g
-                        ? 'bg-white text-brand-ink font-semibold shadow-sm'
+                        ? 'bg-white text-accent-ink font-semibold shadow-sm'
                         : 'text-zinc-500 font-medium hover:text-zinc-700'
                     }`}
                   >
@@ -412,32 +414,31 @@ export function RolesYPermisosView() {
             ) : (
               /* Matriz como tabla: una sola cabecera con los niveles
                  (antes cada fila repetía las 3 etiquetas como píldoras) */
-              <div className="overflow-x-auto rounded-xl border border-zinc-200">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-zinc-50/70 border-b border-zinc-200">
-                      <th scope="col" className="text-left text-xs font-bold uppercase tracking-wider text-zinc-500 px-4 py-3">
+              <Table scrollLabel="Matriz de permisos">
+                  <TableHeader>
+                    <TableRow className="bg-zinc-50/70 border-b border-zinc-200">
+                      <TableHead scope="col" className="text-left text-xs font-bold uppercase tracking-wider text-zinc-500 px-4 py-3">
                         Módulo
-                      </th>
+                      </TableHead>
                       {NIVELES.map((nivel) => (
-                        <th key={nivel.value} scope="col" className="text-center text-xs font-bold uppercase tracking-wider text-zinc-500 px-4 py-3">
+                        <TableHead key={nivel.value} scope="col" className="text-center text-xs font-bold uppercase tracking-wider text-zinc-500 px-4 py-3">
                           {nivel.label}
-                        </th>
+                        </TableHead>
                       ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-100">
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-zinc-100">
                     {modulos.map((modulo) => {
                       const nivelActual = permisos[modulo] ?? 'sin_acceso';
                       return (
-                        <tr key={modulo} className="transition-colors hover:bg-zinc-50/60">
-                          <th scope="row" className="px-4 py-2 text-left font-medium text-zinc-800 whitespace-nowrap">
+                        <TableRow key={modulo} className="transition-colors hover:bg-zinc-50/60">
+                          <TableHead scope="row" className="px-4 py-2 text-left font-medium text-zinc-800 whitespace-nowrap">
                             {MODULO_LABELS[modulo]}
-                          </th>
+                          </TableHead>
                           {NIVELES.map((nivel) => {
                             const checked = nivelActual === nivel.value;
                             return (
-                              <td key={nivel.value} className="px-4 py-1 text-center">
+                              <TableCell key={nivel.value} className="px-4 py-1 text-center">
                                 {/* Celda completa como área de clic (hit area ≥ 44px) */}
                                 <label className="inline-flex min-h-11 min-w-11 items-center justify-center cursor-pointer align-middle">
                                   <input
@@ -446,18 +447,17 @@ export function RolesYPermisosView() {
                                     disabled={bloqueado}
                                     onChange={() => setNivel(modulo, nivel.value)}
                                     aria-label={`${nivel.label} — ${MODULO_LABELS[modulo]}`}
-                                    className="h-4.5 w-4.5 rounded border-zinc-300 accent-brand-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="h-4.5 w-4.5 rounded border-zinc-300 accent-accent-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                                   />
                                 </label>
-                              </td>
+                              </TableCell>
                             );
                           })}
-                        </tr>
+                        </TableRow>
                       );
                     })}
-                  </tbody>
-                </table>
-              </div>
+                  </TableBody>
+                </Table>
             )}
           </div>
         </div>

@@ -1,5 +1,8 @@
 # Módulos — Gold Continent
 
+> Actualizado el 11/10/2026. Ver [correcciones y validaciones](CORRECCIONES-2026-10-11.md). La API consulta permisos vigentes en cada solicitud; las lecturas de notificaciones pertenecen a cada usuario.
+
+
 > Qué hace cada módulo del backend (`apps/api/src/modules`) y cada feature del frontend (`apps/web/src/features`).
 
 ---
@@ -7,7 +10,7 @@
 ## Backend (NestJS)
 
 ### auth
-Autenticación JWT con access token (15 min) y refresh token (7 días) en cookies httpOnly + Bearer. Login, refresh con rotación y hash bcrypt en BD, logout, perfil, cambio de contraseña, nombre/email (`PATCH /auth/profile`) y foto de perfil (`PATCH|DELETE /auth/avatar`). Exporta `JwtAuthGuard` usado por todos los demás controllers.
+Autenticación JWT con access token (15 min) y refresh token (7 días) en cookies httpOnly + Bearer. Login, refresh con rotación y hash SHA-256 en BD, logout, perfil, cambio de contraseña, nombre/email (`PATCH /auth/profile`) y foto de perfil (`PATCH|DELETE /auth/avatar`). Exporta `JwtAuthGuard` usado por todos los demás controllers.
 
 - **Arquitectura:** hexagonal parcial (`domain/`, `application/`, `adapters/`, `infrastructure/`) — pero el login real llama a la función plana de `auth.service.ts`; el `LoginUseCase` está inyectado sin usarse (deuda de migración).
 - **Código muerto:** `auth.controller.ts` (handlers Express sin registrar).
@@ -15,9 +18,9 @@ Autenticación JWT con access token (15 min) y refresh token (7 días) en cookie
 ### usuarios
 ✅ **Frontend al 100%.** CRUD de usuarios del equipo: nombre, correo, contraseña, **rol dinámico** (código string en JWT; catálogo en tabla `roles`), **foto de perfil** (`avatar_url`), activar/desactivar. **No se eliminan** (sin endpoint DELETE; solo desactivar).
 
-- Backend: `POST` crea; `PATCH /:id` edita datos (+password opcional + `avatar_url` data URL o `null`); `PATCH /:id/activo` estado; `GET|PUT /:id/permisos` overrides (inerte en UI actual).
+- Backend: `POST` crea; `PATCH /:id` edita datos (+password opcional + `avatar_url` data URL o `null`); `PATCH /:id/activo` estado; `GET|PUT /:id/permisos` efectivos aplicados en UI y API.
 - Guardrails: no desactivar la propia cuenta; no desactivar el único admin activo; `findAll`/login filtran `deleted_at`; `rol` validado contra tabla `roles`.
-- `auth/me` y login devuelven `avatar_url` + `permisos` (overrides); el FE (`usePermissions`/`puede`) los aplica sobre la matriz del rol (BD o defaults). Foto de perfil: `PATCH/DELETE /auth/avatar` + `PerfilModal` en el navbar (**solo foto editable**; nombre/correo solo lectura).
+- `auth/me` y login devuelven `avatar_url` + `permisos` efectivos; el FE (`usePermissions`/`puede`) los aplica sobre la matriz del rol (BD o defaults). Foto de perfil: `PATCH/DELETE /auth/avatar` + `PerfilModal` en el navbar (**solo foto editable**; nombre/correo solo lectura).
 - UI: tabs **[Usuarios] | [Roles y Permisos]**; lista con `FilterCard`+`Input` lupa; dropdown acciones en portal (solo Editar + estado); `UsuarioModal` (crear/editar/cambiar contraseña/foto); `ConfirmModal`.
 
 ### roles
@@ -96,7 +99,7 @@ Almacén clave-valor (`clave`, `valor`, `descripcion`) con endpoints REST:
 - `GET /api/configuracion` — mapa completo clave→valor
 - `PUT /api/configuracion` — upsert (solo `admin`)
 
-El frontend `/admin/configuracion` carga y guarda contra esta API.
+El frontend `/configuracion` carga y guarda contra esta API.
 
 ### historial-precios
 Solo lectura: auditoría de cambios de precio (quién, qué campo, valor anterior/nuevo, cuándo). Los datos se escriben desde `productos.updatePrecios`.
@@ -121,7 +124,7 @@ Scaffold DDD vacío (domain/application/adapters/infrastructure con `.gitkeep`).
 Feature principal: listar con filtros server-side (`buscar`/`fecha`/`estado`, con **debounce 300 ms vía `useDebounce`**), crear/editar con **formulario unificado** (`CotizacionesFormulario` + `CotizacionesEditarLoader`), store Zustand persist con dedup de clientes, cambiar estado **con máquina + `ConfirmModal` en sensibles** (aprobar/rechazar/parcial) en el detalle, detalle, **export PDF con polling** (`exportarPdfCotizacion` → `getCotizacionPdfBlob`: ante 202 sondea `pdf-status` cada 2 s × 10 y solo re-pide `export-pdf` cuando está `listo`; spinner en el botón durante la descarga, toast solo en error/timeout), autocomplete de cliente con debounce/teclado, creación rápida de clientes y **panel de recomendaciones IA** (Similar/Upsell/Equilibrio). También integra la API de cobranza (listado, detalle, pagos).
 
 - Components: `CotizacionesTable`, `CotizacionesFormulario`, `CotizacionesEditarLoader`, `AgregarProductoModal`, `ClienteAutocomplete`, `RecomendacionesPanel`, `ResumenCotizacionCard`.
-- Preview `PdfViewerPage` (`/admin|/vendedor/cotizaciones/pdf/[id]`) usa `getCotizacionPdfObjectUrl` (mismo flujo de polling).
+- Preview `PdfViewerPage` (`/cotizaciones/pdf/[id]`) usa `getCotizacionPdfObjectUrl` (mismo flujo de polling).
 
 ### inventario
 ✅ **Frontend al 100%.** CRUD productos (RHF+zod), movimientos, transferencias entre almacenes, kardex + export CSV, stock/alertas, configuración de colores por producto.
@@ -129,7 +132,7 @@ Feature principal: listar con filtros server-side (`buscar`/`fecha`/`estado`, co
 - Components: `InventarioTable/Filters`, `ProductoModal`, `MovimientoModal`, `TransferenciaModal`, `KardexModal`, `DetalleProductoModal` (Ficha Técnica), `AlertasStockTable`, `ColorTags`, `ColorConfigModal`.
 - `ColorConfigModal`: chips con color real vía `resolveColorHex` (mapa + aliases del seed, ej. `FUSCIA`); lista vacía en producto nuevo; botón Guardar dinámico (deshabilitado/gris sin colores → amarillo `#F8B602` con ≥1).
 - `ColorTags` (Ficha Técnica): círculo HEX junto al nombre, `border-gray-200` para blancos.
-- **Búsqueda con debounce 300 ms** (`useDebounce`): vive en el padre `app/admin/inventario/page.tsx` (el componente `InventarioFilters` solo recibe props).
+- **Búsqueda con debounce 300 ms** (`useDebounce`): vive en el padre `app/inventario/page.tsx` (el componente `InventarioFilters` solo recibe props).
 - Hooks: *(eliminados sin uso: `useInventario`, `useInventarioModals`)*. La page orquesta con `useState` + `apiClient` y recibe `categorias`/`almacenes` como props de los modales.
 
 ### precio-historial

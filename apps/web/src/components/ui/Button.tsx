@@ -20,14 +20,14 @@ const BASE_STYLES =
 const VARIANT_STYLES: Record<NonNullable<ButtonProps['variant']>, string> = {
   // Primary: amarillo de marca con texto on-brand (#18181B) → 10.1:1 WCAG AA
   primary: [
-    'bg-brand-primary text-on-brand hover:bg-brand-hover active:bg-brand-primary/90 active:scale-[0.96]',
+    'bg-accent-primary text-on-accent hover:bg-accent-hover active:bg-accent-primary/90 active:scale-[0.96]',
     'shadow-sm',
     'disabled:bg-status-borrador disabled:text-brand-options',
   ].join(' '),
 
   secondary: [
-    'bg-brand-selection text-brand-subtitle border border-brand-primary/40',
-    'hover:bg-brand-primary/20 hover:border-brand-primary active:bg-brand-primary/30 active:scale-[0.96]',
+    'bg-accent-selection text-brand-subtitle border border-accent-primary/40',
+    'hover:bg-accent-primary/20 hover:border-accent-primary active:bg-accent-primary/30 active:scale-[0.96]',
     'disabled:bg-surface-muted disabled:border-status-borrador disabled:text-brand-options',
   ].join(' '),
 
@@ -44,7 +44,7 @@ const VARIANT_STYLES: Record<NonNullable<ButtonProps['variant']>, string> = {
 
   icon: [
     'bg-white text-brand-subtitle border border-border-default',
-    'hover:bg-brand-selection hover:border-brand-primary active:bg-brand-primary/20 active:scale-[0.96]',
+    'hover:bg-accent-selection hover:border-accent-primary active:bg-accent-primary/20 active:scale-[0.96]',
     'disabled:bg-surface-muted disabled:text-brand-options disabled:border-border-default',
     '[&>svg]:w-5 [&>svg]:h-5 [&>svg]:stroke-[2]',
   ].join(' '),

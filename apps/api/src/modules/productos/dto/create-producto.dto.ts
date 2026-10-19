@@ -4,14 +4,15 @@ import {
   IsOptional,
   IsInt,
   Min,
+  Max,
   MinLength,
   MaxLength,
   IsNumber,
-  IsPositive,
+  ValidateIf,
   IsArray,
   ArrayMinSize
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export class CreateProductoDto {
   @ApiProperty({ example: 'PROD001', minLength: 2, maxLength: 50 })
@@ -21,7 +22,7 @@ export class CreateProductoDto {
   codigo!: string;
 
   @ApiProperty({ example: 1, minimum: 1 })
-  @IsInt()
+  @IsInt() @Max(2147483647)
   @Min(1)
   @Type(() => Number)
   id_categoria!: number;
@@ -53,7 +54,7 @@ export class CreateProductoDto {
   follaje?: string;
 
   @ApiProperty({ example: 10, minimum: 1 })
-  @IsInt()
+  @IsInt() @Max(2147483647)
   @Min(1)
   @Type(() => Number)
   numero_cabezas!: number;
@@ -64,25 +65,25 @@ export class CreateProductoDto {
   tamano!: string;
 
   @ApiProperty({ example: 1, minimum: 1 })
-  @IsInt()
+  @IsInt() @Max(2147483647)
   @Min(1)
   @Type(() => Number)
   id_almacen!: number;
 
   @ApiProperty({ example: 12, minimum: 1 })
-  @IsInt()
+  @IsInt() @Max(2147483647)
   @Min(1)
   @Type(() => Number)
   unidades_por_caja!: number;
 
   @ApiProperty({ example: 100, minimum: 0 })
-  @IsInt()
+  @IsInt() @Max(2147483647)
   @Min(0)
   @Type(() => Number)
   stock_principal!: number;
 
   @ApiProperty({ example: 10, minimum: 0 })
-  @IsInt()
+  @IsInt() @Max(2147483647)
   @Min(0)
   @Type(() => Number)
   stock_minimo!: number;
@@ -111,54 +112,54 @@ export class CreateProductoDto {
 
   // Precios Tienda (Normal)
   @ApiProperty({ example: 15.5, minimum: 0.01 })
-  @IsNumber()
-  @IsPositive()
-  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 }) @Max(99999999.99)
+  @Min(0)
+  @Transform(({value})=>typeof value==='string' && /^\d+(\.\d{1,2})?$/.test(value)?Number(value):value)
   precio_tienda_unidad!: number;
 
   @ApiProperty({ example: 150.0, minimum: 0.01 })
-  @IsNumber()
-  @IsPositive()
-  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 }) @Max(99999999.99)
+  @Min(0)
+  @Transform(({value})=>typeof value==='string' && /^\d+(\.\d{1,2})?$/.test(value)?Number(value):value)
   precio_tienda_docena!: number;
 
   @ApiProperty({ example: 1500.0, minimum: 0.01 })
-  @IsNumber()
-  @IsPositive()
-  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 }) @Max(99999999.99)
+  @Min(0)
+  @Transform(({value})=>typeof value==='string' && /^\d+(\.\d{1,2})?$/.test(value)?Number(value):value)
   precio_tienda_caja!: number;
 
   // Precios Distribuidor
   @ApiProperty({ example: 12.0, minimum: 0.01 })
-  @IsNumber()
-  @IsPositive()
-  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 }) @Max(99999999.99)
+  @Min(0)
+  @Transform(({value})=>typeof value==='string' && /^\d+(\.\d{1,2})?$/.test(value)?Number(value):value)
   precio_distribuidor_unidad!: number;
 
   @ApiProperty({ example: 120.0, minimum: 0.01 })
-  @IsNumber()
-  @IsPositive()
-  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 }) @Max(99999999.99)
+  @Min(0)
+  @Transform(({value})=>typeof value==='string' && /^\d+(\.\d{1,2})?$/.test(value)?Number(value):value)
   precio_distribuidor_docena!: number;
 
   @ApiProperty({ example: 1200.0, minimum: 0.01 })
-  @IsNumber()
-  @IsPositive()
-  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 }) @Max(99999999.99)
+  @Min(0)
+  @Transform(({value})=>typeof value==='string' && /^\d+(\.\d{1,2})?$/.test(value)?Number(value):value)
   precio_distribuidor_caja!: number;
 
   // Costos opcionales (Default 0.00)
   @ApiPropertyOptional({ example: 8.0, minimum: 0, default: 0 })
-  @IsOptional()
-  @IsNumber()
+  @ValidateIf((_o,value)=>value!==undefined)
+  @IsNumber({ maxDecimalPlaces: 2 }) @Max(99999999.99)
   @Min(0)
-  @Type(() => Number)
-  costo_normal?: number = 0;
+  @Transform(({value})=>typeof value==='string' && /^\d+(\.\d{1,2})?$/.test(value)?Number(value):value)
+  costo_normal?: number;
 
   @ApiPropertyOptional({ example: 6.0, minimum: 0, default: 0 })
-  @IsOptional()
-  @IsNumber()
+  @ValidateIf((_o,value)=>value!==undefined)
+  @IsNumber({ maxDecimalPlaces: 2 }) @Max(99999999.99)
   @Min(0)
-  @Type(() => Number)
-  costo_distribuidor?: number = 0;
+  @Transform(({value})=>typeof value==='string' && /^\d+(\.\d{1,2})?$/.test(value)?Number(value):value)
+  costo_distribuidor?: number;
 }

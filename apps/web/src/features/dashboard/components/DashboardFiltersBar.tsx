@@ -89,7 +89,7 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
     <FilterCard>
       <div className="flex flex-wrap items-end justify-between gap-3 w-full">
         {/* FILTROS ALINEADOS A LA BASE */}
-        <div className="flex flex-wrap items-end gap-3 flex-1 min-w-[280px]">
+        <div className="flex flex-wrap items-end gap-3 flex-1 min-w-0">
           {/* FECHA INICIO */}
           <div className="w-full sm:w-44">
             <Input
@@ -100,6 +100,7 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
               placeholder="DD/MM/YYYY"
               disabled={loadingMetas}
               aria-label="Fecha de inicio del rango"
+              className="w-full"
             />
           </div>
 
@@ -113,6 +114,7 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
               placeholder="DD/MM/YYYY"
               disabled={loadingMetas}
               aria-label="Fecha de fin del rango"
+              className="w-full"
             />
           </div>
 
@@ -129,6 +131,7 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
                 ]}
                 disabled={loadingMetas}
                 placeholder="Todos los vendedores"
+                className="w-full"
               />
             </div>
           )}
@@ -145,6 +148,7 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
               ]}
               disabled={loadingMetas}
               placeholder="Todos los almacenes"
+              className="w-full"
             />
           </div>
         </div>
@@ -178,7 +182,7 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
             variant="ghost"
             size="sm"
             onClick={() => setCustomizing(true)}
-            className="h-9 w-9 flex items-center justify-center rounded-xl bg-transparent text-brand-subtitle hover:bg-zinc-100 hover:text-brand-ink transition-colors"
+            className="h-9 w-9 flex items-center justify-center rounded-xl bg-transparent text-brand-subtitle hover:bg-zinc-100 hover:text-accent-ink transition-colors"
             aria-label="Personalizar dashboard"
           >
             <Settings2 className="w-5 h-5" aria-hidden="true" />
@@ -190,12 +194,12 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
       {tieneFiltros && (
         <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-zinc-200 mt-3">
           {(filters.fechaInicio || filters.fechaFin) && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-selection text-brand-subtitle text-xs font-medium rounded-full border border-brand-primary/40 shadow-sm">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
               <span className="font-bold">Rango:</span>
               {filters.fechaInicio ? filters.fechaInicio.split('-').reverse().join('/') : '...'} - {filters.fechaFin ? filters.fechaFin.split('-').reverse().join('/') : '...'}
               <button 
                 onClick={() => onChange({ ...filters, fechaInicio: undefined, fechaFin: undefined })} 
-                className="hover:bg-brand-primary/20 rounded-full p-0.5 transition-colors" 
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors" 
                 aria-label="Remover rango de fechas"
               >
                 <X className="w-3 h-3" />
@@ -204,12 +208,12 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
           )}
 
           {filters.idVendedor && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-selection text-brand-subtitle text-xs font-medium rounded-full border border-brand-primary/40 shadow-sm">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
               <span className="font-bold">Vendedor:</span>
               {vendedorOptions.find(v => v.value === filters.idVendedor)?.label || filters.idVendedor}
               <button 
                 onClick={() => handleChange('idVendedor', undefined)} 
-                className="hover:bg-brand-primary/20 rounded-full p-0.5 transition-colors" 
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors" 
                 aria-label="Remover vendedor"
               >
                 <X className="w-3 h-3" />
@@ -218,12 +222,12 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
           )}
 
           {filters.idAlmacen && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-selection text-brand-subtitle text-xs font-medium rounded-full border border-brand-primary/40 shadow-sm">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
               <span className="font-bold">Almacén:</span>
               {almacenOptions.find(a => a.value === filters.idAlmacen)?.label || filters.idAlmacen}
               <button 
                 onClick={() => handleChange('idAlmacen', undefined)} 
-                className="hover:bg-brand-primary/20 rounded-full p-0.5 transition-colors" 
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors" 
                 aria-label="Remover almacén"
               >
                 <X className="w-3 h-3" />
@@ -232,12 +236,12 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
           )}
 
           {(filters as any).idCliente && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-selection text-brand-subtitle text-xs font-medium rounded-full border border-brand-primary/40 shadow-sm">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
               <span className="font-bold">Cliente:</span>
               {(filters as any).idCliente}
               <button 
                 onClick={() => handleChange('idCliente', undefined)} 
-                className="hover:bg-brand-primary/20 rounded-full p-0.5 transition-colors" 
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors" 
                 aria-label="Remover cliente"
               >
                 <X className="w-3 h-3" />

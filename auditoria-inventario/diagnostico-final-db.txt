@@ -1,0 +1,97 @@
+Pager usage is off.
+                                         version                                          
+------------------------------------------------------------------------------------------
+ PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+(1 row)
+
+ seccion | productos | stocks | movimientos | alertas 
+---------+-----------+--------+-------------+---------
+ conteos |       977 |    977 |         977 |      49
+(1 row)
+
+       tablename        |                        indexname                         |                                                                      indexdef                                                                       
+------------------------+----------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------
+ alertas_stock          | alertas_stock_estado_created_at_idx                      | CREATE INDEX alertas_stock_estado_created_at_idx ON public.alertas_stock USING btree (estado, created_at)
+ alertas_stock          | alertas_stock_estado_idx                                 | CREATE INDEX alertas_stock_estado_idx ON public.alertas_stock USING btree (estado)
+ alertas_stock          | alertas_stock_id_almacen_stock_actual_stock_minimo_idx   | CREATE INDEX alertas_stock_id_almacen_stock_actual_stock_minimo_idx ON public.alertas_stock USING btree (id_almacen, stock_actual, stock_minimo)
+ alertas_stock          | alertas_stock_id_producto_id_almacen_estado_idx          | CREATE INDEX alertas_stock_id_producto_id_almacen_estado_idx ON public.alertas_stock USING btree (id_producto, id_almacen, estado)
+ alertas_stock          | alertas_stock_pkey                                       | CREATE UNIQUE INDEX alertas_stock_pkey ON public.alertas_stock USING btree (id_alerta)
+ inventario_movimientos | inventario_movimientos_created_at_idx                    | CREATE INDEX inventario_movimientos_created_at_idx ON public.inventario_movimientos USING btree (created_at)
+ inventario_movimientos | inventario_movimientos_id_almacen_created_at_idx         | CREATE INDEX inventario_movimientos_id_almacen_created_at_idx ON public.inventario_movimientos USING btree (id_almacen, created_at)
+ inventario_movimientos | inventario_movimientos_id_producto_created_at_idx        | CREATE INDEX inventario_movimientos_id_producto_created_at_idx ON public.inventario_movimientos USING btree (id_producto, created_at)
+ inventario_movimientos | inventario_movimientos_id_usuario_idx                    | CREATE INDEX inventario_movimientos_id_usuario_idx ON public.inventario_movimientos USING btree (id_usuario)
+ inventario_movimientos | inventario_movimientos_pkey                              | CREATE UNIQUE INDEX inventario_movimientos_pkey ON public.inventario_movimientos USING btree (id_movimiento)
+ inventario_movimientos | inventario_movimientos_tipo_referencia_id_referencia_idx | CREATE INDEX inventario_movimientos_tipo_referencia_id_referencia_idx ON public.inventario_movimientos USING btree (tipo_referencia, id_referencia)
+ precios_actuales       | precios_actuales_pkey                                    | CREATE UNIQUE INDEX precios_actuales_pkey ON public.precios_actuales USING btree (id_producto)
+ productos              | productos_codigo_idx                                     | CREATE INDEX productos_codigo_idx ON public.productos USING gin (codigo gin_trgm_ops)
+ productos              | productos_codigo_key                                     | CREATE UNIQUE INDEX productos_codigo_key ON public.productos USING btree (codigo)
+ productos              | productos_deleted_at_created_at_idx                      | CREATE INDEX productos_deleted_at_created_at_idx ON public.productos USING btree (deleted_at, created_at)
+ productos              | productos_descripcion_idx                                | CREATE INDEX productos_descripcion_idx ON public.productos USING gin (descripcion gin_trgm_ops)
+ productos              | productos_id_categoria_idx                               | CREATE INDEX productos_id_categoria_idx ON public.productos USING btree (id_categoria)
+ productos              | productos_pkey                                           | CREATE UNIQUE INDEX productos_pkey ON public.productos USING btree (id_producto)
+ stock_actual           | stock_actual_id_almacen_idx                              | CREATE INDEX stock_actual_id_almacen_idx ON public.stock_actual USING btree (id_almacen)
+ stock_actual           | stock_actual_id_producto_id_almacen_key                  | CREATE UNIQUE INDEX stock_actual_id_producto_id_almacen_key ON public.stock_actual USING btree (id_producto, id_almacen)
+ stock_actual           | stock_actual_pkey                                        | CREATE UNIQUE INDEX stock_actual_pkey ON public.stock_actual USING btree (id_stock)
+(21 rows)
+
+         tabla          |                 conname                 |                                             definicion                                              
+------------------------+-----------------------------------------+-----------------------------------------------------------------------------------------------------
+ alertas_stock          | alertas_stock_id_almacen_fkey           | FOREIGN KEY (id_almacen) REFERENCES almacenes(id_almacen) ON UPDATE CASCADE ON DELETE CASCADE
+ alertas_stock          | alertas_stock_id_producto_fkey          | FOREIGN KEY (id_producto) REFERENCES productos(id_producto) ON UPDATE CASCADE ON DELETE CASCADE
+ alertas_stock          | alertas_stock_pkey                      | PRIMARY KEY (id_alerta)
+ inventario_movimientos | inventario_movimientos_id_almacen_fkey  | FOREIGN KEY (id_almacen) REFERENCES almacenes(id_almacen) ON UPDATE CASCADE ON DELETE CASCADE
+ inventario_movimientos | inventario_movimientos_id_producto_fkey | FOREIGN KEY (id_producto) REFERENCES productos(id_producto) ON UPDATE CASCADE ON DELETE CASCADE
+ inventario_movimientos | inventario_movimientos_id_usuario_fkey  | FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON UPDATE CASCADE ON DELETE SET NULL
+ inventario_movimientos | inventario_movimientos_pkey             | PRIMARY KEY (id_movimiento)
+ precios_actuales       | precios_actuales_id_producto_fkey       | FOREIGN KEY (id_producto) REFERENCES productos(id_producto) ON UPDATE CASCADE ON DELETE CASCADE
+ precios_actuales       | precios_actuales_pkey                   | PRIMARY KEY (id_producto)
+ productos              | productos_id_categoria_fkey             | FOREIGN KEY (id_categoria) REFERENCES categorias(id_categoria) ON UPDATE CASCADE ON DELETE SET NULL
+ productos              | productos_pkey                          | PRIMARY KEY (id_producto)
+ stock_actual           | stock_actual_id_almacen_fkey            | FOREIGN KEY (id_almacen) REFERENCES almacenes(id_almacen) ON UPDATE CASCADE ON DELETE CASCADE
+ stock_actual           | stock_actual_id_producto_fkey           | FOREIGN KEY (id_producto) REFERENCES productos(id_producto) ON UPDATE CASCADE ON DELETE CASCADE
+ stock_actual           | stock_actual_pkey                       | PRIMARY KEY (id_stock)
+(14 rows)
+
+  seccion  | inconsistencias 
+-----------+-----------------
+ agregados |               0
+(1 row)
+
+    seccion     | inconsistencias 
+----------------+-----------------
+ kardex_balance |               0
+(1 row)
+
+    seccion    | inconsistencias 
+---------------+-----------------
+ cadena_kardex |               0
+(1 row)
+
+  seccion  | stocks | productos | precios 
+-----------+--------+-----------+---------
+ negativos |      0 |         0 |       0
+(1 row)
+
+      seccion      | count 
+-------------------+-------
+ alertas_faltantes |    43
+(1 row)
+
+         seccion         | count 
+-------------------------+-------
+ alertas_desactualizadas |     0
+(1 row)
+
+      seccion       | count 
+--------------------+-------
+ alertas_duplicadas |     0
+(1 row)
+
+           migration_name            | aplicada 
+-------------------------------------+----------
+ 0_init                              | t
+ 20261009190731_baseline             | t
+ 20261010_add_notificaciones_leidas  | t
+ 20261011000100_security_consistency | t
+(4 rows)
+

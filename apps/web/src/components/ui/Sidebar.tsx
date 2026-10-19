@@ -81,11 +81,11 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
     // Tema: admin/gerente → ámbar; cualquier otro rol (VENDEDOR) → paleta roja.
     const temaClaro = isAdmin || isGerente;
     const activeItemCls = temaClaro
-        ? 'bg-brand-selection text-brand-ink font-bold shadow-sm shadow-brand-modalFocus/5'
+        ? 'bg-accent-selection text-accent-ink font-bold shadow-sm shadow-brand-modalFocus/5'
         : 'bg-vendedor-soft text-vendedor-ink font-bold shadow-sm';
-    const activeIconCls = temaClaro ? 'text-brand-ink' : 'text-vendedor-ink';
+    const activeIconCls = temaClaro ? 'text-accent-ink' : 'text-vendedor-ink';
     const activeSubCls = temaClaro
-        ? 'text-brand-ink font-bold bg-white shadow-sm shadow-zinc-200/50'
+        ? 'text-accent-ink font-bold bg-white shadow-sm shadow-zinc-200/50'
         : 'text-vendedor-ink font-bold bg-white shadow-sm shadow-zinc-200/50';
 
     const [openSubmenu, setOpenSubmenu] = useState<string | null>(() => findActiveSubmenu(pathname, visibleItems));

@@ -1,6 +1,5 @@
-'use client';
-
 import React from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
   Search,
   RotateCw,
@@ -8,7 +7,6 @@ import {
   ArrowLeftRight,
   ClipboardList,
   Bell,
-  Plus,
   MoreVertical,
 } from 'lucide-react';
 import { Categoria, Almacen } from '@goldcontinent/shared/types/inventario';
@@ -27,6 +25,10 @@ interface InventarioFiltersProps {
   onCategoriaChange: (value: string) => void;
   selectedUbicacion: string;
   onUbicacionChange: (value: string) => void;
+  selectedActivo: string;
+  onActivoChange: (value: string) => void;
+  selectedStockEstado: string;
+  onStockEstadoChange: (value: string) => void;
   onAgregarProducto: () => void;
   onMovimiento?: () => void;
   onTransferencia?: () => void;
@@ -47,6 +49,10 @@ export function InventarioFilters({
   onCategoriaChange,
   selectedUbicacion,
   onUbicacionChange,
+  selectedActivo,
+  onActivoChange,
+  selectedStockEstado,
+  onStockEstadoChange,
   onAgregarProducto,
   onMovimiento,
   onTransferencia,
@@ -58,6 +64,8 @@ export function InventarioFilters({
   alertasCount = 0,
 }: InventarioFiltersProps) {
   const metaDisabled = loading || metaLoading;
+  const { can } = usePermissions();
+  const canEdit = can('productos', 'edicion');
 
   const categoriaOptions = categorias.map((cat) => ({
     label: cat.nombre_categoria,
@@ -69,6 +77,13 @@ export function InventarioFilters({
     value: alm.id_almacen.toString(),
   }));
 
+  const stockEstadoOptions = [
+    { label: 'Todos', value: '' },
+    { label: 'Stock Bajo', value: 'bajo' },
+    { label: 'Stock Suficiente', value: 'disponible' },
+    { label: 'Agotado', value: 'agotado' },
+  ];
+
   const menuItems: DropdownMenuItem[] = [
     {
       key: 'refresh',
@@ -77,72 +92,72 @@ export function InventarioFilters({
       onClick: () => onRefresh?.(),
       disabled: loading,
     },
-    ...(onMovimiento
+    ...(canEdit && onMovimiento
       ? [
-          {
-            key: 'movimiento',
-            label: 'Nuevo Movimiento',
-            icon: <PackagePlus className="w-4 h-4" />,
-            onClick: onMovimiento,
-          },
-        ]
+        {
+          key: 'movimiento',
+          label: 'Nuevo Movimiento',
+          icon: <PackagePlus className="w-4 h-4" />,
+          onClick: onMovimiento,
+        },
+      ]
       : []),
-    ...(onTransferencia
+    ...(canEdit && onTransferencia
       ? [
-          {
-            key: 'transferencia',
-            label: 'Transferencia Global',
-            icon: <ArrowLeftRight className="w-4 h-4" />,
-            onClick: onTransferencia,
-          },
-        ]
+        {
+          key: 'transferencia',
+          label: 'Transferencia Global',
+          icon: <ArrowLeftRight className="w-4 h-4" />,
+          onClick: onTransferencia,
+        },
+      ]
       : []),
     ...(onKardex
       ? [
-          {
-            key: 'kardex',
-            label: 'Kárdex Global',
-            icon: <ClipboardList className="w-4 h-4" />,
-            onClick: onKardex,
-          },
-        ]
+        {
+          key: 'kardex',
+          label: 'Kárdex Global',
+          icon: <ClipboardList className="w-4 h-4" />,
+          onClick: onKardex,
+        },
+      ]
       : []),
     ...(onAlertas
       ? [
-          {
-            key: 'alertas',
-            label: 'Ver Alertas',
-            icon: <Bell className="w-4 h-4" />,
-            onClick: onAlertas,
-            danger: true,
-            dividerBefore: true,
-            badge: alertasCount,
-          },
-        ]
+        {
+          key: 'alertas',
+          label: 'Ver Alertas',
+          icon: <Bell className="w-4 h-4" />,
+          onClick: onAlertas,
+          danger: true,
+          dividerBefore: true,
+          badge: alertasCount,
+        },
+      ]
       : []),
   ];
 
   return (
     <FilterCard>
-      <div className="flex flex-wrap items-end justify-between gap-3 w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[minmax(160px,1fr)_repeat(4,minmax(115px,0.65fr))_auto] items-end gap-3 w-full">
         {/* BUSCADOR Y FILTROS ALINEADOS A LA BASE */}
-        <div className="flex flex-wrap items-end gap-3 flex-1 min-w-[280px]">
-          {/* BUSCADOR */}
-          <div className="flex-1 min-w-[180px] sm:min-w-[220px]">
+        <div className="contents">
+          {/* BUSCAR */}
+          <div className="min-w-0 sm:col-span-2 xl:col-span-1">
             <Input
-              label="Buscar"
+              label="BUSCAR"
               icon={<Search className="w-4 h-4" />}
               placeholder="Buscar..."
               value={searchValue}
-              onChange={(e) => onSearchChange(e.target.value)}
+              onChange={(e) => onSearchChange(e.target.value.toUpperCase())}
               aria-label="Buscar productos"
             />
           </div>
 
           {/* CATEGORÍA */}
-          <div className="w-full sm:w-44">
+          <div className="min-w-0">
             <Select
-              label="Categoría"
+              label="CATEGORÍA"
               value={selectedCategoria}
               onChange={(e) => onCategoriaChange(String(e.target.value))}
               options={[{ label: 'Seleccionar', value: '' }, ...categoriaOptions]}
@@ -151,27 +166,36 @@ export function InventarioFilters({
           </div>
 
           {/* UBICACIÓN */}
-          <div className="w-full sm:w-44">
+          <div className="min-w-0">
             <Select
-              label="Ubicación"
+              label="UBICACIÓN"
               value={selectedUbicacion}
               onChange={(e) => onUbicacionChange(String(e.target.value))}
               options={[{ label: 'Seleccionar', value: '' }, ...almacenOptions]}
               disabled={metaDisabled}
             />
           </div>
+          {/* ESTADO STOCK */}
+          <div className="min-w-0">
+            <Select
+              label="ESTADO STOCK"
+              value={selectedStockEstado}
+              onChange={(e) => onStockEstadoChange(String(e.target.value))}
+              options={stockEstadoOptions}
+              disabled={metaDisabled}
+            />
+          </div>
         </div>
 
         {/* BOTONES Y ACCIONES (MISMA ALTURA EXACTA h-10) */}
-        <div className="flex items-center gap-2 sm:ml-auto h-9">
-          <Button
+        <div className="flex items-center justify-end gap-2 h-9">
+          {canEdit && <Button
             variant="primary"
             onClick={onAgregarProducto}
             className="gap-1.5 whitespace-nowrap shadow-sm"
           >
-            <Plus className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
-            <span>Agregar Producto</span>
-          </Button>
+            <span>+ Agregar Producto</span>
+          </Button>}
 
           <DropdownMenu
             items={menuItems}
@@ -185,7 +209,7 @@ export function InventarioFilters({
                 )}
               </span>
             }
-            triggerClassName="h-9 w-9 flex items-center justify-center rounded-xl bg-transparent text-brand-subtitle hover:bg-zinc-100 hover:text-brand-ink transition-colors"
+            triggerClassName="h-9 w-9 flex items-center justify-center rounded-xl bg-transparent text-brand-subtitle hover:bg-zinc-100 hover:text-accent-ink transition-colors"
           />
         </div>
       </div>

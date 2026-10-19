@@ -302,7 +302,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             <ChevronDown
               className={cn(
                 'absolute right-2.5 size-4 text-brand-options transition-transform duration-200 pointer-events-none',
-                isOpen && 'rotate-180 text-brand-primary'
+                isOpen && 'rotate-180 text-accent-ink'
               )}
               aria-hidden="true"
             />
@@ -340,13 +340,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                           'w-full text-left px-3.5 py-2 text-xs font-medium transition-colors flex items-center justify-between cursor-pointer',
                           index === activeIndex && 'bg-zinc-100',
                           isSelected
-                            ? 'text-brand-ink font-bold'
+                            ? 'text-accent-ink font-bold'
                             : 'text-brand-subtitle'
                         )}
                       >
                         <span className="truncate">{opt.label}</span>
                         {isSelected && (
-                          <Check className="w-3.5 h-3.5 text-brand-primary shrink-0 ml-2" />
+                          <Check className="w-3.5 h-3.5 text-accent-ink shrink-0 ml-2" />
                         )}
                       </div>
                     );

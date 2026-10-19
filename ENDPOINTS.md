@@ -1,5 +1,15 @@
 # Endpoints — Gold Continent API
 
+## Reglas de autorización vigentes
+
+JwtAuthGuard valida cuenta activa, rol activo y session_version. @Permission exige lectura para GET/HEAD y edición para mutaciones. Productos, inventario, categorías y almacenes usan productos; clientes y cotizaciones usan cotizaciones; cobranza, dashboard, reportes, configuración, recomendaciones, usuarios y consulta de precios usan su módulo. PDF exige pdf/lectura y comprueba propiedad. Usuarios y roles conservan además la restricción de administrador.
+
+Reportes y notificaciones imponen el propietario desde la sesión para usuarios sin alcance global. Marcar una notificación leída afecta solo al usuario actual. Ambos endpoints de pagos aceptan clave_idempotencia; repetir la misma operación no duplica el abono y reutilizar la clave con datos diferentes devuelve 409.
+
+
+> Actualizado el 11/10/2026. Ver [correcciones y validaciones](CORRECCIONES-2026-10-11.md). La API consulta permisos vigentes en cada solicitud; las lecturas de notificaciones pertenecen a cada usuario.
+
+
 > **Base URL:** `http://localhost:3001` · **Prefijo global:** `/api` · **Total:** 71 endpoints en 15 controllers
 > **Documentación interactiva (Scalar):** `GET http://localhost:3001/reference`
 > **Autenticación:** JWT en cookie httpOnly (`accessToken`) o header `Authorization: Bearer <token>`
@@ -25,8 +35,8 @@ Todos los controllers aplican `JwtAuthGuard` a nivel de clase salvo los endpoint
 |--------|------|------|-------------|
 | POST | `/api/auth/login` | Público | Login con `{email, password}`. Setea cookies httpOnly `accessToken` (15 min) y `refreshToken` (7 días). Devuelve `usuario` + `access_token` |
 | POST | `/api/auth/refresh` | Público | Renueva tokens desde cookie `refreshToken` (o body). Rota ambos tokens |
-| POST | `/api/auth/logout` | JWT | Invalida `refresh_token_hash` y limpia cookies |
-| GET | `/api/auth/me` | JWT | Perfil del usuario autenticado (incluye `avatar_url` y `permisos` overrides) |
+| POST | `/api/auth/logout` | JWT | Revoca access/refresh mediante session_version y limpia cookies |
+| GET | `/api/auth/me` | JWT | Perfil del usuario autenticado (incluye `avatar_url` y `permisos` efectivos) |
 | PATCH | `/api/auth/password` | JWT | Cambia contraseña: `{currentPassword, newPassword}` (6–50 chars) |
 | PATCH | `/api/auth/profile` | JWT | Actualiza nombre y/o email del usuario actual: `{nombre?, email?}` |
 | PATCH | `/api/auth/avatar` | JWT | Actualiza foto de perfil: `{avatar_url}` data URL PNG/JPEG/WebP, máx ~512 KB |

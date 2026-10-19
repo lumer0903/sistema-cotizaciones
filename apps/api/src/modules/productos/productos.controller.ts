@@ -1,3 +1,5 @@
+import { ProductsQueryDto, ProductIncludeQueryDto } from '../../common/dto/inventory-query.dto';
+import { Permission } from '../../common/decorators/permission.decorator';
 import {
   Controller,
   Get,
@@ -25,13 +27,13 @@ import { UpdateProductoDto } from './dto/update-producto.dto';
 import { UpdatePreciosDto } from './dto/update-precios.dto';
 import type {
   ProductoResponse,
-  PaginatedProductosResponse,
   PreciosActualesResponse,
 } from './productos.service';
 
 @ApiTags('Productos')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@Permission('productos')
 @Controller('productos')
 export class ProductosController {
   constructor(
@@ -46,30 +48,8 @@ export class ProductosController {
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'stock_status', required: false, type: String, description: 'disponible, bajo, agotado' })
   @ApiQuery({ name: 'include', required: false, type: String, description: 'Comma-separated: precios,categoria,stock' })
-  async findAll(
-    @Query('page') page?: string | number,
-    @Query('limit') limit?: string | number,
-    @Query('search') search?: string,
-    @Query('stock_status') stock_status?: string,
-    @Query('include') include?: string,
-  ): Promise<{ success: true; data: PaginatedProductosResponse['data']; total: number; page: number; limit: number }> {
-    const pageNum = Math.max(1, Number(page) || 1);
-    const limitNum = Math.min(Math.max(1, Number(limit) || 50), 1000);
-
-    const includePrecios = include?.includes('precios') ?? false;
-    const includeCategoria = include?.includes('categoria') ?? false;
-    const includeStockActual = include?.includes('stock') ?? false;
-
-    const result = await this.productosService.findAll(
-      pageNum,
-      limitNum,
-      search,
-      stock_status,
-      includePrecios,
-      includeCategoria,
-      includeStockActual,
-    );
-    return { success: true, ...result };
+  async findAll(@Query() query: ProductsQueryDto) {
+    return { success: true, ...await this.productosService.findAllFiltered(query) };
   }
 
   @Get(':id')
@@ -77,11 +57,11 @@ export class ProductosController {
   @ApiQuery({ name: 'include', required: false, type: String, description: 'Comma-separated: precios,categoria,stock' })
   async findById(
     @Param('id', ParseIntPipe) id: number,
-    @Query('include') include?: string,
+    @Query() query: ProductIncludeQueryDto,
   ): Promise<{ success: true; data: ProductoResponse | null }> {
-    const includePrecios = include?.includes('precios') ?? false;
-    const includeCategoria = include?.includes('categoria') ?? false;
-    const includeStockActual = include?.includes('stock') ?? false;
+    const includePrecios = query.include?.includes('precios') ?? false;
+    const includeCategoria = query.include?.includes('categoria') ?? false;
+    const includeStockActual = query.include?.includes('stock') ?? false;
 
     const producto = await this.productosService.findById(id, includePrecios, includeCategoria, includeStockActual);
     return { success: true, data: producto };
@@ -89,8 +69,8 @@ export class ProductosController {
 
   @Post()
   @ApiOperation({ summary: 'Create new product' })
-  async create(@Body() body: CreateProductoDto): Promise<{ success: true; data: ProductoResponse }> {
-    const producto = await this.productosService.create(body);
+  async create(@Body() body: CreateProductoDto, @Req() req: Request & { user: { id_usuario: number } }): Promise<{ success: true; data: ProductoResponse }> {
+    const producto = await this.productosService.create(body, req.user.id_usuario);
     return { success: true, data: producto };
   }
 
@@ -99,8 +79,9 @@ export class ProductosController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateProductoDto,
+    @Req() req: Request & { user: { id_usuario: number } },
   ): Promise<{ success: true; data: ProductoResponse }> {
-    const producto = await this.productosService.update(id, body);
+    const producto = await this.productosService.update(id, body, req.user.id_usuario);
     return { success: true, data: producto };
   }
 

@@ -34,7 +34,6 @@ export interface AutosaveParams {
   costoCarreta?: number;
   observaciones?: string;
   numero?: string | null;
-  /** Si ya existe en BD, hace PATCH en vez de POST */
   idCotizacionGuardada?: number | null;
   tipoPago?: string;
   fechaVencimiento?: string;
@@ -43,7 +42,6 @@ export interface AutosaveParams {
 export function puedeAutosave(cliente: AutosaveCliente, items: AutosaveItem[]): boolean {
   if (items.length === 0) return false;
   if (!items.some((it) => Number(it.id_producto ?? 0) > 0)) return false;
-  // Cliente ya vinculado por id no requiere nombre en memoria
   if (cliente.id_cliente && !cliente.clienteEditado) return true;
   if (cliente.id_cliente && cliente.clienteEditado && cliente.nombre.trim()) return true;
   return cliente.nombre.trim().length > 0;
@@ -70,7 +68,6 @@ async function ensureCliente(
     });
     return cliente.id_cliente;
   }
-  // Evitar duplicados: si ya existe un cliente con el mismo nombre exacto, reutilizarlo
   const nombreBuscado = cliente.nombre.trim();
   const existentes = await buscarClientes(nombreBuscado, 10);
   const exacto = existentes.find(
@@ -107,7 +104,22 @@ export interface AutosaveResultado {
   idCliente: number;
 }
 
-/** Guarda borrador en servidor. Devuelve ids de cotización y cliente, o null si no hay datos suficientes. */
+let lastPayloadHash = '';
+const DEBOUNCE_MS = 5000;
+
+function computePayloadHash(params: AutosaveParams): string {
+  const { cliente, items, tipoPrecioCliente, incluyeCarreta, costoCarreta, fechaVencimiento, tipoPago } = params;
+  return JSON.stringify({
+    cliente: { id: cliente.id_cliente, nombre: cliente.nombre, editado: cliente.clienteEditado },
+    items: items.map(i => ({ id: i.id_producto, cant: i.cantidad, precio: i.precioUnitario ?? i.precio_unitario, tipo: i.tipo_venta, obs: i.observacion })),
+    tipoPrecioCliente,
+    incluyeCarreta,
+    costoCarreta,
+    fechaVencimiento,
+    tipoPago,
+  });
+}
+
 export async function autosaveCotizacion(
   params: AutosaveParams
 ): Promise<AutosaveResultado | null> {
@@ -116,6 +128,12 @@ export async function autosaveCotizacion(
 
   const detalle = construirDetalle(items);
   if (detalle.length === 0) return null;
+
+  const payloadHash = computePayloadHash(params);
+  if (payloadHash === lastPayloadHash) {
+    return null;
+  }
+  lastPayloadHash = payloadHash;
 
   const idCliente = await ensureCliente(cliente, params.tipoPrecioCliente);
   const observaciones =
@@ -154,4 +172,8 @@ export async function autosaveCotizacion(
     }
     throw err;
   }
+}
+
+export function resetAutosaveHash() {
+  lastPayloadHash = '';
 }

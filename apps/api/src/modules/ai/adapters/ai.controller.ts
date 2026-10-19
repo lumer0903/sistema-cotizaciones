@@ -1,3 +1,4 @@
+import { Permission } from '../../../common/decorators/permission.decorator';
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/infrastructure/jwt-auth.guard';
@@ -7,6 +8,7 @@ import { AiSuggestionRequestDto } from '../application/dtos/ai-suggestion-reques
 @ApiTags('AI Service')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@Permission('recomendaciones')
 @Controller('ai')
 export class AiController {
   constructor(private readonly getAiSuggestionsUseCase: GetAiQuoteSuggestionsUseCase) {}

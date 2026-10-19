@@ -137,7 +137,7 @@ export function PermisosModal({ open, onClose, onSuccess, usuario }: PermisosMod
             {MODULOS.map((modulo) => (
               <div
                 key={modulo}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-3 hover:bg-brand-soft/50"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-3 hover:bg-accent-soft/50"
               >
                 <span className="text-sm font-medium text-zinc-800">
                   {MODULO_LABELS[modulo]}

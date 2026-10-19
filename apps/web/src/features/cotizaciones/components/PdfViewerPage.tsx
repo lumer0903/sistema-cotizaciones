@@ -53,7 +53,7 @@ export function PdfViewerPage({ cotizacionId, filename: _filename }: PdfViewerPa
         <div className="w-full max-w-5xl mx-auto h-[60vh] lg:h-[calc(100dvh-180px)] bg-white rounded-xl border border-zinc-200 shadow-md overflow-hidden">
           {loading && (
             <div className="h-full flex flex-col items-center justify-center gap-3 text-zinc-500">
-              <Loader2 className="size-10 animate-spin text-amber-600" />
+              <Loader2 className="size-10 animate-spin text-accent-ink" />
               <p className="text-sm font-semibold">Cargando documento…</p>
             </div>
           )}

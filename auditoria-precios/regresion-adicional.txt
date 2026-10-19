@@ -1,0 +1,67 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "pricing_qa_1792013090460", schema "public" at "postgres:5432"
+
+9 migrations found in prisma/migrations
+
+Applying migration `20261009190731_baseline`
+Applying migration `20261010_add_notificaciones_leidas`
+Applying migration `20261011000100_security_consistency`
+Applying migration `20261014000100_inventory_integrity`
+Applying migration `20261014000200_inventory_alert_checks`
+Applying migration `20261014000300_pricing_audit`
+Applying migration `20261014000400_pricing_hierarchy`
+Applying migration `20261014000500_pricing_query_indexes`
+Applying migration `20261014000600_pricing_audit_batch`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20261009190731_baseline/
+    └─ migration.sql
+  └─ 20261010_add_notificaciones_leidas/
+    └─ migration.sql
+  └─ 20261011000100_security_consistency/
+    └─ migration.sql
+  └─ 20261014000100_inventory_integrity/
+    └─ migration.sql
+  └─ 20261014000200_inventory_alert_checks/
+    └─ migration.sql
+  └─ 20261014000300_pricing_audit/
+    └─ migration.sql
+  └─ 20261014000400_pricing_hierarchy/
+    └─ migration.sql
+  └─ 20261014000500_pricing_query_indexes/
+    └─ migration.sql
+  └─ 20261014000600_pricing_audit_batch/
+    └─ migration.sql
+      
+All migrations have been successfully applied.
+PASS creación registra los ocho importes con actor
+PASS PATCH parcial conserva omitidos y registra un cambio
+PASS no-op no produce eventos
+PASS payloads monetarios inválidos son 400
+PASS jerarquía fusionada se valida y bajo costo se permite
+PASS editar producto conserva costos omitidos y rechaza null
+PASS actor inválido revierte precio e historial
+PASS concurrencia mantiene continuidad del historial
+PASS escritor directo requiere actor y registra auditoría
+PASS ledger no permite insertar, alterar, borrar o truncar
+PASS DB rechaza NaN y precios negativos
+PASS consulta tiene permisos independientes y no expone costos
+PASS filtros y validación de consultas exactos
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+0 !== 1
+
+    at /tmp/pricing-regression.cjs:127:37
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async check (/tmp/pricing-regression.cjs:26:31)
+    at async main (/tmp/pricing-regression.cjs:124:2) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 0,
+  expected: 1,
+  operator: 'strictEqual'
+}
+Comando falló: 1

@@ -322,10 +322,10 @@ export function ReportesView() {
       <h1 className="sr-only">Reportes</h1>
 
       {/* Filtros */}
-      <FilterCard accentBorder>
-        <div className="flex flex-wrap items-end justify-between gap-3 w-full">
-          <div className="flex flex-wrap items-end gap-3 flex-1 min-w-[280px]">
-            <div className="w-full sm:w-44">
+      <FilterCard>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 items-end gap-3 w-full">
+          <div className="contents">
+            <div className="min-w-0">
               <Input
                 label="Fecha inicio"
                 type="date"
@@ -334,7 +334,7 @@ export function ReportesView() {
                 disabled={loadingMetas}
               />
             </div>
-            <div className="w-full sm:w-44">
+            <div className="min-w-0">
               <Input
                 label="Fecha fin"
                 type="date"
@@ -344,7 +344,7 @@ export function ReportesView() {
               />
             </div>
             {isAdmin && (
-              <div className="w-full sm:w-56">
+              <div className="min-w-0">
                 <Select
                   label="Vendedor"
                   value={filtros.idVendedor ? String(filtros.idVendedor) : ''}
@@ -355,7 +355,7 @@ export function ReportesView() {
                 />
               </div>
             )}
-            <div className="w-full sm:w-56">
+            <div className="min-w-0">
               <Select
                 label="Almacén"
                 value={filtros.idAlmacen ? String(filtros.idAlmacen) : ''}
@@ -365,7 +365,7 @@ export function ReportesView() {
                 placeholder="Todos"
               />
             </div>
-            <div className="w-full sm:w-56">
+            <div className="min-w-0">
               <Select
                 label="Cliente"
                 value={filtros.idCliente ? String(filtros.idCliente) : ''}
@@ -376,7 +376,7 @@ export function ReportesView() {
               />
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:ml-auto h-9">
+          <div className="flex items-center justify-end gap-2 h-9">
             <Button
               variant="primary"
               size="sm"
@@ -393,7 +393,7 @@ export function ReportesView() {
 
       {/* Tabs de reportes */}
       <Tabs value={tipoReporte} onValueChange={(v: string) => setTipoReporte(v as TipoReporte)} className="w-full">
-        <TabsList className="grid w-full grid-cols-3" aria-label="Tipo de reporte">
+        <TabsList className="flex w-fit max-w-full overflow-x-auto" aria-label="Tipo de reporte">
           {(Object.keys(REPORTE_CONFIG) as TipoReporte[]).map((tipo) => (
             <TabsTrigger key={tipo} value={tipo} className="gap-2">
               {REPORTE_CONFIG[tipo].icon}
@@ -403,7 +403,7 @@ export function ReportesView() {
         </TabsList>
 
         <TabsContent value="ranking-productos" className="mt-4">
-          <Card>
+          <Card className="shadow-none rounded-none overflow-visible">
             <Table>
               {renderHeaders()}
               <TableBody>
@@ -431,7 +431,7 @@ export function ReportesView() {
         </TabsContent>
 
         <TabsContent value="antiguedad-deuda" className="mt-4">
-          <Card>
+          <Card className="shadow-none rounded-none overflow-visible">
             <Table>
               {renderHeaders()}
               <TableBody>
@@ -459,7 +459,7 @@ export function ReportesView() {
         </TabsContent>
 
         <TabsContent value="auditoria-ia" className="mt-4">
-          <Card>
+          <Card className="shadow-none rounded-none overflow-visible">
             <Table>
               {renderHeaders()}
               <TableBody>
@@ -488,8 +488,8 @@ export function ReportesView() {
       </Tabs>
 
       {loading && (
-        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50" role="status" aria-live="polite">
-          <div className="flex items-center gap-2 text-brand-primary">
+        <div className="flex items-center justify-center py-4" role="status" aria-live="polite">
+          <div className="flex items-center gap-2 text-accent-ink">
             <RefreshCw className="w-6 h-6 animate-spin" aria-hidden="true" />
             <span>Cargando reporte...</span>
           </div>

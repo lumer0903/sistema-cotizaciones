@@ -1,4 +1,5 @@
 'use client';
+import { Input } from '@/components/ui';
 
 import React from 'react';
 import { Store, Truck } from 'lucide-react';
@@ -21,7 +22,7 @@ export interface PriceMatrixProps {
 const ROWS: Array<{ unit: PriceUnit; label: string }> = [
   { unit: 'unidad', label: 'Unidad' },
   { unit: 'docena', label: 'Docena' },
-  { unit: 'caja', label: 'Caja' },
+  { unit: 'caja', label: 'Mayor' },
 ];
 
 interface PriceRowProps {
@@ -71,7 +72,7 @@ function PriceRow({
           >
             S/
           </span>
-          <input
+          <Input
             id={inputId}
             type="number"
             step="0.01"
@@ -82,7 +83,7 @@ function PriceRow({
             aria-describedby={error ? errorId : undefined}
             data-field={field}
             className={cn(
-              'w-full h-9 rounded-lg border bg-white pl-7 pr-2.5 text-right text-sm font-semibold tnum',
+              'w-full h-9 rounded-lg border bg-white pl-7 pr-2.5 text-right text-base font-semibold tnum',
               'transition-colors placeholder:text-brand-options focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring',
               '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
               error ? 'border-danger text-danger' : cn(borderClass, accentClass)
@@ -117,13 +118,13 @@ interface ClientCardProps {
 function ClientCard({ chip, hint, icon: Icon, accentClass, borderClass, softClass, watermarkClass, children }: ClientCardProps) {
   return (
     <section
-      className={cn('group relative overflow-hidden flex flex-col rounded-2xl border p-5 transition-[box-shadow,transform] hover:shadow-md', borderClass, softClass)}
+      className={cn('group relative overflow-hidden flex flex-col rounded-2xl border p-5 transition-[box-shadow,transform] duration-150 hover:shadow-md', borderClass, softClass)}
       aria-label={chip}
     >
       {/* Ícono de fondo (Marca de Agua) con animación premium al hover */}
       <Icon 
         className={cn(
-          "absolute -bottom-8 -left-6 h-48 w-48 -rotate-12 pointer-events-none select-none z-0 transition-[transform] duration-500 group-hover:scale-110 group-hover:-rotate-6", 
+          "absolute bottom-0 left-0 h-48 w-48 -rotate-12 pointer-events-none select-none z-0 opacity-50 transition-[transform] duration-200 group-hover:scale-110", 
           watermarkClass
         )} 
         aria-hidden="true" 
@@ -186,31 +187,31 @@ export function PriceMatrix({ tienda, distribuidor, errors = {} }: PriceMatrixPr
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <ClientCard
         chip="Cliente tienda"
-        hint="Precio estándar"
+        hint="Por unidad: docena desde 12; mayor desde 13"
         icon={Store}
-        accentClass="text-blue-900"
-        borderClass="border-blue-200/80"
-        softClass="bg-blue-50/40 shadow-2xs"
-        watermarkClass="text-blue-500/10"
+        accentClass="text-role-tienda"
+        borderClass="border-role-tienda/40"
+        softClass="bg-role-tienda-soft"
+        watermarkClass="text-role-tienda/10"
       >
-        {buildRows('precio_tienda', tienda, 'tienda', 'text-blue-900', 'border-blue-200/80')}
+        {buildRows('precio_tienda', tienda, 'tienda', 'text-role-tienda', 'border-role-tienda/40')}
       </ClientCard>
 
       <ClientCard
         chip="Cliente distribuidor"
-        hint="Precio mayoreo"
+        hint="Por unidad: docena desde 12; mayor desde 13"
         icon={Truck}
-        accentClass="text-amber-900"
-        borderClass="border-amber-200/80"
-        softClass="bg-amber-50/40 shadow-2xs"
-        watermarkClass="text-amber-700/10"
+        accentClass="text-role-distribuidor"
+        borderClass="border-role-distribuidor/40"
+        softClass="bg-role-distribuidor-soft"
+        watermarkClass="text-role-distribuidor/10"
       >
         {buildRows(
           'precio_distribuidor',
           distribuidor,
           'distribuidor',
-          'text-amber-900',
-          'border-amber-200/80'
+          'text-role-distribuidor',
+          'border-role-distribuidor/40'
         )}
       </ClientCard>
     </div>

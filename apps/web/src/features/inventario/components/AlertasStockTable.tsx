@@ -1,231 +1,65 @@
 'use client';
-
-import { useState, useEffect, useCallback } from 'react';
-import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
+import { useState,useEffect,useCallback,useRef } from 'react';
+import { inventarioApi,AlertaStockResponse } from '../api/inventario.api';
+import { apiErrorMessage } from '@/lib/apiClient';
 import { showToast } from '@/lib/toast';
-import { inventarioApi, AlertaStockResponse } from '../api/inventario.api';
-import { Modal, Button, Badge, Select, ConfirmModal, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
-import { formatCode, formatText } from '@/lib/formatters';
-
-interface AlertasStockTableProps {
-    open: boolean;
-    onClose: () => void;
-    onSuccess?: () => void;
-}
-
-export function AlertasStockTable({ open, onClose, onSuccess }: AlertasStockTableProps) {
-    const [alertas, setAlertas] = useState<AlertaStockResponse[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [estadoFiltro, setEstadoFiltro] = useState<'activa' | 'resuelta' | 'todas'>('activa');
-    const [reconociendoId, setReconociendoId] = useState<number | null>(null);
-    const [confirmReconocerId, setConfirmReconocerId] = useState<number | null>(null);
-    const [activeTab, setActiveTab] = useState<'inventario' | 'cobranzas'>('inventario');
-
-    const fetchAlertas = useCallback(async () => {
-        setLoading(true);
-        try {
-            const estado = estadoFiltro === 'todas' ? undefined : estadoFiltro;
-            const res = await inventarioApi.obtenerAlertasStock(estado);
-            setAlertas(res.data || []);
-        } catch (error) {
-            console.error('Error fetching alertas:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [estadoFiltro]);
-
-    useEffect(() => {
-        if (open && activeTab === 'inventario') {
-            const run = async () => {
-                await fetchAlertas();
-            };
-            void run();
-        }
-    }, [open, activeTab, fetchAlertas]);
-
-    const handleReconocer = async (idAlerta: number) => {
-        setConfirmReconocerId(idAlerta);
-    };
-
-    const confirmarReconocer = async () => {
-        if (confirmReconocerId == null) return;
-        setReconociendoId(confirmReconocerId);
-        try {
-            await inventarioApi.reconocerAlerta(confirmReconocerId);
-            setConfirmReconocerId(null);
-            await fetchAlertas();
-            if (onSuccess) onSuccess();
-        } catch (error) {
-            console.error('Error reconociendo alerta:', error);
-            showToast.error('Error al reconocer la alerta');
-        } finally {
-            setReconociendoId(null);
-        }
-    };
-
-    const renderEstadoBadge = (estado: 'activa' | 'resuelta') => {
-        if (estado === 'activa') {
-            return (
-                <Badge variant="danger" className="flex items-center gap-1.5">
-                    <AlertCircle className="w-3 h-3" />
-                    Activa
-                </Badge>
-            );
-        }
-        return (
-            <Badge variant="success" className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3 h-3" />
-                Resuelta
-            </Badge>
-        );
-    };
-
-    if (!open) return null;
-
-    return (
-        <>
-        <Modal open={open} onClose={onClose} title="Centro de Notificaciones" maxWidth="xl">
-            <div className="flex border-b border-zinc-200 mb-4">
-                <button
-                    type="button"
-                    className={`pb-2 px-4 text-sm font-semibold transition-colors ${activeTab === 'inventario' ? 'border-b-2 border-brand-primary text-brand-ink' : 'text-zinc-500 hover:text-zinc-700'}`}
-                    onClick={() => setActiveTab('inventario')}
-                >
-                    Inventario
-                </button>
-                <button
-                    type="button"
-                    className={`pb-2 px-4 text-sm font-semibold transition-colors ${activeTab === 'cobranzas' ? 'border-b-2 border-brand-primary text-brand-ink' : 'text-zinc-500 hover:text-zinc-700'}`}
-                    onClick={() => setActiveTab('cobranzas')}
-                >
-                    Cobranzas
-                </button>
-            </div>
-
-            {activeTab === 'inventario' && (
-                <div className="space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-brand-options uppercase">Filtrar:</span>
-                            <Select
-                                value={estadoFiltro}
-                                onChange={(e) => setEstadoFiltro(e.target.value as 'activa' | 'resuelta' | 'todas')}
-                                options={[
-                                    { label: 'Activas', value: 'activa' },
-                                    { label: 'Resueltas', value: 'resuelta' },
-                                    { label: 'Todas', value: 'todas' },
-                                ]}
-                                className="w-40"
-                                variant="modal"
-                            />
-                        </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={fetchAlertas}
-                            disabled={loading}
-                            className="gap-1.5"
-                        >
-                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                            Actualizar
-                        </Button>
-                    </div>
-
-                    {loading ? (
-                        <div className="p-6 sm:p-8 text-center text-brand-options text-sm animate-pulse">
-                            <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-brand-ink" />
-                            Cargando alertas...
-                        </div>
-                    ) : alertas.length === 0 ? (
-                        <div className="p-6 sm:p-8 text-center bg-zinc-50/50 rounded-xl border border-dashed border-zinc-300">
-                            <AlertCircle className="w-12 h-12 mx-auto text-zinc-300 mb-3" />
-                            <p className="text-xs font-semibold text-brand-options">
-                                {estadoFiltro === 'activa' ? 'No hay alertas activas' : 'No hay alertas en este filtro'}
-                            </p>
-                        </div>
-                    ) : (
-                        <Table className="min-w-[48rem]" scrollLabel="Alertas de stock">
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="whitespace-nowrap">PRODUCTO</TableHead>
-                                    <TableHead className="whitespace-nowrap">ALMACÉN</TableHead>
-                                    <TableHead className="text-center whitespace-nowrap">STOCK ACTUAL</TableHead>
-                                    <TableHead className="text-center whitespace-nowrap">STOCK MÍNIMO</TableHead>
-                                    <TableHead className="text-center whitespace-nowrap">ESTADO</TableHead>
-                                    <TableHead className="whitespace-nowrap">DETECTADA</TableHead>
-                                    <TableHead className="text-right whitespace-nowrap">ACCIÓN</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {alertas.map((alerta) => (
-                                    <TableRow key={alerta.id_alerta}>
-                                        <TableCell className="font-medium">
-                                            {formatCode(alerta.producto?.codigo || '')} - {formatText(alerta.producto?.descripcion || '')}
-                                        </TableCell>
-                                        <TableCell className="text-xs text-brand-options">
-                                            {alerta.almacen?.codigo} - {formatText(alerta.almacen?.nombre || '')}
-                                        </TableCell>
-                                        <TableCell className="text-center font-bold text-danger">
-                                            {alerta.stock_actual} u.
-                                        </TableCell>
-                                        <TableCell className="text-center font-bold text-brand-options">
-                                            {alerta.stock_minimo} u.
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                            {renderEstadoBadge(alerta.estado)}
-                                        </TableCell>
-                                        <TableCell className="text-xs text-brand-options">
-                                            {new Date(alerta.created_at).toLocaleString('es-PE')}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            {alerta.estado === 'activa' && (
-                                                <Button
-                                                    variant="primary"
-                                                    size="sm"
-                                                    onClick={() => handleReconocer(alerta.id_alerta)}
-                                                    disabled={reconociendoId === alerta.id_alerta}
-                                                    className="gap-1.5"
-                                                >
-                                                    {reconociendoId === alerta.id_alerta ? (
-                                                        <Loader2 className="w-3 h-3 animate-spin" />
-                                                    ) : (
-                                                        <>
-                                                            <CheckCircle2 className="w-3 h-3" />
-                                                            Reconocer
-                                                        </>
-                                                    )}
-                                                </Button>
-                                            )}
-                                            {alerta.estado === 'resuelta' && alerta.reconocida_at && (
-                                                <span className="text-xs text-estado-aprobado-text font-medium">
-                                                    {new Date(alerta.reconocida_at).toLocaleString('es-PE')}
-                                                </span>
-                                            )}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    )}
-                </div>
-            )}
-
-            {activeTab === 'cobranzas' && (
-                <div className="p-6 sm:p-8 text-center text-zinc-500">
-                    No hay alertas de cobranzas
-                </div>
-            )}
-        </Modal>
-
-        <ConfirmModal
-            open={confirmReconocerId != null}
-            onClose={() => { if (!reconociendoId) setConfirmReconocerId(null); }}
-            onConfirm={confirmarReconocer}
-            title="Reconocer alerta"
-            message="¿Marcar esta alerta como reconocida/resuelta?"
-            confirmLabel="Reconocer"
-            loading={reconociendoId != null}
-        />
-        </>
-    );
+import { Modal,Button,Badge,Select,ConfirmModal,Pagination,Table,TableHeader,TableBody,TableRow,TableHead,TableCell } from '@/components/ui';
+import { formatCode,formatText } from '@/lib/formatters';
+type Estado='abiertas'|'activa'|'reconocida'|'resuelta'|'todas';
+export function AlertasStockTable({open,onClose,onSuccess}:{open:boolean;onClose:()=>void;onSuccess?:()=>void}) {
+  const [alertas,setAlertas]=useState<AlertaStockResponse[]>([]);
+  const [estado,setEstado]=useState<Estado>('abiertas');
+  const [page,setPage]=useState(1),[limit,setLimit]=useState(20),[total,setTotal]=useState(0);
+  const [loading,setLoading]=useState(false),[error,setError]=useState<string|null>(null);
+  const [confirmId,setConfirmId]=useState<number|null>(null),[saving,setSaving]=useState(false);
+  const request=useRef<AbortController|null>(null);
+  const fetchAlertas=useCallback(async()=>{
+    request.current?.abort();const controller=new AbortController();request.current=controller;
+    setLoading(true);setError(null);setAlertas([]);
+    try {
+      const res=await inventarioApi.obtenerAlertasStock(estado,page,limit,controller.signal);
+      if(!controller.signal.aborted){setAlertas(res.data);setTotal(res.total);}
+    } catch(err){if(!controller.signal.aborted){setError(apiErrorMessage(err));setTotal(0);}}
+    finally{if(!controller.signal.aborted)setLoading(false);}
+  },[estado,page,limit]);
+  useEffect(()=>{
+    if(!open)return;
+    const timer=window.setTimeout(()=>void fetchAlertas(),0);
+    return()=>{window.clearTimeout(timer);request.current?.abort();};
+  },[open,fetchAlertas]);
+  const reconocer=async()=>{
+    if(confirmId==null)return;setSaving(true);
+    try{await inventarioApi.reconocerAlerta(confirmId);setConfirmId(null);await fetchAlertas();onSuccess?.();}
+    catch(err){showToast.error(apiErrorMessage(err));}finally{setSaving(false);}
+  };
+  if(!open)return null;
+  return <>
+    <Modal open={open} onClose={onClose} title="Alertas de stock" maxWidth="xl">
+      <div className="space-y-4">
+        <div className="flex gap-3 items-end">
+          <Select label="Estado" value={estado} onChange={e=>{setEstado(e.target.value as Estado);setPage(1);}}
+            options={[{label:'Abiertas',value:'abiertas'},{label:'Activas',value:'activa'},
+              {label:'Reconocidas',value:'reconocida'},{label:'Resueltas',value:'resuelta'},{label:'Todas',value:'todas'}]} />
+          <Button onClick={fetchAlertas} disabled={loading}>Actualizar</Button>
+        </div>
+        {loading?<p role="status">Cargando alertas...</p>:error?
+          <div role="alert">{error}<Button onClick={fetchAlertas}>Reintentar</Button></div>:
+          alertas.length===0?<p>No hay alertas con estos filtros.</p>:
+          <Table scrollLabel="Alertas de stock"><TableHeader><TableRow>
+            <TableHead>Producto</TableHead><TableHead>Almacén</TableHead><TableHead>Stock</TableHead>
+            <TableHead>Mínimo</TableHead><TableHead>Estado</TableHead><TableHead>Acción</TableHead>
+          </TableRow></TableHeader><TableBody>{alertas.map(a=><TableRow key={a.id_alerta}>
+            <TableCell>{formatCode(a.producto?.codigo||'')} — {formatText(a.producto?.descripcion||'')}</TableCell>
+            <TableCell>{a.almacen?.codigo} — {a.almacen?.nombre}</TableCell>
+            <TableCell>{a.stock_actual}</TableCell><TableCell>{a.stock_minimo}</TableCell>
+            <TableCell><Badge variant={a.estado==='activa'?'danger':a.estado==='reconocida'?'warning':'success'}>{a.estado}</Badge></TableCell>
+            <TableCell>{a.estado==='activa' && <Button onClick={()=>setConfirmId(a.id_alerta)}>Reconocer</Button>}</TableCell>
+          </TableRow>)}</TableBody></Table>}
+        <Pagination currentPage={page} totalPages={Math.max(1,Math.ceil(total/limit))} totalItems={total}
+          limit={limit} onPageChange={setPage} onLimitChange={n=>{setLimit(n);setPage(1);}} loading={loading} itemLabel="alertas" />
+      </div>
+    </Modal>
+    <ConfirmModal open={confirmId!=null} onClose={()=>{if(!saving)setConfirmId(null);}} onConfirm={reconocer}
+      title="Reconocer alerta" message="La alerta seguirá abierta hasta que se reponga el stock." confirmLabel="Reconocer" loading={saving} />
+  </>;
 }

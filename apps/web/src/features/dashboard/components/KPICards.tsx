@@ -47,18 +47,18 @@ interface KPICardsProps {
 
 const ROLE_COLORS = {
   admin: {
-    primary: 'bg-amber-500',
-    primaryText: 'text-amber-600',
-    primaryBorder: 'border-amber-200',
-    primaryBg: 'bg-amber-50',
-    ring: 'focus-visible:ring-amber-500',
+    primary: 'bg-accent-primary',
+    primaryText: 'text-accent-ink',
+    primaryBorder: 'border-accent-primary/40',
+    primaryBg: 'bg-accent-selection',
+    ring: 'focus-visible:ring-accent-primary',
   },
   vendedor: {
-    primary: 'bg-red-700',
-    primaryText: 'text-red-700',
-    primaryBorder: 'border-red-200',
-    primaryBg: 'bg-red-50',
-    ring: 'focus-visible:ring-red-700',
+    primary: 'bg-vendedor-primary',
+    primaryText: 'text-vendedor-ink',
+    primaryBorder: 'border-vendedor-primary/40',
+    primaryBg: 'bg-vendedor-soft',
+    ring: 'focus-visible:ring-vendedor-primary',
   },
 } as const;
 
@@ -80,15 +80,16 @@ function MetricCard({
   const colors = ROLE_COLORS[role];
   const content = (
     <div className="min-w-0">
-      <p className="text-xs font-semibold text-zinc-600 line-clamp-2 leading-tight">{title}</p>
+      <p className="text-xs font-semibold text-brand-options line-clamp-2 leading-tight">{title}</p>
       <p className="text-2xl font-bold text-zinc-900 mt-0.5 tnum">{value}</p>
-      {subtitle && <p className="mt-0.5 text-[11px] text-zinc-500 line-clamp-1">{subtitle}</p>}
+      {subtitle && <p className="mt-0.5 text-[11px] text-brand-options line-clamp-1">{subtitle}</p>}
     </div>
   );
 
   const baseClass = cn(
-    'bg-white border border-zinc-100 rounded-2xl p-4 shadow-sm h-full',
-    'transition-[background-color,border-color,box-shadow] duration-200 hover:shadow-md hover:border-zinc-200',
+    'bg-surface border border-border-default rounded-2xl p-4 shadow-card h-full',
+    'transition-[background-color,border-color,box-shadow] duration-200 hover:shadow-card-hover hover:border-border-default/80',
+    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
     href && 'cursor-pointer',
   );
 
@@ -135,14 +136,21 @@ export function KPICards({ kpis, cotizacionesPorEstadoTotal, stockBajo, view, lo
 
   if (loading) {
     return (
-      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" role="status" aria-live="polite">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-white border border-zinc-100 rounded-2xl p-4 animate-pulse">
-            <div className="h-4 w-3/4 bg-zinc-200 rounded mb-2" />
-            <div className="h-8 w-20 bg-zinc-200 rounded" />
-            <div className="mt-2 h-4 w-24 bg-zinc-200 rounded" />
-          </div>
-        ))}
+      <div className="mb-6 max-w-[1200px] mx-auto" role="status" aria-live="polite">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-surface border border-border-default rounded-2xl p-4 animate-pulse">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="h-4 w-3/4 bg-surface-muted rounded mb-2" />
+                  <div className="h-8 w-20 bg-surface-muted rounded" />
+                  <div className="mt-2 h-4 w-24 bg-surface-muted rounded" />
+                </div>
+                <div className="h-10 w-10 bg-surface-muted rounded-xl shrink-0" />
+              </div>
+            </div>
+          ))}
+        </div>
         <span className="sr-only">Cargando tarjetas KPI…</span>
       </div>
     );
@@ -190,10 +198,12 @@ export function KPICards({ kpis, cotizacionesPorEstadoTotal, stockBajo, view, lo
     ];
 
     return (
-      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" role="region" aria-label="Indicadores principales">
-        {cards.map((c) => (
-          <MetricCard key={c.title} {...c} />
-        ))}
+      <div className="mb-6 max-w-[1200px] mx-auto" role="region" aria-label="Indicadores principales">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {cards.map((c) => (
+            <MetricCard key={c.title} {...c} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -234,10 +244,12 @@ export function KPICards({ kpis, cotizacionesPorEstadoTotal, stockBajo, view, lo
   ];
 
   return (
-    <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" role="region" aria-label="Mis indicadores">
-      {cards.map((c) => (
-        <MetricCard key={c.title} {...c} />
-      ))}
+    <div className="mb-6 max-w-[1200px] mx-auto" role="region" aria-label="Mis indicadores">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {cards.map((c) => (
+          <MetricCard key={c.title} {...c} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -270,7 +282,7 @@ export function IndicadoresTesis({ kpis, view }: { kpis?: DashboardKpis; view: D
   return (
     <section
       className={cn(
-        'mb-6 rounded-2xl p-4 sm:p-5 border transition-[background-color,border-color]',
+        'mt-6 border-t border-border-default pt-6 rounded-2xl p-4 sm:p-5 border transition-[background-color,border-color]',
         view === 'admin'
           ? 'bg-amber-50/40 border-amber-200/60'
           : 'bg-red-50/40 border-red-200/60',
@@ -299,16 +311,16 @@ export function IndicadoresTesis({ kpis, view }: { kpis?: DashboardKpis; view: D
         {items.map((ind) => (
           <div
             key={ind.label}
-            className="bg-white/70 backdrop-blur-sm rounded-xl border border-zinc-100 p-3 sm:p-4"
+            className="bg-surface/70 backdrop-blur-sm rounded-xl border border-border-default p-3 sm:p-4"
           >
             <div className="flex items-center justify-between gap-2 mb-1.5">
-              <p className="text-xs font-semibold text-zinc-600">{ind.label}</p>
+              <p className="text-xs font-semibold text-brand-options">{ind.label}</p>
               <div className={cn('p-1.5 rounded-lg', colors.primaryBg)}>
                 <ind.icon className={cn('h-4 w-4', colors.primaryText)} />
               </div>
             </div>
             <p className="text-xl sm:text-2xl font-bold text-zinc-900 tnum">{ind.value}</p>
-            <p className="mt-0.5 text-[11px] text-zinc-500">{ind.description}</p>
+            <p className="mt-0.5 text-[11px] text-brand-options">{ind.description}</p>
           </div>
         ))}
       </div>

@@ -26,6 +26,8 @@ export interface ProductoSearchFieldProps<T extends ProductoSearchItem> {
     error?: string;
     /** Máximo de sugerencias visibles (patrón del proyecto: 3). */
     maxSuggestions?: number;
+    loading?: boolean;
+    loadError?: string | null;
     /** Píldora de stock de la derecha de cada sugerencia. */
     stockPill?: (producto: T) => ReactNode;
 }
@@ -45,6 +47,8 @@ export function ProductoSearchField<T extends ProductoSearchItem>({
     error,
     maxSuggestions = 3,
     stockPill,
+    loading = false,
+    loadError,
 }: ProductoSearchFieldProps<T>) {
     const [open, setOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -150,6 +154,7 @@ export function ProductoSearchField<T extends ProductoSearchItem>({
                 icon={<Search className="w-4 h-4" />}
             />
 
+            {!listOpen && loadError && <p role="alert" className="mt-1 text-xs text-danger">{loadError}</p>}
             {listOpen && (
                 <div
                     id={listboxId}
@@ -157,7 +162,9 @@ export function ProductoSearchField<T extends ProductoSearchItem>({
                     aria-label={label}
                     className="absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-xl border border-border-default bg-white shadow-popover"
                 >
-                    {sugerencias.length > 0 ? (
+                    {loading || loadError ? (
+                        <p role={loadError ? "alert" : "status"} className="p-3 text-xs">{loadError || "Buscando productos..."}</p>
+                    ) : sugerencias.length > 0 ? (
                         sugerencias.map((p, index) => (
                             <div
                                 key={p.id_producto}

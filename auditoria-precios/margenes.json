@@ -1,0 +1,51 @@
+[
+  {
+    "price": 100,
+    "cost": 80,
+    "actual": 25.0,
+    "expected": 20.0,
+    "passed": false
+  },
+  {
+    "price": 100,
+    "cost": 0,
+    "actual": 0.0,
+    "expected": 100.0,
+    "passed": false
+  },
+  {
+    "price": 0,
+    "cost": 0,
+    "actual": 0.0,
+    "expected": null,
+    "passed": false
+  },
+  {
+    "price": 0,
+    "cost": 10,
+    "actual": -100.0,
+    "expected": null,
+    "passed": false
+  },
+  {
+    "price": 10,
+    "cost": 15,
+    "actual": -33.33,
+    "expected": -50.0,
+    "passed": false
+  },
+  {
+    "price": 10,
+    "cost": 10,
+    "actual": 0.0,
+    "expected": 0.0,
+    "passed": true
+  },
+  {
+    "price": 0.03,
+    "cost": 0.02,
+    "actual": 50.0,
+    "expected": 33.33,
+    "passed": false
+  }
+]

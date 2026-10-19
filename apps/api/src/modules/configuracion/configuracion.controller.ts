@@ -1,3 +1,4 @@
+import { Permission } from '../../common/decorators/permission.decorator';
 import { Body, Controller, Get, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { IsOptional, IsString, MaxLength } from 'class-validator';
@@ -24,6 +25,7 @@ class UpdateConfiguracionDto {
 @ApiTags('Configuración')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Permission('configuracion')
 @Controller('configuracion')
 export class ConfiguracionController {
   constructor(private readonly configuracionService: ConfiguracionService) {}

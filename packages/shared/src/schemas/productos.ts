@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const moneySchema = z.preprocess(v => typeof v==='string' && /^\d+(\.\d{1,2})?$/.test(v) ? Number(v) : v,
+ z.number().finite().min(0).max(99999999.99).multipleOf(0.01));
 export const CrearProductoSchema = z.object({
   codigo: z.string().min(2, "El código es obligatorio"),
   id_categoria: z.coerce.number().min(1, "Seleccione una categoría"),
@@ -18,18 +20,23 @@ export const CrearProductoSchema = z.object({
   colores_surtido: z.array(z.string()).min(1, "Configure al menos un color para el surtido"),
   
   // Precios Tienda (Normal)
-  precio_tienda_unidad: z.coerce.number().positive("Ingrese precio válido"),
-  precio_tienda_docena: z.coerce.number().positive("Ingrese precio válido"),
-  precio_tienda_caja: z.coerce.number().positive("Ingrese precio válido"),
+  precio_tienda_unidad: moneySchema,
+  precio_tienda_docena: moneySchema,
+  precio_tienda_caja: moneySchema,
   
   // Precios Distribuidor
-  precio_distribuidor_unidad: z.coerce.number().positive("Ingrese precio válido"),
-  precio_distribuidor_docena: z.coerce.number().positive("Ingrese precio válido"),
-  precio_distribuidor_caja: z.coerce.number().positive("Ingrese precio válido"),
+  precio_distribuidor_unidad: moneySchema,
+  precio_distribuidor_docena: moneySchema,
+  precio_distribuidor_caja: moneySchema,
   
   // Costos opcionales (Default 0.00)
-  costo_normal: z.coerce.number().min(0).default(0),
-  costo_distribuidor: z.coerce.number().min(0).default(0)
+  costo_normal: moneySchema.default(0),
+  costo_distribuidor: moneySchema.default(0)
+}).superRefine((p,ctx)=>{
+ for(const tier of ['tienda','distribuidor'] as const){
+  if(p[`precio_${tier}_unidad`]<p[`precio_${tier}_docena`])ctx.addIssue({code:z.ZodIssueCode.custom,path:[`precio_${tier}_docena`],message:'Docena no puede superar unidad'});
+  if(p[`precio_${tier}_docena`]<p[`precio_${tier}_caja`])ctx.addIssue({code:z.ZodIssueCode.custom,path:[`precio_${tier}_caja`],message:'Mayor no puede superar docena'});
+ }
 });
 
 export type CrearProductoInput = z.infer<typeof CrearProductoSchema>;
@@ -46,14 +53,14 @@ export const productoBaseSchema = z.object({
 });
 
 export const preciosSchema = z.object({
-  costo_normal: z.coerce.number().multipleOf(0.01).default(0),
-  precio_unidad_normal: z.coerce.number().multipleOf(0.01).default(0),
-  precio_docena_normal: z.coerce.number().multipleOf(0.01).default(0),
-  precio_mayor_normal: z.coerce.number().multipleOf(0.01).default(0),
-  costo_distribuidor: z.coerce.number().multipleOf(0.01).default(0),
-  precio_unidad_dist: z.coerce.number().multipleOf(0.01).default(0),
-  precio_docena_dist: z.coerce.number().multipleOf(0.01).default(0),
-  precio_mayor_dist: z.coerce.number().multipleOf(0.01).default(0),
+  costo_normal: moneySchema.default(0),
+  precio_unidad_normal: moneySchema.default(0),
+  precio_docena_normal: moneySchema.default(0),
+  precio_mayor_normal: moneySchema.default(0),
+  costo_distribuidor: moneySchema.default(0),
+  precio_unidad_dist: moneySchema.default(0),
+  precio_docena_dist: moneySchema.default(0),
+  precio_mayor_dist: moneySchema.default(0),
 });
 
 export const updateProductoSchema = productoBaseSchema.partial().merge(preciosSchema.partial());

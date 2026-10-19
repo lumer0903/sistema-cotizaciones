@@ -4,12 +4,12 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { showToast } from '@/lib/toast';
 import { useRouter } from 'next/navigation';
 import { useCrearCotizacionStore, ClienteForm } from '@/features/cotizaciones/store/useCrearCotizacionStore';
-import { ProductoCarrito, RecomendacionItem } from '@/features/cotizaciones/types/cotizacion';
+import { ProductoCarrito, RecomendacionItem, getItemTotal } from '@/features/cotizaciones/types/cotizacion';
 import { ProductoBase } from '@/features/cotizaciones/components/AgregarProductoModal';
 import { TipoRecomendacion } from '@/features/cotizaciones/components/RecomendacionesPanel';
 import { obtenerProductosImportados, getProximoNumeroCotizacion } from '@/features/cotizaciones/api/cotizacionApi';
 import { formatCode } from '@/lib/formatters';
-import { autosaveCotizacion, puedeAutosave } from '@/features/cotizaciones/api/autosave';
+import { autosaveCotizacion, puedeAutosave, resetAutosaveHash } from '@/features/cotizaciones/api/autosave';
 import { Cliente } from '@/features/cotizaciones/components/ClienteAutocomplete';
 
 /** Borrador vacío para una cotización totalmente nueva */
@@ -195,7 +195,7 @@ export function useCotizacionForm(modo: 'crear' | 'editar') {
       } catch (e) {
         console.warn('[autosave] No se pudo guardar el borrador en el servidor:', e);
       }
-    }, 1800);
+    }, 5000);
 
     return () => window.clearTimeout(t);
   }, [numeroCotizacion, idCliente, nombre, telefono, email, tipoDocumento, rucDni, clienteEditado, fechaVencimiento, tipoPago, tipoPrecioCliente, items, incluyeCarreta]);
@@ -219,6 +219,7 @@ export function useCotizacionForm(modo: 'crear' | 'editar') {
 
   const handleLimpiar = () => {
     useCrearCotizacionStore.getState().reset();
+    resetAutosaveHash();
     resetForm();
     getProximoNumeroCotizacion()
       .then(setNumeroCotizacion)
@@ -360,7 +361,7 @@ export function useCotizacionForm(modo: 'crear' | 'editar') {
     setIsModalOpen(true);
   };
 
-  const subtotal = useMemo(() => items.reduce((acc, item) => acc + item.total, 0), [items]);
+  const subtotal = useMemo(() => items.reduce((acc, item) => acc + getItemTotal(item), 0), [items]);
   const costoCarreta = incluyeCarreta ? 15.00 : 0.00;
   const total = subtotal + costoCarreta;
 

@@ -1,4 +1,5 @@
 'use client';
+import { useInventoryProducts } from '../useInventoryProducts';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -15,7 +16,7 @@ const TransferenciaSchema = z.object({
     id_producto: z.number().min(1, 'Seleccione un producto'),
     id_almacen_origen: z.number().min(1, 'Seleccione almacén de origen'),
     id_almacen_destino: z.number().min(1, 'Seleccione almacén de destino'),
-    cantidad: z.number().min(1, 'La cantidad debe ser mayor a 0'),
+    cantidad: z.number().int('Use unidades enteras').min(1, 'La cantidad debe ser mayor a 0'),
     observaciones: z.string().max(500).optional(),
 }).refine((data) => data.id_almacen_origen !== data.id_almacen_destino, {
     message: 'El almacén de origen y destino deben ser diferentes',
@@ -50,7 +51,6 @@ interface TransferenciaModalProps {
 }
 
 export function TransferenciaModal({ open, onClose, onSuccess, productoPreseleccionado, almacenes: almacenesProp }: TransferenciaModalProps) {
-    const [productos, setProductos] = useState<ProductoSimple[]>([]);
     const [almacenes, setAlmacenes] = useState<AlmacenSimple[]>([]);
     const [loadingFilters, setLoadingFilters] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,6 +58,8 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
 
     // Buscador con autocompletado (el listbox vive en ProductoSearchField)
     const [searchQuery, setSearchQuery] = useState('');
+    const remote = useInventoryProducts(open, searchQuery, productoPreseleccionado);
+    const productos = remote.productos;
     const [selectedProducto, setSelectedProducto] = useState<ProductoSimple | null>(null);
 
     const {
@@ -103,48 +105,27 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
     }, [open, productoPreseleccionado, resetForm]);
 
     useEffect(() => {
-        if (open) {
-            const fetchFilters = async () => {
-                try {
-                    setLoadingFilters(true);
-                    const almsProp = almacenesProp?.length ? almacenesProp : null;
-                    const [prodRes, almRes] = await Promise.all([
-                        apiClient('/productos?limit=500&include=stock'),
-                        almsProp
-                            ? Promise.resolve({ data: almsProp })
-                            : apiClient('/almacenes?activo=true&limit=100'),
-                    ]);
-                    const prods = (prodRes.data || prodRes.items || []).map((p: any) => ({
-                        id_producto: p.id_producto,
-                        codigo: p.codigo,
-                        descripcion: p.descripcion,
-                        stock_actual: p.stock_actual || [],
-                    }));
-                    setProductos(prods);
-                    setAlmacenes(almRes.data || almRes.items || []);
+        if(!open) return;
+        const controller=new AbortController();let current=true;
+        setLoadingFilters(true);
+        const request=almacenesProp?.length ? Promise.resolve({data:almacenesProp})
+          : apiClient('/almacenes?activo=true&limit=100',{signal:controller.signal});
+        request.then(res=>{if(current)setAlmacenes(res.data||[]);})
+          .catch(err=>{if(current)showToast.error(err.message||'No se pudieron cargar almacenes');})
+          .finally(()=>{if(current)setLoadingFilters(false);});
+        return ()=>{current=false;controller.abort();};
+    },[open,almacenesProp]);
+    useEffect(()=>{
+        if(!open || !remote.preselected) return;
+        setSelectedProducto(remote.preselected);
+        setValue('id_producto',remote.preselected.id_producto,{shouldValidate:true});
+        setSearchQuery(formatCode(remote.preselected.codigo));
+    },[open,remote.preselected,setValue]);
 
-                    if (productoPreseleccionado) {
-                        const prod = prods.find((p: ProductoSimple) => p.id_producto === productoPreseleccionado);
-                        if (prod) {
-                            setValue('id_producto', prod.id_producto, { shouldValidate: true });
-                            setSelectedProducto(prod);
-                            setSearchQuery(`${formatCode(prod.codigo)} - ${prod.descripcion}`);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error fetching filters:', error);
-                    showToast.error('No se pudieron cargar productos o almacenes');
-                } finally {
-                    setLoadingFilters(false);
-                }
-            };
-            fetchFilters();
-        }
-    }, [open, productoPreseleccionado, setValue, almacenesProp]);
 
     useEffect(() => {
         if (Number.isFinite(idProducto) && Number.isFinite(idAlmacenOrigen) && idProducto && idAlmacenOrigen) {
-            const prod = productos.find((p) => p.id_producto === idProducto);
+            const prod = selectedProducto?.id_producto === idProducto ? selectedProducto : null;
             if (prod) {
                 const stock = prod.stock_actual.find((s) => s.id_almacen === idAlmacenOrigen);
                 setStockOrigen(stock?.cantidad ?? 0);
@@ -154,7 +135,7 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
         } else {
             setStockOrigen(null);
         }
-    }, [idProducto, idAlmacenOrigen, productos]);
+    }, [idProducto, idAlmacenOrigen, selectedProducto]);
 
     const handleSelectProducto = (p: ProductoSimple) => {
         setSelectedProducto(p);
@@ -237,6 +218,8 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                 <div className="space-y-3.5">
                     <ProductoSearchField
                         productos={productos}
+                            loading={remote.loading}
+                            loadError={remote.error}
                         value={searchQuery}
                         onValueChange={(value) => {
                             setSearchQuery(value.toUpperCase());

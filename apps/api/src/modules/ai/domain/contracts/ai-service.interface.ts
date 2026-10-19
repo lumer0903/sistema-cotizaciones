@@ -8,7 +8,7 @@ export interface AiRecommendationItem {
   stock: number;
   similarityScore: number;
   categoria?: string;
-  margen?: number;
+  margen?: number | null;
 }
 
 export interface AiRecommendationResponse {

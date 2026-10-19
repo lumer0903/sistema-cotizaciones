@@ -1,3 +1,4 @@
+import { Permission } from '../../common/decorators/permission.decorator';
 import {
     Controller,
     Get,
@@ -30,6 +31,7 @@ interface AuthedRequest extends Request {
 @ApiTags('Cotizaciones')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@Permission('cotizaciones')
 @Controller('cotizaciones')
 export class CotizacionesController {
     constructor(
@@ -57,6 +59,7 @@ export class CotizacionesController {
         return this.cotizacionesService.proximoNumero();
     }
 
+    @Permission('pdf', 'lectura')
     @Get(':id/export-pdf')
     @ApiOperation({ summary: 'Exportar cotización a PDF (cacheado o en cola BullMQ)' })
     async exportPdf(@Param('id', ParseIntPipe) id: number, @Res() res: Response, @Req() req: AuthedRequest) {
@@ -78,6 +81,7 @@ export class CotizacionesController {
         res.end(resultado.buffer);
     }
 
+    @Permission('pdf', 'lectura')
     @Get(':id/pdf-status')
     @ApiOperation({ summary: 'Estado del trabajo de generación del PDF' })
     async pdfStatus(@Param('id', ParseIntPipe) id: number, @Req() req: AuthedRequest) {
@@ -111,6 +115,7 @@ export class CotizacionesController {
         return this.cotizacionesService.cambiarEstado(id, body.estado, alcanceDeDatos(req.user));
     }
 
+    @Permission('cobranza', 'edicion')
     @Post(':id/pagos')
     @ApiOperation({ summary: 'Registrar abono/pago a una cotización' })
     async registerPayment(

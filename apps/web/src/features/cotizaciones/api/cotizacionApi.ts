@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/apiClient';
+import { apiClient, apiFetch } from '@/lib/apiClient';
 import {
     CotizacionItem,
     CotizacionesFilterParams,
@@ -327,7 +327,7 @@ const PDF_POLL_INTERVAL_MS = 2000;
 const PDF_POLL_MAX_RETRIES = 10;
 /** Timeout de los fetch del PDF: sin él, si la API se cuelga (p.ej. sin Redis)
  *  los spinners "Generando..." / "Cargando documento..." quedan infinitos. */
-const PDF_FETCH_TIMEOUT_MS = 15_000;
+const PDF_FETCH_TIMEOUT_MS = 45_000;
 const PDF_STATUS_TIMEOUT_MS = 8_000;
 
 export interface PdfExportProgress {
@@ -340,7 +340,7 @@ async function fetchConTimeout(url: string, init: RequestInit, ms: number): Prom
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   try {
-    return await fetch(url, { ...init, signal: controller.signal });
+    return await apiFetch(url, { ...init, signal: controller.signal });
   } catch (e: any) {
     if (controller.signal.aborted || e?.name === 'AbortError') {
       throw new Error('El servidor de PDF no responde. Intente nuevamente.');
@@ -349,15 +349,6 @@ async function fetchConTimeout(url: string, init: RequestInit, ms: number): Prom
   } finally {
     clearTimeout(timer);
   }
-}
-
-function getTokenForPdf(): string | null {
-  if (typeof window === 'undefined') return null;
-  // Cookie (httpOnly la envía el navegador con credentials:'include'; aquí sólo
-  // queda la legible por JS si existiera). Nunca localStorage (auditoría P13).
-  const match = document.cookie.match(/(?:^|; )accessToken=([^;]*)/);
-  const token = match ? decodeURIComponent(match[1]) : null;
-  return token?.trim() || null;
 }
 
 function downloadPdfBlob(blob: Blob, filename: string): void {
@@ -385,19 +376,6 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * Performs IDOR check by fetching the cotization and verifying ownership.
  * Returns true if access is allowed, throws Error if not.
  */
-function validarAccesoPDF(id: number | string, idUsuario: number): Promise<void> {
-  return fetchConTimeout(
-    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/cotizaciones/${id}`,
-    { credentials: 'include' },
-    5000,
-  ).then(async res => {
-    const cotizacion = await res.json();
-    if (cotizacion.vendedor?.id_usuario !== idUsuario && res.headers.get('x-rol') !== 'admin') {
-      throw new Error('No tiene permisos para acceder a este PDF');
-    }
-  });
-}
-
 /** Obtiene el blob del PDF de una cotización con polling y validación de permisos */
 export async function getCotizacionPdfBlob(
   id: number | string,
@@ -406,15 +384,14 @@ export async function getCotizacionPdfBlob(
 ): Promise<Blob> {
   // IDOR: Validar permisos si se proporciona idUsuario
   if (idUsuario) {
-    await validarAccesoPDF(id, idUsuario);
+    await apiClient(`/cotizaciones/${id}`);
   }
   
-  const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-  const token = getTokenForPdf();
-  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+  const base = '/api';
+  const headers: Record<string, string> = {};
 
   const primera = await fetchConTimeout(
-    `${base}/api/cotizaciones/${id}/export-pdf`,
+    `${base}/cotizaciones/${id}/export-pdf`,
     { headers, credentials: 'include' },
     PDF_FETCH_TIMEOUT_MS,
   );
@@ -428,7 +405,7 @@ export async function getCotizacionPdfBlob(
     await sleep(PDF_POLL_INTERVAL_MS);
 
     const statusRes = await fetchConTimeout(
-      `${base}/api/cotizaciones/${id}/pdf-status`,
+      `${base}/cotizaciones/${id}/pdf-status`,
       { headers, credentials: 'include' },
       PDF_STATUS_TIMEOUT_MS,
     );
@@ -439,7 +416,7 @@ export async function getCotizacionPdfBlob(
 
     onProgress?.({ estado: 'descargando' });
     const finalRes = await fetchConTimeout(
-      `${base}/api/cotizaciones/${id}/export-pdf`,
+      `${base}/cotizaciones/${id}/export-pdf`,
       { headers, credentials: 'include' },
       PDF_FETCH_TIMEOUT_MS,
     );
@@ -529,6 +506,7 @@ export interface RegistrarPagoPayload {
     monto: number;
     metodo_pago: string;
     referencia?: string | null;
+    clave_idempotencia?: string;
 }
 
 export async function registrarPagoCotizacion(

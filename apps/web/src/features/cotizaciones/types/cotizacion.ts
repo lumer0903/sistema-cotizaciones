@@ -4,7 +4,9 @@ export type EstadoCotizacion =
     | 'ENVIADO'
     | 'PARCIALMENTE_PAGADA'
     | 'APROBADO'
-    | 'RECHAZADO';
+    | 'RECHAZADO'
+    | 'EXPIRADA'
+    | 'CONVERTIDA_A_VENTA';
 
 export interface ProductoCarrito {
     id: string;
@@ -13,13 +15,17 @@ export interface ProductoCarrito {
     descripcion: string;
     precioUnitario: number;
     cantidad: number;
-    total: number;
+    total?: number;
     tipo_venta?: 'UNIDAD' | 'DOCENA' | 'MAYOR' | string;
     observacion?: string;
     es_sugerido_ia?: boolean;
     stock?: number;
     almacen?: string;
     ubicacion?: string;
+}
+
+export function getItemTotal(item: ProductoCarrito): number {
+    return item.precioUnitario * item.cantidad;
 }
 
 export interface CotizacionItem {
@@ -56,7 +62,7 @@ export interface RecomendacionItem {
     stock: number;
     similarityScore: number;
     categoria?: string;
-    margen?: number;
+    margen?: number | null;
     es_sugerido_ia: boolean;
     almacen?: string | null;
     ubicacion?: string | null;
@@ -68,10 +74,7 @@ export interface RecomendarItemRequest {
     id_producto_base: number;
     id_cliente?: number;
     id_almacen?: number;
-    /** 'normal' = tienda, 'distribuidor' = distribuidor. Tiene prioridad sobre el tipo del cliente. */
     tipo_precio?: 'normal' | 'distribuidor';
-    /** Tipo de venta del ítem base (UNIDAD | DOCENA | MAYOR): define el esquema de
-     *  precio de las recomendaciones (uno de los 6 de precios_actuales). */
     tipo_venta?: 'UNIDAD' | 'DOCENA' | 'MAYOR' | string;
 }
 

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Min, MaxLength } from 'class-validator';
 
 export class CreateTransferenciaDto {
   @ApiProperty()
@@ -24,6 +24,6 @@ export class CreateTransferenciaDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
+  @IsString() @MaxLength(500)
   observaciones?: string;
 }

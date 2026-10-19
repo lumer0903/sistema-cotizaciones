@@ -1,3 +1,4 @@
+import { Permission } from '../../common/decorators/permission.decorator';
 import { Controller, Get, Post, Param, Query, Body, UseGuards, ParseIntPipe, Req } from '@nestjs/common';
 import type { Request } from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
@@ -15,6 +16,7 @@ interface AuthedRequest extends Request {
 @ApiTags('Cobranza')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@Permission('cobranza')
 @Controller('cobranza')
 export class CobranzaController {
   constructor(private readonly cobranzaService: CobranzaService) {}

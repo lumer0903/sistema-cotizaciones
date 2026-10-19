@@ -200,7 +200,7 @@ export function Breadcrumbs({ accent = 'amber' }: BreadcrumbsProps) {
   const lastAccent =
     items.length > 1
       ? accent === 'brand'
-        ? 'text-brand-ink'
+        ? 'text-accent-ink'
         : accent === 'vendedor'
           ? 'text-vendedor-primary'
           : 'text-amber-700'

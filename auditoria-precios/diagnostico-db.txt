@@ -1,0 +1,81 @@
+Pager usage is off.
+                                         version                                          
+------------------------------------------------------------------------------------------
+ PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+(1 row)
+
+ productos | precios | historial 
+-----------+---------+-----------
+       977 |     977 |         0
+(1 row)
+
+    table_name     |     column_name      |          data_type          | numeric_precision | numeric_scale | is_nullable 
+-------------------+----------------------+-----------------------------+-------------------+---------------+-------------
+ historial_precios | id_historial         | integer                     |                32 |             0 | NO
+ historial_precios | id_producto          | integer                     |                32 |             0 | NO
+ historial_precios | id_usuario           | integer                     |                32 |             0 | YES
+ historial_precios | campo_modificado     | text                        |                   |               | NO
+ historial_precios | valor_anterior       | numeric                     |                10 |             2 | NO
+ historial_precios | valor_nuevo          | numeric                     |                10 |             2 | NO
+ historial_precios | fecha_cambio         | timestamp without time zone |                   |               | NO
+ precios_actuales  | id_producto          | integer                     |                32 |             0 | NO
+ precios_actuales  | costo_normal         | numeric                     |                10 |             2 | NO
+ precios_actuales  | precio_unidad_normal | numeric                     |                10 |             2 | NO
+ precios_actuales  | precio_docena_normal | numeric                     |                10 |             2 | NO
+ precios_actuales  | precio_mayor_normal  | numeric                     |                10 |             2 | NO
+ precios_actuales  | costo_distribuidor   | numeric                     |                10 |             2 | NO
+ precios_actuales  | precio_unidad_dist   | numeric                     |                10 |             2 | NO
+ precios_actuales  | precio_docena_dist   | numeric                     |                10 |             2 | NO
+ precios_actuales  | precio_mayor_dist    | numeric                     |                10 |             2 | NO
+ precios_actuales  | updated_at           | timestamp without time zone |                   |               | NO
+(17 rows)
+
+     tablename     |                   indexname                    |                                                            indexdef                                                             
+-------------------+------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------
+ historial_precios | historial_precios_fecha_cambio_idx             | CREATE INDEX historial_precios_fecha_cambio_idx ON public.historial_precios USING btree (fecha_cambio)
+ historial_precios | historial_precios_id_producto_fecha_cambio_idx | CREATE INDEX historial_precios_id_producto_fecha_cambio_idx ON public.historial_precios USING btree (id_producto, fecha_cambio)
+ historial_precios | historial_precios_id_usuario_idx               | CREATE INDEX historial_precios_id_usuario_idx ON public.historial_precios USING btree (id_usuario)
+ historial_precios | historial_precios_pkey                         | CREATE UNIQUE INDEX historial_precios_pkey ON public.historial_precios USING btree (id_historial)
+ precios_actuales  | precios_actuales_pkey                          | CREATE UNIQUE INDEX precios_actuales_pkey ON public.precios_actuales USING btree (id_producto)
+ productos         | productos_codigo_idx                           | CREATE INDEX productos_codigo_idx ON public.productos USING gin (codigo gin_trgm_ops)
+ productos         | productos_codigo_key                           | CREATE UNIQUE INDEX productos_codigo_key ON public.productos USING btree (codigo)
+ productos         | productos_deleted_at_created_at_idx            | CREATE INDEX productos_deleted_at_created_at_idx ON public.productos USING btree (deleted_at, created_at)
+ productos         | productos_descripcion_idx                      | CREATE INDEX productos_descripcion_idx ON public.productos USING gin (descripcion gin_trgm_ops)
+ productos         | productos_id_categoria_idx                     | CREATE INDEX productos_id_categoria_idx ON public.productos USING btree (id_categoria)
+ productos         | productos_pkey                                 | CREATE UNIQUE INDEX productos_pkey ON public.productos USING btree (id_producto)
+(11 rows)
+
+       tabla       |              conname               |                                                                                                                                                                 definicion                                                                                                                                                                  
+-------------------+------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ historial_precios | historial_precios_id_producto_fkey | FOREIGN KEY (id_producto) REFERENCES productos(id_producto) ON UPDATE CASCADE ON DELETE CASCADE
+ historial_precios | historial_precios_id_usuario_fkey  | FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON UPDATE CASCADE ON DELETE SET NULL
+ historial_precios | historial_precios_pkey             | PRIMARY KEY (id_historial)
+ precios_actuales  | precios_actuales_id_producto_fkey  | FOREIGN KEY (id_producto) REFERENCES productos(id_producto) ON UPDATE CASCADE ON DELETE CASCADE
+ precios_actuales  | precios_actuales_pkey              | PRIMARY KEY (id_producto)
+ precios_actuales  | precios_no_negativos               | CHECK (((costo_normal >= (0)::numeric) AND (precio_unidad_normal >= (0)::numeric) AND (precio_docena_normal >= (0)::numeric) AND (precio_mayor_normal >= (0)::numeric) AND (costo_distribuidor >= (0)::numeric) AND (precio_unidad_dist >= (0)::numeric) AND (precio_docena_dist >= (0)::numeric) AND (precio_mayor_dist >= (0)::numeric)))
+(6 rows)
+
+ event_object_table | trigger_name | event_manipulation | action_statement 
+--------------------+--------------+--------------------+------------------
+(0 rows)
+
+  seccion   | productos_sin_precio | negativos | historial_sin_actor | historial_negativo | jerarquia_normal_invertida | jerarquia_dist_invertida | normal_algun_precio_bajo_costo | dist_algun_precio_bajo_costo 
+------------+----------------------+-----------+---------------------+--------------------+----------------------------+--------------------------+--------------------------------+------------------------------
+ integridad |                    0 |         0 |                   0 |                  0 |                          0 |                        0 |                              1 |                            1
+(1 row)
+
+        seccion        | discontinuidades 
+-----------------------+------------------
+ continuidad_historial |                0
+(1 row)
+
+     seccion      | inconsistencias 
+------------------+-----------------
+ ultimo_vs_actual |               0
+(1 row)
+
+ current_user  | puede_actualizar_historial | puede_borrar_historial 
+---------------+----------------------------+------------------------
+ goldcontinent | t                          | t
+(1 row)
+

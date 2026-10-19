@@ -44,7 +44,7 @@ export function ColorTags({
       {visibleColors.map((color) => (
         <span
           key={color}
-          className={`inline-flex items-center ${sizeClasses[size]} bg-brand-selection text-brand-subtitle border border-brand-primary/40 rounded-full font-medium`}
+          className={`inline-flex items-center ${sizeClasses[size]} bg-accent-selection text-brand-subtitle border border-accent-primary/40 rounded-full font-medium`}
         >
           <span
             className="rounded-full border border-zinc-200 shrink-0"
@@ -58,7 +58,7 @@ export function ColorTags({
           {interactive && onRemove && (
             <button
               onClick={() => onRemove(color)}
-              className={`min-h-11 min-w-11 -my-2.5 -mr-2.5 inline-flex items-center justify-center rounded-full hover:bg-brand-selection transition-colors text-brand-ink hover:text-brand-ink`}
+              className={`min-h-11 min-w-11 -my-2.5 -mr-2.5 inline-flex items-center justify-center rounded-full hover:bg-accent-selection transition-colors text-accent-ink hover:text-accent-ink`}
               aria-label={`Eliminar ${color}`}
             >
               <X className="w-4 h-4" />

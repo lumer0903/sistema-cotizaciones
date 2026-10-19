@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Search, ShoppingCart, X, Loader2, ChevronRight, Sparkles, Trash2 } from 'lucide-react';
 import { Input, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Button } from '@/components/ui';
-import { ProductoCarrito } from '@/features/cotizaciones/types/cotizacion';
+import { ProductoCarrito, getItemTotal } from '@/features/cotizaciones/types/cotizacion';
 import type { ProductoBase } from '@/features/cotizaciones/components/AgregarProductoModal';
 
 export interface CarritoPanelProps {
@@ -59,9 +59,9 @@ export function CarritoPanel({
             placeholder="Escribe el código o nombre del producto (ej: RY-)..."
             icon={
               isLoadingProductos ? (
-                <Loader2 className="size-4 animate-spin text-brand-ink" />
+                <Loader2 className="size-4 animate-spin text-accent-ink" />
               ) : (
-                <Search className="size-4 text-brand-ink" />
+                <Search className="size-4 text-accent-ink" />
               )
             }
             value={searchQuery}
@@ -112,7 +112,7 @@ export function CarritoPanel({
                       </div>
                     </div>
                     <ChevronRight
-                      className="size-4 shrink-0 text-zinc-300 group-hover:text-brand-primary transition-colors"
+                      className="size-4 shrink-0 text-zinc-300 group-hover:text-accent-primary transition-colors"
                       aria-hidden="true"
                     />
                   </div>
@@ -150,11 +150,11 @@ export function CarritoPanel({
           </TableHeader>
           <TableBody>
             {items.map((item) => (
-              <TableRow key={item.id} className={selectedItemId === item.id ? 'bg-brand-soft/60' : ''}>
+              <TableRow key={item.id} className={selectedItemId === item.id ? 'bg-accent-soft/60' : ''}>
                 <TableCell className="font-bold text-zinc-800">{item.codigo}</TableCell>
                 <TableCell className="text-zinc-600">S/ {item.precioUnitario.toFixed(2)}</TableCell>
                 <TableCell className="text-zinc-600">{item.cantidad}</TableCell>
-                <TableCell className="font-bold text-zinc-800">S/ {item.total.toFixed(2)}</TableCell>
+                <TableCell className="font-bold text-zinc-800">S/ {getItemTotal(item).toFixed(2)}</TableCell>
                 <TableCell>
                   <div className="flex justify-center items-center gap-2">
                     <Button
@@ -165,8 +165,8 @@ export function CarritoPanel({
                       title="Ver recomendaciones IA"
                       className={`!px-1.5 ${
                         selectedItemId === item.id
-                          ? '!bg-brand-selection !text-brand-ink outline outline-1 outline-offset-[-1px] outline-brand-modalFocus'
-                          : '!text-zinc-500 hover:!text-brand-ink'
+                          ? '!bg-accent-selection !text-accent-ink outline outline-1 outline-offset-[-1px] outline-brand-modalFocus'
+                          : '!text-zinc-500 hover:!text-accent-ink'
                       }`}
                     >
                       <Sparkles className="size-4" />

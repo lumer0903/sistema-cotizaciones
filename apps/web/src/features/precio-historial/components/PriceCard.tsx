@@ -1,9 +1,11 @@
+import Image from 'next/image';
 import React from 'react';
 import { History } from 'lucide-react';
 import { ProductoConsulta } from '../types/precio';
 import { handleImageError } from '@/lib/imageUtils';
-import { formatPrice, formatCode, obtenerPreciosEstandarizados } from '@/lib/formatters';
+import { formatCode } from '@/lib/formatters';
 import { Button } from '@/components/ui';
+import { cn } from '@/lib/cn';
 
 interface PriceCardProps {
     producto: ProductoConsulta;
@@ -14,120 +16,155 @@ interface PriceCardProps {
 export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVerHistorial }) => {
     const tieneStock = (producto?.stock ?? 0) > 0;
     // Extracción segura: soporta forma procesada (precioTienda/precioDistribuidor) y raw (precios_actuales/precios)
-    const { tienda, distribuidor } = obtenerPreciosEstandarizados(producto);
+    const { tienda, distribuidor } = {tienda:producto.precioTienda,distribuidor:producto.precioDistribuidor};
+
+    const renderPrecioItem = (
+        label: string,
+        valor: number | string | undefined | null,
+        tipo: 'distribuidor' | 'tienda'
+    ) => {
+        const num = typeof valor === 'string' ? parseFloat(valor) : valor;
+        const isValid = num !== null && num !== undefined && Number.isFinite(num);
+        const amountStr = isValid
+            ? num.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : '—';
+        const fullText = `S/ ${amountStr}`;
+
+        const isDist = tipo === 'distribuidor';
+        const textColor = isDist ? 'text-role-distribuidor' : 'text-role-tienda';
+        const borderColor = isDist ? 'border-role-distribuidor/25' : 'border-role-tienda/25';
+        const bgItem = isDist ? 'bg-surface/90 hover:bg-surface' : 'bg-surface/90 hover:bg-surface';
+
+        return (
+            <div className={cn(
+                'flex items-center justify-between gap-2 py-1 px-2 rounded-md border min-w-0 transition-colors',
+                borderColor,
+                bgItem
+            )}>
+                <span className="text-[10px] font-semibold text-brand-options uppercase shrink-0">
+                    {label}
+                </span>
+                <div
+                    className="flex items-baseline justify-end gap-0.5 min-w-0"
+                    title={fullText}
+                >
+                    <span className={cn('text-[10px] font-bold opacity-75 shrink-0 select-none', textColor)}>
+                        S/
+                    </span>
+                    <span className={cn('text-[11px] font-semibold tabular-nums whitespace-nowrap tracking-tight', textColor)}>
+                        {amountStr}
+                    </span>
+                </div>
+            </div>
+        );
+    };
 
     return (
-        <div className="w-full bg-white rounded-2xl shadow-sm border border-zinc-100 p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
-            {/* Imagen & Botón Historial */}
-            <div className="w-full h-28 bg-brand-primary/10 rounded-xl relative flex items-center justify-center overflow-hidden">
-                {producto.imagenUrl ? (
-                        <img
+        <div className={cn(
+            'group w-full h-full bg-surface rounded-2xl shadow-card border border-border-default/80 p-3 flex flex-col gap-2',
+            'hover:shadow-card-hover hover:border-accent-primary/40 transition-all duration-200'
+        )}>
+            {/* Contenido superior: Imagen, Datos del producto */}
+            <div className="flex flex-col gap-2 min-w-0">
+                {/* Imagen & Botón Historial */}
+                <div className="w-full h-28 sm:h-32 bg-surface-muted rounded-xl relative flex items-center justify-center overflow-hidden border border-border-default/40">
+                    {producto.imagenUrl ? (
+                        <Image
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                            unoptimized
+                            loading="lazy"
                             src={producto.imagenUrl}
                             alt={producto.descripcion}
-                            
-                            
-                            className="w-full h-full object-cover object-center"
+                            className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-105"
                             onError={(e) => handleImageError(e, '200')}
                         />
-                ) : (
-                    <div className="text-brand-ink/50 font-bold text-xs uppercase tracking-wider">Sin imagen</div>
-                )}
+                    ) : (
+                        <div className="text-brand-options/50 font-bold text-xs uppercase tracking-wider">
+                            Sin imagen
+                        </div>
+                    )}
 
-                {/* Historial de variaciones: sólo admin/gerente (no se pasa la callback). */}
-                {onVerHistorial && (
-                    <Button
-                        variant="ghost"
-                        onClick={() => onVerHistorial(producto.id)}
-                        title="Ver historial de precios"
-                        aria-label={`Ver historial de precios de ${producto.codigo}`}
-                        className="absolute top-1 right-1 min-h-11 min-w-11 p-0 text-brand-ink hover:text-brand-ink hover:bg-transparent z-10"
-                    >
-                        <History className="size-5" />
-                    </Button>
-                )}
-            </div>
-
-            {/* Cabecera del producto */}
-            <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                    <span className="text-brand-ink font-extrabold text-sm tracking-tight uppercase">
-                        {formatCode(producto.codigo)}
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                        <span
-                            className={`size-2 rounded-full ${tieneStock ? 'bg-estado-aprobado' : 'bg-estado-rechazado'}`}
-                        />
-                        <span
-                            className={`text-xs font-bold uppercase tracking-wider ${tieneStock ? 'text-estado-aprobado-text' : 'text-estado-rechazado'
-                                }`}
+                    {/* Historial de variaciones: sólo admin/gerente (no se pasa la callback). */}
+                    {onVerHistorial && (
+                        <Button
+                            variant="ghost"
+                            onClick={() => onVerHistorial(producto.id)}
+                            title="Ver historial de precios"
+                            aria-label={`Ver historial de precios de ${producto.codigo}`}
+                            className="absolute top-2 right-2 size-8 p-0 rounded-lg bg-surface/90 hover:bg-surface text-brand-subtitle hover:text-accent-ink border border-border-default/60 shadow-xs backdrop-blur-xs transition-all hover:scale-105 active:scale-95 flex items-center justify-center z-10"
                         >
-                            STOCK: {producto.stock}
-                        </span>
-                    </div>
+                            <History className="size-4" />
+                        </Button>
+                    )}
                 </div>
 
-                <p className="text-zinc-500 text-xs font-normal leading-tight line-clamp-2 h-7">
-                    {producto.descripcion}
-                </p>
+                {/* Cabecera del producto */}
+                <div className="flex flex-col gap-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                        <span className="text-accent-ink font-bold text-sm tracking-tight uppercase truncate" title={formatCode(producto.codigo)}>
+                            {formatCode(producto.codigo)}
+                        </span>
+                        <div
+                            className={cn(
+                                'flex items-center gap-1.5 shrink-0 px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wider',
+                                tieneStock
+                                    ? 'bg-status-aprobado-soft text-status-aprobado-text border-status-aprobado/20'
+                                    : 'bg-status-rechazado-soft text-status-rechazado-text border-status-rechazado/20'
+                            )}
+                        >
+                            <span
+                                className={cn(
+                                    'size-1.5 rounded-full',
+                                    tieneStock ? 'bg-status-aprobado' : 'bg-status-rechazado'
+                                )}
+                            />
+                            <span>STOCK: {producto.stock}</span>
+                        </div>
+                    </div>
+
+                    <p className="text-brand-options text-xs font-normal leading-snug line-clamp-2 h-8 min-h-[2rem]" title={producto.descripcion}>
+                        {producto.descripcion}
+                    </p>
+                </div>
             </div>
 
-            {/* Precio Distribuidor (1 Fila de 3 columnas) */}
-            {tipoPrecio !== 'tienda' && (
-                <div className="bg-distribuidor-soft border border-distribuidor/40 rounded-xl p-2.5 flex flex-col items-center gap-1.5">
-                    <span className="text-distribuidor text-xs font-black tracking-wider uppercase">
-                        Precio Distribuidor
-                    </span>
-                    <div className="w-full grid grid-cols-3 gap-x-1 text-center">
-                        <div className="flex flex-col items-center">
-                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Unidad</span>
-                            <span className="text-distribuidor text-xs font-black">
-                                {formatPrice(distribuidor.unidad)}
+            {/* Contenido inferior: Bloques de Precios */}
+            <div className="flex flex-col gap-2.5 w-full">
+                {/* Precio Distribuidor (1 Fila de 3 columnas) */}
+                {tipoPrecio !== 'tienda' && (
+                    <div className="bg-role-distribuidor-soft/60 border border-role-distribuidor/25 rounded-lg p-2 w-full flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between px-0.5">
+                            <span className="text-role-distribuidor text-[10px] font-bold uppercase tracking-wide flex items-center gap-1.5">
+                                <span className="size-1.5 rounded-full bg-role-distribuidor" />
+                                Precio Distribuidor
                             </span>
                         </div>
-                        <div className="flex flex-col items-center">
-                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Docena</span>
-                            <span className="text-distribuidor text-xs font-black">
-                                {formatPrice(distribuidor.docena)}
-                            </span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Mayor</span>
-                            <span className="text-distribuidor text-xs font-black">
-                                {formatPrice(distribuidor.mayor)}
-                            </span>
+                        <div className="grid grid-cols-1 gap-1 w-full">
+                            {renderPrecioItem('Unidad', distribuidor.unidad, 'distribuidor')}
+                            {renderPrecioItem('Docena', distribuidor.docena, 'distribuidor')}
+                            {renderPrecioItem('Mayor', distribuidor.mayor, 'distribuidor')}
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Precio Tienda (1 Fila de 3 columnas) */}
-            {tipoPrecio !== 'distribuidor' && (
-                <div className="bg-tienda-soft/80 border border-tienda/40 rounded-xl p-2.5 flex flex-col items-center gap-1.5">
-                    <span className="text-tienda text-xs font-black tracking-wider uppercase">
-                        Precio Tienda
-                    </span>
-                    <div className="w-full grid grid-cols-3 gap-x-1 text-center">
-                        <div className="flex flex-col items-center">
-                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Unidad</span>
-                            <span className="text-tienda text-xs font-black">
-                                {formatPrice(tienda.unidad)}
+                {/* Precio Tienda (1 Fila de 3 columnas) */}
+                {tipoPrecio !== 'distribuidor' && (
+                    <div className="bg-role-tienda-soft/60 border border-role-tienda/25 rounded-lg p-2 w-full flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between px-0.5">
+                            <span className="text-role-tienda text-[10px] font-bold uppercase tracking-wide flex items-center gap-1.5">
+                                <span className="size-1.5 rounded-full bg-role-tienda" />
+                                Precio Tienda
                             </span>
                         </div>
-                        <div className="flex flex-col items-center">
-                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Docena</span>
-                            <span className="text-tienda text-xs font-black">
-                                {formatPrice(tienda.docena)}
-                            </span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <span className="text-zinc-500 text-xs font-bold uppercase leading-tight">Mayor</span>
-                            <span className="text-tienda text-xs font-black">
-                                {formatPrice(tienda.mayor)}
-                            </span>
+                        <div className="grid grid-cols-1 gap-1 w-full">
+                            {renderPrecioItem('Unidad', tienda.unidad, 'tienda')}
+                            {renderPrecioItem('Docena', tienda.docena, 'tienda')}
+                            {renderPrecioItem('Mayor', tienda.mayor, 'tienda')}
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };

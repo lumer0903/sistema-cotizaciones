@@ -1,3 +1,4 @@
+import { Permission } from '../../common/decorators/permission.decorator';
 import { Controller, Get, Post, Patch, Put, Param, Query, Body, UseGuards, ParseIntPipe, Req } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
@@ -80,6 +81,7 @@ class PermisosBodyDto {
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Rol.admin)
+@Permission('usuarios')
 @Controller('usuarios')
 export class UsuariosController {
   constructor(private readonly usuariosService: UsuariosService) {}

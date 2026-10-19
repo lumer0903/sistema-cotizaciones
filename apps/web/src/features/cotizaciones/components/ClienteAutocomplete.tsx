@@ -135,7 +135,7 @@ export function ClienteAutocomplete({
         >
           {cargando && resultados.length === 0 ? (
             <div className="p-3 flex items-center gap-2 text-xs text-zinc-500">
-              <Loader2 className="size-3.5 animate-spin text-brand-ink" />
+              <Loader2 className="size-3.5 animate-spin text-accent-ink" />
               Buscando clientes…
             </div>
           ) : (
@@ -150,7 +150,7 @@ export function ClienteAutocomplete({
                 }}
                 onMouseEnter={() => setActivo(index)}
                 className={`p-3 cursor-pointer transition-colors flex items-center justify-between gap-3 ${
-                  index === activo ? 'bg-brand-soft/60' : 'hover:bg-brand-soft/40'
+                  index === activo ? 'bg-accent-soft/60' : 'hover:bg-accent-soft/40'
                 }`}
               >
                 <div className="min-w-0">

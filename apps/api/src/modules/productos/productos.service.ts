@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException, Logger, ConflictException } from '@nestjs/common';
+import { ProductsQueryDto } from '../../common/dto/inventory-query.dto';
+import { UpdateProductoDto } from './dto/update-producto.dto';
+import { bloquearProducto, sincronizarStock } from '../../common/utils/stock.util';
+import { guardarPreciosAuditados, PRICE_FIELDS } from '../../common/utils/precios.util';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException, Logger, HttpException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { MinioService } from '../../common/storage/minio.service';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -56,6 +60,7 @@ export interface ProductoResponse {
   activo: boolean;
   stock_principal: number;
   stock_total: number;
+  stock_filtrado?: number;
   stock_minimo: number;
   unidades_por_caja: number;
   id_categoria: number | null;
@@ -196,119 +201,50 @@ export class ProductosService {
     private readonly aiCacheRefresh: AiCacheRefreshService,
   ) { }
 
-  async findAll(
-    page = 1,
-    limit = 50,
-    search?: string,
-    stock_status?: string,
-    includePrecios = false,
-    includeCategoria = false,
-    includeStockActual = false,
-  ): Promise<PaginatedProductosResponse> {
-    const skip = (page - 1) * limit;
-    const where: any = { deleted_at: null };
-
-    if (search) {
-      where.OR = [
-        { codigo: { contains: search, mode: 'insensitive' } },
-        { descripcion: { contains: search, mode: 'insensitive' } },
-      ];
-    }
-
-    if (stock_status) {
-      if (stock_status === 'agotado') {
-        where.stock_total = { lte: 0 };
-      } else if (stock_status === 'bajo') {
-        where.stock_total = { gt: 0, lte: 20 };
-      } else if (stock_status === 'disponible') {
-        where.stock_total = { gt: 20 };
-      }
-    }
-
-    const include: any = {};
-    if (includeCategoria) {
-      include.categoria = {
-        select: {
-          id_categoria: true,
-          nombre_categoria: true,
-        },
-      };
-    }
-    if (includePrecios) {
-      include.precios_actuales = {
-        select: {
-          costo_normal: true,
-          precio_unidad_normal: true,
-          precio_docena_normal: true,
-          precio_mayor_normal: true,
-          costo_distribuidor: true,
-          precio_unidad_dist: true,
-          precio_docena_dist: true,
-          precio_mayor_dist: true,
-        },
-      };
-    }
-    if (includeStockActual) {
-      include.stock_actual = {
-        select: {
-          id_almacen: true,
-          cantidad: true,
-          almacen: {
-            select: {
-              id_almacen: true,
-              codigo: true,
-              nombre: true,
-              ubicacion: true,
-            },
-          },
-        },
-      };
-    }
-
-    try {
-      const [data, total] = await Promise.all([
-        this.prisma.producto.findMany({
-          where,
-          select: {
-            id_producto: true,
-            codigo: true,
-            descripcion: true,
-            tipo_flor: true,
-            material: true,
-            composicion: true,
-            presentacion: true,
-            follaje: true,
-            numero_cabezas: true,
-            tamano: true,
-            colores_surtido: true,
-            foto_url: true,
-            activo: true,
-            stock_principal: true,
-            stock_total: true,
-            stock_minimo: true,
-            unidades_por_caja: true,
-            id_categoria: true,
-            created_at: true,
-            updated_at: true,
-            ...include,
-          },
-          skip,
-          take: limit,
-          orderBy: { created_at: 'desc' },
-        }),
-        this.prisma.producto.count({ where }),
-      ]);
-
-      const mappedData = data.map(item => mapProducto(item as unknown as ProductoWithRelations));
-
-      return { data: mappedData, total, page, limit };
-    } catch (error: any) {
-      this.logger.error(`Error en findAll productos: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Error al consultar el catálogo de productos');
-    }
+  // Compatibilidad para consumidores internos; el controlador usa el DTO completo.
+  async findAll(page=1,limit=50,search?:string,stock_status?:string,includePrecios=false,includeCategoria=false,includeStockActual=false) {
+    return this.findAllFiltered({page,limit,search,
+      stock_status:stock_status as ProductsQueryDto['stock_status'],
+      include:[includePrecios?'precios':'',includeCategoria?'categoria':'',includeStockActual?'stock':''].filter(Boolean).join(',') || undefined});
+  }
+  async findAllFiltered(q: ProductsQueryDto): Promise<PaginatedProductosResponse> {
+    const warehouse=q.id_almacen??null, category=q.id_categoria??null, active=q.activo??null;
+    const pattern=q.search?.trim() ? '%'+q.search.trim().replace(/[\\%_]/g,'\\$&')+'%' : null;
+    const scoped=Prisma.sql`
+      SELECT p.id_producto,p.created_at,p.stock_minimo,
+        CASE WHEN ${warehouse}::int IS NULL THEN p.stock_total ELSE COALESCE(s.cantidad,0) END AS stock_scope
+      FROM productos p LEFT JOIN stock_actual s ON s.id_producto=p.id_producto AND s.id_almacen=${warehouse}::int
+      WHERE p.deleted_at IS NULL
+        AND (${category}::int IS NULL OR p.id_categoria=${category}::int)
+        AND (${warehouse}::int IS NULL OR s.id_stock IS NOT NULL)
+        AND (${active}::boolean IS NULL OR p.activo=${active}::boolean)
+        AND (${pattern}::text IS NULL OR p.codigo ILIKE ${pattern}::text OR p.descripcion ILIKE ${pattern}::text)
+    `;
+    const condition=q.stock_status==='agotado'?Prisma.sql`stock_scope=0`
+      :q.stock_status==='bajo'?Prisma.sql`stock_scope>0 AND stock_scope<=stock_minimo`
+      :q.stock_status==='disponible'?Prisma.sql`stock_scope>stock_minimo`:Prisma.sql`TRUE`;
+    const order=q.sortBy==='stock_estado'
+      ?(q.sortOrder==='desc' ? Prisma.sql`(stock_scope<=stock_minimo) ASC,stock_scope DESC,created_at DESC,id_producto DESC` : Prisma.sql`(stock_scope<=stock_minimo) DESC,stock_scope ASC,created_at DESC,id_producto DESC`)
+      :q.sortOrder==='asc'?Prisma.sql`created_at ASC,id_producto ASC`:Prisma.sql`created_at DESC,id_producto DESC`;
+    const includes=new Set(q.include?.split(',')??[]);
+    return this.prisma.$transaction(async tx=>{
+      const counts=await tx.$queryRaw<Array<{total:bigint}>>(Prisma.sql`WITH scoped AS (${scoped}) SELECT count(*) AS total FROM scoped WHERE ${condition}`);
+      if((q.page-1)*q.limit>=Number(counts[0].total)) return {data:[],total:Number(counts[0].total),page:q.page,limit:q.limit};
+      const rows=await tx.$queryRaw<Array<{id_producto:number;stock_scope:number}>>(Prisma.sql`
+        WITH scoped AS (${scoped}) SELECT id_producto,stock_scope FROM scoped WHERE ${condition}
+        ORDER BY ${order} LIMIT ${q.limit} OFFSET ${(q.page-1)*q.limit}`);
+      const where={id_producto:{in:rows.map(r=>r.id_producto)}};
+      const include={categoria:includes.has('categoria'),precios_actuales:includes.has('precios')};
+      const products=includes.has('stock')
+        ? await tx.producto.findMany({where,include:{...include,stock_actual:{include:{almacen:true}}}})
+        : await tx.producto.findMany({where,include});
+      const byId=new Map(products.map(p=>[p.id_producto,p]));
+      return {data:rows.map(r=>({...mapProducto(byId.get(r.id_producto)!),stock_filtrado:r.stock_scope})),
+        total:Number(counts[0].total),page:q.page,limit:q.limit};
+    },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead});
   }
 
-  async findById(id: number, includePrecios = false, includeCategoria = false, includeStockActual = false): Promise<ProductoResponse | null> {
+  async findById(id: number, includePrecios = false, includeCategoria = false, includeStockActual = false): Promise<ProductoResponse> {
     const include: any = {};
     if (includeCategoria) {
       include.categoria = {
@@ -376,12 +312,12 @@ export class ProductosService {
       },
     });
 
-    if (!item) return null;
+    if (!item) throw new NotFoundException('Producto no encontrado');
 
     return mapProducto(item as unknown as ProductoWithRelations);
   }
 
-  async create(data: CreateProductoDto): Promise<ProductoResponse> {
+  async create(data: CreateProductoDto, actorId: number): Promise<ProductoResponse> {
     // Descripción estructurada: la enviada por el cliente (generada con el mismo
     // helper) o, si no viene, la calcula aquí para garantizar el formato del TF-IDF.
     const descripcionGenerada = data.descripcion?.trim()
@@ -397,23 +333,13 @@ export class ProductosService {
           tamano: data.tamano,
           unidades_por_caja: data.unidades_por_caja,
         });
+    if (data.foto_url?.startsWith('data:')) throw new BadRequestException('Suba la imagen con /productos/upload');
     const stockTotal = data.stock_principal;
 
     try {
       const creado = await this.prisma.$transaction(async (tx) => {
-        let almacenPrincipal = await tx.almacen.findFirst({
-          where: { codigo: 'ALM-001' },
-        });
-        if (!almacenPrincipal) {
-          almacenPrincipal = await tx.almacen.create({
-            data: {
-              codigo: 'ALM-001',
-              nombre: 'ALMACÉN PRINCIPAL',
-              ubicacion: 'Sede Central',
-              activo: true,
-            },
-          });
-        }
+        const almacenPrincipal = await tx.almacen.findUnique({where:{id_almacen:data.id_almacen}});
+        if (!almacenPrincipal?.activo) throw new BadRequestException('Almacén no disponible');
 
         const producto = await tx.producto.create({
           data: {
@@ -459,32 +385,8 @@ export class ProductosService {
           },
         });
 
-        let fotoUrl = data.foto_url;
-        if (data.foto_url && data.foto_url.startsWith('data:')) {
-          const base64Data = data.foto_url.split(',')[1];
-          const buffer = Buffer.from(base64Data, 'base64');
-          const mimeMatch = data.foto_url.match(/data:(image\/\w+);base64/);
-          const mimetype = mimeMatch ? mimeMatch[1] : 'image/png';
-
-          const fakeFile = {
-            buffer,
-            mimetype,
-            originalname: `${data.codigo}.png`,
-            size: buffer.length,
-          } as Express.Multer.File;
-
-          fotoUrl = await this.minio.uploadProductImage(fakeFile) ?? undefined;
-
-          await tx.producto.update({
-            where: { id_producto: producto.id_producto },
-            data: { foto_url: fotoUrl },
-          });
-        }
-
-        await tx.preciosActuales.create({
-          data: {
-            id_producto: producto.id_producto,
-            costo_normal: Number(data.costo_normal ?? 0),
+        await guardarPreciosAuditados(tx,producto.id_producto,{
+costo_normal: Number(data.costo_normal ?? 0),
             precio_unidad_normal: Number(data.precio_tienda_unidad),
             precio_docena_normal: Number(data.precio_tienda_docena),
             precio_mayor_normal: Number(data.precio_tienda_caja),
@@ -492,8 +394,7 @@ export class ProductosService {
             precio_unidad_dist: Number(data.precio_distribuidor_unidad),
             precio_docena_dist: Number(data.precio_distribuidor_docena),
             precio_mayor_dist: Number(data.precio_distribuidor_caja),
-          },
-        });
+        },actorId,'Creación de producto');
 
         await tx.stockActual.create({
           data: {
@@ -503,8 +404,9 @@ export class ProductosService {
           },
         });
 
-        await tx.inventarioMovimiento.create({
+        if (data.stock_principal > 0) await tx.inventarioMovimiento.create({
           data: {
+            id_usuario: actorId,
             id_producto: producto.id_producto,
             id_almacen: almacenPrincipal.id_almacen,
             tipo: 'entrada',
@@ -516,13 +418,9 @@ export class ProductosService {
           },
         });
 
-        return mapProducto({
-          ...producto,
-          foto_url: fotoUrl ?? null,
-          categoria: null,
-          precios_actuales: null,
-          stock_actual: null,
-        });
+        await sincronizarStock(tx, producto.id_producto);
+        const refreshed = await tx.producto.findUniqueOrThrow({where:{id_producto:producto.id_producto}});
+        return mapProducto(refreshed);
       });
 
       // Reentrenar TF-IDF con la nueva descripción (fire-and-forget, no bloquea)
@@ -532,11 +430,12 @@ export class ProductosService {
       if (error.code === 'P2002') {
         throw new ConflictException('El código del producto ya existe');
       }
+      if(error.code==='P2003') throw new BadRequestException('Categoría, almacén o usuario no válido');
       throw error;
     }
   }
 
-  async update(id: number, data: any): Promise<ProductoResponse> {
+  async update(id: number, data: UpdateProductoDto, actorId: number): Promise<ProductoResponse> {
     try {
       // 1. Separar campos de precios y relacionales de los campos propios del Producto
       const {
@@ -548,10 +447,8 @@ export class ProductosService {
         precio_distribuidor_caja,
         costo_normal,
         costo_distribuidor,
-        id_almacen,
         ...productoData
       } = data;
-      void id_almacen;
 
       if (productoData.codigo) {
         const existe = await this.prisma.producto.findFirst({
@@ -563,7 +460,9 @@ export class ProductosService {
         if (existe) throw new ConflictException('El código del producto ya existe');
       }
 
-      const productoActual = await this.prisma.producto.findUnique({
+      const item = await this.prisma.$transaction(async (tx) => {
+      await bloquearProducto(tx, id);
+      const productoActual = await tx.producto.findUnique({
         where: { id_producto: id },
         select: {
           stock_principal: true,
@@ -603,24 +502,28 @@ export class ProductosService {
         });
       }
 
-      const stockAnterior = productoActual.stock_principal;
+      const principal = await tx.stockActual.findFirst({
+        where: { id_producto: id, almacen: { codigo: 'ALM-001' } }, select: { cantidad: true },
+      });
+      const stockAnterior = principal?.cantidad ?? 0;
       const stockNuevo = productoData.stock_principal !== undefined
         ? Number(productoData.stock_principal)
         : stockAnterior;
       const stockCambio = stockNuevo !== stockAnterior;
 
-      const almacenPrincipal = await this.prisma.almacen.findFirst({
+      const almacenPrincipal = await tx.almacen.findFirst({
         where: { codigo: 'ALM-001' },
       });
 
-      const item = await this.prisma.$transaction(async (tx) => {
+        if (stockCambio && !almacenPrincipal) throw new NotFoundException('Almacén principal no encontrado');
+
         // 2. Actualizar únicamente la tabla Producto
         const updated = await tx.producto.update({
           where: { id_producto: id },
           data: {
             ...productoData,
             stock_principal: stockNuevo,
-            stock_total: stockNuevo,
+
           },
           select: {
             id_producto: true,
@@ -657,23 +560,7 @@ export class ProductosService {
         if (costo_normal !== undefined) updatePreciosData.costo_normal = Number(costo_normal);
         if (costo_distribuidor !== undefined) updatePreciosData.costo_distribuidor = Number(costo_distribuidor);
 
-        if (Object.keys(updatePreciosData).length > 0) {
-          await tx.preciosActuales.upsert({
-            where: { id_producto: id },
-            create: {
-              id_producto: id,
-              costo_normal: updatePreciosData.costo_normal ?? 0,
-              precio_unidad_normal: updatePreciosData.precio_unidad_normal ?? 0,
-              precio_docena_normal: updatePreciosData.precio_docena_normal ?? 0,
-              precio_mayor_normal: updatePreciosData.precio_mayor_normal ?? 0,
-              costo_distribuidor: updatePreciosData.costo_distribuidor ?? 0,
-              precio_unidad_dist: updatePreciosData.precio_unidad_dist ?? 0,
-              precio_docena_dist: updatePreciosData.precio_docena_dist ?? 0,
-              precio_mayor_dist: updatePreciosData.precio_mayor_dist ?? 0,
-            },
-            update: updatePreciosData,
-          });
-        }
+        await guardarPreciosAuditados(tx, id, updatePreciosData, actorId);
 
         // 4. Ajuste de stock e historial de movimientos si cambió el stock
         if (stockCambio && almacenPrincipal) {
@@ -693,12 +580,14 @@ export class ProductosService {
               cantidad: Math.abs(diferencia),
               stock_anterior: stockAnterior,
               stock_posterior: stockNuevo,
+              id_usuario: actorId,
               observaciones: `Ajuste de stock: ${diferencia > 0 ? '+' : ''}${diferencia}`,
             },
           });
         }
 
-        return updated;
+        await sincronizarStock(tx, id);
+        return tx.producto.findUniqueOrThrow({ where: { id_producto: updated.id_producto } });
       });
 
       // Reentrenar TF-IDF con la descripción actualizada (fire-and-forget)
@@ -723,17 +612,11 @@ export class ProductosService {
   }
 
   async delete(id: number): Promise<void> {
-    try {
-      await this.prisma.producto.update({
-        where: { id_producto: id },
-        data: { deleted_at: new Date() },
-      });
-    } catch (error: any) {
-      if (error.code === 'P2025') {
-        throw new NotFoundException('Producto no encontrado');
-      }
-      throw error;
-    }
+    await this.prisma.$transaction(async tx => {
+      await bloquearProducto(tx,id);
+      await tx.producto.update({where:{id_producto:id},data:{deleted_at:new Date()}});
+      await tx.alertas_stock.updateMany({where:{id_producto:id},data:{estado:'resuelta'}});
+    });
   }
 
   async updatePrecios(
@@ -747,62 +630,13 @@ export class ProductosService {
     });
     if (!producto) throw new NotFoundException('Producto no encontrado');
 
-    const fields = Object.keys(data) as (keyof UpdatePreciosDto)[];
+    const fields = PRICE_FIELDS.filter(field => data[field] !== undefined);
     if (fields.length === 0) throw new BadRequestException('Al menos un precio es requerido');
-
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { id_usuario },
-      select: { id_usuario: true },
-    });
-    if (!usuario) {
-      this.logger.warn(`Usuario ${id_usuario} no encontrado, usando usuario sistema (id: 1)`);
-      const sistemaUser = await this.prisma.usuario.findFirst({
-        select: { id_usuario: true },
-      });
-      if (sistemaUser) {
-        id_usuario = sistemaUser.id_usuario;
-      } else {
-        throw new BadRequestException('No hay usuarios disponibles para auditoría');
-      }
-    }
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-        const current = await tx.preciosActuales.findUnique({
-          where: { id_producto: id },
-        });
-
-        const changes: { campo: string; anterior: number; nuevo: number }[] = [];
-        const updateData: Record<string, number> = {};
-
-        for (const campo of fields) {
-          const nuevoValor = Number(data[campo]!);
-          const anterior = current?.[campo]?.toNumber() ?? 0;
-
-          if (nuevoValor !== anterior) {
-            changes.push({ campo, anterior, nuevo: nuevoValor });
-            updateData[campo] = nuevoValor;
-          }
-        }
-
-        if (changes.length > 0) {
-          await tx.preciosActuales.upsert({
-            where: { id_producto: id },
-            create: { id_producto: id, ...updateData },
-            update: updateData,
-          });
-
-          await tx.historialPrecios.createMany({
-            data: changes.map(c => ({
-              id_producto: id,
-              id_usuario,
-              campo_modificado: c.campo,
-              valor_anterior: new Prisma.Decimal(c.anterior.toFixed(2)),
-              valor_nuevo: new Prisma.Decimal(c.nuevo.toFixed(2)),
-            })),
-          });
-        }
-
+        await bloquearProducto(tx, id);
+        await guardarPreciosAuditados(tx, id, data, id_usuario);
         const updated = await tx.preciosActuales.findUnique({
           where: { id_producto: id },
         });
@@ -831,9 +665,10 @@ export class ProductosService {
       if (error.code === 'P2003') {
         throw new BadRequestException('Error de referencia: usuario inválido para auditoría');
       }
+      if (error instanceof HttpException) throw error;
       const err = error as Error;
       this.logger.error(`Error updating prices for product ${id}: ${err.message}`, err.stack);
-      throw new InternalServerErrorException(`Error al actualizar precios: ${err.message}`);
+      throw new InternalServerErrorException('No se pudieron actualizar los precios');
     }
   }
 }

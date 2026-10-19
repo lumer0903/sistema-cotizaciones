@@ -78,6 +78,7 @@ interface ProductoPayload {
   follaje?: string;
   tamano?: string;
   numero_cabezas?: number;
+  activo?: boolean;
 }
 
 const DEFAULT_FORM_VALUES: DefaultValues<ProductoFormData> = {
@@ -108,9 +109,6 @@ const DEFAULT_FORM_VALUES: DefaultValues<ProductoFormData> = {
 
 const PRICE_UNITS: PriceUnit[] = ["unidad", "docena", "caja"];
 
-/** Tamaño máximo (bytes) para el fallback base64 si falla la subida. */
-const MAX_BASE64_FALLBACK = 500 * 1024;
-
 export function ProductoModal({
   open,
   onClose,
@@ -124,6 +122,8 @@ export function ProductoModal({
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [almacenes, setAlmacenes] = useState<Almacen[]>([]);
   const [loadingFilters, setLoadingFilters] = useState(true);
+  const [activo,setActivo]=useState(true);
+  useEffect(()=>{if(open)setActivo(productoInicial?.activo??true);},[open,productoInicial]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
@@ -153,11 +153,11 @@ export function ProductoModal({
     values: (() => {
       if (!isEditing || !productoInicial) return undefined;
       const inv = productoInicial as unknown as Record<string, unknown> & {
-        stock_actual?: Array<{ id_almacen?: number }>;
+        stock_actual?: Array<{ id_almacen?: number; almacen?: {codigo?:string} }>;
         precios_actuales?: Record<string, unknown>;
         precios?: Record<string, unknown>;
       };
-      const almacenPrincipal = inv.stock_actual?.[0]?.id_almacen || 1;
+      const almacenPrincipal = inv.stock_actual?.find(s=>s.almacen?.codigo==='ALM-001')?.id_almacen || 1;
       const { tienda, distribuidor } = obtenerPreciosEstandarizados(productoInicial);
       const costoNormal = Number(
         inv.precios_actuales?.costo_normal ?? inv.precios?.costo_normal ?? inv.costo_normal ?? 0
@@ -183,15 +183,15 @@ export function ProductoModal({
         tamano: (inv.tamano as string) || "",
         unidades_por_caja: (inv.unidades_por_caja as number) || 1,
         stock_principal: (inv.stock_principal as number) || 0,
-        stock_minimo: (inv.stock_minimo as number) || 10,
+        stock_minimo: (inv.stock_minimo as number) ?? 10,
         descripcion: (inv.descripcion as string) || "",
         colores_surtido: (inv.colores_surtido as string[]) || [],
-        precio_tienda_unidad: Number(tienda.unidad) || undefined,
-        precio_tienda_docena: Number(tienda.docena) || undefined,
-        precio_tienda_caja: Number(tienda.mayor) || undefined,
-        precio_distribuidor_unidad: Number(distribuidor.unidad) || undefined,
-        precio_distribuidor_docena: Number(distribuidor.docena) || undefined,
-        precio_distribuidor_caja: Number(distribuidor.mayor) || undefined,
+        precio_tienda_unidad: Number(tienda.unidad),
+        precio_tienda_docena: Number(tienda.docena),
+        precio_tienda_caja: Number(tienda.mayor),
+        precio_distribuidor_unidad: Number(distribuidor.unidad),
+        precio_distribuidor_docena: Number(distribuidor.docena),
+        precio_distribuidor_caja: Number(distribuidor.mayor),
         costo_normal: costoNormal || 0,
         costo_distribuidor: costoDist || 0,
       } as ProductoFormData;
@@ -374,41 +374,14 @@ export function ProductoModal({
     let fotoUrlToSend: string | null = isEditing ? productoInicial?.foto_url || null : null;
 
     if (imageFile) {
-      let uploadedUrl: string | null = null;
       try {
-        const formData = new FormData();
-        formData.append("file", imageFile);
-        const uploadRes = await uploadFile("/productos/upload", formData);
-
-        const rawUrl: unknown = uploadRes?.url || uploadRes?.data?.url || "";
-        const isValidUrl =
-          typeof rawUrl === "string" &&
-          rawUrl.trim() !== "" &&
-          (rawUrl.startsWith("http://") ||
-            rawUrl.startsWith("https://") ||
-            rawUrl.startsWith("data:") ||
-            rawUrl.startsWith("/"));
-
-        if (isValidUrl) uploadedUrl = rawUrl.trim();
-      } catch (err) {
-        console.warn("Fallo endpoint de subida de imagen:", err);
-      }
-
-      if (uploadedUrl) {
-        fotoUrlToSend = uploadedUrl;
-      } else if (imageFile.size <= MAX_BASE64_FALLBACK) {
-        // Fallback local solo para imágenes pequeñas (evita payloads gigantes)
-        fotoUrlToSend = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result));
-          reader.onerror = reject;
-          reader.readAsDataURL(imageFile);
-        });
-      } else {
-        showToast.error(
-          "No se pudo subir la imagen (supera el tamaño permitido). Se guardará el producto sin imagen."
-        );
-        fotoUrlToSend = isEditing ? productoInicial?.foto_url || null : null;
+        const formData=new FormData();formData.append('file',imageFile);
+        const uploaded=await uploadFile('/productos/upload',formData);
+        if(typeof uploaded?.url!=='string' || !uploaded.url)throw new Error('No se recibió una imagen válida');
+        fotoUrlToSend=uploaded.url;
+      } catch(error) {
+        showToast.error(error instanceof Error?error.message:'No se pudo subir la imagen');
+        return;
       }
     }
 
@@ -418,7 +391,7 @@ export function ProductoModal({
       id_categoria: Number(data.id_categoria) || 1,
       id_almacen: Number(data.id_almacen) || 1,
       stock_principal: Number(data.stock_principal) || 0,
-      stock_minimo: Number(data.stock_minimo) || 10,
+      stock_minimo: data.stock_minimo == null ? 10 : Number(data.stock_minimo),
       unidades_por_caja: Number(data.unidades_por_caja) || 1,
       colores_surtido: coloresArray,
       foto_url: fotoUrlToSend,
@@ -445,7 +418,7 @@ export function ProductoModal({
       if (isEditing && productoInicial) {
         await apiClient(`/api/productos/${productoInicial.id_producto}`, {
           method: "PATCH",
-          body: JSON.stringify(payload),
+          body: JSON.stringify((({id_almacen:_id_almacen,...editable})=>({...editable,activo}))(payload)),
         });
       } else {
         await apiClient("/api/productos", {
@@ -544,6 +517,9 @@ export function ProductoModal({
           onSubmit={handleSubmit(handleFormSubmit)}
           className="space-y-6"
         >
+          {isEditing && <Select label="Estado del producto" value={String(activo)}
+            onChange={e=>setActivo(String(e.target.value)==='true')}
+            options={[{label:'Activo',value:'true'},{label:'Inactivo',value:'false'}]} />}
           {/* Información básica */}
           <div className="space-y-3.5">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -580,7 +556,7 @@ export function ProductoModal({
                   setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
                 })}
                 value={watch("id_almacen") ?? ""}
-                disabled={loadingFilters}
+                disabled={loadingFilters || isEditing}
               >
                 <option value="">Seleccionar</option>
                 {almacenes.map((a) => (
@@ -643,7 +619,7 @@ export function ProductoModal({
                 {...cleanNumberInputProps("unidades_por_caja")}
               />
               <Input
-                label="Stock actual"
+                label={isEditing ? "Stock del almacén principal" : "Stock inicial en almacén elegido"}
                 type="number"
                 min="0"
                 placeholder="10"

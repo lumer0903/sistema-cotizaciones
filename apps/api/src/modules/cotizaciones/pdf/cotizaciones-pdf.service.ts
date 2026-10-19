@@ -226,7 +226,7 @@ export class CotizacionesPdfService implements OnModuleInit, OnModuleDestroy {
       })
       .join('');
 
-    const costoCarreta = Number(cot.costo_carreta ?? 0);
+    const costoCarreta = cot.incluye_carreta ? Number(cot.costo_carreta ?? 0) : 0;
     const total = subtotal + costoCarreta;
 
     const estadoColor =

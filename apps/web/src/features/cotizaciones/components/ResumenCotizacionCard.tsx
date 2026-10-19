@@ -58,7 +58,7 @@ export function ResumenCotizacionCard({
       {/* Encabezado con botón de minimizar */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <FileText className="size-5 text-amber-500" strokeWidth={2.2} />
+          <FileText className="size-5 text-accent-ink" strokeWidth={2.2} />
           <span className="text-lg font-black text-zinc-700 tracking-wide uppercase">
             RESUMEN
           </span>
@@ -67,7 +67,7 @@ export function ResumenCotizacionCard({
         <Button
           variant="ghost"
           onClick={() => setIsMinimized((prev) => !prev)}
-          className="min-h-11 min-w-11 -mr-2 p-0 text-amber-700 hover:text-amber-800 hover:bg-amber-50"
+          className="min-h-11 min-w-11 -mr-2 p-0 text-accent-ink hover:text-accent-ink hover:bg-accent-soft"
           aria-label={isMinimized ? 'Expandir resumen' : 'Minimizar resumen'}
           aria-expanded={!isMinimized}
         >
@@ -88,7 +88,7 @@ export function ResumenCotizacionCard({
 
             <div className="border-t border-zinc-200 mt-3 pt-3 flex justify-between items-center">
               <span className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Total</span>
-              <span className="text-xl font-bold text-brand-ink">
+              <span className="text-xl font-bold text-accent-ink">
                 S/ {total.toFixed(2)}
               </span>
             </div>
@@ -133,7 +133,7 @@ export function ResumenCotizacionCard({
               variant={continuarDisabled ? 'ghost' : 'primary'}
               disabled={continuarDisabled}
               onClick={onContinuar}
-              className="min-h-11 px-6 !rounded-xl text-sm font-bold transition-[background-color,color] active:scale-[0.96]"
+              className="min-h-11 px-6 !rounded-xl text-sm font-bold transition-[background-color,color,transform] active:scale-[0.96]"
             >
               Continuar
             </Button>

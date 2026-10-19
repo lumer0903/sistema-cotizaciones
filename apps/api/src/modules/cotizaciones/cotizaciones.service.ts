@@ -1,3 +1,4 @@
+import { registrarPagoSeguro } from '../../common/utils/pagos.util';
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -10,7 +11,16 @@ import { verificarAlcance } from '../../common/utils/alcance.util';
 
 @Injectable()
 export class CotizacionesService {
+    private readonly IGV_RATE = 0.18;
+    private readonly DEFAULT_ALMACEN_ID = 1;
+
     constructor(private readonly prisma: PrismaService) { }
+
+    private calcularTotales(subtotal: number, incluyeCarreta: boolean, costoCarreta: number) {
+        const igv = Math.round(subtotal * this.IGV_RATE * 100) / 100;
+        const total = subtotal + igv + (incluyeCarreta ? costoCarreta : 0);
+        return { subtotal, igv, total };
+    }
 
     async crear(data: CreateCotizacionDto, idUsuario: number) {
         const {
@@ -40,7 +50,6 @@ export class CotizacionesService {
             );
         }
 
-        // Asegurar que el idUsuario sea válido o nulo si falla la extracción del JWT
         const userIdParsed = Number(idUsuario);
         const id_usuario = !isNaN(userIdParsed) && userIdParsed > 0 ? userIdParsed : null;
 
@@ -48,14 +57,13 @@ export class CotizacionesService {
             (acc, item) => acc + Number(item.cantidad) * Number(item.precio_unitario),
             0,
         );
-        // Coherente con actualizar: si no se incluye carreta, no suma ni almacena costo
         const carreta = incluye_carreta ? Number(costo_carreta) : 0;
-        const total = subtotal + carreta;
-
-        const numero = data.numero || await this.generarNumeroSecuencial();
+        const { igv, total } = this.calcularTotales(subtotal, incluye_carreta, carreta);
 
         try {
             return await this.prisma.$transaction(async (tx) => {
+                await tx.$queryRaw`SELECT pg_advisory_xact_lock(718222)::text`;
+                const numero = await this.generarNumeroSecuencial(tx);
                 const cotizacion = await tx.cotizacion.create({
                     data: {
                         numero,
@@ -67,8 +75,8 @@ export class CotizacionesService {
                         incluye_carreta: Boolean(incluye_carreta),
                         costo_carreta: carreta,
                         subtotal,
+                        igv,
                         total,
-                        // La llena el asesor de ventas (habilita cobranza "vencida")
                         fecha_vencimiento: fecha_vencimiento ? new Date(fecha_vencimiento) : null,
                         detalle: {
                             create: detalle.map((item) => ({
@@ -91,7 +99,6 @@ export class CotizacionesService {
                 return cotizacion;
             });
         } catch (error: any) {
-            // Capturar fallos de Claves Foráneas (FK) en Prisma
             if (error.code === 'P2003') {
                 throw new BadRequestException(
                     'Error de relación: Verifique que el id_cliente, id_usuario o id_producto existan en la base de datos.',
@@ -115,10 +122,11 @@ export class CotizacionesService {
             'parcialmente_pagada',
             'aprobada',
             'rechazada',
+            'expirada',
+            'convertida_a_venta',
         ];
 
         const where: Prisma.CotizacionWhereInput = {};
-        // Aislamiento por usuario: sólo el admin ve cotizaciones ajenas.
         if (alcance !== null) where.id_usuario = alcance;
         if (query.estado) {
             const estado = String(query.estado).trim().toLowerCase() as EstadoCotizacion;
@@ -126,7 +134,6 @@ export class CotizacionesService {
         }
         if (query.id_cliente) where.id_cliente = Number(query.id_cliente);
 
-        // Búsqueda por número de cotización o por cliente (nombre o documento)
         const buscar = String(query.buscar ?? '').trim().slice(0, 100);
         if (buscar) {
             where.OR = [
@@ -136,7 +143,6 @@ export class CotizacionesService {
             ];
         }
 
-        // Filtro por día (YYYY-MM-DD) en horario local del servidor
         const fecha = String(query.fecha ?? '').trim();
         if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
             where.created_at = {
@@ -169,8 +175,8 @@ export class CotizacionesService {
         };
     }
 
-    async obtenerPorId(id: number, alcance: number | null = null) {
-        const cotizacion = await this.prisma.cotizacion.findUnique({
+    async obtenerPorId(id: number, alcance: number | null = null, client: Prisma.TransactionClient | PrismaService = this.prisma) {
+        const cotizacion = await client.cotizacion.findUnique({
             where: { id_cotizacion: id },
             include: {
                 detalle: {
@@ -196,7 +202,6 @@ export class CotizacionesService {
         return cotizacion;
     }
 
-    /** Chequeo ligero de propiedad (exportar PDF / estado del job). */
     async asegurarAcceso(id: number, alcance: number | null = null): Promise<void> {
         if (alcance === null) return;
         const row = await this.prisma.cotizacion.findUnique({
@@ -209,123 +214,79 @@ export class CotizacionesService {
         }
     }
 
-    /**
-     * Genera el siguiente número secuencial COT-001, COT-002, ...
-     * Ignora numeraciones antiguas largas (COT-<timestamp>) y continúa
-     * desde el mayor correlativo corto existente.
-     */
-    async generarNumeroSecuencial(): Promise<string> {
-        const ultimas = await this.prisma.cotizacion.findMany({
-            select: { numero: true },
-            orderBy: { id_cotizacion: 'desc' },
-            take: 50,
-        });
-        let max = 0;
-        for (const c of ultimas) {
-            const m = /^COT-(\d{1,6})$/.exec(String(c.numero || '').trim());
-            if (m) {
-                const n = parseInt(m[1], 10);
-                if (!isNaN(n) && n > max) max = n;
-            }
-        }
-        // Si no hay correlativos cortos, partir de count+1 por si hay data antigua
-        if (max === 0) {
-            const total = await this.prisma.cotizacion.count();
-            max = total;
-            // Verificar que COT-(total+1) no exista (por timestamps no aplica, pero por seguridad)
-            let candidato = max + 1;
-
-            while (true) {
-                const existe = await this.prisma.cotizacion.findUnique({
-                    where: { numero: `COT-${String(candidato).padStart(3, '0')}` },
-                });
-                if (!existe) {
-                    max = candidato - 1;
-                    break;
-                }
-                candidato++;
-                if (candidato > max + 1000) break;
-            }
-        }
-        const siguiente = max + 1;
-        return `COT-${String(siguiente).padStart(3, '0')}`;
+    async generarNumeroSecuencial(client: Pick<Prisma.TransactionClient, '$queryRaw'> = this.prisma): Promise<string> {
+        const rows = await client.$queryRaw<Array<{ maximo: string }>>`
+          SELECT COALESCE(MAX(SUBSTRING(numero FROM 5)::numeric), 0)::text AS maximo
+          FROM cotizaciones WHERE numero ~ '^COT-[0-9]{1,9}$'
+        `;
+        return 'COT-' + String(BigInt(rows[0]?.maximo ?? '0') + 1n).padStart(3, '0');
     }
 
     async proximoNumero(): Promise<{ numero: string }> {
         return { numero: await this.generarNumeroSecuencial() };
     }
 
-    /**
-     * Actualiza una cotización SOLO si está en BORRADOR.
-     * El número correlativo NUNCA se modifica.
-     * Si se envía `detalle`, reemplaza todas las líneas y recalcula subtotal/total.
-     */
     async actualizar(id: number, data: UpdateCotizacionDto, alcance: number | null = null) {
-        const actual = await this.obtenerPorId(id, alcance);
+        return this.prisma.$transaction(async (tx) => {
+            await tx.$queryRaw`SELECT id_cotizacion FROM cotizaciones WHERE id_cotizacion = ${id} FOR UPDATE`;
+            const actual = await this.obtenerPorId(id, alcance, tx);
 
-        if (actual.estado !== 'borrador') {
-            throw new BadRequestException(
-                `Solo se puede editar una cotización en estado BORRADOR (actual: ${actual.estado})`,
-            );
-        }
-
-        const {
-            id_cliente,
-            tipo_precio,
-            observaciones,
-            incluye_carreta,
-            costo_carreta,
-            detalle,
-            fecha_vencimiento,
-        } = data;
-
-        if (detalle !== undefined && (!Array.isArray(detalle) || detalle.length === 0)) {
-            throw new BadRequestException('La cotización debe incluir al menos un producto en el detalle');
-        }
-
-        if (Array.isArray(detalle)) {
-            const detalleInvalido = !detalle.every((it) =>
-                Number(it.id_producto) > 0 && Number(it.cantidad) > 0 && Number(it.precio_unitario) >= 0,
-            );
-            if (detalleInvalido) {
+            if (actual.estado !== 'borrador') {
                 throw new BadRequestException(
-                    'Cada línea del detalle requiere un producto válido, cantidad mayor a 0 y precio_unitario mayor o igual a 0',
+                    `Solo se puede editar una cotización en estado BORRADOR (actual: ${actual.estado})`,
                 );
             }
-        }
 
-        const lineas = Array.isArray(detalle) ? detalle : null;
-        const subtotal = lineas
-            ? lineas.reduce(
-                (acc, item) => acc + Number(item.cantidad) * Number(item.precio_unitario),
-                0,
-            )
-            : Number(actual.subtotal);
-        let carreta: number;
-        if (incluye_carreta !== undefined) {
-            // Si se indica incluir pero no llega costo, conservar el actual (antes quedaba en 0)
-            carreta = incluye_carreta
-                ? Number(costo_carreta ?? actual.costo_carreta ?? 0)
-                : 0;
-        } else {
-            carreta = Number(actual.costo_carreta);
-        }
-        const total = subtotal + carreta;
+            const {
+                id_cliente,
+                tipo_precio,
+                observaciones,
+                incluye_carreta,
+                costo_carreta,
+                detalle,
+                fecha_vencimiento,
+            } = data;
 
-        try {
-            return await this.prisma.$transaction(async (tx) => {
-                return tx.cotizacion.update({
+            if (detalle !== undefined && (!Array.isArray(detalle) || detalle.length === 0)) {
+                throw new BadRequestException('La cotización debe incluir al menos un producto en el detalle');
+            }
+
+            if (Array.isArray(detalle)) {
+                const detalleInvalido = !detalle.every((it) =>
+                    Number(it.id_producto) > 0 && Number(it.cantidad) > 0 && Number(it.precio_unitario) >= 0,
+                );
+                if (detalleInvalido) {
+                    throw new BadRequestException(
+                        'Cada línea del detalle requiere un producto válido, cantidad mayor a 0 y precio_unitario mayor o igual a 0',
+                    );
+                }
+            }
+
+            const lineas = Array.isArray(detalle) ? detalle : null;
+            const subtotal = lineas
+                ? lineas.reduce(
+                    (acc, item) => acc + Number(item.cantidad) * Number(item.precio_unitario),
+                    0,
+                )
+                : Number(actual.subtotal);
+            const incluyeCarreta = incluye_carreta ?? actual.incluye_carreta;
+            const carreta = incluyeCarreta ? Number(costo_carreta ?? actual.costo_carreta ?? 0) : 0;
+            const { igv, total } = this.calcularTotales(subtotal, incluyeCarreta, carreta);
+
+            try {
+                return await tx.cotizacion.update({
                     where: { id_cotizacion: id },
                     data: {
                         ...(id_cliente !== undefined ? { id_cliente: Number(id_cliente) } : {}),
                         ...(tipo_precio !== undefined ? { tipo_precio: tipo_precio as any } : {}),
                         ...(observaciones !== undefined ? { observaciones } : {}),
                         ...(incluye_carreta !== undefined ? { incluye_carreta: Boolean(incluye_carreta) } : {}),
-                        ...(costo_carreta !== undefined ? { costo_carreta: Number(costo_carreta) } : {}),
+                        costo_carreta: carreta,
                         ...(fecha_vencimiento !== undefined
                             ? { fecha_vencimiento: fecha_vencimiento ? new Date(fecha_vencimiento) : null }
                             : {}),
                         subtotal,
+                        igv,
                         total,
                         ...(lineas
                             ? {
@@ -349,111 +310,155 @@ export class CotizacionesService {
                         cliente: true,
                     },
                 });
-            });
-        } catch (error: any) {
-            if (error instanceof BadRequestException) throw error;
-            if (error.code === 'P2003') {
-                throw new BadRequestException(
-                    'Error de relación: Verifique que el id_cliente o id_producto existan en la base de datos.',
-                );
+            } catch (error: any) {
+                if (error instanceof BadRequestException) throw error;
+                if (error.code === 'P2003') {
+                    throw new BadRequestException(
+                        'Error de relación: Verifique que el id_cliente o id_producto existan en la base de datos.',
+                    );
+                }
+                throw new BadRequestException(`Fallo en la actualización: ${error.message || error}`);
             }
-            throw new BadRequestException(`Fallo en la actualización: ${error.message || error}`);
-        }
+        });
     }
 
     async cambiarEstado(id: number, estado: string, alcance: number | null = null) {
-        if (!estado) {
-            throw new BadRequestException('El campo estado es obligatorio');
-        }
+        return this.prisma.$transaction(async (tx) => {
+            await tx.$queryRaw`SELECT id_cotizacion FROM cotizaciones WHERE id_cotizacion = ${id} FOR UPDATE`;
+            if (!estado) {
+                throw new BadRequestException('El campo estado es obligatorio');
+            }
 
-        const permitidos = ['borrador', 'enviada', 'aprobada', 'parcialmente_pagada', 'rechazada'];
-        if (!permitidos.includes(estado)) {
-            throw new BadRequestException(`Estado inválido: ${estado}`);
-        }
+            const permitidos: EstadoCotizacion[] = [
+                'borrador',
+                'enviada',
+                'parcialmente_pagada',
+                'aprobada',
+                'rechazada',
+                'expirada',
+                'convertida_a_venta',
+            ];
+            if (!permitidos.includes(estado as EstadoCotizacion)) {
+                throw new BadRequestException(`Estado inválido: ${estado}`);
+            }
 
-        const cot = await this.obtenerPorId(id, alcance);
-        const actual = String((cot as any).estado || 'borrador');
+            const cot = await this.obtenerPorId(id, alcance, tx);
+            const actual = String(cot.estado || 'borrador');
 
-        // Máquina de transiciones: prohíbe saltos arbitrarios (p.ej. borrador → aprobada,
-        // aprobada → enviada). Los pagos (registrarPago) actualizan el estado por su vía.
-        const TRANSICIONES: Record<string, string[]> = {
-            borrador: ['borrador', 'enviada'],
-            enviada: ['enviada', 'borrador', 'aprobada', 'parcialmente_pagada', 'rechazada'],
-            parcialmente_pagada: ['parcialmente_pagada', 'aprobada', 'rechazada'],
-            aprobada: ['aprobada'],
-            rechazada: ['rechazada', 'borrador'],
-        };
-        const validas = TRANSICIONES[actual];
-        if (!validas || !validas.includes(estado)) {
-            throw new BadRequestException(
-                `Transición no permitida: "${actual}" → "${estado}"`,
-            );
-        }
+            const TRANSICIONES: Record<string, string[]> = {
+                borrador: ['borrador', 'enviada', 'expirada'],
+                enviada: ['enviada', 'borrador', 'aprobada', 'parcialmente_pagada', 'rechazada', 'expirada'],
+                parcialmente_pagada: ['parcialmente_pagada', 'aprobada', 'rechazada', 'expirada'],
+                aprobada: ['aprobada', 'convertida_a_venta', 'expirada'],
+                rechazada: ['rechazada', 'borrador'],
+                expirada: ['expirada', 'borrador'],
+                convertida_a_venta: ['convertida_a_venta'],
+            };
+            const validas = TRANSICIONES[actual];
+            if (!validas || !validas.includes(estado)) {
+                throw new BadRequestException(
+                    `Transición no permitida: "${actual}" → "${estado}"`,
+                );
+            }
 
-        if (actual === estado) return cot;
+            if (actual === estado) return cot;
 
-        return this.prisma.cotizacion.update({
-            where: { id_cotizacion: id },
-            data: {
-                estado: estado as any,
-                // Indicador de tesis (tiempo de generación): termina en el paso
-                // a 'enviada'; no se pisa si ya tiene valor (p. ej. reenvíos).
-                ...(estado === 'enviada' && !cot.tiempo_fin ? { tiempo_fin: new Date() } : {}),
-            },
+            if (estado === 'aprobada' && actual !== 'aprobada') {
+                await this.reservarStockCotizacion(tx, cot);
+            }
+
+            if (estado === 'convertida_a_venta') {
+                if (actual === 'convertida_a_venta') return cot;
+                await this.confirmarVentaCotizacion(tx, cot);
+            }
+
+            if (['expirada', 'rechazada'].includes(estado) && ['aprobada', 'enviada'].includes(actual)) {
+                await this.liberarReservasCotizacion(tx, cot);
+            }
+
+            return tx.cotizacion.update({
+                where: { id_cotizacion: id },
+                data: {
+                    estado: estado as any,
+                    ...(estado === 'enviada' && !cot.tiempo_fin ? { tiempo_fin: new Date() } : {}),
+                    ...(estado === 'convertida_a_venta' ? { convertida_en: new Date() } : {}),
+                },
+            });
         });
     }
 
-    async registrarPago(id: number, data: RegistrarPagoDto, idUsuario: number, alcance: number | null = null) {
-        if (!data || !data.monto || !data.metodo_pago) {
-            throw new BadRequestException('Debe proporcionar el monto y el metodo_pago');
-        }
-
-        const monto = Number(data.monto);
-        if (!(monto > 0)) {
-            throw new BadRequestException('El monto debe ser mayor a 0');
-        }
-
-        const cot = await this.obtenerPorId(id, alcance);
-        const estado = String((cot as any).estado || '');
-        if (!['enviada', 'aprobada', 'parcialmente_pagada'].includes(estado)) {
-            throw new BadRequestException(
-                `No se pueden registrar pagos en estado "${estado}". Debe estar enviada o aprobada.`,
-            );
-        }
-
-        const pagos = await this.prisma.cotizacionPago.findMany({
-            where: { id_cotizacion: id },
-            select: { monto: true },
-        });
-        const total = Number((cot as any).total || 0);
-        const pagado = pagos.reduce((s, p) => s + Number(p.monto), 0);
-        const saldo = total - pagado;
-        if (monto > saldo + 0.009) {
-            throw new BadRequestException(
-                `El monto (S/ ${monto.toFixed(2)}) excede el saldo pendiente (S/ ${saldo.toFixed(2)})`,
-            );
-        }
-
-        const nuevoPagado = pagado + monto;
-        const nuevoEstado =
-            nuevoPagado >= total - 0.009 ? 'aprobada' : 'parcialmente_pagada';
-
-        await this.prisma.$transaction(async (tx) => {
-            await tx.cotizacionPago.create({
+    private async reservarStockCotizacion(tx: Prisma.TransactionClient, cot: any) {
+        for (const item of cot.detalle) {
+            const stock = await tx.stockActual.findUnique({
+                where: { id_producto_id_almacen: { id_producto: item.id_producto, id_almacen: this.DEFAULT_ALMACEN_ID } },
+            });
+            if (!stock || stock.cantidad < item.cantidad) {
+                throw new BadRequestException(
+                    `Stock insuficiente para ${item.producto?.codigo || item.id_producto}: ${stock?.cantidad ?? 0} < ${item.cantidad}`,
+                );
+            }
+            await tx.stockActual.update({
+                where: { id_producto_id_almacen: { id_producto: item.id_producto, id_almacen: this.DEFAULT_ALMACEN_ID } },
+                data: { cantidad: { decrement: item.cantidad } },
+            });
+            await tx.inventarioMovimiento.create({
                 data: {
-                    id_cotizacion: id,
-                    id_usuario: Number(idUsuario) > 0 ? Number(idUsuario) : null,
-                    monto,
-                    metodo_pago: data.metodo_pago,
-                    referencia: data.referencia || null,
+                    id_producto: item.id_producto,
+                    id_almacen: this.DEFAULT_ALMACEN_ID,
+                    tipo: 'salida',
+                    origen: 'cotizacion_aprobada',
+                    cantidad: item.cantidad,
+                    stock_anterior: stock.cantidad,
+                    stock_posterior: stock.cantidad - item.cantidad,
+                    id_referencia: cot.id_cotizacion,
+                    tipo_referencia: 'COTIZACION',
                 },
             });
-            await tx.cotizacion.update({
-                where: { id_cotizacion: id },
-                data: { estado: nuevoEstado as any },
-            });
-        });
+        }
+    }
 
+    private async confirmarVentaCotizacion(tx: Prisma.TransactionClient, cot: any) {
+        const yaConvertida = await tx.inventarioMovimiento.findFirst({
+            where: { id_referencia: cot.id_cotizacion, tipo_referencia: 'COTIZACION', origen: 'venta' },
+        });
+        if (yaConvertida) return;
+
+        await tx.inventarioMovimiento.updateMany({
+            where: { id_referencia: cot.id_cotizacion, tipo_referencia: 'COTIZACION', origen: 'cotizacion_aprobada' },
+            data: { origen: 'venta' },
+        });
+    }
+
+    private async liberarReservasCotizacion(tx: Prisma.TransactionClient, cot: any) {
+        for (const item of cot.detalle) {
+            const mov = await tx.inventarioMovimiento.findFirst({
+                where: { id_referencia: cot.id_cotizacion, id_producto: item.id_producto, origen: 'cotizacion_aprobada' },
+            });
+            if (mov) {
+                await tx.stockActual.update({
+                    where: { id_producto_id_almacen: { id_producto: item.id_producto, id_almacen: this.DEFAULT_ALMACEN_ID } },
+                    data: { cantidad: { increment: item.cantidad } },
+                });
+                await tx.inventarioMovimiento.create({
+                    data: {
+                        id_producto: item.id_producto,
+                        id_almacen: this.DEFAULT_ALMACEN_ID,
+                        tipo: 'entrada',
+                        origen: 'devolucion_cliente',
+                        cantidad: item.cantidad,
+                        stock_anterior: mov.stock_posterior,
+                        stock_posterior: mov.stock_posterior + item.cantidad,
+                        id_referencia: cot.id_cotizacion,
+                        tipo_referencia: 'COTIZACION',
+                        observaciones: `Liberación por ${cot.estado}`,
+                    },
+                });
+            }
+        }
+    }
+
+    async registrarPago(id: number, data: RegistrarPagoDto, idUsuario: number, alcance: number | null = null) {
+        await registrarPagoSeguro(this.prisma, id, data, idUsuario, alcance);
         return this.obtenerPorId(id, alcance);
     }
 }

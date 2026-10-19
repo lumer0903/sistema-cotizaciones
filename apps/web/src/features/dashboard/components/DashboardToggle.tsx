@@ -35,7 +35,7 @@ export function DashboardToggle({ view, onChange }: DashboardToggleProps) {
           'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors',
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
           view === 'admin'
-            ? 'bg-brand-primary text-zinc-900'
+            ? 'bg-accent-primary text-zinc-900'
             : 'text-brand-options hover:text-brand-subtitle hover:bg-zinc-50'
         )}
       >

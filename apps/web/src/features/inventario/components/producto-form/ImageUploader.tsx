@@ -94,7 +94,7 @@ export function ImageUploader({
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           className={cn(
-            'flex w-full items-center gap-4 rounded-2xl border border-border-default bg-white p-3 shadow-sm transition-colors hover:border-brand-primary/40',
+            'flex w-full items-center gap-4 rounded-2xl border border-border-default bg-white p-3 shadow-sm transition-colors hover:border-accent-primary/40',
             FOCUS_RING,
             disabled && 'pointer-events-none opacity-50'
           )}
@@ -117,7 +117,7 @@ export function ImageUploader({
               <label
                 htmlFor={INPUT_ID}
                 title="Cambiar imagen"
-                className="flex cursor-pointer items-center justify-center rounded-lg bg-brand-selection p-2.5 text-brand-subtitle transition-colors hover:bg-brand-primary/20 hover:text-brand-ink"
+                className="flex cursor-pointer items-center justify-center rounded-lg bg-accent-selection p-2.5 text-brand-subtitle transition-colors hover:bg-accent-primary/20 hover:text-accent-ink"
                 aria-label="Cambiar imagen"
               >
                 <Pencil className="size-4" aria-hidden="true" />
@@ -142,12 +142,12 @@ export function ImageUploader({
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             className={cn(
-              'group flex min-h-36 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border-default bg-surface-muted/30 px-4 py-6 text-center transition-[border-color,background-color] hover:border-brand-primary/50 hover:bg-brand-selection/50',
+              'group flex min-h-36 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border-default bg-surface-muted/30 px-4 py-6 text-center transition-[border-color,background-color] hover:border-accent-primary/50 hover:bg-accent-selection/50',
               FOCUS_RING,
               disabled && 'pointer-events-none opacity-50'
             )}
           >
-          <span className="flex size-12 items-center justify-center rounded-full bg-brand-selection text-brand-subtitle transition-transform group-hover:scale-110">
+          <span className="flex size-12 items-center justify-center rounded-full bg-accent-selection text-brand-subtitle transition-transform duration-150 group-hover:scale-110">
             <CloudUpload className="size-6" aria-hidden="true" />
           </span>
           <span className="mt-3 text-sm font-bold text-brand-subtitle">

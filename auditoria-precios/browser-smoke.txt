@@ -1,0 +1,12 @@
+{
+  "url": "http://web:3000/precios",
+  "errors": [],
+  "requests": [
+    "precios?page=1&limit=8",
+    "precios?page=1&limit=8",
+    "precios?limit=1",
+    "precios?limit=1"
+  ],
+  "historyVisible": true,
+  "bulkModalVisible": true
+}

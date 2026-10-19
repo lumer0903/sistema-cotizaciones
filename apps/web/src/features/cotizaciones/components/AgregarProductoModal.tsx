@@ -191,8 +191,8 @@ export default function AgregarProductoModal({
             <div className="space-y-5 text-zinc-700 p-1">
                 {/* Aviso contextual (flujo de recomendaciones: reemplazo) */}
                 {aviso && (
-                    <div className="flex items-center gap-2 rounded-xl border border-brand-primary/30 bg-brand-soft px-3.5 py-2.5 text-xs font-semibold text-brand-subtitle">
-                        <Info className="size-4 shrink-0 text-brand-ink" />
+                    <div className="flex items-center gap-2 rounded-xl border border-accent-primary/30 bg-accent-soft px-3.5 py-2.5 text-xs font-semibold text-brand-subtitle">
+                        <Info className="size-4 shrink-0 text-accent-ink" />
                         <span>{aviso}</span>
                     </div>
                 )}
@@ -253,7 +253,7 @@ export default function AgregarProductoModal({
                                 type="checkbox"
                                 checked={tipoColor === 'SURTIDO'}
                                 onChange={() => setTipoColor('SURTIDO')}
-                                className="size-5 rounded accent-brand-primary cursor-pointer"
+                                className="size-5 rounded accent-accent-primary cursor-pointer"
                             />
                             Surtido
                         </label>
@@ -262,7 +262,7 @@ export default function AgregarProductoModal({
                                 type="checkbox"
                                 checked={tipoColor === 'ESPECIFICO'}
                                 onChange={() => setTipoColor('ESPECIFICO')}
-                                className="size-5 rounded accent-brand-primary cursor-pointer"
+                                className="size-5 rounded accent-accent-primary cursor-pointer"
                             />
                             Color específico
                         </label>
@@ -395,7 +395,7 @@ export default function AgregarProductoModal({
                         onClick={handleGuardar}
                         className={`px-8 py-2.5 text-sm font-bold rounded-xl shadow-none transition-colors ${sinStock
                             ? 'bg-zinc-200 text-zinc-500 cursor-not-allowed'
-                            : 'bg-brand-primary hover:bg-brand-hover text-on-brand'
+                            : 'bg-accent-primary hover:bg-accent-hover text-on-accent'
                             }`}
                     >
                         {confirmLabel}

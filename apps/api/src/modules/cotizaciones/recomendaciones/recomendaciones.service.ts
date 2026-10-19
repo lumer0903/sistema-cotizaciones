@@ -13,7 +13,7 @@ export interface RecomendacionItemResponse {
   stock: number;
   similarityScore: number;
   categoria?: string;
-  margen?: number;
+  margen?: number | null;
   es_sugerido_ia: boolean;
   almacen?: string | null;
   ubicacion?: string | null;

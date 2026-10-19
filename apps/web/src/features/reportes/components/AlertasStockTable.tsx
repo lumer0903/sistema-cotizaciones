@@ -12,7 +12,7 @@ export function AlertasStockTable({ alertasStock }: AlertasStockTableProps) {
   return (
     <FilterCard>
       <div className="flex items-center gap-2 mb-4">
-        <Package className="h-5 w-5 text-brand-ink" />
+        <Package className="h-5 w-5 text-accent-ink" />
         <h2 className="text-lg font-semibold text-zinc-900">Alertas de stock activas</h2>
       </div>
       <Table>

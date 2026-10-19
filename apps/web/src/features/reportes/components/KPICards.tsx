@@ -11,7 +11,7 @@ interface KPICardsProps {
 export function KPICards({ kpis, cotizaciones }: KPICardsProps) {
   const kpiCards = [
     { label: 'Tasa de conversión', value: `${kpis.tasaConversion}%`, icon: TrendingUp, color: 'bg-estado-aprobado' },
-    { label: 'Efectividad IA', value: `${kpis.efectividadIA}%`, icon: Sparkles, color: 'bg-brand-primary' },
+    { label: 'Efectividad IA', value: `${kpis.efectividadIA}%`, icon: Sparkles, color: 'bg-accent-primary' },
     { label: 'Cotizaciones totales', value: cotizaciones.total, icon: FileText, color: 'bg-estado-enviado' },
     { label: 'Alertas de stock', value: kpis.alertasStockActivas, icon: AlertTriangle, color: 'bg-danger' },
   ];

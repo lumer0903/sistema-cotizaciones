@@ -7,7 +7,7 @@ describe('Badge', () => {
     render(<Badge variant="brand">Marca</Badge>);
     const badge = screen.getByText('Marca');
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass('bg-brand-selection', 'rounded-md', 'border');
+    expect(badge).toHaveClass('bg-accent-selection', 'rounded-md', 'border');
   });
 
   it('renders success variant with status styles', () => {
@@ -42,7 +42,7 @@ describe('Badge', () => {
   it('renders plain-text variant without background', () => {
     render(<Badge variant="vendedor">Vendedor</Badge>);
     const badge = screen.getByText('Vendedor');
-    expect(badge).toHaveClass('text-emerald-600', 'font-semibold');
+    expect(badge).toHaveClass('text-vendedor-ink', 'font-semibold');
     expect(badge).not.toHaveClass('rounded-md');
   });
 

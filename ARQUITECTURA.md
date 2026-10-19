@@ -1,5 +1,8 @@
 # Arquitectura — Gold Continent
 
+> Actualizado el 11/10/2026. Ver [correcciones y validaciones](CORRECCIONES-2026-10-11.md). La API consulta permisos vigentes en cada solicitud; las lecturas de notificaciones pertenecen a cada usuario.
+
+
 > Sistema de cotizaciones para floristería: monorepo con frontend Next.js, API NestJS, microservicio IA Python y PostgreSQL.
 
 ---
@@ -138,17 +141,17 @@ Cliente: `getCotizacionPdfBlob` en `cotizacionApi.ts` — ante 202 sondea `pdf-s
 POST /api/auth/login
   → bcrypt.compare
   → access JWT 15 min (JWT_SECRET) + refresh JWT 7 días (JWT_REFRESH_SECRET)
-  → refresh_token_hash (bcrypt) persistido en usuario
+  → refresh_token_hash (SHA-256) persistido en usuario
   → cookies httpOnly: accessToken + refreshToken
   → JSON: access_token + usuario
 
 JwtStrategy: lee cookies.accessToken → fallback Authorization: Bearer
              validate() → { id_usuario, email, rol }
 
-POST /api/auth/refresh → verifica firma + type=refresh + bcrypt hash
+POST /api/auth/refresh → verifica firma + type=refresh + versión de sesión + hash SHA-256
                         → rota ambos tokens → re-setea cookies
 
-POST /api/auth/logout  → limpia refresh_token_hash + cookies
+POST /api/auth/logout  → revoca la versión de sesión y limpia refresh_token_hash + cookies
 
 GET  /api/auth/me      → usuario (nombre, email, rol, avatar_url, permisos)
 PATCH /api/auth/password → cambia contraseña (bcrypt)
@@ -165,8 +168,8 @@ DELETE /api/auth/avatar  → elimina foto
 Catálogo dinámico en BD (`model Rol` + `model RolPermiso`); `Usuario.rol` es **string código** (JWT/`@Roles` siguen igual). Defaults seed: **`admin` | `gerente` | `vendedor`** (`es_sistema: true`). Matriz admin siempre `edicion` (bloqueada en UI y API).
 
 - RBAC en `packages/shared/src/auth/rbac.ts` (`puede()`, niveles `sin_acceso < lectura < edicion`, `GRUPOS_MODULOS` administrativo/operativo, `esMatrizBloqueada`).
-- **Backend:** módulo `roles` (CRUD + permisos) con `@Roles('admin')`; `RolesGuard` **por controller** + `@Roles(...)` en endpoints sensibles (usuarios, roles, categorías, almacenes, dashboard, PUT configuración). Sin `@Roles` → solo `JwtAuthGuard`. No está como `APP_GUARD` global (ese orden rompería `user` antes del JWT).
-- **Frontend:** `usePermissions()` + `ProtectedRoute` en layouts + `proxy.ts` estricto (rutas `/admin` y `/vendedor` exigen token JWT verificado y el rol del token); pestaña Roles y Permisos en `/admin/usuarios`.
+- **Backend:** JwtAuthGuard autentica con estado actual de BD y aplica @Permission por módulo. RolesGuard mantiene restricciones adicionales de administración en usuarios, roles y configuración.
+- **Frontend:** usePermissions y ProtectedRoute controlan vistas y acciones del árbol unificado app/(dashboard). La autorización definitiva pertenece a la API.
 
 ---
 
@@ -174,21 +177,13 @@ Catálogo dinámico en BD (`model Rol` + `model RolPermiso`); `Usuario.rol` es *
 
 ### Protección de rutas (3 niveles)
 
-1. **`proxy.ts` (Next 16, runtime Node):** verifica la firma del `accessToken` con `jose` (rol sacado del token verificado; el refreshToken solo como respaldo y la cookie `userRole` como hint de UI); redirige `/` por rol, bloquea cruce admin↔vendedor y hace **fail-closed** si faltan los secretos. (`middleware.ts` quedó deprecado en Next 16.)
-2. **`ProtectedRoute` en layouts:** `admin/layout.tsx` exige `roles: [admin, gerente]` + permiso `dashboard`; `vendedor/layout.tsx` exige `roles: [vendedor]` + permiso `cotizaciones`.
-3. **RBAC client-side:** `usePermissions()` → `can(modulo, nivel)` de `@goldcontinent/shared/auth`.
+1. **proxy.ts:** verifica firma y expiración para navegación. La API verifica además cuenta activa, versión de sesión, rol activo y permisos actuales.
+2. **Layout unificado app/(dashboard):** ProtectedRoute y shell según perfil; usePermissions controla las acciones visibles.
+3. **Autorización API:** JwtAuthGuard + @Permission exige lectura para GET/HEAD y edición para mutaciones, salvo overrides explícitos como PDF.
 
 ### Estructura de rutas
 
-```
-app/
-├── (auth)/login/           # Público
-├── admin/                  # Admin/Gerente
-│   ├── dashboard, inventario, precios, cotizaciones/*,
-│   ├── cobranza/*, usuarios, configuracion, reportes (stub)
-└── vendedor/               # Vendedor
-    ├── cotizaciones/*, catalogo
-```
+El grupo app/(dashboard) contiene dashboard, inventario, precios, cotizaciones, cobranza, usuarios, configuracion y reportes. El grupo no forma parte de la URL. Login es público.
 
 ### Patrón de features
 
@@ -207,15 +202,15 @@ features/<nombre>/
 - **Zustand:** `useCrearCotizacionStore` (borrador de creación, `persist`).
 - **Cliente API único:** `lib/apiClient.ts` — token **solo en cookie httpOnly** (nunca en `localStorage`; P13); en 401 intenta `POST /auth/refresh` una vez y reintenta; si falla → limpia sesión y redirige a `/login?redirectTo=...`. Incluye `uploadFile()` para FormData.
 - **Debounce de filtros:** `hooks/useDebounce.ts` (300 ms) en páginas de listado (inventario, cotizaciones admin/vendedor, cobranza, catálogo); el valor crudo se usa para el filtro local inmediato y el debounced para la consulta HTTP.
-- **PDF:** fetch directo con cookies/Bearer en `cotizacionApi.ts` (polling 202 descrito en el flujo backend), no pasa por `apiClient`.
+- **PDF y CSV:** apiFetch utiliza /api, cookies y renovación compartida de sesión. PDF conserva polling 202 y timeout de 45 s.
 
 ---
 
 ## Microservicio IA (`apps/ai-service`)
 
-- FastAPI + uvicorn (`:8000`), pool `psycopg2` a Postgres.
-- **TF-IDF en memoria** (scikit-learn, stop-words español, ngrams 1-2) + `cosine_similarity`.
-- Endpoints: `GET /health`, `POST /suggest` (buckets `similar` / `upsell` / `equilibrio`), `POST /admin/refresh-cache`.
+- FastAPI + uvicorn (`:8000`), conexiones `psycopg2` con cierre garantizado a Postgres.
+- **TF-IDF en memoria** (scikit-learn, ngrams 1-2, publicación atómica de catálogo y matriz) + `cosine_similarity`.
+- Endpoints: `GET /health`, `POST /suggest` (buckets `similar` / `upsell` / `equilibrio`), `POST /refresh-cache`.
 - Consumido por `HttpAiService` (Nest) con fallback a **mock**.
 - **No es paquete pnpm**, pero sí integrado en el dev: `pnpm dev` lo orquesta junto a API/web (sonda a `:8000/health`, opcional con fallback mock) y `pnpm dev:ai` lo arranca solo (`scripts/dev-ai.js`, venv local o PATH).
 - **Env resuelta:** el código lee `AI_SERVICE_URL || IA_URL` (fallback a `localhost:8000`) y compose inyecta `AI_SERVICE_URL=http://ai-service:8000`.

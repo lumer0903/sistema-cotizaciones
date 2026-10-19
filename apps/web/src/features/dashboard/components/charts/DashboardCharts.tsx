@@ -1,5 +1,7 @@
 'use client';
 
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
+
 import {
   BarChart,
   Bar,
@@ -17,22 +19,22 @@ import {
 } from 'recharts';
 import type { PuntoMensual, ConteoPorEstado } from '../../types/dashboard';
 
-const AXIS_TICK = { fontSize: 12, fill: '#6e6e6e', fontFamily: 'Inter, system-ui, sans-serif' };
+const AXIS_TICK = { fontSize: 12, fill: 'var(--color-brand-options)', fontFamily: 'var(--font-sans)' };
 const TOOLTIP_STYLE = {
-  backgroundColor: '#fff',
-  border: '1px solid #e4e4e7',
+  backgroundColor: 'var(--color-surface)',
+  border: '1px solid var(--color-border-default)',
   borderRadius: '0.75rem',
   fontSize: 12,
-  fontFamily: 'Inter, system-ui, sans-serif',
+  fontFamily: 'var(--font-sans)',
   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
 };
 
 export const ESTADO_COLORS: Record<string, string> = {
-  borrador: '#a1a1aa',
-  enviada: '#1f41af',
-  aprobada: '#0dc300',
-  rechazada: '#7b1c1c',
-  parcialmente_pagada: '#f8b602',
+  borrador: 'var(--color-status-borrador-text)',
+  enviada: 'var(--color-status-enviado)',
+  aprobada: 'var(--color-status-aprobado)',
+  rechazada: 'var(--color-status-rechazado)',
+  parcialmente_pagada: 'var(--color-status-advertencia-text)',
 };
 
 const ESTADO_LABELS: Record<string, string> = {
@@ -51,7 +53,7 @@ const formatSoles = (v: unknown) => {
 
 export function CotizadoVsVendidoChart({
   data,
-  accent = '#f8b602',
+  accent = 'var(--color-accent-primary)',
 }: {
   data: PuntoMensual[];
   accent?: string;
@@ -59,7 +61,7 @@ export function CotizadoVsVendidoChart({
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-surface-muted)" vertical={false} />
         <XAxis
           dataKey="mes"
           tick={AXIS_TICK}
@@ -90,7 +92,7 @@ export function CotizadoVsVendidoChart({
         <Bar
           dataKey="vendido"
           name="Vendido"
-          fill="#0dc300"
+          fill="var(--color-status-aprobado)"
           radius={[6, 6, 0, 0]}
           maxBarSize={40}
         />
@@ -101,7 +103,7 @@ export function CotizadoVsVendidoChart({
 
 export function CotizadoVsVendidoArea({
   data,
-  accent = '#f8b602',
+  accent = 'var(--color-accent-primary)',
 }: {
   data: PuntoMensual[];
   accent?: string;
@@ -115,11 +117,11 @@ export function CotizadoVsVendidoArea({
             <stop offset="95%" stopColor={accent} stopOpacity={0} />
           </linearGradient>
           <linearGradient id="gradVendido" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#0dc300" stopOpacity={0.35} />
-            <stop offset="95%" stopColor="#0dc300" stopOpacity={0} />
+            <stop offset="5%" stopColor="var(--color-status-aprobado)" stopOpacity={0.35} />
+            <stop offset="95%" stopColor="var(--color-status-aprobado)" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-surface-muted)" vertical={false} />
         <XAxis
           dataKey="mes"
           tick={AXIS_TICK}
@@ -152,7 +154,7 @@ export function CotizadoVsVendidoArea({
           type="monotone"
           dataKey="vendido"
           name="Vendido"
-          stroke="#0dc300"
+          stroke="var(--color-status-aprobado)"
           strokeWidth={2.5}
           fill="url(#gradVendido)"
         />
@@ -218,7 +220,7 @@ export function EstadoDonutChart({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 6,
-                  color: ESTADO_COLORS[estado] ?? '#6e6e6e',
+                  color: ESTADO_COLORS[estado] ?? 'var(--color-brand-options)',
                 }}
               >
                 <span
@@ -226,7 +228,7 @@ export function EstadoDonutChart({
                     width: 10,
                     height: 10,
                     borderRadius: '50%',
-                    backgroundColor: ESTADO_COLORS[estado] ?? '#6e6e6e',
+                    backgroundColor: ESTADO_COLORS[estado] ?? 'var(--color-brand-options)',
                     display: 'inline-block',
                   }}
                 />
@@ -248,7 +250,7 @@ export function EstadoBarChart({
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-surface-muted)" vertical={false} />
         <XAxis
           dataKey="estado"
           tick={AXIS_TICK}
@@ -265,7 +267,7 @@ export function EstadoBarChart({
         />
         <Tooltip
           contentStyle={TOOLTIP_STYLE}
-          cursor={{ fill: '#f1f5f9' }}
+          cursor={{ fill: 'var(--color-surface-muted)' }}
           // @ts-expect-error Recharts formatter
           formatter={(value: number) => [value, 'Cotizaciones']}
           // @ts-expect-error Recharts labelFormatter
@@ -273,7 +275,7 @@ export function EstadoBarChart({
         />
         <Bar dataKey="cantidad" radius={[6, 6, 0, 0]} maxBarSize={40}>
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={ESTADO_COLORS[entry.estado] ?? '#6e6e6e'} />
+            <Cell key={`cell-${index}`} fill={ESTADO_COLORS[entry.estado] ?? 'var(--color-brand-options)'} />
           ))}
         </Bar>
       </BarChart>
@@ -283,7 +285,7 @@ export function EstadoBarChart({
 
 export function AlertasPorAlmacenChart({
   data,
-  accent = '#f8b602',
+  accent = 'var(--color-accent-primary)',
 }: {
   data: Array<{ almacen: string; cantidad: number }>;
   accent?: string;
@@ -291,7 +293,7 @@ export function AlertasPorAlmacenChart({
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }} layout="vertical">
-        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-surface-muted)" horizontal={false} />
         <XAxis
           type="number"
           tick={AXIS_TICK}
@@ -338,15 +340,15 @@ export function VentasPorTipoChart({
       <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
         <defs>
           <linearGradient id="gradMayorista" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#d97706" stopOpacity={0.9} />
-            <stop offset="95%" stopColor="#d97706" stopOpacity={0.2} />
+            <stop offset="5%" stopColor="var(--color-role-distribuidor)" stopOpacity={0.9} />
+            <stop offset="95%" stopColor="var(--color-role-distribuidor)" stopOpacity={0.2} />
           </linearGradient>
           <linearGradient id="gradMinorista" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#1e40af" stopOpacity={0.9} />
-            <stop offset="95%" stopColor="#1e40af" stopOpacity={0.2} />
+            <stop offset="5%" stopColor="var(--color-role-tienda)" stopOpacity={0.9} />
+            <stop offset="95%" stopColor="var(--color-role-tienda)" stopOpacity={0.2} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-surface-muted)" vertical={false} />
         <XAxis
           dataKey="mes"
           tick={AXIS_TICK}
@@ -394,40 +396,38 @@ export function CompactTable({
   rows: Array<Array<React.ReactNode>>;
 }) {
   return (
-    <div className="w-full overflow-x-auto rounded-lg border border-zinc-100">
-      <table className="w-full text-sm text-zinc-700 tnum" role="table">
-        <thead>
-          <tr className="bg-zinc-50/80 border-b border-zinc-100 uppercase tracking-wider">
+    <Table scrollLabel="Resumen del dashboard">
+        <TableHeader>
+          <TableRow className="bg-zinc-50/80 border-b border-zinc-100 uppercase tracking-wider">
             {headers.map((h, i) => (
-              <th
+              <TableHead
                 key={i}
                 className="py-3 px-4 text-[11px] font-semibold text-zinc-500 text-left"
                 style={{ minWidth: i === 1 ? '200px' : '100px' }}
               >
                 {h}
-              </th>
+              </TableHead>
             ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-zinc-100">
+          </TableRow>
+        </TableHeader>
+        <TableBody className="divide-y divide-zinc-100">
           {rows.map((row, rowIndex) => (
-            <tr
+            <TableRow
               key={rowIndex}
               className="transition-colors hover:bg-zinc-50/50"
             >
               {row.map((cell, cellIndex) => (
-                <td
+                <TableCell
                   key={cellIndex}
                   className="py-2.5 px-4 align-middle"
                   style={{ minWidth: cellIndex === 1 ? '200px' : '100px' }}
                 >
                   {cell}
-                </td>
+                </TableCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </TableBody>
+      </Table>
   );
 }

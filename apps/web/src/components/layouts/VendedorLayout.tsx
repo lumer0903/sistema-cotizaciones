@@ -35,7 +35,7 @@ export function VendedorLayout({ children }: { children: React.ReactNode }) {
   }, [sidebarOpen, setSidebarOpen]);
 
   return (
-    <div className="min-h-screen flex bg-zinc-50 text-zinc-900" data-role={usuario?.rol}>
+    <div className="min-h-screen flex bg-zinc-50 text-zinc-900" data-theme="vendedor">
       {/* Skip link: primer elemento enfocable para navegación por teclado */}
       <a
         href="#contenido-principal"

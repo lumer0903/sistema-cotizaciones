@@ -120,7 +120,7 @@ export function CotizacionEditarLoader() {
   if (estado === 'cargando') {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-24 text-zinc-500">
-        <Loader2 className="size-6 animate-spin text-brand-ink" />
+        <Loader2 className="size-6 animate-spin text-accent-ink" />
         <span className="text-xs font-medium">Cargando cotización…</span>
       </div>
     );
@@ -132,7 +132,7 @@ export function CotizacionEditarLoader() {
 
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
-      <TriangleAlert className="size-8 text-brand-ink" />
+      <TriangleAlert className="size-8 text-accent-ink" />
       <p className="text-sm font-bold text-zinc-700">
         {estado === 'no-borrador'
           ? 'Solo se pueden editar cotizaciones en estado BORRADOR.'

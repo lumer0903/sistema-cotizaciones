@@ -37,6 +37,7 @@ try {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  allowedDevOrigins: ['web', 'host.docker.internal'],
   transpilePackages: ['@goldcontinent/shared'],
   // Imagen mínima para producción (Docker/Fly): standalone + assets copiados aparte.
   output: 'standalone',

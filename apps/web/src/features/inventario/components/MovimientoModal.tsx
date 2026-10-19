@@ -1,4 +1,5 @@
 'use client';
+import { useInventoryProducts } from '../useInventoryProducts';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -18,10 +19,10 @@ const MovimientoSchema = z.object({
     id_almacen: z.number().min(1, 'Seleccione un almacén'),
     tipo: z.enum(['entrada', 'salida', 'ajuste']),
     origen: z.enum(['compra', 'venta', 'devolucion_cliente', 'ajuste_fisico', 'merma', 'transferencia', 'cotizacion_aprobada']),
-    cantidad: z.number().min(1, 'La cantidad debe ser mayor a 0'),
+    cantidad: z.number().int('Use unidades enteras').refine(n=>n!==0,'La variación no puede ser cero'),
     costo_unitario: z.number().min(0).optional().nullable(),
     observaciones: z.string().max(500).optional(),
-});
+}).superRefine((data,ctx)=>{if(data.tipo!=='ajuste' && data.cantidad<1)ctx.addIssue({code:'custom',path:['cantidad'],message:'La cantidad debe ser positiva'});});
 
 type MovimientoFormInput = z.infer<typeof MovimientoSchema>;
 
@@ -51,7 +52,7 @@ interface MovimientoModalProps {
 const TIPO_OPTIONS = [
     { label: 'Entrada (+)', value: 'entrada' as const, icon: ArrowDownLeft, color: 'text-estado-aprobado-text' },
     { label: 'Salida (-)', value: 'salida' as const, icon: ArrowUpRight, color: 'text-danger' },
-    { label: 'Ajuste', value: 'ajuste' as const, icon: Minus, color: 'text-brand-ink' },
+    { label: 'Ajuste', value: 'ajuste' as const, icon: Minus, color: 'text-accent-ink' },
 ];
 
 const ORIGEN_OPTIONS: { label: string; value: OrigenMovimiento; allowedTipos: ('entrada' | 'salida' | 'ajuste')[] }[] = [
@@ -60,12 +61,10 @@ const ORIGEN_OPTIONS: { label: string; value: OrigenMovimiento; allowedTipos: ('
     { label: 'Devolución Cliente', value: 'devolucion_cliente', allowedTipos: ['entrada'] },
     { label: 'Ajuste Físico', value: 'ajuste_fisico', allowedTipos: ['ajuste'] },
     { label: 'Merma', value: 'merma', allowedTipos: ['salida'] },
-    { label: 'Transferencia', value: 'transferencia', allowedTipos: ['entrada', 'salida'] },
     { label: 'Cotización Aprobada', value: 'cotizacion_aprobada', allowedTipos: ['salida'] },
 ];
 
 export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccionado, almacenes: almacenesProp }: MovimientoModalProps) {
-    const [productos, setProductos] = useState<ProductoSimple[]>([]);
     const [almacenes, setAlmacenes] = useState<AlmacenSimple[]>([]);
     const [loadingFilters, setLoadingFilters] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,6 +72,8 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
 
     // Buscador con autocompletado (el listbox vive en ProductoSearchField)
     const [searchQuery, setSearchQuery] = useState('');
+    const remote = useInventoryProducts(open, searchQuery, productoPreseleccionado);
+    const productos = remote.productos;
     const [selectedProducto, setSelectedProducto] = useState<ProductoSimple | null>(null);
 
     const {
@@ -122,45 +123,23 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
     }, [open, productoPreseleccionado, resetForm]);
 
     useEffect(() => {
-        if (open) {
-            const fetchFilters = async () => {
-                try {
-                    setLoadingFilters(true);
-                    const almsProp = almacenesProp?.length ? almacenesProp : null;
-                    const [prodRes, almRes] = await Promise.all([
-                        apiClient('/productos?limit=500&include=stock'),
-                        almsProp
-                            ? Promise.resolve({ data: almsProp })
-                            : apiClient('/almacenes?activo=true&limit=100'),
-                    ]);
-                    const prods = (prodRes.data || prodRes.items || []).map((p: any) => ({
-                        id_producto: p.id_producto,
-                        codigo: p.codigo,
-                        descripcion: p.descripcion,
-                        stock_total: p.stock_total || p.stock_actual?.[0]?.cantidad || 0,
-                        stock_actual: p.stock_actual || [],
-                    }));
-                    setProductos(prods);
-                    setAlmacenes(almRes.data || almRes.items || []);
+        if(!open) return;
+        const controller=new AbortController();let current=true;
+        setLoadingFilters(true);
+        const request=almacenesProp?.length ? Promise.resolve({data:almacenesProp})
+          : apiClient('/almacenes?activo=true&limit=100',{signal:controller.signal});
+        request.then(res=>{if(current)setAlmacenes(res.data||[]);})
+          .catch(err=>{if(current)showToast.error(err.message||'No se pudieron cargar almacenes');})
+          .finally(()=>{if(current)setLoadingFilters(false);});
+        return ()=>{current=false;controller.abort();};
+    },[open,almacenesProp]);
+    useEffect(()=>{
+        if(!open || !remote.preselected) return;
+        setSelectedProducto(remote.preselected);
+        setValue('id_producto',remote.preselected.id_producto,{shouldValidate:true});
+        setSearchQuery(formatCode(remote.preselected.codigo));
+    },[open,remote.preselected,setValue]);
 
-                    if (productoPreseleccionado) {
-                        const prod = prods.find((p: ProductoSimple) => p.id_producto === productoPreseleccionado);
-                        if (prod) {
-                            setValue('id_producto', prod.id_producto, { shouldValidate: true });
-                            setSelectedProducto(prod);
-                            setSearchQuery(`${formatCode(prod.codigo)} - ${prod.descripcion}`);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error fetching filters:', error);
-                    showToast.error('No se pudieron cargar productos o almacenes');
-                } finally {
-                    setLoadingFilters(false);
-                }
-            };
-            fetchFilters();
-        }
-    }, [open, productoPreseleccionado, setValue, almacenesProp]);
 
     // Stock real del almacén seleccionado (sólo interesa para salidas).
     useEffect(() => {
@@ -168,7 +147,7 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
             setStockDisponible(null);
             return;
         }
-        const prod = productos.find((p) => p.id_producto === idProducto);
+        const prod = selectedProducto?.id_producto === idProducto ? selectedProducto : null;
         if (!prod) {
             setStockDisponible(null);
             return;
@@ -177,7 +156,7 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
             ? prod.stock_actual.find((s) => s.id_almacen === idAlmacen)?.cantidad ?? 0
             : prod.stock_total;
         setStockDisponible(porAlmacen);
-    }, [idProducto, idAlmacen, tipo, productos]);
+    }, [idProducto, idAlmacen, tipo, selectedProducto]);
 
     useEffect(() => {
         if (tipo === 'entrada') {
@@ -261,6 +240,8 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                     <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
                         <ProductoSearchField
                             productos={productos}
+                            loading={remote.loading}
+                            loadError={remote.error}
                             value={searchQuery}
                             onValueChange={(value) => {
                                 setSearchQuery(value.toUpperCase());
@@ -311,9 +292,9 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                                     type="button"
                                     aria-pressed={isSelected}
                                     onClick={() => setValue('tipo', opt.value)}
-                                    className={`relative rounded-xl border-2 p-3 transition-[border-color,background-color] duration-150 flex flex-col items-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${isSelected
-                                            ? 'border-brand-primary bg-brand-primary/5 shadow-sm'
-                                            : 'border-zinc-200 hover:border-brand-primary/50'
+                                    className={`relative rounded-xl border-2 p-3 transition-[border-color,background-color,transform] duration-150 flex flex-col items-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:scale-[0.96] ${isSelected
+                                            ? 'border-accent-primary bg-accent-primary/5 shadow-sm'
+                                            : 'border-zinc-200 hover:border-accent-primary/50'
                                         }`}
                                 >
                                     <Icon className={`w-5 h-5 ${opt.color}`} aria-hidden="true" />
@@ -344,9 +325,9 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                         </Select>
 
                         <Input
-                            label="Cantidad"
+                            label={tipo === "ajuste" ? "Variación (+ / - unidades)" : "Cantidad"}
                             type="number"
-                            min="1"
+                            min={tipo === "ajuste" ? undefined : "1"}
                             placeholder="Ej: 100"
                             error={errors.cantidad?.message}
                             {...register('cantidad', {

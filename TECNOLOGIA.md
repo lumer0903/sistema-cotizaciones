@@ -1,5 +1,8 @@
 # Tecnología — Gold Continent
 
+> Actualizado el 11/10/2026. Ver [correcciones y validaciones](CORRECCIONES-2026-10-11.md). La API consulta permisos vigentes en cada solicitud; las lecturas de notificaciones pertenecen a cada usuario.
+
+
 > Stack completo del sistema, dependencias clave, scripts y gaps conocidos.
 
 ---
@@ -8,12 +11,12 @@
 
 | Capa | Tecnología | Versión |
 |------|-----------|---------|
-| Monorepo | pnpm + Turborepo | pnpm 9.15 · turbo ^2.3 |
+| Monorepo | pnpm + Turborepo | pnpm 9.15 · turbo ^2.11 |
 | Lenguaje | TypeScript (backend/frontend) · Python (IA) | TS ^5.6 |
 | Backend | NestJS | 11 |
 | Frontend | Next.js (App Router) + React | Next ^16 · React 19 |
 | ORM / BD | Prisma + PostgreSQL | Prisma 5.22 · PG 16 |
-| IA | FastAPI + scikit-learn (TF-IDF) | FastAPI 0.115 · sklearn 1.5.1 |
+| IA | FastAPI + scikit-learn (TF-IDF) | Consultar apps/ai-service/requirements.txt |
 | Colas / Cache | Redis + BullMQ | Redis 7 · cola activa `cotizacion-pdfs` (PDFs) |
 | Storage | MinIO (S3) + storage local | MinIO (buckets `product-images`, `cotizacion-pdfs`) |
 | Auth | JWT (access+refresh) + cookies httpOnly + Passport | passport-jwt 4 |
@@ -126,7 +129,7 @@ pnpm dev:web            # solo Next :3000
 pnpm build              # build turbo de todos
 pnpm lint               # eslint (flat config en apps/api y apps/web)
 pnpm typecheck          # tsc de todos
-pnpm test               # vitest — 112 specs (93 API + 19 web)
+pnpm test               # Vitest de API y web; integración requiere PostgreSQL migrado
 pnpm db:generate        # prisma generate
 pnpm db:push            # sincronizar schema sin migración
 pnpm db:migrate         # migración dev
@@ -159,7 +162,7 @@ Seed: `pnpm --filter=@goldcontinent/database db:seed`.
 | 1 | ~~Sin RolesGuard en API~~ | **Resuelto:** `RolesGuard` por controller (junto a JWT) + `@Roles` en usuarios, categorías, almacenes, dashboard, config PUT |
 | 2 | ~~helmet y rate-limit sin usar~~ | **Resuelto:** `helmet()` global; límite duro 20/15 min solo en `/api/auth/login` + `/api/auth/refresh` (no `/auth/me`), global `RATE_LIMIT_MAX` (default 300/15 min, configurable), CORS aplicado antes de los limiters |
 | 3 | ~~Sin config ESLint~~ | **Resuelto:** flat config (`eslint.config.mjs`) en `apps/api` y `apps/web`; `pnpm lint` verde |
-| 4 | ~~Sin tests~~ | **Resuelto:** 112 specs vitest — 93 API (44 cotizaciones + 14 PDF + 8 integración + 16 RBAC + 5 JWT + 6 rol PDF) + 19 FE (formatters, useDebounce, Button, Badge con jsdom/testing-library) |
+| 4 | Pruebas | Vitest de API y web, integración PostgreSQL y unittest de IA; ver CORRECCIONES-2026-10-11.md. |
 | 5 | ~~Secrets con fallback~~ | **Resuelto:** `jwt.ts` sin fallback (throw si faltan); `load-env.ts` en API y dotenv en `next.config.mjs` |
 | 6 | ~~Mismatch `IA_URL` vs `AI_SERVICE_URL`~~ | **Resuelto:** código lee `AI_SERVICE_URL \|\| IA_URL`; compose inyecta `AI_SERVICE_URL` |
 | 7 | ~~`ai-service` fuera de pnpm~~ | **Resuelto:** `pnpm dev` lo orquesta (venv/PATH + sonda `:8000/health`) y `pnpm dev:ai` existe |

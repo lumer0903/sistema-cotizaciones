@@ -113,65 +113,39 @@ export class UsuariosService {
   }
 
   async update(id: number, data: UpdateUsuarioData, actorId?: number): Promise<UsuarioResponse> {
-    const existing = await this.prisma.usuario.findFirst({
-      where: { id_usuario: id, deleted_at: null },
-      select: { id_usuario: true, email: true, rol: true, activo: true },
-    });
-    if (!existing) throw new NotFoundException('Usuario no encontrado');
-
-    const updateData: any = {};
-
-    if (data.nombre !== undefined) updateData.nombre = data.nombre;
-    if (data.email !== undefined) updateData.email = data.email.toLowerCase();
-    if (data.rol !== undefined) {
-      await this.assertRolValido(data.rol);
-      updateData.rol = data.rol;
-    }
-    if (data.avatar_url !== undefined) {
-      updateData.avatar_url = data.avatar_url === null ? null : this.assertAvatar(data.avatar_url);
-    }
-    if (data.activo !== undefined) {
-      await this.assertCanChangeActivo(id, data.activo, existing, actorId);
-      updateData.activo = data.activo;
-    }
-
-    if (data.password) {
-      updateData.password_hash = await bcrypt.hash(data.password, 10);
-      updateData.refresh_token_hash = null;
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      return (await this.findById(id)) as UsuarioResponse;
-    }
-
+    if (data.rol !== undefined) await this.assertRolValido(data.rol);
+    const password_hash = data.password ? await bcrypt.hash(data.password, 10) : undefined;
     try {
-      return await this.prisma.usuario.update({
-        where: { id_usuario: id },
-        data: updateData,
-        select: USER_SELECT,
+      return await this.prisma.$transaction(async (tx) => {
+        // Un bloqueo común serializa las bajas y cambios de rol de administradores.
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(718221)::text`;
+        const existing = await tx.usuario.findFirst({ where: { id_usuario: id, deleted_at: null } });
+        if (!existing) throw new NotFoundException('Usuario no encontrado');
+        const activo = data.activo ?? existing.activo;
+        const rol = data.rol ?? existing.rol;
+        if (actorId === id && !activo) throw new BadRequestException('No puedes desactivar tu propia cuenta');
+        if (existing.rol === 'admin' && existing.activo && (rol !== 'admin' || !activo)) {
+          const others = await tx.usuario.count({ where: { rol: 'admin', activo: true, deleted_at: null, id_usuario: { not: id } } });
+          if (others === 0) throw new BadRequestException('No se puede quitar el único administrador activo');
+        }
+        const revocar = password_hash !== undefined || rol !== existing.rol || activo !== existing.activo;
+        return tx.usuario.update({ where: { id_usuario: id }, select: USER_SELECT, data: {
+          ...(data.nombre !== undefined ? { nombre: data.nombre } : {}),
+          ...(data.email !== undefined ? { email: data.email.trim().toLowerCase() } : {}),
+          ...(data.avatar_url !== undefined ? { avatar_url: data.avatar_url === null ? null : this.assertAvatar(data.avatar_url) } : {}),
+          rol, activo,
+          ...(password_hash ? { password_hash } : {}),
+          ...(revocar ? { refresh_token_hash: null, session_version: { increment: 1 } } : {}),
+        } });
       });
     } catch (error: any) {
-      if (error.code === 'P2002') {
-        throw new ConflictException('El email ya está registrado');
-      }
+      if (error.code === 'P2002') throw new ConflictException('El email ya está registrado');
       throw error;
     }
   }
 
   async updateActivo(id: number, activo: boolean, actorId?: number): Promise<UsuarioResponse> {
-    const existing = await this.prisma.usuario.findFirst({
-      where: { id_usuario: id, deleted_at: null },
-      select: { id_usuario: true, email: true, rol: true, activo: true },
-    });
-    if (!existing) throw new NotFoundException('Usuario no encontrado');
-
-    await this.assertCanChangeActivo(id, activo, existing, actorId);
-
-    return this.prisma.usuario.update({
-      where: { id_usuario: id },
-      data: { activo },
-      select: USER_SELECT,
-    });
+    return this.update(id, { activo }, actorId);
   }
 
   async getPermisos(id: number): Promise<OverridesPermisos> {
@@ -266,30 +240,4 @@ export class UsuariosService {
     }
   }
 
-  private async assertCanChangeActivo(
-    id: number,
-    activo: boolean,
-    existing: { id_usuario: number; rol: string; activo: boolean },
-    actorId?: number,
-  ): Promise<void> {
-    if (actorId != null && id === actorId && !activo) {
-      throw new BadRequestException('No puedes desactivar tu propia cuenta');
-    }
-
-    if (activo) return;
-
-    if (existing.rol === 'admin' && existing.activo) {
-      const otrosAdmins = await this.prisma.usuario.count({
-        where: {
-          rol: 'admin',
-          activo: true,
-          deleted_at: null,
-          id_usuario: { not: id },
-        },
-      });
-      if (otrosAdmins === 0) {
-        throw new BadRequestException('No se puede desactivar el único administrador activo');
-      }
-    }
-  }
 }

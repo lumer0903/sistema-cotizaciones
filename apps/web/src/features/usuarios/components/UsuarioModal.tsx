@@ -203,7 +203,7 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-brand-primary text-on-brand flex items-center justify-center border-2 border-white hover:bg-brand-hover transition-colors"
+                className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-accent-primary text-on-accent flex items-center justify-center border-2 border-white hover:bg-accent-hover transition-colors"
                 title="Cambiar foto"
                 aria-label="Cambiar foto"
               >
@@ -217,7 +217,7 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="text-xs font-semibold text-brand-ink hover:underline"
+                  className="text-xs font-semibold text-accent-ink hover:underline"
                 >
                   Cambiar foto
                 </button>

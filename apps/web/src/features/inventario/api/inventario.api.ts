@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/apiClient';
-import { Producto } from '@/types';
+import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
+import { mapToProductoInventario, ProductoAPI } from '../mappers';
 import {
     FiltrosInventario,
     FiltrosMovimientos,
@@ -18,7 +19,7 @@ export type {
 
 export interface ProductosPaginadosResponse {
     success: true;
-    data: Producto[];
+    data: ProductoInventario[];
     total: number;
     page: number;
     limit: number;
@@ -112,7 +113,7 @@ export interface AlertaStockResponse {
     id_almacen: number;
     stock_actual: number;
     stock_minimo: number;
-    estado: 'activa' | 'resuelta';
+    estado: 'activa' | 'reconocida' | 'resuelta';
     reconocida_at: string | null;
     created_at: string;
     producto?: {
@@ -130,6 +131,9 @@ export interface AlertaStockResponse {
 export interface AlertasStockResponse {
     success: true;
     data: AlertaStockResponse[];
+    total: number;
+    page: number;
+    limit: number;
 }
 
 export interface TransferenciaResponse {
@@ -151,16 +155,9 @@ export const inventarioApi = {
         return apiClient<ProductosPaginadosResponse>(endpoint);
     },
 
-    obtenerPorId: async (id: string | number): Promise<Producto> => {
-        return apiClient(`/productos/${id}?include=precios,categoria,stock`);
-    },
-
-    actualizarStock: async (id: string | number, stock: number): Promise<Producto> => {
-        return apiClient(`/inventario/${id}/stock`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ stock }),
-        });
+    obtenerPorId: async (id: string | number): Promise<ProductoInventario> => {
+        const res=await apiClient<{data:ProductoAPI}>('/productos/'+id+'?include=precios,categoria,stock');
+        return mapToProductoInventario(res.data);
     },
 
     obtenerMovimientos: async (filtros?: FiltrosMovimientos): Promise<PaginatedMovimientosResponse> => {
@@ -203,7 +200,8 @@ export const inventarioApi = {
             fecha_fin?: string;
             page?: number;
             limit?: number;
-        }
+        },
+        signal?: AbortSignal,
     ): Promise<PaginatedKardexResponse> => {
         const params = new URLSearchParams();
         if (filtros?.id_almacen) params.set('id_almacen', String(filtros.id_almacen));
@@ -217,77 +215,27 @@ export const inventarioApi = {
         const endpoint = queryString
             ? `/inventario/kardex/${idProducto}?${queryString}`
             : `/inventario/kardex/${idProducto}`;
-        return apiClient<PaginatedKardexResponse>(endpoint);
-    },
-
-    exportarKardexCSV: async (
-        idProducto: number,
-        filtros?: {
-            id_almacen?: number;
-            tipo?: 'entrada' | 'salida' | 'ajuste' | 'transferencia';
-            origen?: string;
-            fecha_inicio?: string;
-            fecha_fin?: string;
-        }
-    ): Promise<Blob> => {
-        const params = new URLSearchParams();
-        if (filtros?.id_almacen) params.set('id_almacen', String(filtros.id_almacen));
-        if (filtros?.tipo) params.set('tipo', filtros.tipo);
-        if (filtros?.origen) params.set('origen', filtros.origen);
-        if (filtros?.fecha_inicio) params.set('fecha_inicio', filtros.fecha_inicio);
-        if (filtros?.fecha_fin) params.set('fecha_fin', filtros.fecha_fin);
-        params.set('page', '1');
-        params.set('limit', '10000');
-        const queryString = params.toString();
-        const endpoint = `/inventario/kardex/${idProducto}/export?${queryString}`;
-
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-        const basePath = baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl;
-        const cleanEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
-
-        const isBrowser = typeof window !== 'undefined';
-        const getTokenFromCookies = (): string | null => {
-            if (!isBrowser) return null;
-            const match = document.cookie.match(/(?:^|; )accessToken=([^;]*)/);
-            return match ? decodeURIComponent(match[1]) : null;
-        };
-        const cookieToken = getTokenFromCookies();
-        // Sin localStorage: el JWT vive sólo en cookies (auditoría P13).
-        const token = cookieToken?.trim() || null;
-
-        const headers: HeadersInit = {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        };
-
-        const response = await fetch(`${basePath}${cleanEndpoint}`, {
-            method: 'GET',
-            headers,
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Error al exportar kardex');
-        }
-
-        return response.blob();
+        return apiClient<PaginatedKardexResponse>(endpoint, { signal });
     },
 
     obtenerStockActual: async (filtros?: FiltrosStock): Promise<StockActualPaginatedResponse> => {
         const params = new URLSearchParams();
         if (filtros?.id_producto) params.set('id_producto', String(filtros.id_producto));
         if (filtros?.id_almacen) params.set('id_almacen', String(filtros.id_almacen));
+        if (filtros?.pagina) params.set('page',String(filtros.pagina));
+        if (filtros?.limite) params.set('limit',String(filtros.limite));
         if (filtros?.soloBajoMinimo) params.set('soloBajoMinimo', 'true');
         const endpoint = params.toString() ? `/inventario/stock?${params.toString()}` : '/inventario/stock';
         return apiClient<StockActualPaginatedResponse>(endpoint);
     },
 
-    obtenerAlertasStock: async (estado?: 'activa' | 'resuelta'): Promise<AlertasStockResponse> => {
+    obtenerAlertasStock: async (estado: 'abiertas' | 'activa' | 'reconocida' | 'resuelta' | 'todas' = 'abiertas', page = 1, limit = 20, signal?: AbortSignal): Promise<AlertasStockResponse> => {
         const params = new URLSearchParams();
-        if (estado) params.set('estado', estado);
+        params.set('estado', estado);
+        params.set('page', String(page));
+        params.set('limit', String(limit));
         const endpoint = params.toString() ? `/inventario/alertas?${params.toString()}` : '/inventario/alertas';
-        return apiClient<AlertasStockResponse>(endpoint);
+        return apiClient<AlertasStockResponse>(endpoint, { signal });
     },
 
     reconocerAlerta: async (idAlerta: number): Promise<void> => {

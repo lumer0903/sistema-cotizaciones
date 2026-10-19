@@ -1,5 +1,8 @@
 # Componentes — Frontend (apps/web)
 
+> Actualizado el 11/10/2026. Ver [correcciones y validaciones](CORRECCIONES-2026-10-11.md). La API consulta permisos vigentes en cada solicitud; las lecturas de notificaciones pertenecen a cada usuario.
+
+
 > Inventario de componentes UI, layouts, páginas (App Router), features, hooks y stores.
 
 ---
@@ -90,8 +93,8 @@ app/
 │   ├── dashboard/page.tsx      # KPIs (iconos Package, Users, FileText…)
 │   ├── inventario/page.tsx     # Gestión de inventario (feature)
 │   ├── productos/
-│   │   ├── page.tsx            # Redirect → /admin/inventario
-│   │   └── crear/page.tsx      # Redirect → /admin/inventario
+│   │   ├── page.tsx            # Redirect → /inventario
+│   │   └── crear/page.tsx      # Redirect → /inventario
 │   ├── precios/page.tsx        # Consulta precios + historial
 │   ├── cotizaciones/
 │   │   ├── page.tsx            # Listado "Mis Cotizaciones"

@@ -1,3 +1,5 @@
+import { PricingController } from '../precios/pricing.controller';
+import { PricingService } from '../precios/pricing.service';
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../common/prisma/prisma.module';
 import { MinioModule } from '../../common/storage/minio.module';
@@ -7,8 +9,8 @@ import { ProductosService } from './productos.service';
 
 @Module({
   imports: [PrismaModule, MinioModule, AiModule],
-  controllers: [ProductosController],
-  providers: [ProductosService],
+  controllers: [ProductosController, PricingController],
+  providers: [ProductosService, PricingService],
   exports: [ProductosService],
 })
 export class ProductosModule {}

@@ -14,7 +14,7 @@ export function FormularioHeader({ numeroCotizacion, hayContenido, onLimpiar }: 
   return (
     <div className="flex flex-wrap justify-between items-center w-full gap-2 px-1">
       <div className="flex items-center gap-2.5 min-w-0">
-        <FileText className="w-5 h-5 text-brand-ink" aria-hidden="true" />
+        <FileText className="w-5 h-5 text-accent-ink" aria-hidden="true" />
         <h1 className="text-xl font-black text-zinc-700 tracking-tight truncate">{numeroCotizacion}</h1>
       </div>
 

@@ -1,0 +1,153 @@
+Pager usage is off.
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+INSERT 0 100
+INSERT 0 100
+INSERT 0 1000
+ANALYZE
+ANALYZE
+ANALYZE
+SMALL_CATALOG_100
+                                                           QUERY PLAN                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=9.85..9.97 rows=50 width=17) (actual time=0.364..0.382 rows=50 loops=1)
+   Buffers: local hit=3
+   ->  Sort  (cost=9.85..10.10 rows=100 width=17) (actual time=0.362..0.374 rows=50 loops=1)
+         Sort Key: p.created_at DESC, p.id_producto DESC
+         Sort Method: quicksort  Memory: 32kB
+         Buffers: local hit=3
+         ->  Hash Join  (cost=3.25..6.52 rows=100 width=17) (actual time=0.179..0.251 rows=100 loops=1)
+               Hash Cond: (p.id_producto = a.id_producto)
+               Buffers: local hit=3
+               ->  Seq Scan on qa_products p  (cost=0.00..3.00 rows=100 width=12) (actual time=0.015..0.051 rows=100 loops=1)
+                     Filter: (deleted_at IS NULL)
+                     Buffers: local hit=2
+               ->  Hash  (cost=2.00..2.00 rows=100 width=9) (actual time=0.095..0.096 rows=100 loops=1)
+                     Buckets: 1024  Batches: 1  Memory Usage: 13kB
+                     Buffers: local hit=1
+                     ->  Seq Scan on qa_prices a  (cost=0.00..2.00 rows=100 width=9) (actual time=0.010..0.033 rows=100 loops=1)
+                           Buffers: local hit=1
+ Planning:
+   Buffers: shared hit=75, local hit=21
+ Planning Time: 2.523 ms
+ Execution Time: 0.494 ms
+(21 rows)
+
+SMALL_HISTORY_1000
+                                                                               QUERY PLAN                                                                               
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.28..5.82 rows=50 width=50) (actual time=0.074..0.104 rows=50 loops=1)
+   Buffers: local hit=4
+   ->  Index Scan Backward using qa_history_id_producto_fecha_cambio_idx on qa_history  (cost=0.28..56.26 rows=505 width=50) (actual time=0.071..0.095 rows=50 loops=1)
+         Index Cond: ((id_producto = 1) AND (fecha_cambio >= (now() - '30 days'::interval)))
+         Buffers: local hit=4
+ Planning:
+   Buffers: shared hit=28, local hit=7
+ Planning Time: 3.204 ms
+ Execution Time: 0.595 ms
+(9 rows)
+
+INSERT 0 9900
+INSERT 0 9900
+INSERT 0 99000
+ANALYZE
+ANALYZE
+ANALYZE
+LARGE_CATALOG_10000
+                                                              QUERY PLAN                                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=901.45..901.58 rows=50 width=17) (actual time=13.826..13.836 rows=50 loops=1)
+   Buffers: local hit=4 read=214 written=14
+   ->  Sort  (cost=901.45..926.45 rows=10000 width=17) (actual time=13.824..13.829 rows=50 loops=1)
+         Sort Key: p.created_at DESC, p.id_producto DESC
+         Sort Method: top-N heapsort  Memory: 28kB
+         Buffers: local hit=4 read=214 written=14
+         ->  Hash Join  (cost=319.00..569.26 rows=10000 width=17) (actual time=7.044..12.263 rows=10000 loops=1)
+               Hash Cond: (p.id_producto = a.id_producto)
+               Buffers: local hit=4 read=214 written=14
+               ->  Seq Scan on qa_products p  (cost=0.00..224.00 rows=10000 width=12) (actual time=0.016..2.775 rows=10000 loops=1)
+                     Filter: (deleted_at IS NULL)
+                     Buffers: local hit=2 read=122 written=11
+               ->  Hash  (cost=194.00..194.00 rows=10000 width=9) (actual time=6.722..6.723 rows=10000 loops=1)
+                     Buckets: 16384  Batches: 1  Memory Usage: 558kB
+                     Buffers: local hit=2 read=92 written=3
+                     ->  Seq Scan on qa_prices a  (cost=0.00..194.00 rows=10000 width=9) (actual time=0.014..2.924 rows=10000 loops=1)
+                           Buffers: local hit=2 read=92 written=3
+ Planning:
+   Buffers: shared hit=23, local hit=14 read=15 written=1
+ Planning Time: 7.593 ms
+ Execution Time: 14.377 ms
+(21 rows)
+
+LARGE_PRICE_RANGE_10000
+                                                             QUERY PLAN                                                              
+-------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=562.84..562.97 rows=50 width=17) (actual time=7.075..7.083 rows=50 loops=1)
+   Buffers: local hit=218
+   ->  Sort  (cost=562.84..566.59 rows=1500 width=17) (actual time=7.073..7.077 rows=50 loops=1)
+         Sort Key: p.created_at DESC
+         Sort Method: top-N heapsort  Memory: 28kB
+         Buffers: local hit=218
+         ->  Hash Join  (cost=262.75..513.01 rows=1500 width=17) (actual time=2.619..6.677 rows=1500 loops=1)
+               Hash Cond: (p.id_producto = a.id_producto)
+               Buffers: local hit=218
+               ->  Seq Scan on qa_products p  (cost=0.00..224.00 rows=10000 width=12) (actual time=0.010..2.508 rows=10000 loops=1)
+                     Filter: (deleted_at IS NULL)
+                     Buffers: local hit=124
+               ->  Hash  (cost=244.00..244.00 rows=1500 width=9) (actual time=2.582..2.583 rows=1500 loops=1)
+                     Buckets: 2048  Batches: 1  Memory Usage: 81kB
+                     Buffers: local hit=94
+                     ->  Seq Scan on qa_prices a  (cost=0.00..244.00 rows=1500 width=9) (actual time=0.009..2.193 rows=1500 loops=1)
+                           Filter: ((precio_unidad_normal >= '15'::numeric) AND (precio_unidad_normal <= '17'::numeric))
+                           Rows Removed by Filter: 8500
+                           Buffers: local hit=94
+ Planning:
+   Buffers: local hit=12
+ Planning Time: 0.559 ms
+ Execution Time: 7.264 ms
+(23 rows)
+
+LARGE_HISTORY_100000
+                                                                                 QUERY PLAN                                                                                 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.42..4.93 rows=50 width=50) (actual time=0.063..0.103 rows=50 loops=1)
+   Buffers: local hit=2 read=3
+   ->  Index Scan Backward using qa_history_id_producto_fecha_cambio_idx on qa_history  (cost=0.42..4482.36 rows=49690 width=50) (actual time=0.062..0.095 rows=50 loops=1)
+         Index Cond: ((id_producto = 1) AND (fecha_cambio >= (now() - '30 days'::interval)))
+         Buffers: local hit=2 read=3
+ Planning:
+   Buffers: shared hit=31, local hit=4 read=4 written=1
+ Planning Time: 1.036 ms
+ Execution Time: 0.149 ms
+(9 rows)
+
+LARGE_HISTORY_COUNT_100000
+                                                      QUERY PLAN                                                      
+----------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=3059.22..3059.24 rows=1 width=8) (actual time=40.257..40.259 rows=1 loops=1)
+   Buffers: local hit=2 read=933 written=347
+   ->  Seq Scan on qa_history  (cost=0.00..2935.00 rows=49690 width=0) (actual time=0.015..36.950 rows=49510 loops=1)
+         Filter: ((id_producto = 1) AND (fecha_cambio >= (now() - '30 days'::interval)))
+         Rows Removed by Filter: 50490
+         Buffers: local hit=2 read=933 written=347
+ Planning:
+   Buffers: shared hit=3, local hit=4
+ Planning Time: 0.248 ms
+ Execution Time: 40.333 ms
+(10 rows)
+
+LARGE_HISTORY_OFFSET_40000
+                                                                                   QUERY PLAN                                                                                   
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=3508.33..3512.72 rows=50 width=50) (actual time=16.004..16.037 rows=50 loops=1)
+   Buffers: local hit=1 read=656 written=3
+   ->  Index Scan Backward using qa_history_id_producto_fecha_cambio_idx on qa_history  (cost=0.42..4358.13 rows=49690 width=50) (actual time=0.062..13.543 rows=40050 loops=1)
+         Index Cond: (id_producto = 1)
+         Buffers: local hit=1 read=656 written=3
+ Planning Time: 0.098 ms
+ Execution Time: 16.116 ms
+(7 rows)
+
+ROLLBACK

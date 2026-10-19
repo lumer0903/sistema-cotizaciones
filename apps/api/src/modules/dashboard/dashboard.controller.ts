@@ -1,3 +1,4 @@
+import { Permission } from '../../common/decorators/permission.decorator';
 import { Controller, Get, Query, Req, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
@@ -35,6 +36,7 @@ function extraerFiltros(query: DashboardQueryParams, user?: UsuarioSesion): Filt
 @UseGuards(JwtAuthGuard)
 // Métricas globales cacheadas 30s por usuario (la clave incluye el id de sesión)
 @UseInterceptors(CacheInterceptor)
+@Permission('dashboard')
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}

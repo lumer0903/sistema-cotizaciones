@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 
@@ -45,13 +45,11 @@ export interface AuditoriaIaRow {
 }
 
 function buildWhereRangoFechas(f?: FiltrosReporte, alias = 'c'): Prisma.Sql {
-  if (f?.fechaInicio && f?.fechaFin) {
-    const inicio = new Date(`${f.fechaInicio}T00:00:00`);
-    const fin = new Date(`${f.fechaFin}T23:59:59.999`);
-    if (alias === 'i') return Prisma.sql`AND i.created_at BETWEEN ${inicio} AND ${fin}`;
-    return Prisma.sql`AND c.created_at BETWEEN ${inicio} AND ${fin}`;
-  }
-  return Prisma.empty;
+  const campo = alias === 'i' ? Prisma.sql`i.created_at` : Prisma.sql`c.created_at`;
+  const partes: Prisma.Sql[] = [];
+  if (f?.fechaInicio) partes.push(Prisma.sql`AND ${campo} >= ${new Date(f.fechaInicio + 'T00:00:00-05:00')}`);
+  if (f?.fechaFin) partes.push(Prisma.sql`AND ${campo} <= ${new Date(f.fechaFin + 'T23:59:59.999-05:00')}`);
+  return partes.length ? Prisma.join(partes, ' ') : Prisma.empty;
 }
 
 function buildWhereVendedor(f?: FiltrosReporte, alias = 'c'): Prisma.Sql {
@@ -127,7 +125,7 @@ export class ReportesService {
         { error: error instanceof Error ? error.message : String(error), filtros },
         'Error en getRankingProductos',
       );
-      return { data: [], total: 0 };
+      throw new InternalServerErrorException('No se pudo consultar el reporte');
     }
   }
 
@@ -147,7 +145,7 @@ export class ReportesService {
           SELECT COUNT(DISTINCT c.id_cliente)::bigint AS total
           FROM cotizaciones c
           JOIN clientes cl ON c.id_cliente = cl.id_cliente
-          WHERE c.estado = 'aprobada'
+          WHERE c.estado IN ('enviada', 'aprobada', 'parcialmente_pagada')
             AND c.total > COALESCE((
               SELECT SUM(cp.monto) FROM cotizacion_pagos cp WHERE cp.id_cotizacion = c.id_cotizacion
             ), 0)
@@ -167,16 +165,16 @@ export class ReportesService {
               WHERE COALESCE(c.fecha_vencimiento, (c.created_at + interval '30 days')::timestamp) >= ${hoy} - interval '30 days'
             )::numeric(12,2) AS "d0_30",
             SUM(c.total - COALESCE(cp_sum.monto_pagado, 0)) FILTER (
-              WHERE COALESCE(c.fecha_vencimiento, (c.created_at + interval '30 days')::timestamp) BETWEEN ${hoy} - interval '60 days' AND ${hoy} - interval '31 days'
+              WHERE COALESCE(c.fecha_vencimiento, (c.created_at + interval '30 days')::timestamp) >= ${hoy} - interval '60 days' AND COALESCE(c.fecha_vencimiento, (c.created_at + interval '30 days')::timestamp) < ${hoy} - interval '30 days'
             )::numeric(12,2) AS "d31_60",
             SUM(c.total - COALESCE(cp_sum.monto_pagado, 0)) FILTER (
-              WHERE COALESCE(c.fecha_vencimiento, (c.created_at + interval '30 days')::timestamp) BETWEEN ${hoy} - interval '90 days' AND ${hoy} - interval '61 days'
+              WHERE COALESCE(c.fecha_vencimiento, (c.created_at + interval '30 days')::timestamp) >= ${hoy} - interval '90 days' AND COALESCE(c.fecha_vencimiento, (c.created_at + interval '30 days')::timestamp) < ${hoy} - interval '60 days'
             )::numeric(12,2) AS "d61_90",
             SUM(c.total - COALESCE(cp_sum.monto_pagado, 0)) FILTER (
               WHERE COALESCE(c.fecha_vencimiento, (c.created_at + interval '30 days')::timestamp) < ${hoy} - interval '90 days'
             )::numeric(12,2) AS "d90mas",
-            cl.dias_credito_defecto AS "diasCreditoDefecto",
-            cl.dias_gracia AS "diasGracia"
+            cl."diasCreditoDefecto" AS "diasCreditoDefecto",
+            cl."diasGracia" AS "diasGracia"
           FROM cotizaciones c
           JOIN clientes cl ON c.id_cliente = cl.id_cliente
           LEFT JOIN (
@@ -184,10 +182,10 @@ export class ReportesService {
             FROM cotizacion_pagos
             GROUP BY id_cotizacion
           ) cp_sum ON cp_sum.id_cotizacion = c.id_cotizacion
-          WHERE c.estado = 'aprobada'
+          WHERE c.estado IN ('enviada', 'aprobada', 'parcialmente_pagada')
             AND c.total > COALESCE(cp_sum.monto_pagado, 0)
             ${rango} ${vendedor} ${cliente}
-          GROUP BY cl.id_cliente, cl.nombre, cl.ruc_dni, cl.dias_credito_defecto, cl.dias_gracia
+          GROUP BY cl.id_cliente, cl.nombre, cl.ruc_dni, cl."diasCreditoDefecto", cl."diasGracia"
           ORDER BY "totalPendiente" DESC
           LIMIT ${take} OFFSET ${skip}
         `,
@@ -209,7 +207,7 @@ export class ReportesService {
         { error: error instanceof Error ? error.message : String(error), filtros },
         'Error en getAntiguedadDeuda',
       );
-      return { data: [], total: 0 };
+      throw new InternalServerErrorException('No se pudo consultar el reporte');
     }
   }
 
@@ -266,7 +264,7 @@ export class ReportesService {
         { error: error instanceof Error ? error.message : String(error), filtros },
         'Error en getAuditoriaIa',
       );
-      return { data: [], total: 0 };
+      throw new InternalServerErrorException('No se pudo consultar el reporte');
     }
   }
 }

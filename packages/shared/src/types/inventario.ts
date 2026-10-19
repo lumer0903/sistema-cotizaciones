@@ -4,6 +4,7 @@ import type { Categoria, Almacen } from './database';
 export type { Categoria, Almacen };
 
 export interface ProductoInventario extends Producto {
+  stock_filtrado?: number;
   tipo_flor: string | null;
   material: string | null;
   composicion: string | null;
@@ -128,7 +129,7 @@ export interface AlertaStockResponse {
   id_almacen: number;
   stock_actual: number;
   stock_minimo: number;
-  estado: 'activa' | 'resuelta';
+  estado: 'activa' | 'reconocida' | 'resuelta';
   reconocida_at: Date | null;
   created_at: Date;
   producto?: {

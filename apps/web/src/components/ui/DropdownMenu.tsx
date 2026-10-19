@@ -173,7 +173,7 @@ export const DropdownMenu = ({
                     'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-[background-color,color] duration-150 text-left active:scale-[0.96]',
                     item.danger
                       ? 'text-danger hover:bg-status-rechazado-soft'
-                      : 'text-brand-subtitle hover:bg-zinc-100 hover:text-brand-ink',
+                      : 'text-brand-subtitle hover:bg-zinc-100 hover:text-accent-ink',
                     item.disabled && 'opacity-50 cursor-not-allowed',
                     index === activeIndex && !item.disabled && 'bg-zinc-100'
                   )}

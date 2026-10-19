@@ -34,6 +34,8 @@ export interface FiltrosStock {
     id_producto?: number;
     id_almacen?: number;
     soloBajoMinimo?: boolean;
+    pagina?: number;
+    limite?: number;
 }
 
 export interface MovimientoFormData {

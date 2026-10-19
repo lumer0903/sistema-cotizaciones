@@ -39,7 +39,15 @@
   --color-brand-focus: #c9a962;
   --color-brand-modalFocus: #c9a962;
   /* Anillo de foco: contraste ≥4.5:1 sobre blanco (brand-focus solo da 2.25:1) */
-  --color-focus-ring: #7d5b00;
+  --color-focus-ring: var(--color-accent-ink);
+
+  /* Acento de interfaz según sesión; marca y estados conservan su identidad. */
+  --color-accent-primary: var(--color-brand-primary);
+  --color-accent-hover: var(--color-brand-hover);
+  --color-accent-soft: var(--color-brand-soft);
+  --color-accent-selection: var(--color-brand-selection);
+  --color-accent-ink: var(--color-brand-ink);
+  --color-on-accent: var(--color-on-brand);
 
   /* ── Superficies ── */
   --color-surface: #ffffff;
@@ -103,6 +111,7 @@
 
   /* ── Escala de sombras ── */
   --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-card-hover: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-popover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-modal: 0 25px 50px -12px rgb(0 0 0 / 0.25);
 
@@ -114,19 +123,15 @@
   --z-index-select: 70;
 }
 
-/* ── Variantes por rol (data-role) ── */
-[data-role="admin"] {
-  --color-acento-primario: #F8B602;
-  --color-acento-hover: #E0A300;
-  --color-texto-sobre-acento: #18181B;
+/* El tema vive también en html: los portales heredan la misma paleta. */
+[data-theme="vendedor"] {
+  --color-accent-primary: var(--color-vendedor-primary);
+  --color-accent-hover: var(--color-vendedor-hover);
+  --color-accent-soft: var(--color-vendedor-soft);
+  --color-accent-selection: var(--color-vendedor-soft);
+  --color-accent-ink: var(--color-vendedor-ink);
+  --color-on-accent: var(--color-vendedor-on);
 }
-[data-role="vendedor"],
-[data-role="gerente"] {
-  --color-acento-primario: #7B1C1C;
-  --color-acento-hover: #5F1515;
-  --color-fondo-suave: #F5E8E8;
-}
-/* ── Fin variantes por rol ─────────────────────────────────────────────────── */
 
 * {
   box-sizing: border-box;
@@ -195,6 +200,21 @@ html.modal-open {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Densidad de tabla: normal vs compacto */
+:root {
+  --table-cell-py: 12px; /* py-3 = 12px */
+  --table-cell-px: 16px; /* px-4 = 16px */
+  --table-head-py: 14px; /* py-3.5 = 14px */
+  --table-head-px: 16px; /* px-4 = 16px */
+}
+
+[data-table-density="compact"] {
+  --table-cell-py: 6px; /* py-1.5 = 6px */
+  --table-cell-px: 12px; /* px-3 = 12px */
+  --table-head-py: 8px; /* py-2 = 8px */
+  --table-head-px: 12px; /* px-3 = 12px */
 }
 
 @layer utilities {

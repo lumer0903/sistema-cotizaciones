@@ -45,6 +45,7 @@ function makeExport(cot: CotState) {
   };
   const queue = {
     waitUntilReady: vi.fn(() => Promise.resolve()),
+    getWorkers: vi.fn(async () => [{ id: 'worker-test' }]),
     add: vi.fn(() => Promise.resolve({})),
     getJob: vi.fn(() => Promise.resolve(null)),
   };
@@ -61,6 +62,18 @@ afterEach(() => {
 });
 
 describe('PdfExportService.exportar', () => {
+  it('genera directamente cuando Redis responde pero no existen workers', async () => {
+    const { queue, storage, cotizacionesService } = makeExport(makeCot());
+    queue.getWorkers.mockResolvedValue([]);
+    storage.save.mockResolvedValue({ key: 'pdfs/test.pdf' });
+    const pdfService = { generarPdfBuffer: vi.fn(async () => ({ buffer: Buffer.from('%PDF'), filename: 'COT-001.pdf', hash: 'hash' })) };
+    const prisma = { cotizacion: { update: vi.fn(async () => ({})) } };
+    const service = new PdfExportService(queue as any, storage as any, cotizacionesService as any, pdfService as any, prisma as any);
+    await expect(service.exportar(1)).resolves.toMatchObject({ type: 'buffer', cached: false });
+    expect(pdfService.generarPdfBuffer).toHaveBeenCalledWith(1);
+    expect(queue.add).not.toHaveBeenCalled();
+  });
+
   it('sirve el PDF cacheado cuando el hash no cambió (sin encolar)', async () => {
     const cot = makeCot();
     const hash = computePdfHash(cot);

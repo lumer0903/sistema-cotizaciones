@@ -1,3 +1,4 @@
+import { Permission } from '../../common/decorators/permission.decorator';
 import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
@@ -9,6 +10,7 @@ import type { ClienteResponse, PaginatedClientesResponse } from './clientes.serv
 @ApiTags('Clientes')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@Permission('cotizaciones')
 @Controller('clientes')
 export class ClientesController {
   constructor(private readonly clientesService: ClientesService) {}

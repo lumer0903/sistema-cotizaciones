@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useState, useCallback, ReactNode } from 'react';
 import { UsuarioAutenticado } from '@goldcontinent/shared/auth/rbac';
+import { roleTheme } from '@/lib/roleTheme';
 import { apiClient } from '@/lib/apiClient';
 
 interface AuthContextType {
@@ -33,6 +34,11 @@ function clearRoleCookie() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<UsuarioAutenticado | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useLayoutEffect(() => {
+    document.documentElement.dataset.theme = roleTheme(usuario?.rol);
+    return () => { delete document.documentElement.dataset.theme; };
+  }, [usuario?.rol]);
 
   const loadSession = useCallback(async (): Promise<SessionResult> => {
     // Evitar hacer la petición si no hay cookie de rol (usuario deslogueado)

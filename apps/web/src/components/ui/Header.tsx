@@ -54,7 +54,7 @@ export function Header({ sidebarOpen: controlledOpen, onToggleSidebar }: HeaderP
           src={usuario?.avatar_url}
           nombre={usuario?.nombre || 'US'}
           size="md"
-          className="bg-brand-primary text-brand-ink border-transparent"
+          className="bg-accent-primary text-accent-ink border-transparent"
         />
 
         <button

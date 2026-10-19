@@ -4,16 +4,6 @@
 // host.docker.internal no resuelve desde el navegador del host en Windows).
 const API_PREFIX = '/api';
 
-function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  // Sólo cookies legibles por JS (las httpOnly las envía el navegador solas y
-  // se leen en servidor/middleware). Nunca localStorage: el JWT no debe vivir
-  // en almacenamiento explotable por XSS (auditoría P13).
-  const match = document.cookie.match(/(?:^|; )accessToken=([^;]*)/);
-  const cookieToken = match ? decodeURIComponent(match[1]) : null;
-  return cookieToken?.trim() || null;
-}
-
 function normalizeUrl(endpoint: string): string {
   const withSlash = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   // Prefijo /api una sola vez: si el caller ya lo incluye, no se duplica.
@@ -26,15 +16,20 @@ function isAuthPath(path: string): boolean {
 
 function buildHeaders(options: RequestInit): HeadersInit {
   const isFormData = options.body instanceof FormData;
-  const token = getToken();
   return {
     ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
 }
 
+let refreshInFlight: Promise<void> | null = null;
 async function refreshSession(): Promise<void> {
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = renewSession().finally(() => { refreshInFlight = null; });
+  return refreshInFlight;
+}
+
+async function renewSession(): Promise<void> {
   const response = await fetch(normalizeUrl('/auth/refresh'), {
     method: 'POST',
     credentials: 'include',
@@ -60,22 +55,33 @@ function clearSessionAndRedirect(): void {
   window.location.href = `/login?redirectTo=${redirectUrl}`;
 }
 
-async function parseError(response: Response): Promise<Error> {
+export class ApiError extends Error {
+  constructor(public status: number, message: string) { super(message); this.name='ApiError'; }
+}
+async function parseError(response: Response): Promise<ApiError> {
+  const text = await response.clone().text().catch(()=>'');
+  let body: any;
   try {
-    const errorData = await response.clone().json();
-    // SEGURIDAD: Sanitizar mensaje de error - nunca exponer stack traces internos
-    let message = errorData.message || errorData.error || response.statusText;
-    // Remover posibles rutas de archivo internas del stack trace
-    message = message.replace(/at\s+\w+\s+[\w$<>]+\([^)]*\)/g, 'at internal function');
-    message = message.replace(/^\s+at\s+/m, '');
-    message = message.substring(0, 200); // Limitar longitud
-    return new Error(message || 'API Error');
+    body = JSON.parse(text);
   } catch {
-    return new Error('API Error');
+    body = {};
   }
+  const raw = Array.isArray(body.message) ? body.message.join('; ') : (body.message || body.error);
+  const message = typeof raw === 'string' ? raw : response.statusText || 'Error de API';
+  return new ApiError(response.status, message.slice(0, 200));
+}
+export function apiErrorMessage(error: unknown): string {
+  if(error instanceof ApiError) {
+    if(error.status===400) return error.message;
+    if(error.status===403) return 'No tiene permisos para esta operación';
+    if(error.status===404) return 'El recurso ya no está disponible';
+    if(error.status>=500) return 'El servidor no pudo completar la solicitud. Puede reintentar.';
+    return error.message;
+  }
+  return 'No se pudo conectar con el servidor. Revise la conexión y reintente.';
 }
 
-export async function apiClient<T = any>(path: string, options: RequestInit = {}): Promise<T> {
+export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const url = normalizeUrl(path);
   let response = await fetch(url, {
     ...options,
@@ -93,7 +99,7 @@ export async function apiClient<T = any>(path: string, options: RequestInit = {}
       });
     } catch {
       clearSessionAndRedirect();
-      throw new Error('No autorizado');
+      throw new ApiError(401,'No autorizado');
     }
   }
 
@@ -108,26 +114,15 @@ export async function apiClient<T = any>(path: string, options: RequestInit = {}
     throw await parseError(response);
   }
 
-  if (response.status === 204) return null as T;
+  return response;
+}
 
+export async function apiClient<T = any>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await apiFetch(path, options);
+  if (response.status === 204) return null as T;
   return response.json() as Promise<T>;
 }
 
 export async function uploadFile(path: string, formData: FormData): Promise<any> {
-  const response = await fetch(normalizeUrl(path), {
-    method: 'POST',
-    headers: {
-      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
-    },
-    credentials: 'include' as RequestCredentials,
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw await parseError(response);
-  }
-
-  if (response.status === 204) return null;
-
-  return response.json();
+  return apiClient(path, { method: 'POST', body: formData });
 }

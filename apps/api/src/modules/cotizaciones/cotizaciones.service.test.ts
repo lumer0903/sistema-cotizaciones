@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { describe, it, expect, vi } from 'vitest';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CotizacionesService } from './cotizaciones.service';
@@ -8,7 +9,7 @@ import { RegistrarPagoDto } from './dto/registrar-pago.dto';
 function makeService(ops: { cot?: Record<string, any> | null } = {}) {
   const cot =
     ops.cot === undefined
-      ? { id_cotizacion: 1, estado: 'borrador', subtotal: 40, costo_carreta: 15, total: 55 }
+      ? { id_cotizacion: 1, estado: 'borrador', subtotal: 40, costo_carreta: 15, incluye_carreta: true, total: 55 }
       : ops.cot;
 
   const update = vi.fn().mockResolvedValue({ id_cotizacion: 1 });
@@ -16,8 +17,10 @@ function makeService(ops: { cot?: Record<string, any> | null } = {}) {
   const findUnique = vi.fn().mockResolvedValue(cot);
   const findMany = vi.fn().mockResolvedValue([]);
 
-  const tx = { cotizacion: { update, create } };
+  const pagos = { aggregate: vi.fn().mockResolvedValue({ _sum: { monto: new Prisma.Decimal(0) } }), findMany: vi.fn().mockResolvedValue([]), create: vi.fn() };
+  const tx = { $queryRaw: vi.fn().mockResolvedValue([{ maximo: '0' }]), cotizacion: { update, create, findUnique }, cotizacionPago: pagos };
   const prisma: any = {
+    cotizacionPago: pagos,
     cotizacion: { findUnique, findMany, count: vi.fn().mockResolvedValue(0), update, create },
     $transaction: vi.fn(async (fn: any) => fn(tx)),
   };
@@ -26,7 +29,7 @@ function makeService(ops: { cot?: Record<string, any> | null } = {}) {
   return { service, prisma, update, create, findUnique };
 }
 
-const BASE_COT = { id_cotizacion: 1, estado: 'borrador', subtotal: 40, costo_carreta: 15, total: 55 };
+const BASE_COT = { id_cotizacion: 1, estado: 'borrador', subtotal: 40, costo_carreta: 15, incluye_carreta: true, total: 55 };
 
 describe('cambiarEstado (máquina de transiciones)', () => {
   it('rechaza estado vacío', async () => {
@@ -258,6 +261,19 @@ describe('actualizar (carreta consistente y detalle)', () => {
   });
 });
 
+describe('actualizaciones parciales de carreta', () => {
+  it('cambiar solo costo recalcula el total sin exigir repetir la bandera', async () => {
+    const { service, update }=makeService({cot:BASE_COT});
+    await service.actualizar(1,{costo_carreta:8});
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({costo_carreta:8,total:48})}));
+  });
+  it('un costo enviado con carreta desactivada no se suma al total', async () => {
+    const { service, update }=makeService({cot:{...BASE_COT,incluye_carreta:false,costo_carreta:0,total:40}});
+    await service.actualizar(1,{costo_carreta:8});
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({costo_carreta:0,total:40})}));
+  });
+});
+
 describe('registrarPago (guardrails)', () => {
   it('rechaza pagos en borrador', async () => {
     const { service } = makeService({ cot: { ...BASE_COT, estado: 'borrador' } });
@@ -268,7 +284,7 @@ describe('registrarPago (guardrails)', () => {
 
   it('rechaza monto que excede el saldo', async () => {
     const { service, prisma } = makeService({ cot: { ...BASE_COT, estado: 'enviada', total: 50 } });
-    prisma.cotizacionPago = { findMany: vi.fn().mockResolvedValue([{ monto: 40 }]) };
+    prisma.cotizacionPago.aggregate.mockResolvedValue({ _sum: { monto: new Prisma.Decimal(40) } });
     await expect(
       service.registrarPago(1, { monto: 20, metodo_pago: 'efectivo' }, 1),
     ).rejects.toThrow('excede el saldo');
@@ -278,11 +294,7 @@ describe('registrarPago (guardrails)', () => {
     const { service, prisma, update } = makeService({
       cot: { ...BASE_COT, estado: 'enviada', total: 50 },
     });
-    prisma.cotizacionPago = { findMany: vi.fn().mockResolvedValue([]) };
-    const pagoCreate = vi.fn();
-    prisma.$transaction = vi.fn(async (fn: any) =>
-      fn({ cotizacion: { update }, cotizacionPago: { create: pagoCreate } }),
-    );
+    const pagoCreate = prisma.cotizacionPago.create;
     await service.registrarPago(1, { monto: 50, metodo_pago: 'efectivo' }, 1);
     expect(pagoCreate).toHaveBeenCalled();
     expect(update).toHaveBeenCalledWith({
@@ -292,17 +304,13 @@ describe('registrarPago (guardrails)', () => {
   });
 
   it('pago parcial marca parcialmente_pagada', async () => {
-    const { service, prisma, update } = makeService({
+    const { service, update } = makeService({
       cot: { ...BASE_COT, estado: 'enviada', total: 50 },
     });
-    prisma.cotizacionPago = { findMany: vi.fn().mockResolvedValue([]) };
-    const pagoCreate = vi.fn();
-    prisma.$transaction = vi.fn(async (fn: any) =>
-      fn({ cotizacion: { update }, cotizacionPago: { create: pagoCreate } }),
-    );
+
     await service.registrarPago(
       1,
-      { monto: 20, metodo_pago: 'yape' } as unknown as RegistrarPagoDto,
+      { monto: 20, metodo_pago: 'yape_plin' } as unknown as RegistrarPagoDto,
       1,
     );
     expect(update).toHaveBeenCalledWith({

@@ -182,7 +182,7 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
             {notifications.some(n => !n.leida) && (
               <button
                 onClick={handleMarcarTodos}
-                className="text-[11px] font-medium text-brand-primary hover:text-brand-primary/80 transition-colors"
+                className="text-xs font-medium text-accent-ink hover:text-accent-ink/80 transition-colors"
               >
                 Marcar todas leídas
               </button>
@@ -212,13 +212,13 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
                 onClick={() => setActiveTab(tab.id)}
                 aria-pressed={active}
                 className={`min-h-8 px-2.5 inline-flex items-center gap-1 rounded-md text-xs font-semibold whitespace-nowrap transition-colors ${
-                  active ? 'text-brand-ink bg-brand-soft' : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50'
+                  active ? 'text-accent-ink bg-accent-soft' : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50'
                 }`}
               >
                 {tab.label}
                 {count > 0 && (
                   <span className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
-                    active ? 'bg-brand-primary text-on-brand' : 'bg-zinc-100 text-zinc-600'
+                    active ? 'bg-accent-primary text-on-accent' : 'bg-zinc-100 text-zinc-600'
                   }`}>
                     {count}
                   </span>
@@ -248,10 +248,10 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
                   type="button"
                   onClick={() => handleCardClick(item)}
                   className={`w-full text-left flex items-start gap-2.5 px-4 py-2.5 transition-[background-color] duration-150 group active:scale-[0.96] ${
-                    isUnread ? 'bg-brand-soft/30 hover:bg-brand-soft/60' : 'hover:bg-zinc-50'
+                    isUnread ? 'bg-accent-soft/30 hover:bg-accent-soft/60' : 'hover:bg-zinc-50'
                   }`}
                 >
-                  <span className={`mt-0.5 shrink-0 ${isUnread ? 'text-brand-primary' : 'text-zinc-400'}`}>
+                  <span className={`mt-0.5 shrink-0 ${isUnread ? 'text-accent-primary' : 'text-zinc-400'}`}>
                     {renderIcon(item.tipo)}
                   </span>
                   <span className="flex-1 min-w-0">

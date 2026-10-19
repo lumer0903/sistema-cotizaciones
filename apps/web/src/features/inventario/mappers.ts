@@ -15,6 +15,7 @@ export interface ProductoAPI {
   id_categoria: number | null;
   categoria: { id_categoria: number; nombre_categoria: string } | null;
   stock_total: number;
+  stock_filtrado?: number;
   stock_minimo: number;
   stock_principal: number;
   stock_tacna: number;
@@ -25,7 +26,7 @@ export interface ProductoAPI {
   stock_actual: Array<{
     id_almacen: number;
     cantidad: number;
-    almacen: { id_almacen: number; nombre: string; ubicacion: string | null };
+    almacen: { id_almacen: number; codigo: string; nombre: string; ubicacion: string | null };
   }>;
   precios?: Record<string, unknown> | null;
   precios_actuales?: Record<string, unknown> | null;
@@ -54,6 +55,7 @@ export const mapToProductoInventario = (p: ProductoAPI): ProductoInventario => (
   id_categoria: p.id_categoria,
   categoria: p.categoria,
   stock_total: p.stock_total,
+  stock_filtrado: p.stock_filtrado,
   stock_minimo: p.stock_minimo,
   stock_principal: p.stock_principal,
   foto_url: p.foto_url,
@@ -67,7 +69,7 @@ export const mapToProductoInventario = (p: ProductoAPI): ProductoInventario => (
       updated_at: new Date(),
       almacen: {
         ...s.almacen,
-        codigo: `ALM-${String(s.almacen.id_almacen).padStart(3, '0')}`,
+        codigo: s.almacen.codigo,
         activo: true,
       },
     })) || [],

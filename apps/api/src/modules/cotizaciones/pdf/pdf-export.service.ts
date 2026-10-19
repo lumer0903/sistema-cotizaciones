@@ -93,6 +93,11 @@ export class PdfExportService {
     // Si Redis no responde, fallback a generación en memoria antes del 503.
     try {
       await this.assertColaLista();
+      // Redis puede estar sano aunque ningún proceso consuma la cola.
+      const workers = await this.conTope(this.pdfQueue.getWorkers());
+      if (workers.length === 0 && this.pdfService && this.prisma) {
+        throw new ServiceUnavailableException('Cola PDF sin workers activos');
+      }
 
       await this.conTope(
         this.pdfQueue.add(

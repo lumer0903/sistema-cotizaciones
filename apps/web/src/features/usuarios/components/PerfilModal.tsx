@@ -114,7 +114,7 @@ export function PerfilModal({ open, onClose }: PerfilModalProps) {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-brand-primary text-on-brand border-2 border-white shadow-sm flex items-center justify-center hover:bg-brand-hover transition-colors disabled:opacity-60"
+              className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-accent-primary text-on-accent border-2 border-white shadow-sm flex items-center justify-center hover:bg-accent-hover transition-colors disabled:opacity-60"
               title="Cambiar foto"
               aria-label="Cambiar foto"
             >

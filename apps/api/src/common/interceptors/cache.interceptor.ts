@@ -38,7 +38,7 @@ export class CacheInterceptor implements NestInterceptor {
     }
 
     const userId = req.user?.id_usuario ?? req.user?.id ?? 'anon';
-    const key = `${userId}|${req.originalUrl ?? req.url}`;
+    const key = `${userId}|${req.user?.rol ?? ''}|${JSON.stringify(req.user?.permisos ?? {})}|${req.originalUrl ?? req.url}`;
     const now = Date.now();
 
     const hit = this.store.get(key);

@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { puede, UsuarioAutenticado } from '@goldcontinent/shared/auth/rbac';
+import { alcanceDeDatos, verificarAlcance } from '../../common/utils/alcance.util';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 export type TipoNotificacion =
@@ -24,32 +26,19 @@ interface ConfigNotificaciones {
 /** Días de anticipación para avisar que un pago está por vencer. */
 const DIAS_PAGO_POR_VENCER = 3;
 
-/** Máximo de notificaciones leídas que se conservan como historial por tipo. */
-const HISTORIAL_MAX_POR_TIPO = 10;
-
-/**
- * Notificaciones de la bandeja (campana del navbar).
- *
- * Una notificación vista se marca como "leída" pero NO se elimina: queda en la
- * bandeja como historial (máx. HISTORIAL_MAX_POR_TIPO por tipo).
- *
- * - STOCK_BAJO: alertas de `alertas_stock` con estado 'activa' (no vistas) o
- *   'reconocida' (vistas). Al hacer clic se pasa a 'reconocida'.
- * - COTIZACION_VENCIDA / COBRANZA_PENDIENTE: se derivan de `cotizaciones`; el
- *   estado "vista" se persiste en la tabla `notificaciones_leidas`.
- */
+/** Bandeja filtrada por permisos y propietario; las lecturas pertenecen a cada usuario. */
 @Injectable()
 export class NotificacionesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getNotificaciones(): Promise<NotificacionItem[]> {
+  async getNotificaciones(user: UsuarioAutenticado): Promise<NotificacionItem[]> {
     const cfg = await this.getFlags();
-    const leidas = await this.getLeidasSet();
+    const leidas = await this.getLeidasSet(user.id_usuario);
 
     const [stock, cotizaciones, cobranzas] = await Promise.all([
-      cfg.stockBajo ? this.getAlertasStock() : Promise.resolve([]),
-      cfg.cotizacionesVencidas ? this.getCotizacionesVencidas(leidas) : Promise.resolve([]),
-      cfg.cobranzasPendientes ? this.getCobranzasPendientes(leidas) : Promise.resolve([]),
+      cfg.stockBajo && puede(user, 'productos') ? this.getAlertasStock(leidas) : Promise.resolve([]),
+      cfg.cotizacionesVencidas && puede(user, 'cotizaciones') ? this.getCotizacionesVencidas(leidas, alcanceDeDatos(user)) : Promise.resolve([]),
+      cfg.cobranzasPendientes && puede(user, 'cobranza') ? this.getCobranzasPendientes(leidas, alcanceDeDatos(user)) : Promise.resolve([]),
     ]);
 
     return [...stock, ...cotizaciones, ...cobranzas].sort(
@@ -57,15 +46,15 @@ export class NotificacionesService {
     );
   }
 
-  async marcarTodosComoLeidos(): Promise<{ ok: true }> {
-    const notificaciones = await this.getNotificaciones();
+  async marcarTodosComoLeidos(user: UsuarioAutenticado): Promise<{ ok: true }> {
+    const notificaciones = await this.getNotificaciones(user);
     const noLeidas = notificaciones.filter(n => !n.leida);
     
     for (const n of noLeidas) {
       if (n.tipo === 'STOCK_BAJO') {
-        await this.reconocerAlertaStock(n.data.id_alerta as number);
+        await this.reconocerAlertaStock(n.data.id_alerta as number, user);
       } else if (n.tipo === 'COTIZACION_VENCIDA' || n.tipo === 'COBRANZA_PENDIENTE') {
-        await this.marcarLeida(n.tipo, n.data.id_cotizacion as number);
+        await this.marcarLeida(n.tipo, n.data.id_cotizacion as number, user);
       }
     }
     
@@ -73,26 +62,31 @@ export class NotificacionesService {
   }
 
   /** Marca una alerta de stock como vista (reconocida, no resuelta). */
-  async reconocerAlertaStock(idAlerta: number): Promise<{ ok: true }> {
-    await this.prisma.alertas_stock.update({
-      where: { id_alerta: idAlerta },
-      data: { estado: 'reconocida', reconocida_at: new Date() },
-    });
+  async reconocerAlertaStock(idAlerta: number, user: UsuarioAutenticado): Promise<{ ok: true }> {
+    if (!puede(user, 'productos')) throw new ForbiddenException();
+    const alerta = await this.prisma.alertas_stock.findUnique({ where: { id_alerta: idAlerta } });
+    if (!alerta) throw new NotFoundException('Alerta no encontrada');
+    await this.guardarLectura('STOCK_BAJO', idAlerta, user.id_usuario);
     return { ok: true };
   }
 
-  /** Marca una notificación de cotización/cobranza como vista. */
-  async marcarLeida(tipo: 'COTIZACION_VENCIDA' | 'COBRANZA_PENDIENTE', idReferencia: number): Promise<{ ok: true }> {
-    await this.prisma.notificaciones_leidas.upsert({
-      where: { tipo_id_referencia: { tipo, id_referencia: idReferencia } },
-      create: { tipo, id_referencia: idReferencia },
-      update: {},
-    });
-    await this.podarHistorial(tipo);
+  async marcarLeida(tipo: 'COTIZACION_VENCIDA' | 'COBRANZA_PENDIENTE', idReferencia: number, user: UsuarioAutenticado): Promise<{ ok: true }> {
+    if (!puede(user, tipo === 'COTIZACION_VENCIDA' ? 'cotizaciones' : 'cobranza')) throw new ForbiddenException();
+    const cot = await this.prisma.cotizacion.findUnique({ where: { id_cotizacion: idReferencia }, select: { id_usuario: true } });
+    if (!cot) throw new NotFoundException('Cotización no encontrada');
+    verificarAlcance(alcanceDeDatos(user), cot.id_usuario);
+    await this.guardarLectura(tipo, idReferencia, user.id_usuario);
     return { ok: true };
   }
 
-  private async getAlertasStock(): Promise<NotificacionItem[]> {
+  private async guardarLectura(tipo: string, id_referencia: number, id_usuario: number) {
+    await this.prisma.notificacionLectura.upsert({
+      where: { id_usuario_tipo_id_referencia: { id_usuario, tipo, id_referencia } },
+      create: { id_usuario, tipo, id_referencia }, update: {},
+    });
+  }
+
+  private async getAlertasStock(leidas: Set<string>): Promise<NotificacionItem[]> {
     const alertas = await this.prisma.alertas_stock.findMany({
       where: { estado: { in: ['activa', 'reconocida'] } },
       select: {
@@ -113,7 +107,7 @@ export class NotificacionesService {
       id: `stock_${a.id_alerta}`,
       tipo: 'STOCK_BAJO' as const,
       titulo: 'Stock bajo',
-      leida: a.estado === 'reconocida',
+      leida: leidas.has(this.claveLeida('STOCK_BAJO', a.id_alerta)),
       createdAt: a.created_at.toISOString(),
       data: {
         id_alerta: a.id_alerta,
@@ -127,9 +121,10 @@ export class NotificacionesService {
     }));
   }
 
-  private async getCotizacionesVencidas(leidas: Set<string>): Promise<NotificacionItem[]> {
+  private async getCotizacionesVencidas(leidas: Set<string>, alcance: number | null): Promise<NotificacionItem[]> {
     const vencidas = await this.prisma.cotizacion.findMany({
       where: {
+        ...(alcance === null ? {} : { id_usuario: alcance }),
         estado: 'enviada',
         fecha_vencimiento: { lt: new Date() },
       },
@@ -161,20 +156,22 @@ export class NotificacionesService {
     }));
   }
 
-  private async getCobranzasPendientes(leidas: Set<string>): Promise<NotificacionItem[]> {
+  private async getCobranzasPendientes(leidas: Set<string>, alcance: number | null): Promise<NotificacionItem[]> {
     const hoy = new Date();
     const limite = new Date(hoy);
     limite.setDate(limite.getDate() + DIAS_PAGO_POR_VENCER);
 
     const pendientes = await this.prisma.cotizacion.findMany({
       where: {
-        estado: { in: ['enviada', 'parcialmente_pagada'] },
+        ...(alcance === null ? {} : { id_usuario: alcance }),
+        estado: { in: ['enviada', 'parcialmente_pagada', 'aprobada'] },
         fecha_vencimiento: { lte: limite },
       },
       select: {
         id_cotizacion: true,
         numero: true,
         total: true,
+        pagos: { select: { monto: true } },
         fecha_vencimiento: true,
         created_at: true,
         cliente: { select: { nombre: true } },
@@ -183,7 +180,7 @@ export class NotificacionesService {
       take: 30,
     });
 
-    return pendientes.map((c) => ({
+    return pendientes.filter(c => Number(c.total) > c.pagos.reduce((n, p) => n + Number(p.monto), 0)).map((c) => ({
       id: `cobranza_${c.id_cotizacion}`,
       tipo: 'COBRANZA_PENDIENTE' as const,
       titulo: 'Cobranza por vencer',
@@ -203,25 +200,12 @@ export class NotificacionesService {
     return `${tipo}:${id}`;
   }
 
-  private async getLeidasSet(): Promise<Set<string>> {
-    const filas = await this.prisma.notificaciones_leidas.findMany({
+  private async getLeidasSet(id_usuario: number): Promise<Set<string>> {
+    const filas = await this.prisma.notificacionLectura.findMany({
+      where: { id_usuario },
       select: { tipo: true, id_referencia: true },
     });
     return new Set(filas.map((f) => this.claveLeida(f.tipo, f.id_referencia)));
-  }
-
-  /** Conserva solo las HISTORIAL_MAX_POR_TIPO leídas más recientes por tipo. */
-  private async podarHistorial(tipo: string): Promise<void> {
-    const recientes = await this.prisma.notificaciones_leidas.findMany({
-      where: { tipo },
-      orderBy: { leida_en: 'desc' },
-      take: HISTORIAL_MAX_POR_TIPO,
-      select: { id: true },
-    });
-    const idsConservar = recientes.map((r) => r.id);
-    await this.prisma.notificaciones_leidas.deleteMany({
-      where: { tipo, id: { notIn: idsConservar } },
-    });
   }
 
   private async getFlags(): Promise<ConfigNotificaciones> {

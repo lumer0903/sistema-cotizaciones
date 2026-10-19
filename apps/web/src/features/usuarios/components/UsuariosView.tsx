@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { showToast } from '@/lib/toast';
-import { Select, Button, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Input, Badge, FilterCard } from '@/components/ui';
+import { Select, Button, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Input, Badge, FilterCard, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
 import { UserPlus, Settings, ShieldCheck, Search } from 'lucide-react';
 import { RolesYPermisosView } from '@/features/usuarios/components/RolesYPermisosView';
 import { UsuarioModal } from '@/features/usuarios/components/UsuarioModal';
@@ -48,14 +48,14 @@ export function UsuariosView() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16" role="status" aria-live="polite">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-primary" />
         <span className="sr-only">Cargando usuarios…</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <Tabs value={activeTab} onValueChange={value => setActiveTab(value as TabId)} className="space-y-4">
       {/* Filtros + acción principal (sólo pestaña Usuarios) */}
       {activeTab === 'usuarios' && (
         <FilterCard>
@@ -101,32 +101,13 @@ export function UsuariosView() {
         </FilterCard>
       )}
 
-      {/* Tabs directamente sobre la vista: sin tarjeta envolvente
-          (evita doble borde y scroll horizontal a la derecha) */}
-      <div className="border-b border-zinc-200" role="tablist" aria-label="Secciones de usuarios">
-        <div className="flex" role="presentation">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 sm:px-6 py-3 text-sm border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${activeTab === tab.id
-                  ? 'border-brand-primary text-brand-ink font-bold'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-700 hover:border-zinc-300 font-medium'
-                }`}
-            >
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <TabsList aria-label="Secciones de usuarios" className="w-fit max-w-full overflow-x-auto">
+        {TABS.map(tab => <TabsTrigger key={tab.id} value={tab.id}><tab.icon className="h-4 w-4" />{tab.label}</TabsTrigger>)}
+      </TabsList>
 
-      {activeTab === 'usuarios' ? (
-        /* Único contenedor visual: el Table aporta borde, redondeo y scroll.
-           wrapperClassName reemplaza el rounded-xl/border-zinc-100 por defecto. */
+      <TabsContent value="usuarios">
+        {/* Único contenedor visual: el Table aporta borde, redondeo y scroll.
+           wrapperClassName reemplaza el rounded-xl/border-zinc-100 por defecto. */}
         <Table
           className="text-sm"
           wrapperClassName="rounded-2xl border-zinc-200/80 shadow-sm"
@@ -179,9 +160,8 @@ export function UsuariosView() {
             )}
           </TableBody>
         </Table>
-      ) : (
-        <RolesYPermisosView />
-      )}
+      </TabsContent>
+      <TabsContent value="roles"><RolesYPermisosView /></TabsContent>
 
       {/* Modal de creación/edición de usuario (rol y contraseña persisten vía PATCH /usuarios/:id) */}
       <UsuarioModal
@@ -189,6 +169,6 @@ export function UsuariosView() {
         onClose={() => setUsuarioModalOpen(null)}
         usuario={usuarioModalOpen?.usuario ?? null}
       />
-    </div>
+    </Tabs>
   );
 }

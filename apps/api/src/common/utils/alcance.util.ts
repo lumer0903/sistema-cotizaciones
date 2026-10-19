@@ -26,7 +26,7 @@ export interface UsuarioSesion {
  */
 export function alcanceDeDatos(user?: UsuarioSesion | null): number | null {
   const rol = String(user?.rol ?? '').trim().toLowerCase();
-  if (rol === Rol.admin || rol === 'superadmin') return null;
+  if (rol === Rol.admin || rol === 'superadmin' || rol === Rol.gerente) return null;
 
   const id = Number(user?.id_usuario ?? user?.id ?? user?.sub);
   return Number.isFinite(id) && id > 0 ? id : -1;

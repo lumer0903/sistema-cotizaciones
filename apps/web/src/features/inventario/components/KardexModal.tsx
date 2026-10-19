@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { ArrowUpRight, ArrowDownLeft, RefreshCw, Calendar, Download, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import { showToast } from '@/lib/toast';
@@ -19,7 +19,8 @@ import {
 } from '@/components/ui';
 import { ProductoInventario, Almacen } from '@goldcontinent/shared/types/inventario';
 import { inventarioApi, KardexResponse } from '../api/inventario.api';
-import { apiClient } from '@/lib/apiClient';
+import { apiErrorMessage } from '@/lib/apiClient';
+import { useInventoryProducts } from '../useInventoryProducts';
 import { getImageUrl, handleImageError } from '@/lib/imageUtils';
 import { formatCode, formatText } from '@/lib/formatters';
 import { ProductoSearchField } from './ProductoSearchField';
@@ -45,10 +46,13 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
     const [exportando, setExportando] = useState(false);
 
     const [selectedProducto, setSelectedProducto] = useState<ProductoInventario | null>(producto);
-    const [productos, setProductos] = useState<ProductoInventario[]>([]);
+    const requestRef = useRef<AbortController | null>(null);
+    const [requestError, setRequestError] = useState<string | null>(null);
 
     // Buscador con autocompletado (el listbox vive en ProductoSearchField)
     const [searchQuery, setSearchQuery] = useState('');
+    const remote=useInventoryProducts(open,searchQuery);
+    const productos=remote.productos;
 
     const [prevReset, setPrevReset] = useState({ open, producto });
     if (prevReset.open !== open || prevReset.producto !== producto) {
@@ -68,20 +72,6 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
         }
     }
 
-    useEffect(() => {
-        if (open && !producto && productos.length === 0) {
-            const fetchProds = async () => {
-                try {
-                    const res = await apiClient('/productos?limit=500&include=categoria,stock');
-                    setProductos(res.data || res.items || []);
-                } catch (e) {
-                    console.error('Error fetching productos:', e);
-                }
-            };
-            void fetchProds();
-        }
-    }, [open, producto, productos.length]);
-
     const handleSelectProducto = (prod: ProductoInventario) => {
         setSelectedProducto(prod);
         setSearchQuery(formatCode(prod.codigo));
@@ -96,7 +86,10 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
 
     const fetchKardex = useCallback(async (pageNum: number = 1) => {
         if (!selectedProducto) return;
-        setLoading(true);
+        requestRef.current?.abort();
+        const controller=new AbortController();
+        requestRef.current=controller;
+        setLoading(true);setRequestError(null);setMovimientos([]);
         try {
             const res = await inventarioApi.obtenerKardex(selectedProducto.id_producto, {
                 id_almacen: filtroAlmacen ? Number(filtroAlmacen) : undefined,
@@ -105,15 +98,16 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                 fecha_fin: fechaFin || undefined,
                 page: pageNum,
                 limit,
-            });
+            },controller.signal);
+            if(controller.signal.aborted) return;
             setMovimientos(res.data);
             setTotal(res.total);
             setPage(res.page);
         } catch (error) {
             console.error('Error fetching kardex:', error);
-            showToast.error('Error al cargar el kárdex');
+            if(!controller.signal.aborted){setRequestError(apiErrorMessage(error));setMovimientos([]);setTotal(0);}
         } finally {
-            setLoading(false);
+            if(!controller.signal.aborted)setLoading(false);
         }
     }, [selectedProducto, filtroAlmacen, filtroTipo, fechaInicio, fechaFin, limit]);
 
@@ -130,21 +124,17 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
         if (!selectedProducto) return;
         setExportando(true);
         try {
-            const blob = await inventarioApi.exportarKardexCSV(selectedProducto.id_producto, {
-                id_almacen: filtroAlmacen ? Number(filtroAlmacen) : undefined,
-                tipo: filtroTipo !== 'TODOS' ? filtroTipo as 'entrada' | 'salida' | 'ajuste' | 'transferencia' : undefined,
-                fecha_inicio: fechaInicio || undefined,
-                fecha_fin: fechaFin || undefined,
-            });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `kardex-${formatCode(selectedProducto.codigo)}-${new Date().toISOString().split('T')[0]}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-            showToast.success('Kárdex exportado correctamente');
+            const params=new URLSearchParams();
+            if(filtroAlmacen)params.set('id_almacen',filtroAlmacen);
+            if(filtroTipo!=='TODOS')params.set('tipo',filtroTipo);
+            if(fechaInicio)params.set('fecha_inicio',fechaInicio);
+            if(fechaFin)params.set('fecha_fin',fechaFin);
+            if(fechaInicio && fechaFin && fechaInicio>fechaFin) throw new Error('Rango invertido');
+            const a=document.createElement('a');
+            a.href='/api/inventario/kardex/'+selectedProducto.id_producto+'/export?'+params;
+            a.download='kardex-'+formatCode(selectedProducto.codigo)+'.csv';
+            document.body.appendChild(a);a.click();a.remove();
+            showToast.success('Descarga solicitada');
         } catch (error) {
             console.error('Error exporting kardex:', error);
             showToast.error('Error al exportar el kárdex');
@@ -160,6 +150,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
             };
             void run();
         }
+        return ()=>requestRef.current?.abort();
     }, [open, selectedProducto, fetchKardex, page]);
 
     const renderBadgeTipo = (tipo: string) => {
@@ -233,6 +224,8 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                 {/* Producto analizado */}
                 <ProductoSearchField
                     productos={productos}
+                    loading={remote.loading}
+                    loadError={remote.error}
                     value={searchQuery}
                     onValueChange={(value) => {
                         setSearchQuery(value.toUpperCase());
@@ -310,7 +303,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
 
                 {/* ENCABEZADO RESUMEN DEL PRODUCTO */}
                 {selectedProducto && (
-                    <div className="bg-brand-selection/40 border border-brand-primary/40 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 animate-in fade-in duration-200">
+                    <div className="bg-accent-selection/40 border border-accent-primary/40 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 animate-in fade-in duration-200">
                         <div className="flex items-center gap-3">
                             <div className="w-14 h-14 shrink-0 bg-surface-muted rounded-lg border border-stone-200 flex items-center justify-center overflow-hidden">
                                 {selectedProducto.foto_url ? (
@@ -327,7 +320,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                                 )}
                             </div>
                             <div>
-                                <h4 className="font-bold text-brand-ink text-xl">
+                                <h4 className="font-bold text-accent-ink text-xl">
                                     {formatText(selectedProducto.codigo)}
                                 </h4>
                                 <h4 className="font-medium text-brand-text text-zinc-700 text-sm">
@@ -335,7 +328,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                                 </h4>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 border-t md:border-t-0 md:border-l border-brand-primary/40 pt-2 md:pt-0 md:pl-4">
+                        <div className="flex items-center gap-3 border-t md:border-t-0 md:border-l border-accent-primary/40 pt-2 md:pt-0 md:pl-4">
                             <div className="text-center">
                                 <span className="block text-xs font-bold text-zinc-700 uppercase">Stock Actual</span>
                                 <span className="text-lg font-bold tabular-nums text-estado-aprobado-text">
@@ -355,9 +348,11 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                     </div>
                 ) : loading ? (
                     <div className="p-6 sm:p-8 text-center text-brand-options text-sm animate-pulse">
-                        <RefreshCw className="w-6 h-6 mx-auto mb-2 animate-spin text-brand-ink" />
+                        <RefreshCw className="w-6 h-6 mx-auto mb-2 animate-spin text-accent-ink" />
                         Cargando historial de movimientos del Kárdex...
                     </div>
+                ) : requestError ? (
+                    <div role="alert" className="p-4 text-danger">{requestError}<Button onClick={()=>fetchKardex(page)}>Reintentar</Button></div>
                 ) : movimientos.length === 0 ? (
                     <div className="p-6 sm:p-8 text-center bg-zinc-50/50 rounded-xl border border-dashed border-zinc-300">
                         <p className="text-xs font-semibold text-brand-options">
@@ -387,10 +382,10 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                                         <TableCell className="font-medium text-xs">{renderOrigen(mov.origen, mov.tipo, mov.referencia)}</TableCell>
                                         <TableCell className={`text-right font-bold ${mov.tipo === 'entrada' ? 'text-estado-aprobado-text' :
                                                 mov.tipo === 'salida' ? 'text-danger' :
-                                                    mov.tipo === 'ajuste' ? 'text-brand-ink' :
+                                                    mov.tipo === 'ajuste' ? 'text-accent-ink' :
                                                         'text-estado-enviado'
                                             }`}>
-                                            {mov.tipo === 'entrada' ? `+${mov.cantidad}` : mov.tipo === 'salida' ? `-${mov.cantidad}` : mov.cantidad}
+                                            {mov.tipo === 'entrada' ? `+${mov.cantidad}` : mov.tipo === 'salida' ? `-${mov.cantidad}` : mov.cantidad > 0 ? `+${mov.cantidad}` : mov.cantidad}
                                         </TableCell>
                                         <TableCell className="text-right font-bold text-brand-subtitle">
                                             {mov.stock_posterior} u.

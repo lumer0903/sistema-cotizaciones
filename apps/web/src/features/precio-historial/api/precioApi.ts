@@ -1,102 +1,20 @@
 import { ProductoConsulta } from '../types/precio';
 import { apiClient } from '@/lib/apiClient';
 import { getImageUrl } from '@/lib/imageUtils';
-
-interface ProductoPreciosResponse {
-  id_producto: number;
-  codigo: string;
-  descripcion: string;
-  stock_total?: number;
-  stock_principal?: number;
-  stock_minimo?: number;
-  foto_url?: string;
-  precios?: {
-    precio_unidad_normal: number;
-    precio_docena_normal: number;
-    precio_mayor_normal: number;
-    precio_unidad_dist: number;
-    precio_docena_dist: number;
-    precio_mayor_dist: number;
-  } | null;
+export interface Page<T>{data:T[];total:number;page:number;limit:number;next_cursor?:string|null}
+interface ProductRaw {id_producto:number;codigo:string;descripcion:string;stock_total:number;stock_minimo:number;foto_url?:string;precios:Record<string,string>|null}
+const amount=(v:unknown)=>v===null||v===undefined||!Number.isFinite(Number(v))?null:Number(v);
+export async function getProductosConsulta(params='page=1&limit=8',signal?:AbortSignal):Promise<Page<ProductoConsulta>> {
+ const response=await apiClient<Page<ProductRaw>>('/precios?'+params,{signal});
+ return {...response,data:response.data.map(p=>({id:String(p.id_producto),codigo:p.codigo,descripcion:p.descripcion,
+ stock:p.stock_total,stockMinimo:p.stock_minimo,imagenUrl:getImageUrl(p.foto_url,'200'),
+ precioTienda:{unidad:amount(p.precios?.precio_unidad_normal),docena:amount(p.precios?.precio_docena_normal),mayor:amount(p.precios?.precio_mayor_normal)},
+ precioDistribuidor:{unidad:amount(p.precios?.precio_unidad_dist),docena:amount(p.precios?.precio_docena_dist),mayor:amount(p.precios?.precio_mayor_dist)}}))};
 }
-
-interface ProductosListResponse {
-  success: boolean;
-  data: ProductoPreciosResponse[];
+export interface HistorialPrecioItem {id:number;campoModificado:string;fechaCambio:string;usuario:string;valorAnterior:number;valorNuevo:number;evento:string;motivo:string}
+interface HistoryRaw {id_historial:number;campo_modificado:string;fecha_cambio:string;actor_nombre:string;valor_anterior:string;valor_nuevo:string;evento:string;motivo:string}
+export async function getHistorialPrecios(id:string,params='page=1&limit=20',signal?:AbortSignal):Promise<Page<HistorialPrecioItem>>{
+ const response=await apiClient<Page<HistoryRaw>>('/historial-precios?id_producto='+encodeURIComponent(id)+'&'+params,{signal});
+ return {...response,data:response.data.map(p=>({id:p.id_historial,campoModificado:p.campo_modificado,
+ fechaCambio:p.fecha_cambio,usuario:p.actor_nombre,valorAnterior:Number(p.valor_anterior),valorNuevo:Number(p.valor_nuevo),evento:p.evento,motivo:p.motivo}))};
 }
-
-export const getProductosConsulta = async (): Promise<ProductoConsulta[]> => {
-  const response = await apiClient<ProductosListResponse>(
-    '/productos?include=precios,stock&limit=500'
-  );
-
-  return (response.data ?? []).map((prod) => {
-    const stockTotal = prod.stock_total ?? prod.stock_principal ?? 0;
-
-    return {
-      id: String(prod.id_producto),
-      codigo: prod.codigo || 'S/C',
-      descripcion: prod.descripcion || '',
-      stock: stockTotal,
-      stockMinimo: prod.stock_minimo ?? 10,
-      imagenUrl: getImageUrl(prod.foto_url, '200'),
-      precioDistribuidor: {
-        unidad: Number(prod.precios?.precio_unidad_dist ?? 0),
-        docena: Number(prod.precios?.precio_docena_dist ?? 0),
-        mayor: Number(prod.precios?.precio_mayor_dist ?? 0),
-      },
-      precioTienda: {
-        unidad: Number(prod.precios?.precio_unidad_normal ?? 0),
-        docena: Number(prod.precios?.precio_docena_normal ?? 0),
-        mayor: Number(prod.precios?.precio_mayor_normal ?? 0),
-      },
-    };
-  });
-};
-
-export interface HistorialPrecioItem {
-  id: string | number;
-  campoModificado: string;
-  fechaCambio: string;
-  usuario: string;
-  valorAnterior: number;
-  valorNuevo: number;
-}
-
-interface HistorialPrecioRaw {
-  id_historial?: number;
-  id?: string | number;
-  campo_modificado?: string;
-  campoModificado?: string;
-  fecha_cambio?: string;
-  fechaCambio?: string;
-  usuario_nombre?: string | null;
-  usuario?: { nombre?: string } | string | null;
-  valor_anterior?: number;
-  valorAnterior?: number;
-  valor_nuevo?: number;
-  valorNuevo?: number;
-}
-
-function mapHistorialItem(raw: HistorialPrecioRaw): HistorialPrecioItem {
-  const usuario =
-    typeof raw.usuario === 'string'
-      ? raw.usuario
-      : raw.usuario?.nombre ?? raw.usuario_nombre ?? '—';
-  const fecha = raw.fechaCambio ?? raw.fecha_cambio ?? '';
-  return {
-    id: raw.id ?? raw.id_historial ?? 0,
-    campoModificado: raw.campoModificado ?? raw.campo_modificado ?? '—',
-    fechaCambio: fecha ? new Date(fecha).toLocaleDateString('es-PE') : '—',
-    usuario,
-    valorAnterior: Number(raw.valorAnterior ?? raw.valor_anterior ?? 0),
-    valorNuevo: Number(raw.valorNuevo ?? raw.valor_nuevo ?? 0),
-  };
-}
-
-export const getHistorialPrecios = async (productoId: string | number): Promise<HistorialPrecioItem[]> => {
-  const response = await apiClient<{ success: true; data: HistorialPrecioRaw[] }>(
-    `/historial-precios?id_producto=${productoId}&limit=100`
-  );
-  return (response.data ?? []).map(mapHistorialItem);
-};

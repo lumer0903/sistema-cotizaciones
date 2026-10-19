@@ -56,6 +56,9 @@ services:
     container_name: goldcontinent-api
     environment:
       NODE_ENV: development
+      # Docker Desktop/Windows puede perder eventos del bind mount.
+      TSC_WATCHFILE: DynamicPriorityPolling
+      TSC_WATCHDIRECTORY: DynamicPriorityPolling
       DATABASE_URL: postgresql://goldcontinent:goldcontinent_dev@postgres:5432/goldcontinent?schema=public
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-in-production}
@@ -78,6 +81,12 @@ services:
       RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-600}
     ports:
       - "3001:3001"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health', { signal: AbortSignal.timeout(4000) }).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      start_period: 180s
+      retries: 12
     depends_on:
       postgres:
         condition: service_healthy
@@ -92,8 +101,10 @@ services:
       - ./apps/api:/app/apps/api
       - ./packages:/app/packages
       - /app/apps/api/node_modules
+      - /app/apps/api/dist
       - /app/packages/shared/node_modules
       - /app/packages/database/node_modules
+    command: sh -c "pnpm --filter @goldcontinent/database db:generate && pnpm --filter @goldcontinent/shared build && pnpm --filter @goldcontinent/api dev"
 
   pdf-worker:
     build:
@@ -102,6 +113,9 @@ services:
     container_name: goldcontinent-pdf-worker
     environment:
       NODE_ENV: development
+      # Docker Desktop/Windows puede perder eventos del bind mount.
+      TSC_WATCHFILE: DynamicPriorityPolling
+      TSC_WATCHDIRECTORY: DynamicPriorityPolling
       DATABASE_URL: postgresql://goldcontinent:goldcontinent_dev@postgres:5432/goldcontinent?schema=public
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-in-production}
@@ -132,9 +146,10 @@ services:
       - ./apps/api:/app/apps/api
       - ./packages:/app/packages
       - /app/apps/api/node_modules
+      - /app/apps/api/dist
       - /app/packages/shared/node_modules
       - /app/packages/database/node_modules
-    command: sh -c "pnpm --filter @goldcontinent/shared build && pnpm --filter @goldcontinent/api dev:worker"
+    command: sh -c "pnpm --filter @goldcontinent/database db:generate && pnpm --filter @goldcontinent/shared build && pnpm --filter @goldcontinent/api dev:worker"
 
   web:
     build:
@@ -155,7 +170,8 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     volumes:
       - ./apps/web:/app/apps/web
       - ./packages:/app/packages

@@ -58,11 +58,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   }, [sidebarOpen, setSidebarOpen]);
 
   return (
-    <div className="min-h-screen bg-zinc-50/50 flex font-sans">
+    <div className="min-h-screen bg-zinc-50/50 flex font-sans" data-theme="admin">
       {/* Skip link: primer elemento enfocable para navegación por teclado */}
       <a
         href="#contenido-principal"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-brand-ink focus:text-sm focus:font-bold focus:px-4 focus:py-2.5 focus:rounded-xl focus:shadow-modal focus:border focus:border-border-default"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-accent-ink focus:text-sm focus:font-bold focus:px-4 focus:py-2.5 focus:rounded-xl focus:shadow-modal focus:border focus:border-border-default"
       >
         Saltar al contenido
       </a>

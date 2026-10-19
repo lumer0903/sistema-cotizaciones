@@ -1,8 +1,9 @@
-import { Controller, Get, Query, Req, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Permission } from '../../common/decorators/permission.decorator';
+import { BadRequestException, Controller, Get, Query, Req, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
 import { ReportesService, FiltrosReporte, RankingProductoRow, AntiguedadDeudaRow, AuditoriaIaRow } from './reportes.service';
-import { UsuarioSesion } from '../../common/utils/alcance.util';
+import { alcanceDeDatos, UsuarioSesion } from '../../common/utils/alcance.util';
 import { CacheInterceptor } from '../../common/interceptors/cache.interceptor';
 import { PagingLimitGuard, DEFAULT_TAKE, MAX_TAKE, MAX_SKIP } from '../../common/guards/paging-limit.guard';
 
@@ -34,7 +35,7 @@ function extraerFiltros(query: ReportesQueryParams, user?: UsuarioSesion): Filtr
   return {
     fechaInicio: query.fechaInicio || undefined,
     fechaFin: query.fechaFin || undefined,
-    idVendedor: esAdmin && query.idVendedor ? Number(query.idVendedor) : undefined,
+    idVendedor: alcanceDeDatos(user) ?? (esAdmin && query.idVendedor ? Number(query.idVendedor) : undefined),
     idAlmacen: query.idAlmacen ? Number(query.idAlmacen) : undefined,
     idCliente: query.idCliente ? Number(query.idCliente) : undefined,
     idProducto: query.idProducto ? Number(query.idProducto) : undefined,
@@ -45,6 +46,7 @@ function extraerFiltros(query: ReportesQueryParams, user?: UsuarioSesion): Filtr
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @UseInterceptors(CacheInterceptor)
+@Permission('reportes')
 @Controller('reportes')
 export class ReportesController {
   constructor(private readonly reportesService: ReportesService) {}
@@ -60,7 +62,7 @@ export class ReportesController {
   ): Promise<{ success: true; data: RankingProductoRow[]; total: number; take: number; skip: number }> {
     const validacion = validarFechas(query.fechaInicio, query.fechaFin);
     if (!validacion.ok) {
-      return { success: true, data: [], total: 0, take: Number(query.take) || DEFAULT_TAKE, skip: Number(query.skip) || 0 };
+      throw new BadRequestException(validacion.error);
     }
 
     const filtros = extraerFiltros(query, req.user);
@@ -81,7 +83,7 @@ export class ReportesController {
   ): Promise<{ success: true; data: AntiguedadDeudaRow[]; total: number; take: number; skip: number }> {
     const validacion = validarFechas(query.fechaInicio, query.fechaFin);
     if (!validacion.ok) {
-      return { success: true, data: [], total: 0, take: Number(query.take) || DEFAULT_TAKE, skip: Number(query.skip) || 0 };
+      throw new BadRequestException(validacion.error);
     }
 
     const filtros = extraerFiltros(query, req.user);
@@ -102,7 +104,7 @@ export class ReportesController {
   ): Promise<{ success: true; data: AuditoriaIaRow[]; total: number; take: number; skip: number }> {
     const validacion = validarFechas(query.fechaInicio, query.fechaFin);
     if (!validacion.ok) {
-      return { success: true, data: [], total: 0, take: Number(query.take) || DEFAULT_TAKE, skip: Number(query.skip) || 0 };
+      throw new BadRequestException(validacion.error);
     }
 
     const filtros = extraerFiltros(query, req.user);

@@ -187,10 +187,10 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 bg-brand-primary rounded-xl shadow-md text-on-brand font-bold text-sm tracking-wide
+              className="w-full h-11 bg-accent-primary rounded-xl shadow-md text-on-accent font-bold text-sm tracking-wide
                 flex items-center justify-center gap-2
-                hover:bg-brand-hover active:scale-[0.96] transition-[scale,background-color,box-shadow] duration-150
-                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-primary disabled:active:scale-100
+                hover:bg-accent-hover active:scale-[0.96] transition-[scale,background-color,box-shadow] duration-150
+                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-accent-primary disabled:active:scale-100
                 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
             >
               {loading ? (

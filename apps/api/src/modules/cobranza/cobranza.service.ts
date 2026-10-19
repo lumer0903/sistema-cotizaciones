@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { registrarPagoSeguro, PagoInput } from '../../common/utils/pagos.util';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EstadoCotizacion } from '@goldcontinent/shared/constants/enums';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -269,76 +270,8 @@ export class CobranzaService {
     };
   }
 
-  async registrarPago(
-    idCotizacion: number,
-    data: { monto: number; metodo_pago: string; referencia?: string | null },
-    idUsuario: number,
-    alcance: number | null = null,
-  ): Promise<CobranzaDetalleResponse> {
-    const monto = Number(data?.monto);
-    if (!monto || monto <= 0) {
-      throw new BadRequestException('El monto debe ser mayor a 0');
-    }
-    if (!data?.metodo_pago) {
-      throw new BadRequestException('El metodo_pago es obligatorio');
-    }
-
-    const cot = await this.prisma.cotizacion.findUnique({
-      where: { id_cotizacion: idCotizacion },
-      include: { pagos: { select: { monto: true } } },
-    });
-    if (!cot) throw new NotFoundException('Cotización no encontrada');
-
-    verificarAlcance(
-      alcance,
-      cot.id_usuario,
-      'Cotización no encontrada',
-      'No tienes permiso sobre esta cotización',
-    );
-
-    const estadosValidos: string[] = [
-      EstadoCotizacion.enviada,
-      EstadoCotizacion.aprobada,
-      EstadoCotizacion.parcialmente_pagada,
-    ];
-    if (!estadosValidos.includes(cot.estado)) {
-      throw new BadRequestException(
-        `No se pueden registrar pagos en una cotización en estado "${cot.estado}". Debe estar enviada o aprobada.`,
-      );
-    }
-
-    const total = toNumber(cot.total);
-    const pagado = cot.pagos.reduce((s, p) => s + toNumber(p.monto), 0);
-    const saldo = total - pagado;
-
-    if (monto > saldo + 0.009) {
-      throw new BadRequestException(
-        `El monto (S/ ${monto.toFixed(2)}) excede el saldo pendiente (S/ ${saldo.toFixed(2)})`,
-      );
-    }
-
-    const nuevoPagado = pagado + monto;
-    const nuevoEstado =
-      nuevoPagado >= total - 0.009
-        ? EstadoCotizacion.aprobada
-        : EstadoCotizacion.parcialmente_pagada;
-
-    await this.prisma.$transaction(async (tx) => {
-      await tx.cotizacionPago.create({
-        data: {
-          id_cotizacion: idCotizacion,
-          id_usuario: Number(idUsuario) > 0 ? Number(idUsuario) : null,
-          monto,
-          metodo_pago: data.metodo_pago as any,
-          referencia: data.referencia || null,
-        },
-      });
-      await tx.cotizacion.update({
-        where: { id_cotizacion: idCotizacion },
-        data: { estado: nuevoEstado as any },
-      });
-    });
-
+  async registrarPago(idCotizacion: number, data: PagoInput, idUsuario: number, alcance: number | null = null): Promise<CobranzaDetalleResponse> {
+    await registrarPagoSeguro(this.prisma, idCotizacion, data, idUsuario, alcance);
     return this.findById(idCotizacion, alcance);
   }
 

@@ -20,7 +20,7 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
   ) => (
     <div
       className={cn(
-        'w-full rounded-xl border border-zinc-100 shadow-card overflow-x-auto select-text bg-white',
+        'w-full rounded-xl border border-border-default shadow-card overflow-x-auto select-text bg-surface',
         wrapperClassName
       )}
       role="region"
@@ -51,8 +51,8 @@ export const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeader
     <thead
       ref={ref}
       className={cn(
-        'bg-zinc-50/80 border-b border-zinc-200 uppercase tracking-wider [&_tr]:hover:bg-transparent',
-        sticky && '[&>tr>th]:sticky [&>tr>th]:top-0 [&>tr>th]:z-10 [&>tr>th]:bg-zinc-50',
+        'bg-surface-muted/80 border-b border-border-default uppercase tracking-wider [&_tr]:hover:bg-transparent',
+        sticky && '[&>tr>th]:sticky [&>tr>th]:top-0 [&>tr>th]:z-10 [&>tr>th]:bg-surface-muted',
         className
       )}
       {...props}
@@ -71,7 +71,7 @@ export interface TableBodyProps extends React.HTMLAttributes<HTMLTableSectionEle
 
 export const TableBody = React.forwardRef<HTMLTableSectionElement, TableBodyProps>(
   ({ children, className, ...props }, ref) => (
-    <tbody ref={ref} className={cn('divide-y divide-zinc-100', className)} {...props}>
+    <tbody ref={ref} className={cn('divide-y divide-border-default', className)} {...props}>
       {children}
     </tbody>
   )
@@ -102,8 +102,8 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       tabIndex={onClick ? 0 : undefined}
       role={onClick ? 'button' : undefined}
       className={cn(
-        'group transition-colors duration-150 ease-in-out hover:bg-zinc-50',
-        onClick && 'cursor-pointer',
+        'group transition-colors duration-100 ease-in-out hover:bg-surface-muted/50',
+        onClick && 'cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
         className
       )}
       {...props}
@@ -121,10 +121,17 @@ export interface TableHeadProps extends React.ThHTMLAttributes<HTMLTableCellElem
 }
 
 export const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
-  ({ children, className, ...props }, ref) => (
+  ({ children, className, style, ...props }, ref) => (
     <th
       ref={ref}
-      className={cn('py-3.5 px-4 text-xs font-semibold text-zinc-600 align-middle', className)}
+      className={cn('text-xs font-semibold text-brand-options align-middle', className)}
+      style={{
+        paddingTop: 'var(--table-head-py)',
+        paddingBottom: 'var(--table-head-py)',
+        paddingLeft: 'var(--table-head-px)',
+        paddingRight: 'var(--table-head-px)',
+        ...style,
+      }}
       {...props}
     >
       {children}
@@ -140,8 +147,19 @@ export interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElem
 }
 
 export const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
-  ({ children, className, ...props }, ref) => (
-    <td ref={ref} className={cn('py-3 px-4 align-middle', className)} {...props}>
+  ({ children, className, style, ...props }, ref) => (
+    <td
+      ref={ref}
+      className={cn('align-middle', className)}
+      style={{
+        paddingTop: 'var(--table-cell-py)',
+        paddingBottom: 'var(--table-cell-py)',
+        paddingLeft: 'var(--table-cell-px)',
+        paddingRight: 'var(--table-cell-px)',
+        ...style,
+      }}
+      {...props}
+    >
       {children}
     </td>
   )

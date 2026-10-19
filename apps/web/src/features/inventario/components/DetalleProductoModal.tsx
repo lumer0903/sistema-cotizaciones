@@ -94,7 +94,7 @@ export function DetalleProductoModal({
                         <button
                             type="button"
                             onClick={() => setShowDetails(!showDetails)}
-                            className="flex items-center gap-1.5 text-xs font-bold text-brand-ink hover:text-brand-ink transition-colors mt-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                            className="flex items-center gap-1.5 text-xs font-bold text-accent-ink hover:text-accent-ink transition-colors mt-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                         >
                             {showDetails ? (
                                 <>Ocultar <ChevronUp className="w-3.5 h-3.5" /></>
@@ -104,7 +104,7 @@ export function DetalleProductoModal({
                         </button>
 
                         {/* ESPECIFICACIONES TÉCNICAS DESPLEGABLES */}
-                        <div className={`overflow-hidden transition-[max-height,opacity,margin-top] duration-300 ease-in-out ${showDetails ? 'max-h-[500px] opacity-100 mt-3' : 'max-h-0 opacity-0 mt-0'}`}>
+                        <div className={`overflow-hidden transition-[max-height,opacity,margin-top] duration-300 ease-out ${showDetails ? 'max-h-[500px] opacity-100 mt-3' : 'max-h-0 opacity-0 mt-0'}`}>
                             <div className="bg-zinc-50/80 p-3 rounded-2xl border border-zinc-200/80">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                     <div>
@@ -237,7 +237,7 @@ export function DetalleProductoModal({
                                             className="flex items-center justify-between px-3.5 py-2 bg-white border border-zinc-200/80 rounded-xl"
                                         >
                                             <div className="flex items-center gap-2 min-w-0">
-                                                <Store className="w-4 h-4 text-brand-ink shrink-0" />
+                                                <Store className="w-4 h-4 text-accent-ink shrink-0" />
                                                 <span className="text-xs font-bold text-brand-subtitle truncate">
                                                     {formatText(st.almacen?.nombre || '')}
                                                 </span>

@@ -37,7 +37,7 @@ const XL_STYLES: Record<string, string> = {
   neutral: 'bg-status-borrador outline-brand-options text-status-borrador-text',
   secondary: 'bg-status-borrador outline-brand-options text-status-borrador-text',
   borrador: 'bg-status-borrador outline-brand-options text-status-borrador-text',
-  brand: 'bg-brand-soft outline-brand-primary text-brand-ink',
+  brand: 'bg-accent-soft outline-accent-primary text-accent-ink',
   enviado: 'bg-status-enviado-soft outline-status-enviado text-status-enviado-text',
   aprobado: 'bg-status-aprobado-soft outline-status-aprobado text-status-aprobado-text',
   rechazado: 'bg-status-rechazado-soft outline-status-rechazado text-status-rechazado-text',
@@ -54,7 +54,7 @@ const ESTADO_STYLES: Record<string, string> = {
   tienda: 'bg-role-tienda-soft text-role-tienda border-role-tienda/40',
   distribuidor: 'bg-role-distribuidor-soft text-role-distribuidor border-role-distribuidor/40',
   neutral: 'bg-status-borrador text-status-borrador-text border-brand-options/40',
-  brand: 'bg-brand-soft text-brand-ink border-brand-primary/40',
+  brand: 'bg-accent-soft text-accent-ink border-accent-primary/40',
 };
 
 /** Texto plano (sin fondo ni bordes) — tabla del sistema. */
@@ -66,18 +66,18 @@ const PLAIN_TEXT_STYLES: Record<string, string> = {
   parcial: 'text-amber-700 font-bold uppercase tracking-wide',
   tienda: 'text-role-tienda font-bold uppercase',
   distribuidor: 'text-role-distribuidor font-bold uppercase',
-  vendedor: 'text-emerald-600 font-semibold',
-  gerente: 'text-blue-600 font-semibold',
-  administrador: 'text-amber-600 font-semibold',
+  vendedor: 'text-vendedor-ink font-semibold',
+  gerente: 'text-brand-ink font-semibold',
+  administrador: 'text-brand-ink font-semibold',
   activo: 'text-emerald-600 font-bold uppercase',
   inactivo: 'text-rose-500 font-bold uppercase',
 };
 
 /** Pills con fondo y borde (variantes genéricas). */
 const PILL_STYLES: Record<string, string> = {
-  brand: 'bg-brand-selection text-brand-subtitle border-brand-primary/40',
+  brand: 'bg-accent-selection text-brand-subtitle border-accent-primary/40',
   success: 'bg-status-aprobado-soft text-status-aprobado-text border-status-aprobado/40',
-  warning: 'bg-brand-soft text-brand-subtitle border-brand-primary/40',
+  warning: 'bg-status-advertencia-soft text-status-advertencia-text border-status-advertencia-text/40',
   danger: 'bg-status-rechazado-soft text-status-rechazado-text border-status-rechazado/40',
   neutral: 'bg-status-borrador text-status-borrador-text border-status-borrador',
   secondary: 'bg-status-enviado-soft text-status-enviado-text border-status-enviado/40',

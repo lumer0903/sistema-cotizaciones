@@ -156,7 +156,7 @@ export function ConfiguracionView() {
               type="button"
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${activeTab === tab.id
-                  ? 'border-brand-primary text-brand-ink'
+                  ? 'border-accent-primary text-accent-ink'
                   : 'border-transparent text-zinc-500 hover:text-zinc-700 hover:border-zinc-300'
                 }`}
             >
@@ -223,7 +223,7 @@ export function ConfiguracionView() {
                   <h2 className="text-lg font-semibold text-brand-subtitle">Configuración de Documentos</h2>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <label className="block text-xs font-black uppercase tracking-wider mb-1" style={{ color: 'var(--color-brand-ink)' }}>Moneda</label>
+                      <label className="block text-xs font-black uppercase tracking-wider mb-1" style={{ color: 'var(--color-accent-ink)' }}>Moneda</label>
                       <Select
                         value={config.moneda}
                         onChange={(e) => handleChange('moneda', String(e.target.value))}
@@ -313,7 +313,7 @@ export function ConfiguracionView() {
                           type="checkbox"
                           checked={config.incluir_carreta_default}
                           onChange={(e) => handleChange('incluir_carreta_default', e.target.checked)}
-                          className="h-5 w-5 text-brand-ink border-zinc-300 rounded"
+                          className="h-5 w-5 text-accent-ink border-zinc-300 rounded"
                         />
                         <span className="text-sm font-medium text-zinc-700">Incluir carreta por defecto</span>
                       </label>
@@ -343,7 +343,7 @@ export function ConfiguracionView() {
                             onChange={(e) => handleChange(key as keyof Configuracion, e.target.checked)}
                             className="sr-only peer"
                           />
-                          <div className="w-11 h-6 bg-zinc-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-[transform,background-color] peer-checked:bg-brand-primary"></div>
+                          <div className="w-11 h-6 bg-zinc-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-[transform,background-color] peer-checked:bg-accent-primary peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-accent-primary"></div>
                         </label>
                       </div>
                     ))}
@@ -356,7 +356,7 @@ export function ConfiguracionView() {
                   <h2 className="text-lg font-semibold text-brand-subtitle">Configuración del Sistema</h2>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <label className="block text-xs font-black uppercase tracking-wider mb-1" style={{ color: 'var(--color-brand-ink)' }}>Tema</label>
+                      <label className="block text-xs font-black uppercase tracking-wider mb-1" style={{ color: 'var(--color-accent-ink)' }}>Tema</label>
                       <Select
                         value={config.tema}
                         onChange={(e) => handleChange('tema', String(e.target.value) as 'claro' | 'oscuro' | 'sistema')}
@@ -365,7 +365,7 @@ export function ConfiguracionView() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-black uppercase tracking-wider mb-1" style={{ color: 'var(--color-brand-ink)' }}>Idioma</label>
+                      <label className="block text-xs font-black uppercase tracking-wider mb-1" style={{ color: 'var(--color-accent-ink)' }}>Idioma</label>
                       <Select
                         value={config.idioma}
                         onChange={(e) => handleChange('idioma', String(e.target.value))}
@@ -379,7 +379,7 @@ export function ConfiguracionView() {
                           type="checkbox"
                           checked={config.backup_automatico}
                           onChange={(e) => handleChange('backup_automatico', e.target.checked)}
-                          className="h-5 w-5 text-brand-ink border-zinc-300 rounded"
+                          className="h-5 w-5 text-accent-ink border-zinc-300 rounded"
                         />
                         <span className="text-sm font-medium text-zinc-700">Backup automático diario</span>
                       </label>

@@ -6,6 +6,7 @@ import { CotizacionItem } from '../types/cotizacion';
 import { formatCode } from '@/lib/formatters';
 import { Badge, ESTADO_BADGE, TIPO_CLIENTE_BADGE, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Button } from '@/components/ui';
 import { Can } from '@/components/shared/Can';
+import { cn } from '@/lib/cn';
 
 interface CotizacionesTableProps {
     data: CotizacionItem[];
@@ -13,6 +14,17 @@ interface CotizacionesTableProps {
     onEdit?: (id: string | number) => void;
     onView?: (id: string | number) => void;
 }
+
+// Definición de columnas con anchos fluidos y comportamiento responsive
+const COLUMNS = [
+  { key: 'CODIGO', headerClassName: 'font-semibold', cellClassName: 'min-w-[100px] max-w-[140px] whitespace-nowrap' },
+  { key: 'CLIENTE', headerClassName: '', cellClassName: 'min-w-[160px] max-w-[220px] truncate' },
+  { key: 'TIPO', headerClassName: 'text-center', cellClassName: 'min-w-[80px] max-w-[100px] text-center whitespace-nowrap' },
+  { key: 'FECHA', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[120px] text-center whitespace-nowrap' },
+  { key: 'TOTAL', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[120px] text-center whitespace-nowrap tabular-nums' },
+  { key: 'ESTADO', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[120px] text-center whitespace-nowrap' },
+  { key: 'ACCIONES', headerClassName: 'text-right', cellClassName: 'min-w-[100px] max-w-[120px] text-right sticky right-0' },
+] as const;
 
 export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
     data,
@@ -22,7 +34,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
 }) => {
     if (loading) {
         return (
-            <div className="w-full bg-white rounded-2xl border border-zinc-100 shadow-sm p-12 text-center text-zinc-500 font-sans">
+            <div className="w-full bg-surface rounded-2xl border border-border-default shadow-card p-12 text-center text-brand-options font-sans">
                 Cargando cotizaciones...
             </div>
         );
@@ -30,7 +42,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
 
     if (!data || data.length === 0) {
         return (
-            <div className="w-full bg-white rounded-2xl border border-zinc-100 shadow-sm p-12 text-center text-zinc-500 font-sans">
+            <div className="w-full bg-surface rounded-2xl border border-border-default shadow-card p-12 text-center text-brand-options font-sans">
                 No se encontraron cotizaciones.
             </div>
         );
@@ -40,33 +52,39 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
         <Table>
             <TableHeader>
                 <TableRow>
-                    <TableHead>CODIGO</TableHead>
-                    <TableHead className="w-36">CLIENTE</TableHead>
-                    <TableHead className="w-28 text-center">TIPO</TableHead>
-                    <TableHead className="w-28 text-center">FECHA</TableHead>
-                    <TableHead className="w-28 text-center">TOTAL</TableHead>
-                    <TableHead className="w-32 text-right sticky right-0 bg-zinc-50 shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]">ACCIONES</TableHead>
+                    {COLUMNS.map((col) => (
+                        <TableHead
+                            key={col.key}
+                            className={cn(
+                                col.headerClassName,
+                                col.cellClassName,
+                                col.key === 'ACCIONES' ? 'bg-surface/95 backdrop-blur-sm' : undefined
+                            )}
+                        >
+                            {col.key}
+                        </TableHead>
+                    ))}
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {data.map((item, index) => {
                     const isBorrador = item.estado === 'BORRADOR';
                     /* ESTADO BADGE SEGURO: validar que el estado sea un valor conocido para prevenir XSS */
-                    const safeEstado = item.estado && 
-                      Object.values(ESTADO_BADGE).includes(ESTADO_BADGE[item.estado as keyof typeof ESTADO_BADGE]) 
-                        ? item.estado 
+                    const safeEstado = item.estado &&
+                      Object.values(ESTADO_BADGE).includes(ESTADO_BADGE[item.estado as keyof typeof ESTADO_BADGE])
+                        ? item.estado
                         : 'BORRADOR';
 
                     return (
                         <TableRow key={item.id_cotizacion || item.id || index}>
                             {/* CODIGO */}
-                            <TableCell className="w-36 font-normal text-zinc-600 whitespace-nowrap uppercase">
+                            <TableCell className={cn('font-normal text-zinc-600 uppercase', COLUMNS[0].cellClassName)}>
                                 {formatCode(item.codigo)}
                             </TableCell>
 
                             {/* CLIENTE */}
                             <TableCell
-                                className="min-w-[160px] max-w-[220px] truncate font-light text-zinc-700"
+                                className={cn('font-light text-zinc-700 truncate', COLUMNS[1].cellClassName)}
                                 title={typeof item.cliente === 'string'
                                     ? item.cliente
                                     : (item.cliente as any)?.nombre || (item.cliente as any)?.nombre_cliente || '-'}
@@ -77,31 +95,31 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                             </TableCell>
 
                             {/* TIPO BADGE */}
-                            <TableCell className="w-28 text-center whitespace-nowrap">
+                            <TableCell className={cn('', COLUMNS[2].cellClassName)}>
                                 <Badge variant={TIPO_CLIENTE_BADGE[String(item.tipo).toLowerCase()] ?? 'brand'} size="estado">
                                     {item.tipo}
                                 </Badge>
                             </TableCell>
 
                             {/* FECHA */}
-                            <TableCell className="w-28 text-center font-light text-zinc-700 whitespace-nowrap">
+                            <TableCell className={cn('font-light text-zinc-700', COLUMNS[3].cellClassName)}>
                                 {item.fecha}
                             </TableCell>
 
                             {/* TOTAL */}
-                            <TableCell className="w-28 text-center font-light text-estado-aprobado-text whitespace-nowrap tabular-nums">
+                            <TableCell className={cn('font-light text-estado-aprobado-text tabular-nums', COLUMNS[4].cellClassName)}>
                                 S/{item.total}
                             </TableCell>
 
                             {/* ESTADO BADGE SEGURO */}
-                            <TableCell className="w-28 text-center whitespace-nowrap">
+                            <TableCell className={cn('', COLUMNS[5].cellClassName)}>
                                 <Badge variant={ESTADO_BADGE[safeEstado as keyof typeof ESTADO_BADGE] ?? 'neutral'} size="estado">
                                     {safeEstado === 'PARCIALMENTE_PAGADA' ? 'PARCIAL' : safeEstado}
                                 </Badge>
                             </TableCell>
 
                             {/* ACCIONES */}
-                            <TableCell className="w-32 text-right whitespace-nowrap sticky right-0 bg-white shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]">
+                            <TableCell className={cn('bg-surface/95 backdrop-blur-sm', COLUMNS[6].cellClassName)}>
                                 <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                                     {/* Lápiz (Editar): Activo solo en BORRADOR, protegido con Can */}
                                     <Can modulo="cotizaciones" nivel="edicion">
@@ -110,13 +128,13 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                                             disabled={!isBorrador}
                                             onClick={() => onEdit?.(item.id_cotizacion || item.id)}
                                             className={`min-h-11 min-w-11 p-0 ${isBorrador
-                                                ? 'text-brand-ink hover:text-brand-primary cursor-pointer'
+                                                ? 'text-accent-ink hover:text-accent-primary cursor-pointer'
                                                 : 'text-zinc-300 cursor-not-allowed'}
                                             }`}
                                             title={isBorrador ? 'Editar (borrador)' : 'No editable'}
                                             aria-label={isBorrador ? 'Editar cotización' : 'No editable'}
                                         >
-                                            <Pencil className="w-5 h-5" />
+                                            <Pencil className="w-5 h-5" aria-hidden="true" />
                                         </Button>
                                     </Can>
                                     {/* Ojo (Ver): Protegido con Can nivel lectura */}
@@ -126,13 +144,13 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                                             disabled={isBorrador}
                                             onClick={() => onView?.(item.id_cotizacion || item.id)}
                                             className={`min-h-11 min-w-11 p-0 ${!isBorrador
-                                                ? 'text-brand-ink hover:text-brand-primary cursor-pointer'
+                                                ? 'text-accent-ink hover:text-accent-primary cursor-pointer'
                                                 : 'text-zinc-300 cursor-not-allowed'}
                                             }`}
                                             title={!isBorrador ? 'Ver documento (solo lectura)' : 'No disponible en borrador'}
                                             aria-label={!isBorrador ? 'Ver documento' : 'No disponible en borrador'}
                                         >
-                                            <Eye className="w-5 h-5" />
+                                            <Eye className="w-5 h-5" aria-hidden="true" />
                                         </Button>
                                     </Can>
                                 </div>

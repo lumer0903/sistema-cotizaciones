@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -89,6 +89,7 @@ export default function CobranzaDetallePage() {
   const [monto, setMonto] = useState('');
   const [metodoPago, setMetodoPago] = useState('efectivo');
   const [referencia, setReferencia] = useState('');
+  const intentoPago = useRef<{ datos: string; clave: string } | null>(null);
 
   const fetchCuenta = useCallback(async () => {
     if (!id) return;
@@ -114,7 +115,7 @@ export default function CobranzaDetallePage() {
 
   const handleRegistrarPago = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cuenta) return;
+    if (!cuenta || submitting) return;
     const montoNum = Number(monto);
     if (!montoNum || montoNum <= 0) {
       showToast.warning('Ingrese un monto mayor a 0');
@@ -125,13 +126,17 @@ export default function CobranzaDetallePage() {
       return;
     }
 
+    const datos = JSON.stringify([id, montoNum, metodoPago, referencia]);
+    if (intentoPago.current?.datos !== datos) intentoPago.current = { datos, clave: crypto.randomUUID() };
     setSubmitting(true);
     try {
       await registrarPagoCotizacion(cuenta.id_cotizacion, {
         monto: montoNum,
         metodo_pago: metodoPago,
         referencia: referencia || null,
+        clave_idempotencia: intentoPago.current.clave,
       });
+      intentoPago.current = null;
       showToast.success('Pago registrado correctamente');
       setMonto('');
       setReferencia('');
@@ -146,7 +151,7 @@ export default function CobranzaDetallePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-brand-ink" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent-ink" />
       </div>
     );
   }
@@ -178,7 +183,7 @@ export default function CobranzaDetallePage() {
         </div>
         <Link
           href={`/cotizaciones/detalle/${cuenta.id_cotizacion}`}
-          className="text-sm font-semibold text-brand-ink hover:underline"
+          className="text-sm font-semibold text-accent-ink hover:underline"
           title="Ver documento (solo lectura)"
         >
           Ver cotización
@@ -202,7 +207,7 @@ export default function CobranzaDetallePage() {
           <div className="flex items-center gap-2 text-zinc-500 text-sm mb-2">
             <Clock className="h-4 w-4" /> Saldo
           </div>
-          <p className={`text-2xl font-bold ${saldoCero ? 'text-estado-aprobado-text' : 'text-brand-ink'}`}>
+          <p className={`text-2xl font-bold ${saldoCero ? 'text-estado-aprobado-text' : 'text-accent-ink'}`}>
             S/ {money(saldo)}
           </p>
         </div>
