@@ -1,10 +1,11 @@
 'use client';
+import { IconButton } from '@/components/ui/IconButton';
 
 import React from 'react';
 import { Pencil, Eye } from 'lucide-react';
 import { CotizacionItem } from '../types/cotizacion';
 import { formatCode } from '@/lib/formatters';
-import { Badge, ESTADO_BADGE, TIPO_CLIENTE_BADGE, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Button } from '@/components/ui';
+import { Badge, ESTADO_BADGE, TIPO_CLIENTE_BADGE, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
 import { Can } from '@/components/shared/Can';
 import { cn } from '@/lib/cn';
 
@@ -21,9 +22,9 @@ const COLUMNS = [
   { key: 'CLIENTE', headerClassName: '', cellClassName: 'min-w-[160px] max-w-[220px] truncate' },
   { key: 'TIPO', headerClassName: 'text-center', cellClassName: 'min-w-[80px] max-w-[100px] text-center whitespace-nowrap' },
   { key: 'FECHA', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[120px] text-center whitespace-nowrap' },
-  { key: 'TOTAL', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[120px] text-center whitespace-nowrap tabular-nums' },
+  { key: 'TOTAL', headerClassName: 'text-right', cellClassName: 'min-w-[100px] max-w-[120px] text-right whitespace-nowrap tabular-nums' },
   { key: 'ESTADO', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[120px] text-center whitespace-nowrap' },
-  { key: 'ACCIONES', headerClassName: 'text-right', cellClassName: 'min-w-[100px] max-w-[120px] text-right sticky right-0' },
+  { key: 'ACCIONES', headerClassName: 'text-right', cellClassName: 'min-w-[100px] max-w-[120px] text-right' },
 ] as const;
 
 export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
@@ -58,7 +59,6 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                             className={cn(
                                 col.headerClassName,
                                 col.cellClassName,
-                                col.key === 'ACCIONES' ? 'bg-surface/95 backdrop-blur-sm' : undefined
                             )}
                         >
                             {col.key}
@@ -108,7 +108,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
 
                             {/* TOTAL */}
                             <TableCell className={cn('font-light text-estado-aprobado-text tabular-nums', COLUMNS[4].cellClassName)}>
-                                S/{item.total}
+                                S/ {item.total}
                             </TableCell>
 
                             {/* ESTADO BADGE SEGURO */}
@@ -119,39 +119,15 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                             </TableCell>
 
                             {/* ACCIONES */}
-                            <TableCell className={cn('bg-surface/95 backdrop-blur-sm', COLUMNS[6].cellClassName)}>
+                            <TableCell className={COLUMNS[6].cellClassName}>
                                 <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                                     {/* Lápiz (Editar): Activo solo en BORRADOR, protegido con Can */}
                                     <Can modulo="cotizaciones" nivel="edicion">
-                                        <Button
-                                            variant="ghost"
-                                            disabled={!isBorrador}
-                                            onClick={() => onEdit?.(item.id_cotizacion || item.id)}
-                                            className={`min-h-11 min-w-11 p-0 ${isBorrador
-                                                ? 'text-accent-ink hover:text-accent-primary cursor-pointer'
-                                                : 'text-zinc-300 cursor-not-allowed'}
-                                            }`}
-                                            title={isBorrador ? 'Editar (borrador)' : 'No editable'}
-                                            aria-label={isBorrador ? 'Editar cotización' : 'No editable'}
-                                        >
-                                            <Pencil className="w-5 h-5" aria-hidden="true" />
-                                        </Button>
+                                        <IconButton icon={Pencil} label={isBorrador ? 'Editar cotización' : 'No editable'} onClick={() => onEdit?.(item.id_cotizacion || item.id)} disabled={!isBorrador}  />
                                     </Can>
                                     {/* Ojo (Ver): Protegido con Can nivel lectura */}
                                     <Can modulo="cotizaciones" nivel="lectura">
-                                        <Button
-                                            variant="ghost"
-                                            disabled={isBorrador}
-                                            onClick={() => onView?.(item.id_cotizacion || item.id)}
-                                            className={`min-h-11 min-w-11 p-0 ${!isBorrador
-                                                ? 'text-accent-ink hover:text-accent-primary cursor-pointer'
-                                                : 'text-zinc-300 cursor-not-allowed'}
-                                            }`}
-                                            title={!isBorrador ? 'Ver documento (solo lectura)' : 'No disponible en borrador'}
-                                            aria-label={!isBorrador ? 'Ver documento' : 'No disponible en borrador'}
-                                        >
-                                            <Eye className="w-5 h-5" aria-hidden="true" />
-                                        </Button>
+                                        <IconButton icon={Eye} label={!isBorrador ? 'Ver documento' : 'No disponible en borrador'} onClick={() => onView?.(item.id_cotizacion || item.id)} disabled={isBorrador}  />
                                     </Can>
                                 </div>
                             </TableCell>

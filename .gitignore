@@ -33,8 +33,10 @@ pnpm-debug.log*
 coverage/
 .nyc_output/
 
-# Runtime artifacts (PDFs generados por la API)
+# Runtime artifacts (PDFs generados por la API y almacenamiento persistente)
 apps/api/uploads/
+uploads/
+storage/
 *.pdf
 
 # Playwright

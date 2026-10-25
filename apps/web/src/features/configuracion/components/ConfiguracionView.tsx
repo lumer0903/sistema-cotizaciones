@@ -1,10 +1,12 @@
 'use client';
+import { Checkbox } from '@/components/ui/Checkbox';
 
 import { Settings, Bell, Database, CreditCard, Save, FileText, CheckCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { Card, ConfirmModal, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
 import { showToast } from '@/lib/toast';
 import { getConfiguracion, saveAllConfiguracion } from '@/features/configuracion/api/configApi';
 
@@ -47,6 +49,11 @@ interface Configuracion {
   backup_automatico: boolean;
   tema: 'claro' | 'oscuro' | 'sistema';
   idioma: string;
+  empresa_banco_principal: string;
+  empresa_cuenta_principal: string;
+  empresa_titular_principal: string;
+  empresa_numero_cuenta: string;
+  empresa_numero_interbanciero: string;
 }
 
 const TABS = [
@@ -59,12 +66,7 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id'];
 
-export function ConfiguracionView() {
-  const [loading, setLoading] = useState(true);
-  const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabId>('empresa');
-
-  const [config, setConfig] = useState<Configuracion>({
+const DEFAULT_CONFIG: Configuracion = {
     empresa_nombre: 'Gold Continent SAC',
     empresa_ruc: '20123456789',
     empresa_direccion: 'Av. Principal 123, Lima, Perú',
@@ -87,7 +89,20 @@ export function ConfiguracionView() {
     backup_automatico: false,
     tema: 'sistema',
     idioma: 'es',
-  });
+    empresa_banco_principal: 'BBVA',
+    empresa_cuenta_principal: '123456789012',
+    empresa_titular_principal: 'RAZÓN SOCIAL GOLD CONTINENT',
+    empresa_numero_cuenta: '123456789012',
+    empresa_numero_interbanciero: '012345678901',
+  };
+
+export function ConfiguracionView() {
+  const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabId>('empresa');
+
+  const [config, setConfig] = useState<Configuracion>({ ...DEFAULT_CONFIG });
+  const [resetOpen, setResetOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -148,26 +163,11 @@ export function ConfiguracionView() {
   return (
     <>
       <h1 className="sr-only">Configuración</h1>
-      <div className="border-b border-zinc-200 mb-6 overflow-x-auto">
-        <nav className="flex gap-4" aria-label="Tabs">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${activeTab === tab.id
-                  ? 'border-accent-primary text-accent-ink'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-700 hover:border-zinc-300'
-                }`}
-            >
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 p-4 sm:p-6 font-sans">
+      <Tabs value={activeTab} onValueChange={value => setActiveTab(value as TabId)} className="space-y-4">
+        <TabsList aria-label="Secciones de configuración" className="max-w-full">
+          {TABS.map(tab => <TabsTrigger key={tab.id} value={tab.id}><tab.icon className="h-4 w-4" aria-hidden="true" />{tab.label}</TabsTrigger>)}
+        </TabsList>
+      <TabsContent value={activeTab}><Card className="p-4 sm:p-5">
         {loading ? (
           <div className="animate-pulse space-y-6">
             {[1, 2, 3].map((i) => (
@@ -214,6 +214,32 @@ export function ConfiguracionView() {
                       value={config.empresa_email}
                       onChange={(e) => handleChange('empresa_email', e.target.value)}
                     />
+                    <div className="md:col-span-2">
+                      <Input
+                        label="Banco Principal"
+                        type="text"
+                        value={config.empresa_banco_principal}
+                        onChange={(e) => handleChange('empresa_banco_principal', e.target.value)}
+                      />
+                      <Input
+                        label="Número de Cuenta"
+                        type="text"
+                        value={config.empresa_numero_cuenta}
+                        onChange={(e) => handleChange('empresa_numero_cuenta', e.target.value)}
+                      />
+                      <Input
+                        label="Número Interbanciero"
+                        type="text"
+                        value={config.empresa_numero_interbanciero}
+                        onChange={(e) => handleChange('empresa_numero_interbanciero', e.target.value)}
+                      />
+                      <Input
+                        label="Titular Principal"
+                        type="text"
+                        value={config.empresa_titular_principal}
+                        onChange={(e) => handleChange('empresa_titular_principal', e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -223,8 +249,7 @@ export function ConfiguracionView() {
                   <h2 className="text-lg font-semibold text-brand-subtitle">Configuración de Documentos</h2>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <label className="block text-xs font-black uppercase tracking-wider mb-1" style={{ color: 'var(--color-accent-ink)' }}>Moneda</label>
-                      <Select
+                      <Select label="Moneda"
                         value={config.moneda}
                         onChange={(e) => handleChange('moneda', String(e.target.value))}
                         options={MONEDA_OPTIONS}
@@ -309,11 +334,11 @@ export function ConfiguracionView() {
                     />
                     <div className="md:col-span-2 pt-2">
                       <label className="inline-flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
+                        <Checkbox
+                          
                           checked={config.incluir_carreta_default}
                           onChange={(e) => handleChange('incluir_carreta_default', e.target.checked)}
-                          className="h-5 w-5 text-accent-ink border-zinc-300 rounded"
+                          
                         />
                         <span className="text-sm font-medium text-zinc-700">Incluir carreta por defecto</span>
                       </label>
@@ -331,19 +356,20 @@ export function ConfiguracionView() {
                       { key: 'notificaciones_cotizaciones_vencidas', label: 'Cotizaciones Vencidas', desc: 'Alertar sobre cotizaciones enviadas que ya vencieron' },
                       { key: 'notificaciones_cobranzas_pendientes', label: 'Cobranzas por Vencer', desc: 'Avisar pagos que vencen en los próximos días o ya vencieron' },
                     ].map(({ key, label, desc }) => (
-                      <div key={key} className="flex items-center justify-between p-4 border border-zinc-100 rounded-xl bg-zinc-50/50">
+                      <div key={key} className="flex items-center justify-between p-4 border border-border-default rounded-xl bg-zinc-50/50">
                         <div>
-                          <p className="font-semibold text-zinc-900">{label}</p>
-                          <p className="text-sm text-zinc-500">{desc}</p>
+                          <p className="font-semibold text-brand-subtitle">{label}</p>
+                          <p className="text-sm text-brand-options">{desc}</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
                             type="checkbox"
+                            aria-label={label}
                             checked={config[key as keyof Configuracion] as boolean}
                             onChange={(e) => handleChange(key as keyof Configuracion, e.target.checked)}
                             className="sr-only peer"
                           />
-                          <div className="w-11 h-6 bg-zinc-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-[transform,background-color] peer-checked:bg-accent-primary peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-accent-primary"></div>
+                          <div className="w-11 h-6 bg-zinc-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-[transform,background-color] peer-checked:bg-accent-primary peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-accent-primary"></div>
                         </label>
                       </div>
                     ))}
@@ -356,8 +382,7 @@ export function ConfiguracionView() {
                   <h2 className="text-lg font-semibold text-brand-subtitle">Configuración del Sistema</h2>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <label className="block text-xs font-black uppercase tracking-wider mb-1" style={{ color: 'var(--color-accent-ink)' }}>Tema</label>
-                      <Select
+                      <Select label="Tema"
                         value={config.tema}
                         onChange={(e) => handleChange('tema', String(e.target.value) as 'claro' | 'oscuro' | 'sistema')}
                         options={TEMA_OPTIONS}
@@ -365,8 +390,7 @@ export function ConfiguracionView() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-black uppercase tracking-wider mb-1" style={{ color: 'var(--color-accent-ink)' }}>Idioma</label>
-                      <Select
+                      <Select label="Idioma"
                         value={config.idioma}
                         onChange={(e) => handleChange('idioma', String(e.target.value))}
                         options={IDIOMA_OPTIONS}
@@ -375,25 +399,25 @@ export function ConfiguracionView() {
                     </div>
                     <div className="flex items-center pt-2">
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
+                        <Checkbox
+                          
                           checked={config.backup_automatico}
                           onChange={(e) => handleChange('backup_automatico', e.target.checked)}
-                          className="h-5 w-5 text-accent-ink border-zinc-300 rounded"
+                          
                         />
                         <span className="text-sm font-medium text-zinc-700">Backup automático diario</span>
                       </label>
                     </div>
                   </div>
 
-                  <div className="border-t border-zinc-200 pt-6 mt-6">
-                    <h3 className="text-md font-semibold text-zinc-900 mb-3">Zona de Peligro</h3>
+                  <div className="border-t border-border-default pt-6 mt-6">
+                    <h3 className="text-md font-semibold text-brand-subtitle mb-3">Zona de Peligro</h3>
                     <div className="flex items-center justify-between p-4 bg-estado-rechazado-soft border border-estado-rechazado/30 rounded-xl">
                       <div>
                         <p className="font-semibold text-red-800">Restablecer Configuración</p>
                         <p className="text-sm text-red-600">Volver a los valores por defecto del sistema</p>
                       </div>
-                      <Button variant="danger">
+                      <Button variant="danger" onClick={() => setResetOpen(true)}>
                         Restablecer
                       </Button>
                     </div>
@@ -402,7 +426,7 @@ export function ConfiguracionView() {
               )}
             </div>
 
-            <div className="flex justify-end pt-4 mt-6 border-t border-zinc-100">
+            <div className="flex justify-end pt-4 mt-6 border-t border-border-default">
               <div className="flex items-center gap-3">
                 {saved && (
                   <span className="px-3 py-1 text-sm font-medium bg-estado-aprobado-soft text-estado-aprobado-text rounded-full flex items-center gap-1">
@@ -418,7 +442,9 @@ export function ConfiguracionView() {
             </div>
           </div>
         )}
-      </div>
+      </Card></TabsContent>
+      </Tabs>
+      <ConfirmModal open={resetOpen} onClose={() => setResetOpen(false)} title="Restablecer configuración" message="Se cargarán los valores predeterminados en el formulario. Revisa los datos de la empresa antes de pulsar Guardar cambios." confirmLabel="Cargar valores predeterminados" onConfirm={() => { setConfig({ ...DEFAULT_CONFIG }); setSaved(false); setResetOpen(false); }} />
     </>
   );
 }

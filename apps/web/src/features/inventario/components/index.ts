@@ -1,4 +1,4 @@
-export * from './ColorTags';
+
 export * from './InventarioFilters';
 export * from './InventarioTable';
 export * from './MovimientoModal';

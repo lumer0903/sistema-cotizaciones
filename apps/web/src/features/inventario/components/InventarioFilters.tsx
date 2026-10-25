@@ -8,9 +8,11 @@ import {
   ClipboardList,
   Bell,
   MoreVertical,
+  X
 } from 'lucide-react';
 import { Categoria, Almacen } from '@goldcontinent/shared/types/inventario';
-import { FilterCard } from '@/components/ui/FilterCard';
+import { FilterCard, FilterGrid } from '@/components/ui/FilterCard';
+import { Plus } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
@@ -25,8 +27,6 @@ interface InventarioFiltersProps {
   onCategoriaChange: (value: string) => void;
   selectedUbicacion: string;
   onUbicacionChange: (value: string) => void;
-  selectedActivo: string;
-  onActivoChange: (value: string) => void;
   selectedStockEstado: string;
   onStockEstadoChange: (value: string) => void;
   onAgregarProducto: () => void;
@@ -49,8 +49,6 @@ export function InventarioFilters({
   onCategoriaChange,
   selectedUbicacion,
   onUbicacionChange,
-  selectedActivo,
-  onActivoChange,
   selectedStockEstado,
   onStockEstadoChange,
   onAgregarProducto,
@@ -66,6 +64,13 @@ export function InventarioFilters({
   const metaDisabled = loading || metaLoading;
   const { can } = usePermissions();
   const canEdit = can('productos', 'edicion');
+
+  const tieneFiltrosActivos = Boolean(
+    selectedCategoria ||
+    selectedUbicacion ||
+    selectedStockEstado ||
+    searchValue
+  );
 
   const categoriaOptions = categorias.map((cat) => ({
     label: cat.nombre_categoria,
@@ -138,63 +143,62 @@ export function InventarioFilters({
   ];
 
   return (
-    <FilterCard>
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[minmax(160px,1fr)_repeat(4,minmax(115px,0.65fr))_auto] items-end gap-3 w-full">
+    <FilterCard className="w-full">
+      <FilterGrid>
         {/* BUSCADOR Y FILTROS ALINEADOS A LA BASE */}
-        <div className="contents">
-          {/* BUSCAR */}
-          <div className="min-w-0 sm:col-span-2 xl:col-span-1">
-            <Input
-              label="BUSCAR"
-              icon={<Search className="w-4 h-4" />}
-              placeholder="Buscar..."
-              value={searchValue}
-              onChange={(e) => onSearchChange(e.target.value.toUpperCase())}
-              aria-label="Buscar productos"
-            />
-          </div>
-
-          {/* CATEGORÍA */}
-          <div className="min-w-0">
-            <Select
-              label="CATEGORÍA"
-              value={selectedCategoria}
-              onChange={(e) => onCategoriaChange(String(e.target.value))}
-              options={[{ label: 'Seleccionar', value: '' }, ...categoriaOptions]}
-              disabled={metaDisabled}
-            />
-          </div>
-
-          {/* UBICACIÓN */}
-          <div className="min-w-0">
-            <Select
-              label="UBICACIÓN"
-              value={selectedUbicacion}
-              onChange={(e) => onUbicacionChange(String(e.target.value))}
-              options={[{ label: 'Seleccionar', value: '' }, ...almacenOptions]}
-              disabled={metaDisabled}
-            />
-          </div>
-          {/* ESTADO STOCK */}
-          <div className="min-w-0">
-            <Select
-              label="ESTADO STOCK"
-              value={selectedStockEstado}
-              onChange={(e) => onStockEstadoChange(String(e.target.value))}
-              options={stockEstadoOptions}
-              disabled={metaDisabled}
-            />
-          </div>
+        {/* BUSCAR */}
+        <div className="flex-[1.4] min-w-[200px]">
+          <Input
+            label="BUSCAR"
+            icon={<Search className="w-4 h-4" />}
+            placeholder="Buscar"
+            value={searchValue}
+            onChange={(e) => onSearchChange(e.target.value.toUpperCase())}
+            aria-label="Buscar productos"
+          />
         </div>
 
-        {/* BOTONES Y ACCIONES (MISMA ALTURA EXACTA h-10) */}
-        <div className="flex items-center justify-end gap-2 h-9">
+        {/* CATEGORÍA */}
+        <div className="flex-1 min-w-[150px]">
+          <Select
+            label="CATEGORÍA"
+            value={selectedCategoria}
+            onChange={(e) => onCategoriaChange(String(e.target.value))}
+            options={[{ label: 'Seleccionar', value: '' }, ...categoriaOptions]}
+            disabled={metaDisabled}
+          />
+        </div>
+
+        {/* UBICACIÓN */}
+        <div className="flex-1 min-w-[150px]">
+          <Select
+            label="UBICACIÓN"
+            value={selectedUbicacion}
+            onChange={(e) => onUbicacionChange(String(e.target.value))}
+            options={[{ label: 'Seleccionar', value: '' }, ...almacenOptions]}
+            disabled={metaDisabled}
+          />
+        </div>
+
+        {/* ESTADO STOCK */}
+        <div className="flex-1 min-w-[140px]">
+          <Select
+            label="ESTADO STOCK"
+            value={selectedStockEstado}
+            onChange={(e) => onStockEstadoChange(String(e.target.value))}
+            options={stockEstadoOptions}
+            disabled={metaDisabled}
+          />
+        </div>
+
+        {/* Acciones juntas, alineadas a la derecha */}
+        <div className="shrink-0 flex items-end gap-2">
           {canEdit && <Button
             variant="primary"
             onClick={onAgregarProducto}
-            className="gap-1.5 whitespace-nowrap shadow-sm"
+            className="h-9 gap-1.5 whitespace-nowrap shadow-sm"
           >
-            <span>+ Agregar Producto</span>
+            <Plus className="h-4 w-4" aria-hidden="true" /><span>Agregar</span>
           </Button>}
 
           <DropdownMenu
@@ -209,10 +213,71 @@ export function InventarioFilters({
                 )}
               </span>
             }
-            triggerClassName="h-9 w-9 flex items-center justify-center rounded-xl bg-transparent text-brand-subtitle hover:bg-zinc-100 hover:text-accent-ink transition-colors"
+            triggerClassName="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-transparent text-brand-subtitle hover:bg-surface-muted hover:text-accent-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           />
         </div>
-      </div>
+      </FilterGrid>
+
+      {/* FILTROS ACTIVOS */}
+      {tieneFiltrosActivos && (
+        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border-default mt-3">
+          {selectedCategoria && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Categoría:</span>
+              {categoriaOptions.find(c => c.value === selectedCategoria)?.label || selectedCategoria}
+              <button
+                onClick={() => onCategoriaChange('')}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Remover categoría"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {selectedUbicacion && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Ubicación:</span>
+              {almacenOptions.find(a => a.value === selectedUbicacion)?.label || selectedUbicacion}
+              <button
+                onClick={() => onUbicacionChange('')}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Remover ubicación"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {selectedStockEstado && selectedStockEstado !== '' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Stock:</span>
+              {stockEstadoOptions.find(s => s.value === selectedStockEstado)?.label || selectedStockEstado}
+              <button
+                onClick={() => onStockEstadoChange('')}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Remover estado de stock"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {searchValue && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Búsqueda:</span>
+              {searchValue.substring(0, 20)}{searchValue.length > 20 ? '...' : ''}
+              <button
+                onClick={() => onSearchChange('')}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+        </div>
+      )}
     </FilterCard>
   );
 }

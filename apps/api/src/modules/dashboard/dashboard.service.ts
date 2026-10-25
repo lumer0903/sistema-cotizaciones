@@ -230,7 +230,9 @@ export class DashboardService {
       ? (itemsStats.itemsSugeridosIA / itemsStats.totalItemsAprobados) * 100
       : 0;
 
-    // Eficacia de la tesis: aceptadas (aprobadas) sobre el TOTAL registrado
+    // Eficacia de la tesis: X1 = SOLO cotizaciones con estado 'aprobada'
+    // (estrictamente; no incluye convertida_a_venta ni otros estados),
+    // X2 = total de cotizaciones registradas (todos los estados).
     const eficacia = cotizacionesStats.total > 0
       ? (cotizacionesStats.aprobada / cotizacionesStats.total) * 100
       : 0;
@@ -345,8 +347,9 @@ export class DashboardService {
 
   /**
    * Rendimiento monetario de la tesis:
-   * X1 = ventas de cotizaciones (suma del total de APROBADAS, que equivalen a
-   *      pago completo) / X2 = ventas totales (suma del total de TODAS) × 100.
+   * X1 = ventas de cotizaciones (suma del total de las APROBADAS, pago completo)
+   *      / X2 = cotizaciones cerradas/finalizadas (enviada + aprobada + rechazada,
+   *      excluye borradores y estados no cerrados) × 100.
    * `ventasTotales` es X1 en dinero (tarjeta "Ventas" del dashboard).
    */
   private async getRendimientoMonetarioStats(
@@ -366,7 +369,7 @@ export class DashboardService {
     const rows = await this.prisma.$queryRaw<Array<{ aprobadas: number | string; total: number | string }>>(
       Prisma.sql`
         SELECT COALESCE(SUM(total) FILTER (WHERE estado = 'aprobada'), 0) AS aprobadas,
-               COALESCE(SUM(total), 0) AS total
+               COALESCE(SUM(total) FILTER (WHERE estado IN ('enviada', 'aprobada', 'rechazada')), 0) AS total
         FROM cotizaciones ${whereSql}`,
     );
 

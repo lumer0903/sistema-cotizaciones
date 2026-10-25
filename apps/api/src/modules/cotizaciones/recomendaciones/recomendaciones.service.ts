@@ -18,12 +18,31 @@ export interface RecomendacionItemResponse {
   almacen?: string | null;
   ubicacion?: string | null;
   unidades_por_caja?: number | null;
+  imagen_url?: string | null;
 }
 
 export interface RecomendarItemResponse {
   similar: RecomendacionItemResponse[];
   upsell: RecomendacionItemResponse[];
   equilibrio: RecomendacionItemResponse[];
+  /** ID de la fila creada en ia_interacciones (auditoría de la recomendación). */
+  id_interaccion?: number | null;
+}
+
+/** Valor fijo de ia_interacciones.tipo_sugerencia para recomendaciones por ítem. */
+export const TIPO_SUGERENCIA_IA = 'SIMILITUD_COSENO_TFIDF';
+
+export interface AccionIaRequest {
+  id_interaccion: number;
+  accion: 'ACEPTADO' | 'RECHAZADO';
+  id_cotizacion?: number;
+  id_producto_sugerido?: number;
+}
+
+export interface AccionIaResponse {
+  id_interaccion: number;
+  accion_usuario: string;
+  id_cotizacion: number | null;
 }
 
 @Injectable()
@@ -69,10 +88,10 @@ export class RecomendacionesService {
         dto.tipo_venta,
       );
 
-      // 4. Auditoría asíncrona
-      this.logIaInteraccion(id_usuario, dto.id_producto_base, dto, enriched);
+      // 4. Auditoría: registrar interacción IA (id_usuario, tipo_sugerencia, id_cotizacion)
+      const idInteraccion = await this.logIaInteraccion(id_usuario, dto.id_producto_base, dto, enriched);
 
-      return enriched;
+      return { ...enriched, id_interaccion: idInteraccion };
     } catch (error: any) {
       if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException(`Error al generar recomendaciones IA: ${error.message}`);
@@ -112,6 +131,7 @@ export class RecomendacionesService {
             id_producto: true,
             codigo: true,
             descripcion: true,
+            foto_url: true,
             unidades_por_caja: true,
             categoria: { select: { nombre_categoria: true } },
           },
@@ -170,6 +190,7 @@ export class RecomendacionesService {
             id_producto: item.id,
             codigo: productoReal.codigo,
             descripcion: productoReal.descripcion,
+            imagen_url: productoReal.foto_url ?? null,
             precio: precioFinal,
             stock: stockReal,
             similarityScore: item.similarityScore,
@@ -198,7 +219,7 @@ export class RecomendacionesService {
     id_producto_base: number,
     request: RecomendarItemDto,
     response: RecomendarItemResponse,
-  ): Promise<void> {
+  ): Promise<number | null> {
     try {
       const prompt = `Recomendación por ítem: producto_base=${id_producto_base}, cliente=${request.id_cliente ?? 'N/A'}, almacen=${request.id_almacen ?? 'N/A'}, tipo_precio=${request.tipo_precio ?? 'auto'}`;
       const respuesta = JSON.stringify({
@@ -207,15 +228,67 @@ export class RecomendacionesService {
         equilibrio: response.equilibrio.map((r) => ({ id: r.id_producto, score: r.similarityScore })),
       });
 
-      await this.prisma.iaInteracciones.create({
+      const creada = await this.prisma.iaInteracciones.create({
         data: {
           id_producto: id_producto_base,
+          id_usuario,
+          tipo_sugerencia: TIPO_SUGERENCIA_IA,
+          id_cotizacion: request.id_cotizacion ?? null,
           prompt,
           respuesta,
         },
+        select: { id_interaccion: true },
       });
+      return creada.id_interaccion;
     } catch (error) {
       console.error('Error al registrar interacción IA:', error);
+      return null;
     }
+  }
+
+  /**
+   * Registra la decisión del asesor sobre una recomendación IA:
+   * accion_usuario = 'ACEPTADO' (agrega/reemplaza el ítem sugerido) o 'RECHAZADO'
+   * (descarta la tarjeta). ACEPTADO siempre sobrescribe; RECHAZADO solo se aplica
+   * si aún no existe decisión, para no pisar una aceptación posterior.
+   */
+  async registrarAccionIa(
+    dto: AccionIaRequest,
+    id_usuario: number,
+  ): Promise<AccionIaResponse> {
+    const interaccion = await this.prisma.iaInteracciones.findUnique({
+      where: { id_interaccion: dto.id_interaccion },
+      select: { id_interaccion: true, accion_usuario: true, id_cotizacion: true, id_usuario: true },
+    });
+    if (!interaccion) {
+      throw new NotFoundException(`Interacción IA ${dto.id_interaccion} no encontrada`);
+    }
+
+    const datos = {
+      accion_usuario: dto.accion,
+      id_usuario: interaccion.id_usuario ?? id_usuario,
+      id_cotizacion: dto.id_cotizacion ?? interaccion.id_cotizacion,
+    };
+
+    if (dto.accion === 'ACEPTADO' || interaccion.accion_usuario == null) {
+      await this.prisma.iaInteracciones.update({
+        where: { id_interaccion: dto.id_interaccion },
+        data: {
+          ...datos,
+          ...(dto.id_producto_sugerido ? { id_producto_sugerido: dto.id_producto_sugerido } : {}),
+        },
+      });
+    }
+
+    const actualizada = await this.prisma.iaInteracciones.findUniqueOrThrow({
+      where: { id_interaccion: dto.id_interaccion },
+      select: { id_interaccion: true, accion_usuario: true, id_cotizacion: true },
+    });
+
+    return {
+      id_interaccion: actualizada.id_interaccion,
+      accion_usuario: actualizada.accion_usuario ?? dto.accion,
+      id_cotizacion: actualizada.id_cotizacion,
+    };
   }
 }

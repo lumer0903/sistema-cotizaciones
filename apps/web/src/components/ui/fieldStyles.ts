@@ -14,7 +14,7 @@ export const FIELD_HEIGHT = 'h-9';
 export const FIELD_TEXT = 'text-sm font-medium text-brand-subtitle';
 
 /** Borde base del campo. */
-export const FIELD_BORDER = 'border border-border-default bg-white rounded-xl';
+export const FIELD_BORDER = 'border border-border-default bg-surface rounded-xl';
 
 /** Transición + placeholder comunes. */
 export const FIELD_TRANSITION =
@@ -22,8 +22,7 @@ export const FIELD_TRANSITION =
 
 /**
  * Estado hover/focus (versión sin error).
- * El foco no añade nada: solo se ve el borde normal del campo
- * (sin ring, sin outline y sin cambio de color).
+ * Foco visible con el mismo token de contraste que el resto de controles.
  */
 export const FIELD_FOCUS = 'hover:border-brand-options focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring';
 

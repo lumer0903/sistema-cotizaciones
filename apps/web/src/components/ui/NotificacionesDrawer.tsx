@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { X, Package, FileText, Wallet, Loader2, ExternalLink } from 'lucide-react';
 import { notificacionesApi, NotificacionItem, TipoNotificacion } from '@/features/notificaciones/api/notificaciones.api';
 import { showToast } from '@/lib/toast';
-import { lockBodyScroll, unlockBodyScroll } from '@/lib/scrollLock';
+import { useDialogLayer } from '@/hooks/useDialogLayer';
 import { formatCode, formatText } from '@/lib/formatters';
 
 interface NotificacionesDrawerProps {
@@ -58,6 +58,7 @@ function getRelativeTime(dateStr: string) {
 }
 
 export function NotificacionesDrawer({ open, onClose, onSuccess }: NotificacionesDrawerProps) {
+  const dialogRef = useDialogLayer(open, onClose);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('todas');
   const [notifications, setNotifications] = useState<NotificacionItem[]>([]);
@@ -88,20 +89,6 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
       fetchNotifications().then(onNotificationsLoaded, onNotificationsError);
     }
   }, [open, fetchNotifications, onNotificationsLoaded, onNotificationsError]);
-
-  // Escape cierra el panel y el scroll del body queda bloqueado mientras está abierto
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    lockBodyScroll();
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      unlockBodyScroll();
-      window.removeEventListener('keydown', onKeyDown);
-    };
-  }, [open, onClose]);
 
   const handleCardClick = async (item: NotificacionItem) => {
     // Marca como vista (queda en historial, no se elimina) según el tipo.
@@ -166,19 +153,19 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
   };
 
   return (
-    <div className={`fixed inset-0 z-[70] transition-opacity duration-200 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none invisible'}`}>
-      <div className="absolute inset-0 bg-transparent" onClick={onClose} aria-hidden="true" />
+    <div ref={dialogRef} tabIndex={-1} className={`fixed inset-0 z-[70] transition-opacity duration-200 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none invisible'}`}>
+      <div className="absolute inset-0 bg-overlay" onClick={onClose} aria-hidden="true" />
 
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Notificaciones"
-        className={`absolute right-4 sm:right-8 top-16 w-[90vw] sm:w-[400px] max-h-[calc(100dvh-5rem)] bg-white shadow-2xl rounded-2xl border border-zinc-100 transition-[transform,opacity] duration-200 flex flex-col ${open ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-4 opacity-0 scale-95 origin-top-right'}`}
+        className={`absolute right-4 sm:right-8 top-16 w-[90vw] sm:w-[400px] max-h-[calc(100dvh-5rem)] bg-surface shadow-2xl rounded-2xl border border-border-default transition-[transform,opacity] duration-200 flex flex-col ${open ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-4 opacity-0 scale-95 origin-top-right'}`}
       >
         {/* Header compacto */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100 shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border-default shrink-0">
           <div className="flex items-center gap-3">
-            <h2 className="text-sm font-bold text-zinc-900">Notificaciones</h2>
+            <h2 className="text-sm font-bold text-brand-subtitle">Notificaciones</h2>
             {notifications.some(n => !n.leida) && (
               <button
                 onClick={handleMarcarTodos}
@@ -191,14 +178,14 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
           <button
             onClick={onClose}
             aria-label="Cerrar notificaciones"
-            className="p-1.5 -m-1.5 min-h-9 min-w-9 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50 transition-colors"
+            className="p-1.5 -m-1.5 min-h-9 min-w-9 flex items-center justify-center rounded-xl text-brand-options hover:text-brand-subtitle hover:bg-surface-muted transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tabs compactos */}
-        <div className="px-3 py-2 border-b border-zinc-100 flex items-center gap-1 overflow-x-auto scrollbar-hide shrink-0">
+        <div className="px-3 py-2 border-b border-border-default flex items-center gap-1 overflow-x-auto scrollbar-hide shrink-0">
           {tabsVisibles.map((tab) => {
             const count = tab.id === 'todas'
               ? notifications.filter(n => !n.leida).length
@@ -211,14 +198,14 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
                 aria-pressed={active}
-                className={`min-h-8 px-2.5 inline-flex items-center gap-1 rounded-md text-xs font-semibold whitespace-nowrap transition-colors ${
-                  active ? 'text-accent-ink bg-accent-soft' : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50'
+                className={`min-h-8 px-2.5 inline-flex items-center gap-1 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
+                  active ? 'text-accent-ink bg-accent-soft' : 'text-brand-options hover:text-brand-subtitle hover:bg-surface-muted'
                 }`}
               >
                 {tab.label}
                 {count > 0 && (
                   <span className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
-                    active ? 'bg-accent-primary text-on-accent' : 'bg-zinc-100 text-zinc-600'
+                    active ? 'bg-accent-primary text-on-accent' : 'bg-surface-muted text-brand-subtitle'
                   }`}>
                     {count}
                   </span>
@@ -229,14 +216,14 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
         </div>
 
         {/* Lista compacta */}
-        <div className="flex-1 overflow-y-auto divide-y divide-zinc-50 bg-white rounded-b-2xl">
+        <div className="flex-1 overflow-y-auto divide-y divide-zinc-50 bg-surface rounded-b-2xl">
           {loading ? (
-            <div className="flex flex-col items-center justify-center h-40 text-zinc-500">
+            <div className="flex flex-col items-center justify-center h-40 text-brand-options">
               <Loader2 className="w-5 h-5 animate-spin mb-2" />
               <span className="text-xs">Cargando...</span>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 text-zinc-500">
+            <div className="flex flex-col items-center justify-center h-40 text-brand-options">
               <span className="text-xs">No hay notificaciones</span>
             </div>
           ) : (
@@ -248,26 +235,26 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
                   type="button"
                   onClick={() => handleCardClick(item)}
                   className={`w-full text-left flex items-start gap-2.5 px-4 py-2.5 transition-[background-color] duration-150 group active:scale-[0.96] ${
-                    isUnread ? 'bg-accent-soft/30 hover:bg-accent-soft/60' : 'hover:bg-zinc-50'
+                    isUnread ? 'bg-accent-soft/30 hover:bg-accent-soft/60' : 'hover:bg-surface-muted'
                   }`}
                 >
-                  <span className={`mt-0.5 shrink-0 ${isUnread ? 'text-accent-primary' : 'text-zinc-400'}`}>
+                  <span className={`mt-0.5 shrink-0 ${isUnread ? 'text-accent-primary' : 'text-brand-options'}`}>
                     {renderIcon(item.tipo)}
                   </span>
                   <span className="flex-1 min-w-0">
                     <span className="flex items-center justify-between gap-2">
-                      <span className={`text-xs font-semibold truncate ${isUnread ? 'text-zinc-900' : 'text-zinc-600'}`}>
+                      <span className={`text-xs font-semibold truncate ${isUnread ? 'text-brand-subtitle' : 'text-brand-subtitle'}`}>
                         {item.titulo}
                       </span>
-                      <span className="text-[10px] font-medium text-zinc-400 whitespace-nowrap shrink-0">
+                      <span className="text-[10px] font-medium text-brand-options whitespace-nowrap shrink-0">
                         {getRelativeTime(item.createdAt)}
                       </span>
                     </span>
-                    <span className="block text-[11px] text-zinc-500 leading-snug truncate">
+                    <span className="block text-[11px] text-brand-options leading-snug truncate">
                       {renderDetalle(item)}
                     </span>
                   </span>
-                  <ExternalLink className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-400 shrink-0 mt-0.5" />
+                  <ExternalLink className="w-3.5 h-3.5 text-zinc-300 group-hover:text-brand-options shrink-0 mt-0.5" />
                 </button>
               );
             })

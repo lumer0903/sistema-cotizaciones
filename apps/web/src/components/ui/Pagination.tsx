@@ -28,7 +28,7 @@ export const Pagination: React.FC<PaginationProps> = ({
     const startItem = totalItems === 0 ? 0 : (currentPage - 1) * limit + 1;
     const endItem = Math.min(currentPage * limit, totalItems);
 
-    const limitOptions = [8, 16, 24].map((n) => ({
+    const limitOptions = Array.from(new Set([8, 16, 24, ...(limit > 0 ? [limit] : [])])).sort((a, b) => a - b).map((n) => ({
         label: String(n),
         value: n,
     }));
@@ -59,10 +59,11 @@ export const Pagination: React.FC<PaginationProps> = ({
     };
 
     return (
-        <div className="px-5 py-3 bg-zinc-50/80 border-t border-zinc-100 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500 tnum">
+        <div className="px-5 py-3 bg-surface-muted/80 border-t border-border-default flex flex-wrap items-center justify-between gap-3 text-xs text-brand-options tnum">
             <div className="flex items-center gap-2 whitespace-nowrap">
                 <span>Mostrar</span>
                 <Select
+                    disabled={loading}
                     value={displayLimit}
                     onChange={(e) => onLimitChange(Number(e.target.value))}
                     options={limitOptions}
@@ -82,32 +83,33 @@ export const Pagination: React.FC<PaginationProps> = ({
             <nav aria-label="Paginación" className="flex items-center gap-1 flex-wrap justify-end">
                 <button
                     type="button"
-                    disabled={currentPage === 1 || loading}
+                    disabled={currentPage <= 1 || loading}
                     onClick={() => onPageChange(currentPage - 1)}
                     aria-label="Página anterior"
-                    className="min-h-11 min-w-11 flex items-center justify-center border border-zinc-200 rounded-lg hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    className="min-h-11 min-w-11 flex items-center justify-center border border-border-default rounded-xl hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
-                    <ChevronLeft className="size-4 text-zinc-600" />
+                    <ChevronLeft className="size-4 text-brand-subtitle" />
                 </button>
 
                 {getPageItems().map((item, index) =>
                     item === 'ellipsis' ? (
                         <span
                             key={`ellipsis-${index}`}
-                            className="min-h-11 min-w-11 flex items-center justify-center text-xs text-zinc-500 select-none"
+                            className="min-h-11 min-w-11 flex items-center justify-center text-xs text-brand-options select-none"
                         >
                             …
                         </span>
                     ) : (
                         <button
                             key={item}
+                            disabled={loading}
                             type="button"
                             onClick={() => onPageChange(item)}
                             aria-label={`Página ${item}`}
                             aria-current={currentPage === item ? 'page' : undefined}
-                            className={`min-h-11 min-w-11 flex items-center justify-center rounded-lg text-xs font-bold transition-colors ${currentPage === item
+                            className={`min-h-11 min-w-11 flex items-center justify-center rounded-xl text-xs font-bold transition-colors ${currentPage === item
                                 ? 'bg-accent-primary text-on-accent'
-                                : 'border border-zinc-200 text-zinc-600 hover:bg-zinc-100'
+                                : 'border border-border-default text-brand-subtitle hover:bg-surface-muted'
                             }`}
                         >
                             {item}
@@ -117,12 +119,12 @@ export const Pagination: React.FC<PaginationProps> = ({
 
                 <button
                     type="button"
-                    disabled={currentPage === totalPages || totalItems === 0 || loading}
+                    disabled={currentPage >= totalPages || totalItems === 0 || loading}
                     onClick={() => onPageChange(currentPage + 1)}
                     aria-label="Página siguiente"
-                    className="min-h-11 min-w-11 flex items-center justify-center border border-zinc-200 rounded-lg hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    className="min-h-11 min-w-11 flex items-center justify-center border border-border-default rounded-xl hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
-                    <ChevronRight className="size-4 text-zinc-600" />
+                    <ChevronRight className="size-4 text-brand-subtitle" />
                 </button>
             </nav>
         </div>

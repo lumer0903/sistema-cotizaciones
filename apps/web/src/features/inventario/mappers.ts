@@ -30,6 +30,8 @@ export interface ProductoAPI {
   }>;
   precios?: Record<string, unknown> | null;
   precios_actuales?: Record<string, unknown> | null;
+  costo_unidad_tienda?: unknown;
+  costo_unidad_distribuidor?: unknown;
 }
 
 export interface PaginatedResponse<T> {
@@ -75,6 +77,8 @@ export const mapToProductoInventario = (p: ProductoAPI): ProductoInventario => (
     })) || [],
   precios_actuales: (p.precios_actuales ?? p.precios ??
     null) as ProductoInventario['precios_actuales'],
+  costo_unidad_tienda: (p.costo_unidad_tienda as any) ?? null,
+  costo_unidad_distribuidor: (p.costo_unidad_distribuidor as any) ?? null,
   unidades_por_caja: p.unidades_por_caja ?? 1,
   created_at: new Date(),
   updated_at: new Date(),

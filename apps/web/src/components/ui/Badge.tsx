@@ -59,7 +59,7 @@ const ESTADO_STYLES: Record<string, string> = {
 
 /** Texto plano (sin fondo ni bordes) — tabla del sistema. */
 const PLAIN_TEXT_STYLES: Record<string, string> = {
-  borrador: 'text-zinc-500 font-bold uppercase tracking-wide',
+  borrador: 'text-brand-options font-bold uppercase tracking-wide',
   enviado: 'text-role-tienda font-bold uppercase tracking-wide',
   aprobado: 'text-status-aprobado-text font-bold uppercase tracking-wide',
   rechazado: 'text-status-rechazado font-bold uppercase tracking-wide',
@@ -103,7 +103,7 @@ export const Badge: React.FC<BadgeProps> = ({
     return (
       <span
         className={cn(
-          'inline-flex justify-center items-center h-9 px-4 rounded-lg outline outline-1 outline-offset-[-1px] text-base font-bold',
+          'inline-flex justify-center items-center h-9 px-4 rounded-xl outline outline-1 outline-offset-[-1px] text-base font-bold',
           color,
           className
         )}
@@ -141,7 +141,7 @@ export const Badge: React.FC<BadgeProps> = ({
   const sizeClass = PILL_SIZES[size] ?? PILL_SIZES.md;
   return (
     <span
-      className={cn('inline-flex items-center rounded-md border', color, sizeClass, className)}
+      className={cn('inline-flex items-center rounded-xl border', color, sizeClass, className)}
     >
       {children}
     </span>

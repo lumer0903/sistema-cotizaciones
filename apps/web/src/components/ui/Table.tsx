@@ -92,6 +92,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       onKeyDown={
         onClick
           ? (e) => {
+              if (e.defaultPrevented || e.target !== e.currentTarget) return;
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 (onClick as unknown as React.KeyboardEventHandler<HTMLTableRowElement>)(e);
@@ -100,7 +101,6 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
           : undefined
       }
       tabIndex={onClick ? 0 : undefined}
-      role={onClick ? 'button' : undefined}
       className={cn(
         'group transition-colors duration-100 ease-in-out hover:bg-surface-muted/50',
         onClick && 'cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',

@@ -1,4 +1,5 @@
 'use client';
+import { Card } from '@/components/ui/Card';
 
 import { Input, Select } from '@/components/ui';
 import { ClienteAutocomplete } from '@/features/cotizaciones/components/ClienteAutocomplete';
@@ -45,7 +46,7 @@ export function InformacionGeneral({
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80 space-y-4">
+    <Card className="p-6 space-y-4 overflow-visible">
       <h2 className="text-lg font-bold text-zinc-700 mb-2">Información general</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <ClienteAutocomplete
@@ -138,6 +139,6 @@ export function InformacionGeneral({
           ]}
         />
       </div>
-    </div>
+    </Card>
   );
 }

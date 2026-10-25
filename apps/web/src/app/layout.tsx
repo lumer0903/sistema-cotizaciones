@@ -3,6 +3,9 @@ import localFont from 'next/font/local';
 import '../styles/tailwind.css';
 import { Providers } from './providers';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const dmSans = localFont({
   src: [
     {

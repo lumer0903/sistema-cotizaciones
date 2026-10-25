@@ -13,8 +13,9 @@ export interface StockBadgeProps {
 
 /**
  * Indicador de stock semántico:
- *  - 0 unidades      → crítico
- *  - bajo el mínimo  → advertencia
+ *  - 0 unidades      → crítico (rojo)
+ *  - bajo el mínimo  → rojo
+ *  - en el mínimo    → rojo
  *  - sobre el mínimo → OK
  * El color comunica el estado real (nunca "verde" por defecto).
  */
@@ -24,8 +25,8 @@ export function StockBadge({ stock, minimo = 0, className }: StockBadgeProps) {
 
   const styles: Record<typeof state, string> = {
     critico: 'bg-status-rechazado-soft text-status-rechazado-text border-status-rechazado/40',
-    bajo: 'bg-status-advertencia-soft text-status-advertencia-text border-amber-500/40',
-    minimo: 'bg-status-advertencia-soft text-status-advertencia-text border-amber-500/40',
+    bajo: 'bg-status-rechazado-soft text-status-rechazado-text border-status-rechazado/40',
+    minimo: 'bg-status-rechazado-soft text-status-rechazado-text border-status-rechazado/40',
     ok: 'bg-status-aprobado-soft text-status-aprobado-text border-status-aprobado/40',
   };
 

@@ -61,7 +61,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({ producto, tipoPrecio, onVe
 
     return (
         <div className={cn(
-            'group w-full h-full bg-surface rounded-2xl shadow-card border border-border-default/80 p-3 flex flex-col gap-2',
+            'group relative isolate z-0 w-full h-full bg-surface rounded-2xl shadow-card border border-border-default/80 p-3 flex flex-col gap-2',
             'hover:shadow-card-hover hover:border-accent-primary/40 transition-all duration-200'
         )}>
             {/* Contenido superior: Imagen, Datos del producto */}

@@ -18,6 +18,8 @@ function buildHeaders(options: RequestInit): HeadersInit {
   const isFormData = options.body instanceof FormData;
   return {
     ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    Pragma: 'no-cache',
     ...(options.headers || {}),
   };
 }
@@ -33,6 +35,7 @@ async function renewSession(): Promise<void> {
   const response = await fetch(normalizeUrl('/auth/refresh'), {
     method: 'POST',
     credentials: 'include',
+    cache: 'no-store',
   });
   if (!response.ok) throw new Error('No se pudo renovar la sesión');
   // El backend renueva las cookies httpOnly; nada que guardar en JS (P13).
@@ -84,6 +87,7 @@ export function apiErrorMessage(error: unknown): string {
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const url = normalizeUrl(path);
   let response = await fetch(url, {
+    cache: 'no-store',
     ...options,
     headers: buildHeaders(options),
     credentials: 'include' as RequestCredentials,
@@ -93,6 +97,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     try {
       await refreshSession();
       response = await fetch(url, {
+        cache: 'no-store',
         ...options,
         headers: buildHeaders(options),
         credentials: 'include' as RequestCredentials,

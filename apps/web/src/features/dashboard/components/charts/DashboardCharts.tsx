@@ -398,11 +398,11 @@ export function CompactTable({
   return (
     <Table scrollLabel="Resumen del dashboard">
         <TableHeader>
-          <TableRow className="bg-zinc-50/80 border-b border-zinc-100 uppercase tracking-wider">
+          <TableRow className="bg-zinc-50/80 border-b border-border-default uppercase tracking-wider">
             {headers.map((h, i) => (
               <TableHead
                 key={i}
-                className="py-3 px-4 text-[11px] font-semibold text-zinc-500 text-left"
+                className="py-3 px-4 text-[11px] font-semibold text-brand-options text-left"
                 style={{ minWidth: i === 1 ? '200px' : '100px' }}
               >
                 {h}

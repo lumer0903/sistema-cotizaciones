@@ -96,7 +96,7 @@ export function DashboardView() {
       {activeWidgets.length === 0 && !isLoading && (
         <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/50 p-10 text-center">
           <p className="text-sm font-semibold text-zinc-700">No hay widgets activos</p>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-brand-options">
             Personaliza tu dashboard para agregar indicadores y gráficos.
           </p>
           <Button variant="primary" size="sm" className="mt-4" onClick={() => setCustomizing(true)}>

@@ -1,4 +1,5 @@
 import { apiClient, apiFetch } from '@/lib/apiClient';
+import { invalidateCotizacionesQueries } from '@/lib/queryClient';
 import {
     CotizacionItem,
     CotizacionesFilterParams,
@@ -6,6 +7,7 @@ import {
     RecomendarItemRequest,
     RecomendacionItem,
     RecomendarItemResponse,
+    RegistrarAccionIaRequest,
 } from '../types/cotizacion';
 import { ProductoBase } from '../components/AgregarProductoModal';
 
@@ -14,6 +16,7 @@ export type {
     RecomendarItemRequest,
     RecomendacionItem,
     RecomendarItemResponse,
+    RegistrarAccionIaRequest,
 };
 
 interface BackendCotizacion {
@@ -234,6 +237,7 @@ export async function crearCotizacion(payload: CrearCotizacionPayload): Promise<
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   }) as any;
+  void invalidateCotizacionesQueries();
   return res?.data ?? res;
 }
 
@@ -243,6 +247,7 @@ export async function cambiarEstadoCotizacion(id: number | string, estado: strin
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ estado }),
   }) as any;
+  void invalidateCotizacionesQueries();
   return res?.data ?? res;
 }
 
@@ -270,6 +275,7 @@ export async function actualizarCotizacion(id: number | string, payload: Actuali
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   }) as any;
+  void invalidateCotizacionesQueries();
   return res?.data ?? res;
 }
 
@@ -463,6 +469,18 @@ export async function obtenerRecomendacionesItem(
     return response as RecomendarItemResponse;
 }
 
+/** Notifica al backend la decisión del asesor sobre una recomendación IA (ACEPTADO / RECHAZADO) */
+export async function registrarAccionIa(
+    data: RegistrarAccionIaRequest
+): Promise<{ id_interaccion: number; accion_usuario: string; id_cotizacion: number | null }> {
+    const response = await apiClient('/cotizaciones/registrar-accion-ia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+    return response as { id_interaccion: number; accion_usuario: string; id_cotizacion: number | null };
+}
+
 export interface CobranzaListParams {
     page?: number;
     limit?: number;
@@ -518,5 +536,6 @@ export async function registrarPagoCotizacion(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
     })) as any;
+    void invalidateCotizacionesQueries();
     return res?.data ?? res;
 }

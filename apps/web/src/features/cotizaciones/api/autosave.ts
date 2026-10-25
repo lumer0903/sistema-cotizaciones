@@ -105,7 +105,6 @@ export interface AutosaveResultado {
 }
 
 let lastPayloadHash = '';
-const DEBOUNCE_MS = 5000;
 
 function computePayloadHash(params: AutosaveParams): string {
   const { cliente, items, tipoPrecioCliente, incluyeCarreta, costoCarreta, fechaVencimiento, tipoPago } = params;

@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/apiClient';
+import { invalidateInventarioQueries } from '@/lib/queryClient';
 import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
 import { mapToProductoInventario, ProductoAPI } from '../mappers';
 import {
@@ -175,19 +176,23 @@ export const inventarioApi = {
     },
 
     crearMovimiento: async (data: MovimientoFormData): Promise<{ success: true; data: MovimientoResponse }> => {
-        return apiClient('/inventario/movimientos', {
+        const res = await apiClient<{ success: true; data: MovimientoResponse }>('/inventario/movimientos', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
         });
+        void invalidateInventarioQueries();
+        return res;
     },
 
     crearTransferencia: async (data: TransferenciaFormData): Promise<{ success: true; data: TransferenciaResponse }> => {
-        return apiClient('/inventario/transferencia', {
+        const res = await apiClient<{ success: true; data: TransferenciaResponse }>('/inventario/transferencia', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
         });
+        void invalidateInventarioQueries();
+        return res;
     },
 
     obtenerKardex: async (
@@ -242,5 +247,6 @@ export const inventarioApi = {
         await apiClient(`/inventario/alertas/${idAlerta}/reconocer`, {
             method: 'PATCH',
         });
+        void invalidateInventarioQueries();
     },
 };

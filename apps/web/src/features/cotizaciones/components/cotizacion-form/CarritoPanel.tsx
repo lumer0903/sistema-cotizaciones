@@ -1,4 +1,5 @@
 'use client';
+import { Card } from '@/components/ui/Card';
 
 import { useMemo, useRef, useState } from 'react';
 import { Search, ShoppingCart, X, Loader2, ChevronRight, Sparkles, Trash2 } from 'lucide-react';
@@ -49,7 +50,7 @@ export function CarritoPanel({
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80 space-y-4">
+    <Card className="p-6 space-y-4 overflow-visible">
       <h2 className="text-lg font-bold text-zinc-700">Carrito</h2>
 
       <div className="relative">
@@ -92,7 +93,7 @@ export function CarritoPanel({
         {showDropdown && searchQuery.trim() !== '' && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
-            <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-xl shadow-lg max-h-64 overflow-y-auto divide-y divide-zinc-100">
+            <div className="absolute z-20 left-0 right-0 mt-1 bg-surface border border-border-default rounded-xl shadow-lg max-h-64 overflow-y-auto divide-y divide-zinc-100">
               {resultadosBusqueda.length > 0 ? (
                 resultadosBusqueda.map((prod, index) => (
                   <div
@@ -107,7 +108,7 @@ export function CarritoPanel({
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-zinc-700 leading-tight truncate">{prod.descripcion}</p>
                         {typeof prod.stockTotal === 'number' && (
-                          <p className="text-xs text-zinc-500 mt-0.5 tnum">Stock: {prod.stockTotal}</p>
+                          <p className="text-xs text-brand-options mt-0.5 tnum">Stock: {prod.stockTotal}</p>
                         )}
                       </div>
                     </div>
@@ -118,7 +119,7 @@ export function CarritoPanel({
                   </div>
                 ))
               ) : (
-                <div className="p-4 text-center text-xs text-zinc-500">
+                <div className="p-4 text-center text-xs text-brand-options">
                   {isLoadingProductos
                     ? 'Cargando catálogo...'
                     : `No se encontraron productos importados con "${searchQuery}"`}
@@ -132,10 +133,10 @@ export function CarritoPanel({
       {items.length === 0 ? (
         <div
           onClick={() => searchInputRef.current?.focus()}
-          className="h-44 border-2 border-dashed border-zinc-200 rounded-xl flex flex-col justify-center items-center gap-2 cursor-pointer hover:bg-surface-muted/80 transition-colors"
+          className="h-44 border-2 border-dashed border-border-default rounded-xl flex flex-col justify-center items-center gap-2 cursor-pointer hover:bg-surface-muted/80 transition-colors"
         >
           <ShoppingCart className="size-8 text-zinc-300" />
-          <span className="text-zinc-500 font-medium text-xs">Busca un producto importado arriba para agregarlo</span>
+          <span className="text-brand-options font-medium text-xs">Busca un producto importado arriba para agregarlo</span>
         </div>
       ) : (
         <Table>
@@ -166,7 +167,7 @@ export function CarritoPanel({
                       className={`!px-1.5 ${
                         selectedItemId === item.id
                           ? '!bg-accent-selection !text-accent-ink outline outline-1 outline-offset-[-1px] outline-brand-modalFocus'
-                          : '!text-zinc-500 hover:!text-accent-ink'
+                          : '!text-brand-options hover:!text-accent-ink'
                       }`}
                     >
                       <Sparkles className="size-4" />
@@ -177,7 +178,7 @@ export function CarritoPanel({
                       onClick={() => onEliminarItem(item.id)}
                       aria-label={`Eliminar ${item.codigo} del carrito`}
                       title="Eliminar del carrito"
-                      className="!px-1.5 !text-zinc-500 hover:!text-red-500"
+                      className="!px-1.5 !text-brand-options hover:!text-red-500"
                     >
                       <Trash2 className="size-4" />
                     </Button>
@@ -188,6 +189,6 @@ export function CarritoPanel({
           </TableBody>
         </Table>
       )}
-    </div>
+    </Card>
   );
 }

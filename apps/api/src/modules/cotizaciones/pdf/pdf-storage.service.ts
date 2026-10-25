@@ -8,7 +8,7 @@ import { PDF_BUCKET } from './pdf.constants';
 export interface SavedPdf {
   /** Object key de MinIO (`cotizaciones/...`) o ruta relativa local (`pdfs/...`) */
   key: string;
-  /** URL firmada de MinIO, o null si se guardó en almacenamiento local */
+  /** URL directa o firmada de MinIO, o null si se guardó en almacenamiento local */
   url: string | null;
 }
 
@@ -26,13 +26,12 @@ export class PdfStorageService {
   async save(id: number, hash: string, buffer: Buffer): Promise<SavedPdf> {
     if (this.minio.isHealthy()) {
       const key = `cotizaciones/${id}-${hash}.pdf`;
-      // presigned máx. 7 días (S3/MinIO rechaza expiry mayor)
+      const bucket = this.minio.getBucketName() || PDF_BUCKET;
       const url = await this.minio.uploadFile(
-        PDF_BUCKET,
+        bucket,
         key,
         buffer,
         'application/pdf',
-        7 * 24 * 60 * 60,
       );
       if (url) return { key, url };
       this.logger.warn(`MinIO upload devolvió null para ${key}; usando almacenamiento local`);
@@ -50,7 +49,15 @@ export class PdfStorageService {
         return null;
       }
     }
-    return this.minio.getObject(PDF_BUCKET, key);
+    const bucket = this.minio.getBucketName() || PDF_BUCKET;
+    const data = await this.minio.getObject(bucket, key);
+    if (data) return data;
+
+    // Fallback al bucket legacy si fue guardado previamente en cotizacion-pdfs
+    if (bucket !== PDF_BUCKET) {
+      return this.minio.getObject(PDF_BUCKET, key);
+    }
+    return null;
   }
 
   private async saveLocal(id: number, hash: string, buffer: Buffer): Promise<SavedPdf> {

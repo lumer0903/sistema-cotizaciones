@@ -22,6 +22,7 @@ export interface ProductoCarrito {
     stock?: number;
     almacen?: string;
     ubicacion?: string;
+    imagenUrl?: string;
 }
 
 export function getItemTotal(item: ProductoCarrito): number {
@@ -67,7 +68,7 @@ export interface RecomendacionItem {
     almacen?: string | null;
     ubicacion?: string | null;
     unidades_por_caja?: number | null;
-    imagen_url?: string;
+    imagen_url?: string | null;
 }
 
 export interface RecomendarItemRequest {
@@ -76,10 +77,21 @@ export interface RecomendarItemRequest {
     id_almacen?: number;
     tipo_precio?: 'normal' | 'distribuidor';
     tipo_venta?: 'UNIDAD' | 'DOCENA' | 'MAYOR' | string;
+    /** Cotización (borrador) desde la que se pide la recomendación → ia_interacciones.id_cotizacion */
+    id_cotizacion?: number;
 }
 
 export interface RecomendarItemResponse {
     similar: RecomendacionItem[];
     upsell: RecomendacionItem[];
     equilibrio: RecomendacionItem[];
+    /** Fila creada en ia_interacciones; se usa para reportar ACEPTADO/RECHAZADO */
+    id_interaccion?: number | null;
+}
+
+export interface RegistrarAccionIaRequest {
+    id_interaccion: number;
+    accion: 'ACEPTADO' | 'RECHAZADO';
+    id_cotizacion?: number;
+    id_producto_sugerido?: number;
 }

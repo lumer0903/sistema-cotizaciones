@@ -668,7 +668,7 @@ export function ProductoModal({
           </div>
 
           {/* Precios por tipo de cliente */}
-          <div className="border-t border-zinc-100 pt-6">
+          <div className="border-t border-border-default pt-6">
             <PriceMatrix
               tienda={priceProps.tienda}
               distribuidor={priceProps.distribuidor}
@@ -677,7 +677,7 @@ export function ProductoModal({
           </div>
 
           {/* Imagen del producto (al final, luego de precios) */}
-          <div className="border-t border-zinc-100 pt-6">
+          <div className="border-t border-border-default pt-6">
             <span className={FIELD_LABEL}>Imagen del producto</span>
             <div className="mt-2">
               <ImageUploader

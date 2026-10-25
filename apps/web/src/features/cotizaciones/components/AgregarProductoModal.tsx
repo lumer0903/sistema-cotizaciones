@@ -1,4 +1,5 @@
 'use client';
+import { Checkbox } from '@/components/ui/Checkbox';
 
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
@@ -8,7 +9,7 @@ import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { getImageUrl, handleImageError } from '@/lib/imageUtils';
+import { getImageUrl } from '@/lib/imageUtils';
 import { formatCode, obtenerPreciosEstandarizados } from '@/lib/formatters';
 
 export interface ColorDisponible {
@@ -80,7 +81,7 @@ export default function AgregarProductoModal({
     const [tipoVenta, setTipoVenta] = useState<'UNIDAD' | 'DOCENA' | 'MAYOR' | ''>('MAYOR');
     const [cantidad, setCantidad] = useState<number>(1);
     const [precioInput, setPrecioInput] = useState<string>('0.00');
-    const [imgError, setImgError] = useState<boolean>(false);
+    const [failedImage, setFailedImage] = useState<string | null>(null);
     const [prevReset, setPrevReset] = useState<{
         isOpen: boolean;
         producto: ProductoBase | null;
@@ -117,7 +118,7 @@ export default function AgregarProductoModal({
             setCantidad(cantidadInicial ?? 1);
             const inicial = precioInicial ?? (esTienda ? tienda.mayor : distribuidor.mayor);
             setPrecioInput(Number(inicial || 0).toFixed(2));
-            setImgError(false);
+            setFailedImage(null);
         }
     }
 
@@ -198,22 +199,20 @@ export default function AgregarProductoModal({
                 )}
 
                 {/* Ficha de producto con manejo de errores de imagen */}
-                <div className="border border-zinc-200 rounded-2xl p-3.5 flex gap-3.5 bg-white items-center">
-                    <div className="size-20 rounded-xl border border-zinc-200 flex items-center justify-center overflow-hidden bg-zinc-50 shrink-0">
-                        {imagenSrc && !imgError ? (
+                <div className="border border-border-default rounded-2xl p-3.5 flex gap-3.5 bg-surface items-center">
+                    <div className="size-20 rounded-xl border border-border-default flex items-center justify-center overflow-hidden bg-zinc-50 shrink-0">
+                        {imagenSrc && failedImage !== imagenSrc ? (
                             <Image
-                                src={getImageUrl(producto.foto_url || producto.imagenUrl)}
+                                unoptimized
+                                src={imagenSrc}
                                 alt={producto.descripcion}
                                 width={80}
                                 height={80}
                                 className="w-full h-full object-cover"
-                                onError={(e) => {
-                                    handleImageError(e);
-                                    setImgError(true);
-                                }}
+                                onError={() => setFailedImage(imagenSrc)}
                             />
                         ) : (
-                            <Package className="size-8 text-zinc-500" />
+                            <Package className="size-8 text-brand-options" />
                         )}
                     </div>
                     <div className="flex flex-col justify-between py-0.5 min-w-0 flex-1 gap-1">
@@ -227,7 +226,7 @@ export default function AgregarProductoModal({
                         </div>
                         <div className="flex items-center gap-1.5 text-xs pt-1">
                             <span className="inline-flex items-center gap-1 bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-md font-medium">
-                                <Archive className="size-3 text-zinc-500" />
+                                <Archive className="size-3 text-brand-options" />
                                 {estanteDisplay}
                             </span>
                             <span className="inline-flex items-center gap-1 bg-estado-rechazado-soft text-danger font-bold px-2 py-0.5 rounded-md">
@@ -249,20 +248,20 @@ export default function AgregarProductoModal({
                     </label>
                     <div className="flex items-center gap-6">
                         <label className="flex items-center gap-2 text-xs font-medium text-zinc-700 cursor-pointer select-none">
-                            <input
-                                type="checkbox"
+                            <Checkbox
+                                
                                 checked={tipoColor === 'SURTIDO'}
                                 onChange={() => setTipoColor('SURTIDO')}
-                                className="size-5 rounded accent-accent-primary cursor-pointer"
+                                
                             />
                             Surtido
                         </label>
                         <label className="flex items-center gap-2 text-xs font-medium text-zinc-700 cursor-pointer select-none">
-                            <input
-                                type="checkbox"
+                            <Checkbox
+                                
                                 checked={tipoColor === 'ESPECIFICO'}
                                 onChange={() => setTipoColor('ESPECIFICO')}
-                                className="size-5 rounded accent-accent-primary cursor-pointer"
+                                
                             />
                             Color específico
                         </label>
@@ -385,7 +384,7 @@ export default function AgregarProductoModal({
                         type="button"
                         variant="ghost"
                         onClick={onClose}
-                        className="min-h-11 px-5 text-sm font-bold text-zinc-500 hover:text-zinc-600 transition-colors"
+                        className="min-h-11 px-5 text-sm font-bold text-brand-options hover:text-zinc-600 transition-colors"
                     >
                         Cancelar
                     </Button>
@@ -394,7 +393,7 @@ export default function AgregarProductoModal({
                         disabled={sinStock}
                         onClick={handleGuardar}
                         className={`px-8 py-2.5 text-sm font-bold rounded-xl shadow-none transition-colors ${sinStock
-                            ? 'bg-zinc-200 text-zinc-500 cursor-not-allowed'
+                            ? 'bg-zinc-200 text-brand-options cursor-not-allowed'
                             : 'bg-accent-primary hover:bg-accent-hover text-on-accent'
                             }`}
                     >

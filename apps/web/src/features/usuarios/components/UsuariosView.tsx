@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { showToast } from '@/lib/toast';
-import { Select, Button, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Input, Badge, FilterCard, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
-import { UserPlus, Settings, ShieldCheck, Search } from 'lucide-react';
+import { Select, Button, IconButton, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Input, Badge, FilterCard, FilterGrid, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
+import { Plus, Pencil, Settings, ShieldCheck, Search, X } from 'lucide-react';
 import { RolesYPermisosView } from '@/features/usuarios/components/RolesYPermisosView';
 import { UsuarioModal } from '@/features/usuarios/components/UsuarioModal';
 import type { UsuarioLista } from '@/features/usuarios/api/usuariosApi';
@@ -23,6 +23,8 @@ export function UsuariosView() {
   const [rolFilter, setRolFilter] = useState<'TODOS' | 'admin' | 'gerente' | 'vendedor'>('TODOS');
   const [search, setSearch] = useState('');
   const [usuarioModalOpen, setUsuarioModalOpen] = useState<{ usuario?: UsuarioLista; isEditing: boolean } | null>(null);
+
+  const tieneFiltrosActivos = Boolean(search || rolFilter !== 'TODOS');
 
   useEffect(() => {
     const fetchUsuarios = async () => {
@@ -58,20 +60,20 @@ export function UsuariosView() {
     <Tabs value={activeTab} onValueChange={value => setActiveTab(value as TabId)} className="space-y-4">
       {/* Filtros + acción principal (sólo pestaña Usuarios) */}
       {activeTab === 'usuarios' && (
-        <FilterCard>
-          <div className="flex flex-col md:flex-row items-stretch md:items-end gap-x-6 gap-y-4 w-full">
+        <FilterCard className="w-full">
+          <FilterGrid>
             <div className="flex-[2] min-w-[220px]">
               <Input
                 type="text"
                 label="Buscar"
                 icon={<Search className="w-4 h-4" />}
-                placeholder="Nombre o correo"
+                placeholder="Buscar por nombre o correo..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full"
               />
             </div>
-            <div className="flex-1 min-w-[180px]">
+            <div className="flex-1 min-w-[160px]">
               <Select
                 label="Rol"
                 value={rolFilter}
@@ -86,31 +88,65 @@ export function UsuariosView() {
               />
             </div>
             {/* Acción alineada a la derecha, a la altura de los campos (h-9) */}
-            <div className="w-full md:w-auto">
+            <div className="shrink-0 flex items-end">
               <Button
                 type="button"
                 variant="primary"
                 onClick={() => setUsuarioModalOpen({ isEditing: false })}
-                className="w-full md:w-auto"
+                className="h-9 gap-1.5 whitespace-nowrap"
               >
-                <UserPlus className="w-4 h-4" />
-                Nuevo Usuario
+                <Plus className="w-4 h-4" />
+                <span>Nuevo Usuario</span>
               </Button>
             </div>
-          </div>
-        </FilterCard>
+          </FilterGrid>
+      
+      {/* FILTROS ACTIVOS */}
+      {tieneFiltrosActivos && (
+        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border-default mt-3">
+          {search && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Búsqueda:</span>
+              {search.substring(0, 15)}{search.length > 15 ? '...' : ''}
+              <button
+                onClick={() => setSearch('')}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {rolFilter !== 'TODOS' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Rol:</span>
+              {rolFilter}
+              <button
+                onClick={() => setRolFilter('TODOS')}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Remover rol"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+        </div>
+      )}
+      
+      </FilterCard>
       )}
 
-      <TabsList aria-label="Secciones de usuarios" className="w-fit max-w-full overflow-x-auto">
+      <TabsList aria-label="Secciones de usuarios" className="w-full max-w-full overflow-x-auto">
         {TABS.map(tab => <TabsTrigger key={tab.id} value={tab.id}><tab.icon className="h-4 w-4" />{tab.label}</TabsTrigger>)}
       </TabsList>
 
       <TabsContent value="usuarios">
         {/* Único contenedor visual: el Table aporta borde, redondeo y scroll.
-           wrapperClassName reemplaza el rounded-xl/border-zinc-100 por defecto. */}
+           wrapperClassName reemplaza el rounded-xl/border-border-default por defecto. */}
         <Table
           className="text-sm"
-          wrapperClassName="rounded-2xl border-zinc-200/80 shadow-sm"
+
           scrollLabel="Usuarios"
         >
           <TableHeader>
@@ -126,7 +162,7 @@ export function UsuariosView() {
             {usuariosFiltrados.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5}>
-                  <div className="py-10 text-center text-zinc-500">
+                  <div className="py-10 text-center text-brand-options">
                     No se encontraron usuarios
                   </div>
                 </TableCell>
@@ -134,8 +170,8 @@ export function UsuariosView() {
             ) : (
               usuariosFiltrados.map((u) => (
                 <TableRow key={u.id_usuario}>
-                  <TableCell className="font-medium text-zinc-900">{u.nombre}</TableCell>
-                  <TableCell className="text-zinc-500">{u.email}</TableCell>
+                  <TableCell className="font-medium text-brand-subtitle">{u.nombre}</TableCell>
+                  <TableCell className="text-brand-options">{u.email}</TableCell>
                   <TableCell>
                     <Badge variant="neutral" size="estado">{u.rol}</Badge>
                   </TableCell>
@@ -145,15 +181,11 @@ export function UsuariosView() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-center">
-                    <Button
-                      size="sm"
-                      variant="ghost"
+                    <IconButton
+                      icon={Pencil}
+                      label={`Editar usuario ${u.nombre}`}
                       onClick={() => setUsuarioModalOpen({ usuario: u, isEditing: true })}
-                      title="Editar usuario"
-                      aria-label={`Editar usuario ${u.nombre}`}
-                    >
-                      <Settings className="w-4 h-4" />
-                    </Button>
+                    />
                   </TableCell>
                 </TableRow>
               ))
@@ -167,6 +199,7 @@ export function UsuariosView() {
       <UsuarioModal
         open={!!usuarioModalOpen}
         onClose={() => setUsuarioModalOpen(null)}
+        onSuccess={() => { void apiClient('/usuarios').then(res => setUsuarios(res.data || [])).catch(() => showToast.error('No se pudo actualizar el listado')); }}
         usuario={usuarioModalOpen?.usuario ?? null}
       />
     </Tabs>

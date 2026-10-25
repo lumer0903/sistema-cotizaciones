@@ -100,7 +100,7 @@ export function TabsList({ children, className, 'aria-label': ariaLabel }: TabsL
       role="tablist"
       aria-orientation={orientation}
       aria-label={ariaLabel}
-      className={cn('flex h-10 items-center bg-surface-muted/80 border border-border-default rounded-xl p-1', className)}
+      className={cn('flex min-h-11 w-full items-stretch gap-2 overflow-x-auto overflow-y-hidden border-b border-border-default bg-transparent', orientation === 'vertical' && 'flex-col border-b-0 border-l', className)}
     >
       {children}
     </div>
@@ -182,10 +182,11 @@ export function TabsTrigger({ value, children, className, disabled }: TabsTrigge
       type="button"
       tabIndex={isActive ? 0 : -1}
       className={cn(
-        'flex h-8 items-center justify-center gap-1.5 rounded-lg px-3 py-1 text-sm font-medium transition-[background-color,color,transform] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.96]',
+        'flex min-h-11 shrink-0 whitespace-nowrap items-center justify-center gap-2 border-b-2 border-transparent px-4 py-2.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-focus-ring disabled:opacity-50 disabled:cursor-not-allowed',
+        orientation === 'vertical' && 'border-b-0 border-l-2 justify-start',
         isActive
-          ? 'bg-surface shadow-sm text-accent-ink'
-          : 'text-brand-options hover:text-brand-subtitle hover:bg-surface-muted/50',
+          ? 'border-accent-primary text-accent-ink'
+          : 'text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted/50',
         className,
       )}
     >

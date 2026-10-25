@@ -12,6 +12,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   href?: string;
   target?: string;
   rel?: string;
+  download?: string | boolean;
 }
 
 const BASE_STYLES =
@@ -32,7 +33,7 @@ const VARIANT_STYLES: Record<NonNullable<ButtonProps['variant']>, string> = {
   ].join(' '),
 
   outline: [
-    'bg-white text-brand-subtitle border border-border-default',
+    'bg-surface text-brand-subtitle border border-border-default',
     'hover:bg-surface-muted hover:border-brand-options active:bg-status-borrador/60 active:scale-[0.96]',
     'disabled:bg-surface-muted disabled:text-brand-options disabled:border-border-default',
   ].join(' '),
@@ -43,7 +44,7 @@ const VARIANT_STYLES: Record<NonNullable<ButtonProps['variant']>, string> = {
   ].join(' '),
 
   icon: [
-    'bg-white text-brand-subtitle border border-border-default',
+    'bg-surface text-brand-subtitle border border-border-default',
     'hover:bg-accent-selection hover:border-accent-primary active:bg-accent-primary/20 active:scale-[0.96]',
     'disabled:bg-surface-muted disabled:text-brand-options disabled:border-border-default',
     '[&>svg]:w-5 [&>svg]:h-5 [&>svg]:stroke-[2]',
@@ -85,10 +86,17 @@ export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonPr
     if (isLink) {
       return (
         <a
+          {...(props as unknown as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
           ref={ref as React.Ref<HTMLAnchorElement>}
-          href={href}
+          href={disabled || loading ? undefined : href}
           target={target}
-          rel={rel}
+          rel={rel ?? (target === '_blank' ? 'noopener noreferrer' : undefined)}
+          aria-disabled={disabled || loading || undefined}
+          tabIndex={disabled || loading ? -1 : props.tabIndex}
+          onClick={(event) => {
+            if (disabled || loading) { event.preventDefault(); return; }
+            (props.onClick as unknown as React.MouseEventHandler<HTMLAnchorElement>)?.(event);
+          }}
           aria-busy={loading || undefined}
           className={cn(BASE_STYLES, VARIANT_STYLES[variant], finalSize, className)}
         >

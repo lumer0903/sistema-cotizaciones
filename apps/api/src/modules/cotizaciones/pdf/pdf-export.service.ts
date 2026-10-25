@@ -99,6 +99,17 @@ export class PdfExportService {
         throw new ServiceUnavailableException('Cola PDF sin workers activos');
       }
 
+      // BullMQ deduplicates by jobId, including completed/failed jobs. If the
+      // current PDF cache is absent or stale, keeping a terminal job would
+      // make every export return 202 forever without executing the worker.
+      const previousJob = await this.conTope(this.pdfQueue.getJob(jobId));
+      if (previousJob) {
+        const state = await this.conTope(previousJob.getState());
+        if (state === 'completed' || state === 'failed') {
+          await this.conTope(previousJob.remove());
+        }
+      }
+
       await this.conTope(
         this.pdfQueue.add(
           PDF_JOB_NAME,
@@ -150,7 +161,7 @@ export class PdfExportService {
     const cot = await this.cotizacionesService.obtenerPorId(id);
     const hash = computePdfHash(cot);
 
-    if (cot.pdf_key && cot.pdf_hash === hash) {
+    if (cot.pdf_key && cot.pdf_hash === hash && await this.storage.read(cot.pdf_key)) {
       return { estado: 'listo', pdf_generado_en: cot.pdf_generado_en };
     }
 

@@ -83,7 +83,7 @@ function PriceRow({
             aria-describedby={error ? errorId : undefined}
             data-field={field}
             className={cn(
-              'w-full h-9 rounded-lg border bg-white pl-7 pr-2.5 text-right text-base font-semibold tnum',
+              'w-full h-9 rounded-lg border bg-surface pl-7 pr-2.5 text-right text-base font-semibold tnum',
               'transition-colors placeholder:text-brand-options focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring',
               '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
               error ? 'border-danger text-danger' : cn(borderClass, accentClass)
@@ -135,7 +135,7 @@ function ClientCard({ chip, hint, icon: Icon, accentClass, borderClass, softClas
         <header className="flex flex-wrap items-center justify-between gap-2">
           <span
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-full border bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shadow-sm',
+              'inline-flex items-center gap-1.5 rounded-full border bg-surface px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shadow-sm',
               borderClass,
               accentClass
             )}

@@ -1,1 +1,0 @@
-SELECT datname,state,wait_event_type,wait_event,now()-query_start AS elapsed FROM pg_stat_activity WHERE datname LIKE 'pricing_qa_%';

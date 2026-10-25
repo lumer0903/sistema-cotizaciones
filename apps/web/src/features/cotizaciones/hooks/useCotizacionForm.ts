@@ -7,7 +7,7 @@ import { useCrearCotizacionStore, ClienteForm } from '@/features/cotizaciones/st
 import { ProductoCarrito, RecomendacionItem, getItemTotal } from '@/features/cotizaciones/types/cotizacion';
 import { ProductoBase } from '@/features/cotizaciones/components/AgregarProductoModal';
 import { TipoRecomendacion } from '@/features/cotizaciones/components/RecomendacionesPanel';
-import { obtenerProductosImportados, getProximoNumeroCotizacion } from '@/features/cotizaciones/api/cotizacionApi';
+import { obtenerProductosImportados, getProximoNumeroCotizacion, registrarAccionIa } from '@/features/cotizaciones/api/cotizacionApi';
 import { formatCode } from '@/lib/formatters';
 import { autosaveCotizacion, puedeAutosave, resetAutosaveHash } from '@/features/cotizaciones/api/autosave';
 import { Cliente } from '@/features/cotizaciones/components/ClienteAutocomplete';
@@ -41,6 +41,10 @@ interface ModalRecContexto {
   confirmLabel: string;
   observacion: string;
   reemplazaId: string | null;
+  /** ia_interacciones.id_interaccion de la sugerencia (para reportar ACEPTADO) */
+  idInteraccion: number | null;
+  /** Producto sugerido aceptado → ia_interacciones.id_producto_sugerido */
+  idProductoSugerido: number | null;
 }
 
 const inferirTipoDoc = (doc: string): 'DNI' | 'CE' | 'RUC' => {
@@ -99,6 +103,9 @@ export function useCotizacionForm(modo: 'crear' | 'editar') {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [productoParaModal, setProductoParaModal] = useState<ProductoBase | null>(null);
   const [modalRecContexto, setModalRecContexto] = useState<ModalRecContexto | null>(null);
+
+  /** Cotización (borrador) autosaveada: se envía a la IA y a registrar-accion-ia */
+  const idCotizacion = useCrearCotizacionStore((s) => s.idCotizacionGuardada);
 
   const [refreshKeyRecs, setRefreshKeyRecs] = useState(0);
 
@@ -289,6 +296,18 @@ export function useCotizacionForm(modo: 'crear' | 'editar') {
       if (modalRecContexto) showToast.success('Producto agregado al carrito');
     }
 
+    // Auditoría IA: el asesor aceptó la sugerencia (alta o reemplazo en el carrito)
+    if (modalRecContexto?.idInteraccion != null) {
+      const idInteraccion = modalRecContexto.idInteraccion;
+      const idProductoSugerido = modalRecContexto.idProductoSugerido;
+      registrarAccionIa({
+        id_interaccion: idInteraccion,
+        accion: 'ACEPTADO',
+        ...(idCotizacion != null ? { id_cotizacion: idCotizacion } : {}),
+        ...(idProductoSugerido != null ? { id_producto_sugerido: idProductoSugerido } : {}),
+      }).catch((e) => console.warn('[ia] No se pudo registrar ACEPTADO:', e));
+    }
+
     setSelectedItemId(id);
     handleCloseModal();
   };
@@ -331,7 +350,11 @@ export function useCotizacionForm(modo: 'crear' | 'editar') {
     };
   };
 
-  const handleSelectAgregar = (rec: RecomendacionItem, tipo: TipoRecomendacion) => {
+  const handleSelectAgregar = (
+    rec: RecomendacionItem,
+    tipo: TipoRecomendacion,
+    meta?: { idInteraccion?: number | null },
+  ) => {
     setModalRecContexto({
       aviso: null,
       cantidadInicial: 1,
@@ -340,12 +363,19 @@ export function useCotizacionForm(modo: 'crear' | 'editar') {
       confirmLabel: 'Agregar',
       observacion: `Sugerido por IA (${tipo.toUpperCase()})`,
       reemplazaId: null,
+      idInteraccion: meta?.idInteraccion ?? null,
+      idProductoSugerido: rec.id_producto ?? null,
     });
     setProductoParaModal(mapRecToProductoBase(rec));
     setIsModalOpen(true);
   };
 
-  const handleSelectReemplazar = (baseCartId: string, rec: RecomendacionItem, tipo: TipoRecomendacion) => {
+  const handleSelectReemplazar = (
+    baseCartId: string,
+    rec: RecomendacionItem,
+    tipo: TipoRecomendacion,
+    meta?: { idInteraccion?: number | null },
+  ) => {
     const baseItem = items.find((i) => i.id === baseCartId);
     if (!baseItem) return;
     setModalRecContexto({
@@ -356,6 +386,8 @@ export function useCotizacionForm(modo: 'crear' | 'editar') {
       confirmLabel: 'Reemplazar',
       observacion: `Reemplazado por IA (${tipo.toUpperCase()})`,
       reemplazaId: baseCartId,
+      idInteraccion: meta?.idInteraccion ?? null,
+      idProductoSugerido: rec.id_producto ?? null,
     });
     setProductoParaModal(mapRecToProductoBase(rec));
     setIsModalOpen(true);
@@ -410,6 +442,7 @@ export function useCotizacionForm(modo: 'crear' | 'editar') {
     modalRecContexto,
     refreshKeyRecs,
     numeroCotizacion,
+    idCotizacion,
     clienteForm,
     subtotal,
     costoCarreta,

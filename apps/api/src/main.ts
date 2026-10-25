@@ -9,6 +9,9 @@ import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import * as express from 'express';
+import * as path from 'path';
+import type { Request, Response, NextFunction } from 'express';
 
 process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
   console.error('Unhandled Rejection at:', new Date().toISOString(), 'Promise:', promise, 'Reason:', reason);
@@ -34,8 +37,22 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // Servir archivos locales estáticos si existen en uploads (fallback de almacenamiento)
+  const uploadsPath = process.env.STORAGE_PATH || path.join(process.cwd(), 'uploads');
+  app.use('/uploads', express.static(path.resolve(uploadsPath)));
+
   app.use(cookieParser());
-  app.use(helmet());
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }));
+
+  // Desactivación de caché HTTP en respuestas de API para desarrollo y navegación en tiempo real
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+  });
 
   // Límite duro SOLO para endpoints de credenciales (login/refresh). Antes cubría
   // todo /api/auth incluido /auth/me: el auth provider lo llama en cada

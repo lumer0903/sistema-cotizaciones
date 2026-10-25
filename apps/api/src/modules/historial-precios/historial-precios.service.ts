@@ -8,8 +8,45 @@ const select = { id_historial: true, id_producto: true, id_usuario: true, campo_
 type Entry = Prisma.HistorialPreciosGetPayload<{
     select: typeof select;
 }>;
-const map = (item: Entry) => ({ ...item, valor_anterior: item.valor_anterior.toFixed(2), valor_nuevo: item.valor_nuevo.toFixed(2),
-    delta: item.valor_nuevo.minus(item.valor_anterior).toFixed(2) });
+const parseCostoUnitario = (motivo: string | null, campo: string, nuevo: Prisma.Decimal): number | null => {
+    if (campo.startsWith('costo_')) {
+        return Number(nuevo.toFixed(2));
+    }
+    if (!motivo) return null;
+    const match = motivo.match(/Costo:\s*([\d,.]+)/i);
+    if (match) {
+        const val = parseFloat(match[1].replace(',', '.'));
+        return Number.isFinite(val) ? val : null;
+    }
+    return null;
+};
+
+const parseMotivoLimpio = (motivo: string | null): string => {
+    if (!motivo) return '';
+    if (motivo.includes('|')) {
+        const parts = motivo.split('|').map(s => s.trim());
+        const nonCostParts = parts.filter(p => !p.toLowerCase().startsWith('costo:'));
+        if (nonCostParts.length > 1) {
+            return nonCostParts.slice(1).join(' · ');
+        } else if (nonCostParts.length === 1) {
+            return nonCostParts[0];
+        }
+    }
+    return motivo;
+};
+
+const map = (item: Entry) => {
+    const costo_unitario = parseCostoUnitario(item.motivo, item.campo_modificado, item.valor_nuevo);
+    const motivo_limpio = parseMotivoLimpio(item.motivo);
+    return {
+        ...item,
+        valor_anterior: item.valor_anterior.toFixed(2),
+        valor_nuevo: item.valor_nuevo.toFixed(2),
+        delta: item.valor_nuevo.minus(item.valor_anterior).toFixed(2),
+        costo_unitario,
+        motivo_limpio,
+    };
+};
 export type HistorialPrecioResponse = ReturnType<typeof map>;
 export interface PaginatedHistorialPreciosResponse {
     data: HistorialPrecioResponse[];

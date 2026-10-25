@@ -1,9 +1,10 @@
 'use client';
+import { IconButton } from '@/components/ui/IconButton';
 
 import React, { useState } from 'react';
-import { Eye, Pencil, Trash2, PackageSearch, Loader2, PackagePlus, ArrowLeftRight, ClipboardList } from 'lucide-react';
+import { Eye, Pencil, Trash2, PackageSearch, Loader2 } from 'lucide-react';
 import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Button } from '@/components/ui';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
 import { DetalleProductoModal } from './DetalleProductoModal';
 import { StockBadge } from './StockBadge';
 import { formatCode, formatText } from '@/lib/formatters';
@@ -17,9 +18,6 @@ interface InventarioTableProps {
   almacenId?: number;
   onEditar: (producto: ProductoInventario) => void;
   onEliminar: (id: number) => void;
-  onMovimiento?: (productoId: number) => void;
-  onTransferencia?: (productoId: number) => void;
-  onKardex?: (producto: ProductoInventario) => void;
 }
 
 // Definición de columnas con anchos fluidos y comportamiento responsive
@@ -73,9 +71,6 @@ export function InventarioTable({
   loading = false,
   onEditar,
   onEliminar,
-  onMovimiento,
-  onTransferencia,
-  onKardex,
   almacenId,
 }: InventarioTableProps) {
   const [detalleProducto, setDetalleProducto] = useState<ProductoInventario | null>(null);
@@ -139,7 +134,7 @@ export function InventarioTable({
 
             return (
               <TableRow key={id ?? prod.codigo}>
-                <TableCell className={cn('font-bold text-zinc-900 font-mono text-sm', COLUMNS[0].cellClassName)}>
+                <TableCell className={cn('font-bold text-brand-subtitle font-mono text-sm', COLUMNS[0].cellClassName)}>
                   {formatCode(prod.codigo)}
                 </TableCell>
                 <TableCell
@@ -160,42 +155,13 @@ export function InventarioTable({
                 <TableCell className={cn('bg-surface', COLUMNS[4].cellClassName)}>
                   <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                     <Can modulo="productos" nivel="edicion">
-                      {onMovimiento && <Button variant="ghost" onClick={()=>onMovimiento(id)} aria-label={'Movimiento de '+prod.codigo}><PackagePlus className="w-4 h-4" /></Button>}
-                      {onTransferencia && <Button variant="ghost" onClick={()=>onTransferencia(id)} aria-label={'Transferir '+prod.codigo}><ArrowLeftRight className="w-4 h-4" /></Button>}
-                    </Can>
-                    {onKardex && <Button variant="ghost" onClick={()=>onKardex(prod)} aria-label={'Kárdex de '+prod.codigo}><ClipboardList className="w-4 h-4" /></Button>}
-                    <Can modulo="productos" nivel="edicion">
-                      <Button
-                        variant="ghost"
-                        onClick={() => onEditar(prod)}
-                        className="min-h-11 min-w-11 p-0 text-accent-ink hover:text-accent-primary"
-                        title="Editar"
-                        aria-label={`Editar ${formatCode(prod.codigo)}`}
-                      >
-                        <Pencil className="w-5 h-5" aria-hidden="true" />
-                      </Button>
+                      <IconButton icon={Pencil} label={`Editar ${formatCode(prod.codigo)}`} onClick={() => onEditar(prod)}   />
                     </Can>
                     <Can modulo="productos" nivel="lectura">
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleVerDetalle(prod)}
-                        className="min-h-11 min-w-11 p-0 text-accent-ink hover:text-accent-primary"
-                        title="Ver detalle"
-                        aria-label={`Ver detalle de ${formatCode(prod.codigo)}`}
-                      >
-                        <Eye className="w-5 h-5" aria-hidden="true" />
-                      </Button>
+                      <IconButton icon={Eye} label={`Ver detalle de ${formatCode(prod.codigo)}`} onClick={() => handleVerDetalle(prod)}   />
                     </Can>
                     <Can modulo="productos" nivel="edicion">
-                      <Button
-                        variant="ghost"
-                        onClick={() => id !== undefined && onEliminar(id)}
-                        className="min-h-11 min-w-11 p-0 text-accent-ink hover:text-danger"
-                        title="Eliminar"
-                        aria-label={`Eliminar ${formatCode(prod.codigo)}`}
-                      >
-                        <Trash2 className="w-5 h-5" aria-hidden="true" />
-                      </Button>
+                      <IconButton icon={Trash2} label={`Eliminar ${formatCode(prod.codigo)}`} onClick={() => id !== undefined && onEliminar(id)}  destructive />
                     </Can>
                   </div>
                 </TableCell>

@@ -26,4 +26,12 @@ export class RecomendarItemDto {
   })
   @IsOptional() @IsString() @MaxLength(20)
   tipo_venta?: string;
+
+  @ApiPropertyOptional({
+    example: 1,
+    description:
+      'ID de la cotización desde la cual se pide la recomendación (borrador autosaveado). Se registra en ia_interacciones.id_cotizacion.',
+  })
+  @IsOptional() @IsInt() @Min(1) @Type(() => Number)
+  id_cotizacion?: number;
 }

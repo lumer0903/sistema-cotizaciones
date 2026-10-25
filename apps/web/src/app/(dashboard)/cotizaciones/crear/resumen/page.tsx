@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, FileText, Download, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, FileText, Download, Save, UserRound, Package, CalendarDays, CreditCard, MessageSquare, Info } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import {
+  Card, CardHeader, CardContent, Badge, ESTADO_BADGE,
   Table,
   TableHeader,
   TableBody,
@@ -25,7 +26,7 @@ import {
   cambiarEstadoCotizacion,
   exportarPdfCotizacion,
 } from '@/features/cotizaciones/api/cotizacionApi';
-import { formatCode } from '@/lib/formatters';
+import { formatCode, formatPrice } from '@/lib/formatters';
 
 export default function ResumenCotizacionPage() {
   const router = useRouter();
@@ -45,7 +46,7 @@ export default function ResumenCotizacionPage() {
   } = useCrearCotizacionStore();
 
   const [estadoActual, setEstadoActual] = useState<string>('borrador');
-  const [observaciones, setObservaciones] = useState('Enviar por shalom');
+  const [observaciones, setObservaciones] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [exportando, setExportando] = useState(false);
 
@@ -134,7 +135,7 @@ export default function ResumenCotizacionPage() {
       const basePayload = {
         id_cliente: idCliente,
         tipo_precio: tipoPrecioCliente === 'DISTRIBUIDOR' ? 'distribuidor' : 'normal',
-        observaciones: observaciones || `Vencimiento: ${fechaVencimiento || '-'} | Pago: ${tipoPago || '-'}`,
+        observaciones: observaciones.trim(),
         incluye_carreta: incluyeCarreta,
         costo_carreta: costoCarreta,
         fecha_vencimiento: fechaVencimiento || null,
@@ -201,7 +202,7 @@ export default function ResumenCotizacionPage() {
       await actualizarCotizacion(editandoId, {
         id_cliente: idCliente,
         tipo_precio: tipoPrecioCliente === 'DISTRIBUIDOR' ? 'distribuidor' : 'normal',
-        observaciones: observaciones || `Vencimiento: ${fechaVencimiento || '-'} | Pago: ${tipoPago || '-'}`,
+        observaciones: observaciones.trim(),
         incluye_carreta: incluyeCarreta,
         costo_carreta: costoCarreta,
         fecha_vencimiento: fechaVencimiento || null,
@@ -266,194 +267,154 @@ export default function ResumenCotizacionPage() {
 
   if (items.length === 0 && !idCotizacionGuardada) {
     return (
-        <div className="max-w-3xl mx-auto p-6 sm:p-8 text-center space-y-4">
-        <p className="text-sm text-zinc-500">No hay productos en el carrito.</p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => router.push(`${base}/crear`)}
-        >
-          <ArrowLeft className="size-4" /> Volver a crear
+      <Card className="mx-auto max-w-xl p-8 text-center sm:p-10">
+        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-accent-soft text-accent-ink">
+          <FileText className="size-6" aria-hidden="true" />
+        </div>
+        <h1 className="text-lg font-bold text-brand-subtitle">Tu cotización aún no tiene productos</h1>
+        <p className="mt-2 text-sm text-brand-options">Agrega productos para revisar el detalle y preparar el documento.</p>
+        <Button variant="outline" className="mt-5" onClick={() => router.push(`${base}/crear`)}>
+          <ArrowLeft className="size-4" aria-hidden="true" /> Volver a crear
         </Button>
-      </div>
+      </Card>
     );
   }
 
-  return (
-    <div className="w-full max-w-[1100px] mx-auto space-y-6 font-sans pb-10">
-      <h1 className="sr-only">Resumen de cotización</h1>
-      {/* Header con Select global (cápsula de estado) */}
-      <div className="flex justify-between items-center px-1">
-        <div className="flex items-center gap-2.5">
-          <FileText className="w-5 h-5 text-zinc-800" />
-          <span className="text-xl font-bold text-zinc-800 tracking-tight">{numeroCotizacion}</span>
-        </div>
+  const ocupado = guardando || exportando;
+  const estadoVisible = estadoServidor?.estado ?? 'borrador';
+  const estadoLabel = estadoVisible === 'enviada' ? 'Enviado' : estadoVisible.replaceAll('_', ' ');
+  const vencimientoLabel = fechaVencimiento
+    ? fechaVencimiento.split('T')[0].split('-').reverse().join('/')
+    : 'Sin definir';
 
-        <div className="w-44">
-          <Select
-            value={estadoActual}
-            disabled={!editable || guardando || exportando}
-            onChange={(e) => handleCambiarEstadoSelect(e.target.value as 'borrador' | 'enviada')}
-            aria-label="Estado de la cotización"
-            options={[
-              { label: 'BORRADOR', value: 'borrador' },
-              { label: 'ENVIADO', value: 'enviada' },
-              ...(!['borrador', 'enviada'].includes(estadoActual) ? [{ label: estadoActual.toUpperCase(), value: estadoActual }] : []),
-            ]}
-            className="w-full"
-          />
+  return (
+    <div className="mx-auto w-full max-w-7xl space-y-5 pb-6">
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-brand-options">{numeroGuardado ?? numeroCotizacion}</span>
+            <Badge variant={ESTADO_BADGE[estadoVisible] ?? 'neutral'} size="estado">{estadoLabel}</Badge>
+          </div>
+          <h1 className="text-xl font-bold tracking-tight text-brand-subtitle sm:text-2xl">Resumen de cotización</h1>
+          <p className="mt-1 text-sm text-brand-options">Revisa los datos y los importes antes de guardar o descargar.</p>
         </div>
-      </div>
+        <Button variant="outline" disabled={ocupado} onClick={() => router.back()}>
+          <ArrowLeft className="size-4" aria-hidden="true" /> Volver
+        </Button>
+      </header>
 
       {idCotizacionGuardada && !editable && (
-        <p role="status" className="rounded-xl border border-border-default bg-white px-4 py-3 text-sm text-zinc-600">
-          {errorCarga ? 'No se pudo verificar el estado. Vuelve al listado para abrir la cotización.' : !estadoVerificado ? 'Verificando estado de la cotización…' : 'Cotización guardada. Consulta y descarga disponibles; la edición requiere un borrador desde el listado.'}
-        </p>
+        <div role={errorCarga ? 'alert' : 'status'} className="flex items-start gap-2.5 rounded-xl border border-border-default bg-surface px-4 py-3 text-sm text-brand-options">
+          <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <p>{errorCarga ? 'No se pudo verificar el estado. Vuelve al listado para abrir la cotización.' : !estadoVerificado ? 'Verificando estado de la cotización…' : 'Cotización guardada. Puedes descargar el PDF. Para editar un borrador, ábrelo desde el listado.'}</p>
+        </div>
       )}
 
-      {/* Información General */}
-      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-zinc-200/80 shadow-sm space-y-3">
-        <h2 className="text-base font-bold text-zinc-800">Información general</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-6 text-xs">
-          <div>
-            <span className="block text-zinc-500 font-bold uppercase text-xs">CLIENTE</span>
-            <span className="font-semibold text-zinc-800">{cliente.nombre || '-'}</span>
-          </div>
-          <div>
-            <span className="block text-zinc-500 font-bold uppercase text-xs">DOCUMENTO</span>
-            <span className="font-semibold text-zinc-800">{cliente.tipoDocumento} · {cliente.ruc_dni || '-'}</span>
-          </div>
-          <div>
-            <span className="block text-zinc-500 font-bold uppercase text-xs">TELÉFONO</span>
-            <span className="font-semibold text-zinc-800">{cliente.telefono || '-'}</span>
-          </div>
-          <div>
-            <span className="block text-zinc-500 font-bold uppercase text-xs">EMAIL</span>
-            <span className="font-semibold text-zinc-800">{cliente.email || '-'}</span>
-          </div>
-          <div>
-            <span className="block text-zinc-500 font-bold uppercase text-xs">TIPO PRECIO</span>
-            <span className="font-semibold text-zinc-800">{tipoPrecioCliente}</span>
-          </div>
-          <div>
-            <span className="block text-zinc-500 font-bold uppercase text-xs">VENCIMIENTO</span>
-            <span className="font-semibold text-zinc-800">{fechaVencimiento || '-'}</span>
-          </div>
-          <div>
-            <span className="block text-zinc-500 font-bold uppercase text-xs">TIPO PAGO</span>
-            <span className="font-semibold text-zinc-800">{tipoPago || '-'}</span>
-          </div>
-          <div>
-            <span className="block text-zinc-500 font-bold uppercase text-xs">CARRETA</span>
-            <span className="font-semibold text-zinc-800">{incluyeCarreta ? 'Si (S/ 15.00)' : 'No'}</span>
-          </div>
-        </div>
-      </div>
+      <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-5">
+          <Card>
+            <CardHeader className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-5">
+              <h2 className="flex items-center gap-2 text-sm font-bold text-brand-subtitle"><UserRound className="size-4 text-accent-ink" aria-hidden="true" />Datos del cliente</h2>
+              <Badge variant={tipoPrecioCliente === 'DISTRIBUIDOR' ? 'distribuidor' : 'tienda'} size="estado">{tipoPrecioCliente === 'DISTRIBUIDOR' ? 'Distribuidor' : 'Tienda'}</Badge>
+            </CardHeader>
+            <CardContent className="space-y-4 px-4 py-4 sm:px-5">
+              <div>
+                <p className="break-words text-base font-semibold text-brand-subtitle">{cliente.nombre || 'Sin cliente'}</p>
+                <p className="mt-1 text-sm text-brand-options">{cliente.tipoDocumento} · {cliente.ruc_dni || 'Sin documento'}</p>
+              </div>
+              <dl className="grid min-w-0 gap-4 border-t border-border-default pt-4 sm:grid-cols-2">
+                <div className="min-w-0"><dt className="text-xs text-brand-options">Teléfono</dt><dd className="mt-1 break-words text-sm font-medium text-brand-subtitle">{cliente.telefono || 'Sin registrar'}</dd></div>
+                <div className="min-w-0"><dt className="text-xs text-brand-options">Correo electrónico</dt><dd className="mt-1 break-all text-sm font-medium text-brand-subtitle">{cliente.email || 'Sin registrar'}</dd></div>
+              </dl>
+            </CardContent>
+          </Card>
 
-      {/* Detalle, Totales y Observaciones */}
-      <div className="bg-white p-4 sm:p-6 rounded-2xl border border-zinc-200/80 shadow-sm space-y-6">
-        <h2 className="text-base font-bold text-zinc-800">Detalle ({items.length} items)</h2>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          <div className="lg:col-span-2 border border-zinc-200/80 rounded-xl overflow-hidden">
-            <Table wrapperClassName="border-0 rounded-none shadow-none">
-              <TableHeader className="bg-zinc-50/50">
-                <TableRow>
-                  <TableHead className="text-xs font-bold text-zinc-500 uppercase">CÓDIGO</TableHead>
-                  <TableHead className="text-xs font-bold text-zinc-500 uppercase">DESCRIPCIÓN</TableHead>
-                  <TableHead className="text-xs font-bold text-zinc-500 uppercase">PRECIO</TableHead>
-                  <TableHead className="text-xs font-bold text-zinc-500 uppercase">CANT</TableHead>
-                  <TableHead className="text-xs font-bold text-zinc-500 uppercase">TOTAL</TableHead>
-                </TableRow>
-              </TableHeader>
+          <section aria-labelledby="resumen-productos" className="min-w-0 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+              <h2 id="resumen-productos" className="flex items-center gap-2 text-sm font-bold text-brand-subtitle"><Package className="size-4 text-accent-ink" aria-hidden="true" />Productos y precios</h2>
+              <span className="text-xs text-brand-options">{items.length} {items.length === 1 ? 'producto' : 'productos'}</span>
+            </div>
+            <ul aria-label="Productos de la cotización" className="space-y-3 sm:hidden">
+              {items.map(it => (
+                <li key={it.id}>
+                  <Card className="p-4">
+                    <p className="text-sm font-semibold text-brand-subtitle">{formatCode(it.codigo)}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-brand-options">{it.descripcion}</p>
+                    <div className="mt-3 grid grid-cols-[auto_1fr] items-end gap-3 border-t border-border-default pt-3">
+                      <div><p className="text-xs text-brand-options">Cantidad</p><p className="mt-1 text-base font-semibold text-brand-subtitle tnum">{it.cantidad}</p></div>
+                      <div className="text-right"><p className="text-xs text-brand-options">Precio unitario</p><p className="mt-1 text-lg font-bold text-accent-ink tnum">{formatPrice(it.precioUnitario)}</p></div>
+                      <div className="col-span-2 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface-muted px-3 py-2"><span className="text-xs font-semibold text-brand-subtitle">Total del producto</span><span className="text-lg font-bold text-brand-subtitle tnum">{formatPrice(it.total ?? 0)}</span></div>
+                    </div>
+                  </Card>
+                </li>
+              ))}
+            </ul>
+            <div className="hidden sm:block"><Table scrollLabel="Productos de la cotización">
+              <TableHeader><TableRow>
+                <TableHead>Producto</TableHead>
+                <TableHead className="text-right whitespace-nowrap">Precio unitario</TableHead>
+                <TableHead className="text-right">Cant.</TableHead>
+                <TableHead className="text-right whitespace-nowrap">Total producto</TableHead>
+              </TableRow></TableHeader>
               <TableBody>
-                {items.map((it) => (
+                {items.map(it => (
                   <TableRow key={it.id}>
-                    <TableCell className="font-bold text-xs">{formatCode(it.codigo)}</TableCell>
-                    <TableCell className="text-xs uppercase">{it.descripcion}</TableCell>
-                    <TableCell className="text-xs">S/ {Number(it.precioUnitario).toFixed(2)}</TableCell>
-                    <TableCell className="text-xs">{it.cantidad}</TableCell>
-                    <TableCell className="font-bold text-xs">S/ {Number(it.total).toFixed(2)}</TableCell>
+                    <TableCell className="min-w-[180px] max-w-md">
+                      <span className="block text-sm font-semibold text-brand-subtitle">{formatCode(it.codigo)}</span>
+                      <span className="mt-1 block text-xs leading-relaxed text-brand-options">{it.descripcion}</span>
+                    </TableCell>
+                    <TableCell className="text-right whitespace-nowrap"><span className="inline-block rounded-lg border border-accent-primary/20 bg-accent-soft px-2.5 py-1 text-base font-bold text-accent-ink tnum">{formatPrice(it.precioUnitario)}</span></TableCell>
+                    <TableCell className="text-right">{it.cantidad}</TableCell>
+                    <TableCell className="bg-surface-muted/70 text-right text-base font-bold whitespace-nowrap">{formatPrice(it.total ?? 0)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
-          </div>
+            </Table></div>
+          </section>
 
-          <div className="space-y-1.5 text-xs text-zinc-600 self-start lg:pl-4">
-            <div className="flex justify-between items-center">
-              <span>Subtotal</span>
-              <span className="font-semibold text-zinc-800">S/ {subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Carreta</span>
-              <span className="font-semibold text-zinc-800">S/ {costoCarreta.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center text-sm font-bold text-zinc-900 pt-2">
-              <span className="text-base font-bold">Total</span>
-              <span className="text-base font-bold">S/ {total.toFixed(2)}</span>
-            </div>
-          </div>
+          <Card>
+            <CardHeader className="px-4 py-3.5 sm:px-5"><h2 className="text-sm font-bold text-brand-subtitle">Condiciones comerciales</h2></CardHeader>
+            <CardContent className="px-4 py-4 sm:px-5">
+              <dl className="grid gap-4 text-sm sm:grid-cols-2">
+                <div className="flex items-start gap-2.5"><CalendarDays className="mt-0.5 size-4 shrink-0 text-brand-options" aria-hidden="true" /><div><dt className="text-xs text-brand-options">Vencimiento</dt><dd className="mt-0.5 font-medium text-brand-subtitle">{vencimientoLabel}</dd></div></div>
+                <div className="flex items-start gap-2.5"><CreditCard className="mt-0.5 size-4 shrink-0 text-brand-options" aria-hidden="true" /><div><dt className="text-xs text-brand-options">Forma de pago</dt><dd className="mt-0.5 font-medium text-brand-subtitle">{tipoPago || 'Sin definir'}</dd></div></div>
+              </dl>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-wrap items-center justify-between gap-2 px-4 py-3.5 sm:px-5"><h2 className="flex items-center gap-2 text-sm font-bold text-brand-subtitle"><MessageSquare className="size-4 text-accent-ink" aria-hidden="true" />Observaciones del asesor</h2><span className="text-xs text-brand-options">Opcional</span></CardHeader>
+            <CardContent className="px-4 py-4 sm:px-5">
+              <Textarea aria-label="Observaciones de la cotización" value={observaciones} disabled={!editable || ocupado}
+                onChange={e => setObservaciones(e.target.value)} rows={3} placeholder="Escribe una observación si es necesario" />
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Sección de Observaciones usando Textarea global */}
-        <div className="space-y-2 pt-2">
-          <h3 className="text-sm font-bold text-zinc-800">Observaciones</h3>
-          <div className="max-w-md">
-            <Textarea
-              value={observaciones}
-              disabled={!editable || guardando || exportando}
-              onChange={(e) => setObservaciones(e.target.value)}
-              rows={3}
-              className="text-xs"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Botones Inferiores con Button global */}
-      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2">
-        <Button
-          variant="outline"
-          onClick={() => router.back()}
-          className="px-5 rounded-xl font-medium"
-        >
-          <ArrowLeft className="size-4 mr-1.5" /> Volver
-        </Button>
-
-        {!idCotizacionGuardada && (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => handleGuardar(false)}
-            disabled={guardando || exportando || items.length === 0}
-          >
-            {guardando ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-            {guardando ? 'Guardando...' : 'Guardar'}
-          </Button>
-        )}
-
-        {enModoEdicion && editable && (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleGuardarCambios}
-            disabled={guardando || exportando || items.length === 0}
-          >
-            {guardando ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-            {guardando ? 'Guardando...' : 'Guardar cambios'}
-          </Button>
-        )}
-
-        <Button
-          variant="primary"
-          onClick={handleExportarClick}
-          disabled={exportando || guardando}
-          className="px-5 rounded-xl font-medium bg-accent-primary hover:bg-accent-hover text-on-accent shadow-sm"
-        >
-          {exportando || guardando ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4 mr-1.5" />}
-          {exportando ? 'Generando...' : 'Exportar PDF'}
-        </Button>
+        <aside aria-label="Importe y acciones de la cotización" className="min-w-0 xl:sticky xl:top-20">
+          <Card>
+            <CardHeader className="px-4 py-3.5 sm:px-5"><h2 className="text-sm font-bold text-brand-subtitle">Total y confirmación</h2></CardHeader>
+            <CardContent className="space-y-5 px-4 py-4 sm:px-5">
+              <dl className="space-y-3 text-sm">
+                <div className="flex justify-between gap-3"><dt className="text-brand-options">Subtotal de productos</dt><dd className="font-semibold text-brand-subtitle tnum">{formatPrice(subtotal)}</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-brand-options">Carreta{!incluyeCarreta && ' · No incluida'}</dt><dd className="font-semibold text-brand-subtitle tnum">{formatPrice(costoCarreta)}</dd></div>
+              </dl>
+              <div className="rounded-xl border border-accent-primary/25 bg-accent-soft p-4">
+                <p className="text-sm font-semibold text-brand-subtitle">Total a pagar</p>
+                <p className="mt-2 text-4xl font-bold tracking-tight text-brand-subtitle tnum" data-testid="quotation-total">{formatPrice(total)}</p>
+              </div>
+              <Select label={editable ? 'Estado al guardar' : 'Estado de la cotización'} value={estadoActual}
+                disabled={!editable || ocupado} onChange={e => handleCambiarEstadoSelect(e.target.value as 'borrador' | 'enviada')}
+                options={[{ label: 'BORRADOR', value: 'borrador' }, { label: 'ENVIADO', value: 'enviada' }, ...(!['borrador', 'enviada'].includes(estadoActual) ? [{ label: estadoActual.toUpperCase(), value: estadoActual }] : [])]} />
+              <div className="space-y-2">
+                {!idCotizacionGuardada && <Button className="w-full" variant="outline" loading={guardando} disabled={ocupado || items.length === 0} onClick={() => handleGuardar(false)}><Save className="size-4" aria-hidden="true" />{guardando ? 'Guardando...' : 'Guardar'}</Button>}
+                {enModoEdicion && editable && <Button className="w-full" variant="outline" loading={guardando} disabled={ocupado || items.length === 0} onClick={handleGuardarCambios}><Save className="size-4" aria-hidden="true" />{guardando ? 'Guardando...' : 'Guardar cambios'}</Button>}
+                <Button className="w-full" variant="primary" loading={exportando} disabled={ocupado} onClick={handleExportarClick}><Download className="size-4" aria-hidden="true" />{exportando ? 'Generando...' : 'Exportar PDF'}</Button>
+              </div>
+              {!idCotizacionGuardada && <p className="text-xs leading-relaxed text-brand-options">Al exportar el PDF también se guardará la cotización.</p>}
+            </CardContent>
+          </Card>
+        </aside>
       </div>
     </div>
   );

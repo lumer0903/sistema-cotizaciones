@@ -94,7 +94,7 @@ export function ImageUploader({
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           className={cn(
-            'flex w-full items-center gap-4 rounded-2xl border border-border-default bg-white p-3 shadow-sm transition-colors hover:border-accent-primary/40',
+            'flex w-full items-center gap-4 rounded-2xl border border-border-default bg-surface p-3 shadow-sm transition-colors hover:border-accent-primary/40',
             FOCUS_RING,
             disabled && 'pointer-events-none opacity-50'
           )}

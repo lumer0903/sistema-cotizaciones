@@ -6,7 +6,7 @@ import { useDashboardStore } from '../store/useDashboardStore';
 import { apiClient } from '@/lib/apiClient';
 import { getUsuarios, type UsuarioLista } from '@/features/usuarios/api/usuariosApi';
 import type { Almacen } from '@goldcontinent/shared/types/inventario';
-import { FilterCard } from '@/components/ui/FilterCard';
+import { FilterCard, FilterGrid, FilterActions } from '@/components/ui/FilterCard';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
@@ -86,12 +86,12 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
   const vendedorOptions: VendedorOption[] = vendedores.map((v) => ({ label: v.nombre, value: v.id_usuario }));
 
   return (
-    <FilterCard>
-      <div className="flex flex-wrap items-end justify-between gap-3 w-full">
+    <FilterCard className="w-full">
+      <FilterGrid>
         {/* FILTROS ALINEADOS A LA BASE */}
-        <div className="flex flex-wrap items-end gap-3 flex-1 min-w-0">
+        <>
           {/* FECHA INICIO */}
-          <div className="w-full sm:w-44">
+          <div className="flex-1 min-w-[140px]">
             <Input
               label="Fecha inicio"
               type="date"
@@ -105,7 +105,7 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
           </div>
 
           {/* FECHA FIN */}
-          <div className="w-full sm:w-44">
+          <div className="flex-1 min-w-[140px]">
             <Input
               label="Fecha fin"
               type="date"
@@ -120,7 +120,7 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
 
           {/* VENDEDOR (solo admin) */}
           {isAdmin && (
-            <div className="w-full sm:w-56">
+            <div className="flex-1 min-w-[150px]">
               <Select
                 label="Vendedor"
                 value={filters.idVendedor ? String(filters.idVendedor) : ''}
@@ -137,7 +137,7 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
           )}
 
           {/* ALMACÉN */}
-          <div className="w-full sm:w-56">
+          <div className="flex-1 min-w-[150px]">
             <Select
               label="Almacén"
               value={filters.idAlmacen ? String(filters.idAlmacen) : ''}
@@ -151,10 +151,10 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
               className="w-full"
             />
           </div>
-        </div>
+        </>
 
         {/* BOTONES Y ACCIONES (MISMA ALTURA h-9) */}
-        <div className="flex items-center gap-2 sm:ml-auto h-9">
+        <FilterActions>
           <Button
             variant="ghost"
             size="sm"
@@ -187,12 +187,12 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
           >
             <Settings2 className="w-5 h-5" aria-hidden="true" />
           </Button>
-        </div>
-      </div>
+        </FilterActions>
+      </FilterGrid>
 
       {/* FILTROS ACTIVOS */}
       {tieneFiltros && (
-        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-zinc-200 mt-3">
+        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border-default mt-3">
           {(filters.fechaInicio || filters.fechaFin) && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
               <span className="font-bold">Rango:</span>

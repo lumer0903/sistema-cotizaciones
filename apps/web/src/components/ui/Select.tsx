@@ -29,6 +29,7 @@ import {
 export interface SelectOption {
   label: string;
   value: string | number;
+  disabled?: boolean;
 }
 
 export interface SelectProps
@@ -57,12 +58,13 @@ function parseChildrenOptions(children: ReactNode): SelectOption[] {
     }
     if (typeof nodes === 'string' || typeof nodes === 'number') return;
     if (typeof nodes === 'object' && (nodes as ReactElement).type) {
-      const el = nodes as ReactElement<{ value?: string | number; children?: ReactNode }>;
+      const el = nodes as ReactElement<{ value?: string | number; disabled?: boolean; children?: ReactNode }>;
       if (el.type === 'option') {
         const child = el.props.children;
         out.push({
           label: typeof child === 'string' || typeof child === 'number' ? String(child) : '',
           value: el.props.value ?? '',
+          disabled: el.props.disabled,
         });
         return;
       }
@@ -83,7 +85,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       className,
       disabled,
       variant: _variant = 'default',
-      sizeVariant: _sizeVariant = 'md',
+      sizeVariant = 'md',
       placeholder = 'Seleccionar',
       value: propValue,
       defaultValue,
@@ -98,26 +100,46 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     ref
   ) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedValue, setSelectedValue] = useState<string | number>(
+    const [internalValue, setSelectedValue] = useState<string | number>(
       propValue !== undefined ? propValue : defaultValue ?? ''
     );
+    const selectedValue = propValue ?? internalValue;
     const [activeIndex, setActiveIndex] = useState(-1);
     const containerRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
+    const nativeRef = useRef<HTMLSelectElement | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
     const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(
       null
     );
 
     const listboxId = useId();
-    const triggerId = id ?? listboxId;
+    const triggerId = id ?? `${listboxId}-trigger`;
+    const errorId = `${triggerId}-error`;
 
     const parsedOptions: SelectOption[] =
       options.length > 0 ? [...options] : parseChildrenOptions(children);
+    const enabledIndexes = parsedOptions.flatMap((option, index) => option.disabled ? [] : [index]);
+    const moveActive = (direction: 1 | -1) => {
+      const current = enabledIndexes.indexOf(activeIndex);
+      const next = current < 0 ? (direction === 1 ? 0 : enabledIndexes.length - 1)
+        : Math.max(0, Math.min(enabledIndexes.length - 1, current + direction));
+      setActiveIndex(enabledIndexes[next] ?? -1);
+    };
 
     useEffect(() => {
-      if (propValue !== undefined) setSelectedValue(propValue);
-    }, [propValue]);
+      if (isOpen && activeIndex >= 0) {
+        document.getElementById(`${listboxId}-opt-${activeIndex}`)?.scrollIntoView?.({ block: 'nearest' });
+      }
+    }, [isOpen, activeIndex, listboxId]);
+
+    useEffect(() => {
+      const form = nativeRef.current?.form;
+      const reset = () => { if (propValue === undefined) setSelectedValue(defaultValue ?? ''); };
+      form?.addEventListener('reset', reset);
+      return () => form?.removeEventListener('reset', reset);
+    }, [propValue, defaultValue]);
+
 
     // Click fuera → cierra (contenedor o menú portal)
     useEffect(() => {
@@ -165,11 +187,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
 
     const handleSelect = useCallback(
       (optValue: string | number) => {
-        setSelectedValue(optValue);
+        if (propValue === undefined) setSelectedValue(optValue);
         close();
         onChange?.({ target: { value: optValue, name } });
       },
-      [close, onChange, name]
+      [close, onChange, name, propValue]
     );
 
     // Teclado en el trigger (patrón select-only combobox del APG)
@@ -182,36 +204,37 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           const idx = parsedOptions.findIndex(
             (o) => String(o.value) === String(selectedValue)
           );
-          setActiveIndex(idx >= 0 ? idx : 0);
+          setActiveIndex(idx >= 0 && !parsedOptions[idx].disabled ? idx : enabledIndexes[0] ?? -1);
         }
         return;
       }
       switch (e.key) {
         case 'Escape':
           e.preventDefault();
+          e.stopPropagation();
           close();
           break;
         case 'ArrowDown':
           e.preventDefault();
-          setActiveIndex((i) => Math.min(i + 1, parsedOptions.length - 1));
+          moveActive(1);
           break;
         case 'ArrowUp':
           e.preventDefault();
-          setActiveIndex((i) => Math.max(i - 1, 0));
+          moveActive(-1);
           break;
         case 'Home':
           e.preventDefault();
-          setActiveIndex(0);
+          setActiveIndex(enabledIndexes[0] ?? -1);
           break;
         case 'End':
           e.preventDefault();
-          setActiveIndex(parsedOptions.length - 1);
+          setActiveIndex(enabledIndexes[enabledIndexes.length - 1] ?? -1);
           break;
         case 'Enter':
         case ' ': {
           e.preventDefault();
           const opt = parsedOptions[activeIndex];
-          if (opt) handleSelect(opt.value);
+          if (opt && !opt.disabled) handleSelect(opt.value);
           break;
         }
         case 'Tab':
@@ -223,15 +246,20 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const selectedOption = parsedOptions.find(
       (opt) => String(opt.value) === String(selectedValue)
     );
-    const hasValue = selectedOption !== undefined && selectedOption.value !== '';
-    const heightClass = cn(FIELD_HEIGHT, 'text-sm');
+    const hasValue = selectedOption !== undefined;
+    const heightClass = cn(sizeVariant === 'sm' ? 'h-8' : FIELD_HEIGHT, 'text-sm');
 
     return (
       <div className="w-full space-y-1.5" ref={containerRef}>
         {/* select nativo real: mantiene RHF/submit y valor accesible */}
         <select
-          ref={ref}
+          ref={(element) => {
+            nativeRef.current = element;
+            if (typeof ref === 'function') ref(element);
+            else if (ref) ref.current = element;
+          }}
           name={name}
+          disabled={disabled}
           value={selectedValue}
           className="sr-only"
           tabIndex={-1}
@@ -239,9 +267,16 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           onChange={() => {}}
           required={required}
           {...props}
+          onInvalid={(event) => {
+            event.preventDefault();
+            triggerRef.current?.focus();
+            props.onInvalid?.(event);
+          }}
         >
+          {!parsedOptions.some(option => String(option.value) === String(selectedValue)) &&
+            <option value={selectedValue} hidden>{placeholder}</option>}
           {parsedOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
+            <option key={opt.value} value={opt.value} disabled={opt.disabled}>
               {opt.label}
             </option>
           ))}
@@ -266,11 +301,16 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             aria-expanded={isOpen}
             aria-controls={isOpen ? listboxId : undefined}
             aria-invalid={error ? true : undefined}
+            aria-required={required || undefined}
+            aria-describedby={error ? errorId : undefined}
             aria-activedescendant={
               isOpen && activeIndex >= 0 ? `${listboxId}-opt-${activeIndex}` : undefined
             }
             onClick={() => !disabled && setIsOpen((prev) => !prev)}
             onKeyDown={onTriggerKeyDown}
+            onBlur={(event) => {
+              if (nativeRef.current) props.onBlur?.({ ...event, target: nativeRef.current, currentTarget: nativeRef.current } as unknown as React.FocusEvent<HTMLSelectElement>);
+            }}
             className={cn(
               'relative w-full flex items-center justify-between text-left pr-8',
               heightClass,
@@ -280,7 +320,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
               FIELD_DISABLED,
               icon ? 'pl-9' : 'px-3.5',
               isOpen
-                ? 'border-zinc-300 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring'
+                ? 'border-brand-options focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring'
                 : FIELD_FOCUS,
               error && FIELD_ERROR,
               className
@@ -317,7 +357,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 id={listboxId}
                 role="listbox"
                 aria-label={typeof label === 'string' ? label : placeholder}
-                className="fixed z-select bg-white border border-border-default rounded-2xl shadow-popover py-1 max-h-56 overflow-y-auto animate-in fade-in-50 zoom-in-95 duration-100"
+                className="fixed z-select bg-surface border border-border-default rounded-2xl shadow-popover py-1 max-h-56 overflow-y-auto animate-in fade-in-50 zoom-in-95 duration-100"
                 style={{ top: menuPos.top, left: menuPos.left, width: menuPos.width }}
                 onMouseDown={(e) => e.stopPropagation()}
               >
@@ -330,15 +370,17 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                         id={`${listboxId}-opt-${index}`}
                         role="option"
                         aria-selected={isSelected}
+                        aria-disabled={opt.disabled || undefined}
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleSelect(opt.value);
+                          if (!opt.disabled) handleSelect(opt.value);
                         }}
-                        onMouseEnter={() => setActiveIndex(index)}
+                        onMouseEnter={() => { if (!opt.disabled) setActiveIndex(index); }}
                         className={cn(
                           'w-full text-left px-3.5 py-2 text-xs font-medium transition-colors flex items-center justify-between cursor-pointer',
-                          index === activeIndex && 'bg-zinc-100',
+                          opt.disabled && 'opacity-50 cursor-not-allowed',
+                          index === activeIndex && 'bg-surface-muted',
                           isSelected
                             ? 'text-accent-ink font-bold'
                             : 'text-brand-subtitle'
@@ -362,7 +404,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         </div>
 
         {error && (
-          <p className={FIELD_ERROR_TEXT} role="alert">
+          <p id={errorId} className={FIELD_ERROR_TEXT} role="alert">
             {error}
           </p>
         )}

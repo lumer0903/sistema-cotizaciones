@@ -1,14 +1,28 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as Minio from 'minio';
 import { ConfigService } from '@nestjs/config';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 @Injectable()
 export class MinioService implements OnModuleInit {
   private client: Minio.Client | null = null;
   private readonly logger = new Logger(MinioService.name);
+
+  // Bucket principal unificado (configurable con STORAGE_BUCKET, default: goldcontinent-media)
+  private readonly bucketName: string;
+  // Buckets legacy mantenidos por compatibilidad
   private readonly bucketPdfs = 'cotizacion-pdfs';
   private readonly bucketImages = 'product-images';
+
   private readonly isMinioEnabled: boolean;
+  private readonly endPoint: string;
+  private readonly port: number;
+  private readonly useSSL: boolean;
+  private readonly accessKey: string;
+  private readonly secretKey: string;
+  private readonly publicBaseUrl: string;
+  private readonly storagePath: string;
 
   /** Buckets garantizados. Si falla, se reintenta en la próxima operación. */
   private bucketsEnsured = false;
@@ -22,12 +36,27 @@ export class MinioService implements OnModuleInit {
   private static readonly BUCKET_TIMEOUT_MS = 5_000;
 
   constructor(private config: ConfigService) {
-    this.isMinioEnabled = this.config.get('MINIO_ENABLED') !== 'false';
+    const driver = this.config.get('STORAGE_DRIVER');
+    const minioEnabled = this.config.get('MINIO_ENABLED');
+    this.isMinioEnabled = driver !== 'local' && minioEnabled !== 'false';
+
+    this.endPoint = this.config.get('STORAGE_ENDPOINT') || this.config.get('MINIO_ENDPOINT') || 'localhost';
+    this.port = parseInt(this.config.get('STORAGE_PORT') || this.config.get('MINIO_PORT') || '9000', 10);
+    this.useSSL = (this.config.get('STORAGE_USE_SSL') || this.config.get('MINIO_USE_SSL')) === 'true';
+    this.accessKey = this.config.get('STORAGE_ACCESS_KEY') || this.config.get('MINIO_ACCESS_KEY') || 'minioadmin';
+    this.secretKey = this.config.get('STORAGE_SECRET_KEY') || this.config.get('MINIO_SECRET_KEY') || 'minioadmin';
+    this.bucketName = this.config.get('STORAGE_BUCKET') || 'goldcontinent-media';
+
+    const defaultProtocol = this.useSSL ? 'https' : 'http';
+    const rawPublicUrl = this.config.get('STORAGE_PUBLIC_URL') || `${defaultProtocol}://${this.endPoint}:${this.port}`;
+    this.publicBaseUrl = rawPublicUrl.replace(/\/+$/, '');
+
+    this.storagePath = this.config.get('STORAGE_PATH') || path.join(process.cwd(), 'uploads');
   }
 
   onModuleInit() {
     if (!this.isMinioEnabled) {
-      this.logger.warn('MinIO disabled via MINIO_ENABLED=false. Storage operations will return null.');
+      this.logger.warn('MinIO desactivado (STORAGE_DRIVER=local o MINIO_ENABLED=false). Operaciones usarán almacenamiento local.');
       return;
     }
 
@@ -37,26 +66,39 @@ export class MinioService implements OnModuleInit {
   private initializeClient(): void {
     try {
       this.client = new Minio.Client({
-        endPoint: this.config.get('MINIO_ENDPOINT') || 'localhost',
-        port: parseInt(this.config.get('MINIO_PORT') || '9000', 10),
-        useSSL: this.config.get('MINIO_USE_SSL') === 'true',
-        accessKey: this.config.get('MINIO_ACCESS_KEY') || 'minioadmin',
-        secretKey: this.config.get('MINIO_SECRET_KEY') || 'minioadmin',
+        endPoint: this.endPoint,
+        port: this.port,
+        useSSL: this.useSSL,
+        accessKey: this.accessKey,
+        secretKey: this.secretKey,
       });
       this.bucketsEnsured = false;
 
       // Buckets en segundo plano: un fallo aquí NO invalida el cliente
-      // (antes se nulaba el cliente para siempre si MinIO aún no estaba listo).
       void this.tryEnsureBuckets('inicialización');
     } catch (error) {
       this.client = null;
       this.nextRetryAt = Date.now() + MinioService.RETRY_COOLDOWN_MS;
-      this.logger.warn(`MinIO client initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}. Se reintentará automáticamente.`);
+      this.logger.warn(`Error inicializando cliente MinIO: ${error instanceof Error ? error.message : 'Unknown error'}. Se reintentará automáticamente.`);
     }
   }
 
-  /** Verifica/crea buckets con tope. Nunca nula el cliente; solo deja la
-   *  bandera en false para reintentar en la próxima operación. */
+  /** Retorna el nombre del bucket principal configurado. */
+  getBucketName(): string {
+    return this.bucketName;
+  }
+
+  /**
+   * Genera la URL estática/directa para acceder a un recurso en MinIO
+   * Ej: http://localhost:9000/goldcontinent-media/productos/172938-foto.png
+   */
+  getStaticUrl(bucket: string, key: string): string {
+    const cleanKey = key.replace(/^\/+/, '');
+    const cleanBucket = (bucket || this.bucketName).replace(/^\/+|\/+$/g, '');
+    return `${this.publicBaseUrl}/${cleanBucket}/${cleanKey}`;
+  }
+
+  /** Verifica/crea buckets con tope. Nunca nula el cliente; deja bandera en false para reintentar. */
   private async tryEnsureBuckets(contexto: string): Promise<void> {
     if (!this.client || this.bucketsEnsured) return;
 
@@ -81,12 +123,37 @@ export class MinioService implements OnModuleInit {
   private async doEnsureBuckets(): Promise<void> {
     if (!this.client) return;
 
-    for (const bucket of [this.bucketPdfs, this.bucketImages]) {
+    const buckets = Array.from(new Set([this.bucketName, this.bucketPdfs, this.bucketImages]));
+    for (const bucket of buckets) {
       const exists = await this.client.bucketExists(bucket);
       if (!exists) {
         await this.client.makeBucket(bucket, 'us-east-1');
-        // Sin política anónima: los objetos se sirven vía presigned URLs
+        this.logger.log(`Bucket MinIO creado: ${bucket}`);
       }
+      // Establecer política de lectura pública para servir URLs estáticas directas
+      await this.applyPublicReadPolicy(bucket);
+    }
+  }
+
+  /** Configura política anónima de sólo lectura (GET) para permitir URLs estáticas públicas */
+  private async applyPublicReadPolicy(bucket: string): Promise<void> {
+    if (!this.client) return;
+    try {
+      const policy = {
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Sid: 'PublicReadGetObject',
+            Effect: 'Allow',
+            Principal: '*',
+            Action: ['s3:GetObject'],
+            Resource: [`arn:aws:s3:::${bucket}/*`],
+          },
+        ],
+      };
+      await this.client.setBucketPolicy(bucket, JSON.stringify(policy));
+    } catch (err) {
+      this.logger.debug(`No se pudo aplicar política pública a ${bucket}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -105,15 +172,11 @@ export class MinioService implements OnModuleInit {
     );
   }
 
-  /** Objeto inexistente (NoSuchKey/NotFound): no es un error de conexión,
-   *  tampoco un fallo del sistema → se devuelve el fallback. */
   private isMissingObjectError(error: unknown): boolean {
     const code = (error as { code?: string })?.code;
     return code === 'NoSuchKey' || code === 'NotFound';
   }
 
-  /** Tope por operación: si MinIO no responde, se trata como fallo de
-   *  conexión (fallback) en vez de colgar la petición. */
   private async withTimeout<T>(operacion: Promise<T>): Promise<T> {
     let timer: NodeJS.Timeout | undefined;
     try {
@@ -131,7 +194,6 @@ export class MinioService implements OnModuleInit {
     }
   }
 
-  /** Marca al cliente como caído y programa un re-intento con cooldown. */
   private markUnhealthy(contexto: string): void {
     this.client = null;
     this.bucketsEnsured = false;
@@ -144,11 +206,11 @@ export class MinioService implements OnModuleInit {
 
     if (!this.client) {
       if (Date.now() >= this.nextRetryAt) {
-        this.logger.log(`MinIO: re-conectando para ${operationName}...`);
+        this.logger.log(`MinIO: reconectando para ${operationName}...`);
         this.initializeClient();
       }
       if (!this.client) {
-        this.logger.debug(`MinIO not available, skipping ${operationName}`);
+        this.logger.debug(`MinIO no disponible, ejecutando fallback para ${operationName}`);
         return fallback;
       }
     }
@@ -162,49 +224,76 @@ export class MinioService implements OnModuleInit {
       }
       if (this.isConnectionError(error)) {
         this.logger.warn(
-          `MinIO connection failed during ${operationName}: ${error instanceof Error ? error.message : 'Unknown error'}. Returning fallback.`,
+          `Conexión con MinIO falló durante ${operationName}: ${error instanceof Error ? error.message : 'Unknown error'}. Usando fallback.`,
         );
         this.markUnhealthy(operationName);
         return fallback;
       }
-      // Re-throw non-connection errors
       throw error;
     }
   }
 
+  /**
+   * Guarda un archivo en el disco local como fallback cuando MinIO está caído o en mantenimiento.
+   */
+  private async saveLocalFallback(subfolder: string, filename: string, buffer: Buffer): Promise<string> {
+    try {
+      const dir = path.resolve(this.storagePath, subfolder);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(path.join(dir, filename), buffer);
+      return `/uploads/${subfolder}/${filename}`;
+    } catch (err) {
+      this.logger.warn(`Fallback local falló: ${err instanceof Error ? err.message : String(err)}`);
+      return `/images/placeholder-${Date.now()}.png`;
+    }
+  }
+
+  /**
+   * Sube una imagen de producto a MinIO y devuelve la URL estática directa.
+   * Ej: http://localhost:9000/goldcontinent-media/productos/172938-zapato.png
+   */
   async uploadProductImage(file: Express.Multer.File): Promise<string | null> {
-    const fallbackUrl = `/images/placeholder-${Date.now()}.png`;
+    const filename = `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`;
+    const key = `productos/${filename}`;
+    const bucket = this.bucketName;
+
+    const fallbackUrl = await this.saveLocalFallback('productos', filename, file.buffer);
 
     return this.safeExecute(async () => {
       if (!this.client) throw new Error('MinIO client not initialized');
 
-      const key = `productos/${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`;
-      await this.client.putObject(this.bucketImages, key, file.buffer, file.size, {
+      await this.client.putObject(bucket, key, file.buffer, file.size, {
         'Content-Type': file.mimetype,
       });
-      return this.client.presignedUrl('GET', this.bucketImages, key, 7 * 24 * 60 * 60);
+      return this.getStaticUrl(bucket, key);
     }, fallbackUrl, 'uploadProductImage');
   }
 
+  /**
+   * Sube un PDF generado a MinIO y devuelve su URL estática directa.
+   * Ej: http://localhost:9000/goldcontinent-media/cotizaciones/12-hash.pdf
+   */
   async uploadPdf(quoteId: number, pdfBuffer: Buffer): Promise<string | null> {
-    const fallbackUrl = `/pdfs/placeholder-${quoteId}-${Date.now()}.pdf`;
+    const filename = `${quoteId}-${Date.now()}.pdf`;
+    const key = `cotizaciones/${filename}`;
+    const bucket = this.bucketName;
+
+    const fallbackUrl = await this.saveLocalFallback('cotizaciones', filename, pdfBuffer);
 
     return this.safeExecute(async () => {
       if (!this.client) throw new Error('MinIO client not initialized');
 
-      const key = `cotizaciones/${quoteId}-${Date.now()}.pdf`;
-      await this.client.putObject(this.bucketPdfs, key, pdfBuffer, pdfBuffer.length, {
+      await this.client.putObject(bucket, key, pdfBuffer, pdfBuffer.length, {
         'Content-Type': 'application/pdf',
       });
-      // Máximo permitido por S3/MinIO: 7 días (más => "expires cannot be greater than 7 days")
-      return this.client.presignedUrl('GET', this.bucketPdfs, key, 7 * 24 * 60 * 60);
+      return this.getStaticUrl(bucket, key);
     }, fallbackUrl, 'uploadPdf');
   }
 
-  async getPresignedUrl(bucket: string, key: string, expirySeconds: number): Promise<string | null> {
+  async getPresignedUrl(bucket: string, key: string, expirySeconds: number = 7 * 24 * 60 * 60): Promise<string | null> {
     return this.safeExecute(async () => {
       if (!this.client) throw new Error('MinIO client not initialized');
-      return this.client.presignedUrl('GET', bucket, key, expirySeconds);
+      return this.client.presignedUrl('GET', bucket || this.bucketName, key, expirySeconds);
     }, null, 'getPresignedUrl');
   }
 
@@ -213,32 +302,35 @@ export class MinioService implements OnModuleInit {
     key: string,
     buffer: Buffer,
     contentType: string,
-    expirySeconds: number = 7 * 24 * 60 * 60
+    _expirySeconds?: number,
   ): Promise<string | null> {
+    const targetBucket = bucket || this.bucketName;
     return this.safeExecute(async () => {
       if (!this.client) throw new Error('MinIO client not initialized');
 
-      await this.client.putObject(bucket, key, buffer, buffer.length, {
+      await this.client.putObject(targetBucket, key, buffer, buffer.length, {
         'Content-Type': contentType,
       });
-      return this.client.presignedUrl('GET', bucket, key, expirySeconds);
+      return this.getStaticUrl(targetBucket, key);
     }, null, 'uploadFile');
   }
 
   async deleteFile(bucket: string, key: string): Promise<boolean> {
+    const targetBucket = bucket || this.bucketName;
     return this.safeExecute(async () => {
       if (!this.client) throw new Error('MinIO client not initialized');
 
-      await this.client.removeObject(bucket, key);
+      await this.client.removeObject(targetBucket, key);
       return true;
     }, false, 'deleteFile');
   }
 
   async getObject(bucket: string, key: string): Promise<Buffer | null> {
+    const targetBucket = bucket || this.bucketName;
     return this.safeExecute(async () => {
       if (!this.client) throw new Error('MinIO client not initialized');
 
-      const stream = await this.client.getObject(bucket, key);
+      const stream = await this.client.getObject(targetBucket, key);
       const chunks: Buffer[] = [];
       for await (const chunk of stream) {
         chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
@@ -248,10 +340,11 @@ export class MinioService implements OnModuleInit {
   }
 
   async fileExists(bucket: string, key: string): Promise<boolean> {
+    const targetBucket = bucket || this.bucketName;
     return this.safeExecute(async () => {
       if (!this.client) throw new Error('MinIO client not initialized');
 
-      await this.client.statObject(bucket, key);
+      await this.client.statObject(targetBucket, key);
       return true;
     }, false, 'fileExists');
   }

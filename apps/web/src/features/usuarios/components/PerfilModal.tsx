@@ -99,11 +99,11 @@ export function PerfilModal({ open, onClose }: PerfilModalProps) {
                 alt={`Foto de ${usuario?.nombre || 'usuario'}`}
                 width={96}
                 height={96}
-                className="w-24 h-24 rounded-full overflow-hidden relative bg-zinc-200 border-2 border-zinc-100 object-cover"
+                className="w-24 h-24 rounded-full overflow-hidden relative bg-zinc-200 border-2 border-border-default object-cover"
               />
             ) : (
               <div
-                className="w-24 h-24 rounded-full overflow-hidden relative bg-zinc-200 border-2 border-zinc-100 flex items-center justify-center text-zinc-600 font-bold text-2xl select-none"
+                className="w-24 h-24 rounded-full overflow-hidden relative bg-zinc-200 border-2 border-border-default flex items-center justify-center text-zinc-600 font-bold text-2xl select-none"
                 aria-hidden="true"
               >
                 {iniciales}

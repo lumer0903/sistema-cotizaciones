@@ -72,7 +72,7 @@ def fetch_products(id_almacen=None):
     with closing(get_db_connection()) as conn:
         with conn.cursor() as cursor:
             cursor.execute("""
-                SELECT p.id_producto, p.codigo, p.descripcion,
+                SELECT p.id_producto, p.codigo, p.descripcion, p.foto_url,
                     COALESCE(s.stock, 0) AS stock_total,
                     COALESCE(c.nombre_categoria, 'GENERAL') AS nombre_categoria,
                     COALESCE(pa.costo_normal, 0) AS costo_normal,
@@ -170,15 +170,22 @@ def suggest(req: RecommendRequest):
             continue
         price, cost = obtener_precio_y_costo(prod, req.tipo_precio)
         candidates.append({
-            'id': prod['id_producto'], 'codigo': prod['codigo'], 'descripcion': prod['descripcion'],
+            'id': prod['id_producto'], 'codigo': prod['codigo'], 'descripcion': prod['descripcion'], 
+            'foto_url': prod.get('foto_url') if prod.get('foto_url') else '',
             'precio': price, 'stock': float(prod['stock_total']),
             'similarityScore': round(float(similarities[idx]), 4),
             'categoria': prod['nombre_categoria'], 'margen': calcular_margen(price, cost),
         })
-    similar = sorted(candidates, key=lambda p: p['similarityScore'], reverse=True)[:5]
+    similar = sorted(candidates, key=lambda p: p['similarityScore'], reverse=True)[:3]
     upsell = sorted([p for p in candidates if p['precio']>=target_price*Decimal('1.05') and p['similarityScore']>0.05],
-                    key=lambda p: (p['margen'] if p['margen'] is not None else float('-inf'), p['precio']), reverse=True)[:5]
+                    key=lambda p: (p['margen'] if p['margen'] is not None else float('-inf'), p['precio']), reverse=True)[:3]
     def score(p):
         return p['similarityScore']*.5 + min(max((p['margen'] if p['margen'] is not None else 0)/100, 0), 1)*.35 + (p['stock']>0)*.15
-    equilibrio = sorted(candidates, key=score, reverse=True)[:5]
-    return {'similar': similar, 'upsell': upsell, 'equilibrio': equilibrio}
+    equilibrio = sorted(candidates, key=score, reverse=True)[:3]
+    
+    # Build response ensuring foto_url is included
+    similar_with_foto = [{**item, 'foto_url': item.get('foto_url', '')} for item in similar]
+    upsell_with_foto = [{**item, 'foto_url': item.get('foto_url', '')} for item in upsell]
+    equilibrio_with_foto = [{**item, 'foto_url': item.get('foto_url', '')} for item in equilibrio]
+    
+    return {'similar': similar_with_foto, 'upsell': upsell_with_foto, 'equilibrio': equilibrio_with_foto}

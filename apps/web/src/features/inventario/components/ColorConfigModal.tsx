@@ -163,7 +163,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
             {colors.map((color) => (
               <div
                 key={`${color.name}-${color.hex}`}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-brand-options/30 rounded-lg text-sm text-brand-subtitle shadow-sm"
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-surface border border-brand-options/30 rounded-lg text-sm text-brand-subtitle shadow-sm"
               >
                 <span
                   className="w-2.5 h-2.5 rounded-full border border-zinc-300"
@@ -199,10 +199,10 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
           </div>
 
           {isAdding && (
-            <div className="flex items-center gap-2 bg-white border border-zinc-200 shadow-sm rounded-xl p-2">
+            <div className="flex items-center gap-2 bg-surface border border-border-default shadow-sm rounded-xl p-2">
               {/* Selector circular: muestra el color actual y abre el picker nativo */}
               <label
-                className="relative w-7 h-7 shrink-0 rounded-full border border-zinc-200 shadow-sm cursor-pointer overflow-hidden transition-shadow"
+                className="relative w-7 h-7 shrink-0 rounded-full border border-border-default shadow-sm cursor-pointer overflow-hidden transition-shadow"
                 style={{ backgroundColor: newHex }}
                 title="Elegir color"
               >
@@ -224,7 +224,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
                 aria-label="Nombre del color"
                 autoComplete="off"
                 autoFocus
-                className="w-28 min-h-9 px-3 text-xs rounded-lg border border-zinc-200 bg-white transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-brand-options focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring"
+                className="w-28 min-h-9 px-3 text-xs rounded-lg border border-border-default bg-surface transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-brand-options focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring"
               />
               <Button type="button" variant="primary" size="sm" onClick={addColor}>
                 OK
@@ -262,7 +262,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
           )}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-zinc-100">
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-border-default">
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>

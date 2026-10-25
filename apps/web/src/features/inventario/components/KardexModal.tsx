@@ -239,7 +239,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
 
                 {/* Filtros de movimientos */}
                 <div className="space-y-3.5">
-                    <div className="grid grid-cols-1 items-end gap-3 rounded-xl border border-zinc-200/80 bg-zinc-50/80 p-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid grid-cols-1 items-end gap-3 rounded-xl border border-border-default bg-zinc-50/80 p-3 sm:grid-cols-2 lg:grid-cols-4">
                         <Select
                             label="Tipo de movimiento"
                             value={filtroTipo}
@@ -308,6 +308,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                             <div className="w-14 h-14 shrink-0 bg-surface-muted rounded-lg border border-stone-200 flex items-center justify-center overflow-hidden">
                                 {selectedProducto.foto_url ? (
                                     <Image
+                                        unoptimized
                                         src={getImageUrl(selectedProducto.foto_url, '115')}
                                         alt={selectedProducto.descripcion}
                                         width={115}
@@ -341,7 +342,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
 
                 {/* TABLA DE MOVIMIENTOS */}
                 {!selectedProducto ? (
-                    <div className="p-12 text-center bg-zinc-50/50 rounded-xl border border-dashed border-zinc-200">
+                    <div className="p-12 text-center bg-zinc-50/50 rounded-xl border border-dashed border-border-default">
                         <p className="text-xs font-medium text-stone-500">
                             Selecciona un producto para cargar el historial de movimientos.
                         </p>
@@ -398,7 +399,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
 
                         {/* PAGINACIÓN */}
                         {totalPages > 1 && (
-                            <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-3 border-t border-zinc-100">
+                            <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-3 border-t border-border-default">
                                 <div className="text-xs text-brand-options">
                                     Mostrando {((page - 1) * limit) + 1} - {Math.min(page * limit, total)} de {total} movimientos
                                 </div>

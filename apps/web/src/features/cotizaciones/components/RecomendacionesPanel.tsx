@@ -13,11 +13,12 @@ import {
     Sparkles,
     Package,
     Archive,
+    X,
 } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { Button } from '@/components/ui';
 import { getImageUrl } from '@/lib/imageUtils';
-import { obtenerRecomendacionesItem, RecomendarItemRequest, RecomendacionItem, RecomendarItemResponse } from '../api/cotizacionApi';
+import { obtenerRecomendacionesItem, registrarAccionIa, RecomendarItemRequest, RecomendacionItem, RecomendarItemResponse } from '../api/cotizacionApi';
 import { formatCode } from '@/lib/formatters';
 import type { ProductoBase } from './AgregarProductoModal';
 
@@ -47,6 +48,8 @@ interface RecomendacionesPanelProps {
     tipoPrecioCliente: 'DISTRIBUIDOR' | 'TIENDA';
     idCliente?: number;
     idAlmacen?: number;
+    /** Cotización (borrador) autosaveada: se registra en ia_interacciones.id_cotizacion */
+    idCotizacion?: number | null;
     /** ID del item existente para habilitar "Reemplazar" (normalmente = producto base del carrito) */
     itemExistenteId?: string | null;
     /** Incrementar para forzar recarga */
@@ -54,9 +57,9 @@ interface RecomendacionesPanelProps {
     /** Catálogo ya cargado del formulario: permite resolver la imagen de cada recomendación en cliente */
     productosCatalogo?: ProductoBase[];
     /** El usuario pulsó AGREGAR: el contenedor decide (p.ej. abrir el modal de confirmación) */
-    onSelectAgregar: (item: RecomendacionItem, tipo: TipoRecomendacion) => void;
+    onSelectAgregar: (item: RecomendacionItem, tipo: TipoRecomendacion, meta?: { idInteraccion?: number | null }) => void;
     /** El usuario pulsó REEMPLAZAR sobre el item base seleccionado */
-    onSelectReemplazar?: (itemExistenteId: string, nuevoItem: RecomendacionItem, tipo: TipoRecomendacion) => void;
+    onSelectReemplazar?: (itemExistenteId: string, nuevoItem: RecomendacionItem, tipo: TipoRecomendacion, meta?: { idInteraccion?: number | null }) => void;
 }
 
 export const TIPO_CONFIG = {
@@ -102,6 +105,7 @@ export function normalizeRecomendaciones(raw: any): RecomendarItemResponse {
         similar: asArray(src?.similar),
         upsell: asArray(src?.upsell),
         equilibrio: asArray(src?.equilibrio),
+        id_interaccion: src?.id_interaccion ?? null,
     };
 }
 
@@ -109,6 +113,8 @@ export interface UseRecomendacionesOptions {
     idCliente?: number;
     idAlmacen?: number;
     tipoPrecioCliente?: 'DISTRIBUIDOR' | 'TIENDA';
+    /** Cotización (borrador) autosaveada → ia_interacciones.id_cotizacion */
+    idCotizacion?: number | null;
     enabled?: boolean;
     silent?: boolean;
     resetWhenEmpty?: boolean;
@@ -123,6 +129,7 @@ export function useRecomendaciones(
         idCliente,
         idAlmacen,
         tipoPrecioCliente = 'TIENDA',
+        idCotizacion,
         enabled = true,
         silent = false,
         resetWhenEmpty = true,
@@ -156,6 +163,7 @@ export function useRecomendaciones(
                 id_almacen: idAlmacen,
                 tipo_precio: tipoPrecioCliente === 'DISTRIBUIDOR' ? 'distribuidor' : 'normal',
                 tipo_venta: productoBase?.tipo_venta,
+                ...(idCotizacion != null ? { id_cotizacion: idCotizacion } : {}),
             };
             const data = await obtenerRecomendacionesItem(request);
             if (seqRef.current !== seq) return;
@@ -171,7 +179,7 @@ export function useRecomendaciones(
         // refreshKey es un nonce del padre: solo aporta identidad al callback
         // para que el efecto dispare de nuevo el fetch.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [baseId, idCliente, idAlmacen, tipoPrecioCliente, productoBase?.tipo_venta, silent, resetWhenEmpty, refreshKey]);
+    }, [baseId, idCliente, idAlmacen, tipoPrecioCliente, idCotizacion, productoBase?.tipo_venta, silent, resetWhenEmpty, refreshKey]);
 
     const [prevReset, setPrevReset] = useState({ enabled, baseId, resetWhenEmpty });
     if (
@@ -207,6 +215,7 @@ export function RecomendacionesPanel({
     tipoPrecioCliente,
     idCliente,
     idAlmacen,
+    idCotizacion,
     itemExistenteId,
     refreshKey = 0,
     productosCatalogo,
@@ -215,6 +224,8 @@ export function RecomendacionesPanel({
 }: RecomendacionesPanelProps) {
     const [isMinimized, setIsMinimized] = useState(false);
     const [activeTab, setActiveTab] = useState<TipoRecomendacion>('similar');
+    /** Tarjetas descartadas por el asesor en la interacción actual (clave: `${tipo}-${id_producto}`) */
+    const [descartados, setDescartados] = useState<Record<string, boolean>>({});
 
     const baseItem: SidebarCartItem | undefined = useMemo(() => {
         if (!selectedItemId) return undefined;
@@ -242,12 +253,22 @@ export function RecomendacionesPanel({
         idCliente,
         idAlmacen,
         tipoPrecioCliente,
+        idCotizacion,
         enabled: !!productoBase,
         silent: true,
         refreshKey,
     });
 
+    const idInteraccion = recomendaciones.id_interaccion ?? null;
+
     const baseCartId = itemExistenteId ?? baseItem?.id ?? null;
+
+    // Cada fetch crea una interacción nueva: los descartados anteriores no aplican
+    const prevInteraccion = React.useRef<number | null | undefined>(undefined);
+    if (prevInteraccion.current !== idInteraccion) {
+        prevInteraccion.current = idInteraccion;
+        if (Object.keys(descartados).length > 0) setDescartados({});
+    }
 
     const catalogoById = useMemo(() => {
         const mapa = new Map<number, ProductoBase>();
@@ -259,23 +280,47 @@ export function RecomendacionesPanel({
     }, [productosCatalogo]);
 
     const handleSelectAgregar = (item: RecomendacionItem, tipo: TipoRecomendacion) => {
-        onSelectAgregar(item, tipo);
+        onSelectAgregar(item, tipo, { idInteraccion });
     };
 
     const handleSelectReemplazar = (item: RecomendacionItem, tipo: TipoRecomendacion) => {
         if (baseCartId && onSelectReemplazar) {
-            onSelectReemplazar(baseCartId, item, tipo);
+            onSelectReemplazar(baseCartId, item, tipo, { idInteraccion });
+        }
+    };
+
+    /** RECHAZADO: el asesor descarta la tarjeta (ocultar y notificar al backend) */
+    const handleDescartar = async (item: RecomendacionItem, tipo: TipoRecomendacion) => {
+        const key = `${tipo}-${item.id_producto}`;
+        setDescartados((prev) => ({ ...prev, [key]: true }));
+        if (idInteraccion == null) return;
+        try {
+            await registrarAccionIa({
+                id_interaccion: idInteraccion,
+                accion: 'RECHAZADO',
+                ...(idCotizacion != null ? { id_cotizacion: idCotizacion } : {}),
+                ...(item.id_producto != null ? { id_producto_sugerido: item.id_producto } : {}),
+            });
+        } catch (err) {
+            console.warn('[ia] No se pudo registrar RECHAZADO:', err);
+            setDescartados((prev) => {
+                const next = { ...prev };
+                delete next[key];
+                return next;
+            });
         }
     };
 
     const tipos: TipoRecomendacion[] = ['similar', 'equilibrio', 'upsell'];
-    const currentList = recomendaciones[activeTab] || [];
+    const currentList = (recomendaciones[activeTab] || []).filter(
+        (it) => !descartados[`${activeTab}-${it.id_producto}`],
+    );
     const activeConfig = TIPO_CONFIG[activeTab];
 
     return (
-        <div className="w-full max-w-sm bg-white rounded-xl shadow-md border border-zinc-100 overflow-hidden transition-[box-shadow,transform,background-color,color] duration-300 font-sans">
+        <div className="w-full max-w-sm bg-surface rounded-xl shadow-md border border-border-default overflow-hidden transition-[box-shadow,transform,background-color,color] duration-300 font-sans">
             {/* CABECERA PRINCIPAL */}
-            <div className={`p-4 flex items-center justify-between ${!isMinimized ? 'border-b border-zinc-100' : ''}`}>
+            <div className={`p-4 flex items-center justify-between ${!isMinimized ? 'border-b border-border-default' : ''}`}>
                 <div className="flex items-center gap-2">
                     <div className="p-1.5 bg-accent-primary/10 rounded-lg">
                         <Sparkles className="w-5 h-5 text-accent-ink" />
@@ -285,7 +330,7 @@ export function RecomendacionesPanel({
                             RECOMENDACIONES
                         </h3>
                         {productoBase && !isMinimized && (
-                            <span className="text-xs font-mono text-zinc-500">
+                            <span className="text-xs font-mono text-brand-options">
                                 BASE: {formatCode(productoBase.codigo)}
                             </span>
                         )}
@@ -313,11 +358,13 @@ export function RecomendacionesPanel({
             {!isMinimized && (
                 <>
                     {/* NAVEGACIÓN POR TABS */}
-                    <div className="p-2 bg-zinc-50/50 border-b border-zinc-100 flex items-center justify-between gap-1">
+                    <div className="p-2 bg-zinc-50/50 border-b border-border-default flex items-center justify-between gap-1">
                         {tipos.map((tipo) => {
                             const cfg = TIPO_CONFIG[tipo];
                             const isActive = activeTab === tipo;
-                            const count = (recomendaciones[tipo] || []).length;
+                            const count = (recomendaciones[tipo] || []).filter(
+                                (it) => !descartados[`${tipo}-${it.id_producto}`],
+                            ).length;
 
 return (
                             <button
@@ -331,7 +378,7 @@ return (
                                 <span>{cfg.label}</span>
                                 {count > 0 && (
                                     <span
-                                        className={`px-1 py-0.2 text-xs rounded-full ${isActive ? 'bg-white/30 text-white' : 'bg-zinc-200 text-zinc-700'
+                                        className={`px-1 py-0.2 text-xs rounded-full ${isActive ? 'bg-surface/30 text-white' : 'bg-zinc-200 text-zinc-700'
                                             }`}
                                     >
                                         {count}
@@ -345,19 +392,19 @@ return (
                     {/* LISTADO */}
                     <div className="p-4 space-y-4 max-h-[550px] overflow-y-auto">
                         {cartItems.length === 0 ? (
-                            <div className="text-center py-10 text-zinc-500 space-y-2">
+                            <div className="text-center py-10 text-brand-options space-y-2">
                                 <Sparkles className="size-7 mx-auto text-accent-ink opacity-80" />
                                 <p className="text-xs font-medium">Agrega un producto al carrito para ver sugerencias de IA</p>
                             </div>
                         ) : !baseItem ? (
-                            <div className="text-center py-10 text-zinc-500 space-y-2">
+                            <div className="text-center py-10 text-brand-options space-y-2">
                                 <Sparkles className="size-7 mx-auto text-accent-ink opacity-80" />
                                 <p className="text-xs font-medium">
                                     Haz clic en el icono de recomendaciones IA de un producto para ver sugerencias
                                 </p>
                             </div>
                         ) : !productoBase ? (
-                            <div className="text-center py-8 text-zinc-500">
+                            <div className="text-center py-8 text-brand-options">
                                 <p className="text-xs font-medium">El producto seleccionado no tiene ID válido para recomendar</p>
                             </div>
                         ) : error ? (
@@ -368,13 +415,17 @@ return (
                                 </Button>
                             </div>
                         ) : loading ? (
-                            <div className="py-12 text-center text-zinc-500 text-xs animate-pulse">
+                            <div className="py-12 text-center text-brand-options text-xs animate-pulse">
                                 <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-accent-ink" />
                                 Analizando con IA y consultando precios/stock...
                             </div>
                         ) : currentList.length === 0 ? (
-                            <div className="text-center py-8 text-zinc-500">
-                                <p className="text-xs">No hay productos en la categoría <strong>{activeConfig.label}</strong></p>
+                            <div className="text-center py-8 text-brand-options">
+                                <p className="text-xs">
+                                    {(recomendaciones[activeTab] || []).length > 0
+                                        ? 'Descartaste todas las sugerencias de esta categoría'
+                                        : <>No hay productos en la categoría <strong>{activeConfig.label}</strong></>}
+                                </p>
                             </div>
                         ) : (
                             <div className={`p-3 rounded-xl border ${activeConfig.borderColor} ${activeConfig.containerBg} space-y-3`}>
@@ -389,6 +440,7 @@ return (
                                             catalogoItem={catalogoById.get(Number(item.id_producto))}
                                             onAgregar={() => handleSelectAgregar(item, activeTab)}
                                             onReemplazar={() => handleSelectReemplazar(item, activeTab)}
+                                            onDescartar={() => handleDescartar(item, activeTab)}
                                             showReemplazar={!!baseCartId && !!onSelectReemplazar}
                                         />
                                     ))}
@@ -396,7 +448,7 @@ return (
                             </div>
                         )}
 
-                        <p className="text-xs text-zinc-500 text-right pt-1 border-t border-zinc-100">
+                        <p className="text-xs text-brand-options text-right pt-1 border-t border-border-default">
                             Precios según: <strong>{tipoPrecioCliente}</strong>
                         </p>
                     </div>
@@ -413,6 +465,7 @@ export interface RecomendacionCardSectionProps {
     catalogoItem?: ProductoBase;
     onAgregar: () => void;
     onReemplazar: () => void;
+    onDescartar: () => void;
     showReemplazar: boolean;
 }
 
@@ -421,30 +474,31 @@ export function RecomendacionCardSection({
     catalogoItem,
     onAgregar,
     onReemplazar,
+    onDescartar,
     showReemplazar,
 }: RecomendacionCardSectionProps) {
     const rawImagen =
         item.imagen_url || catalogoItem?.foto_url || catalogoItem?.imagenUrl || null;
     const imagenSrc = rawImagen ? getImageUrl(rawImagen) : null;
+    const [failedImage, setFailedImage] = useState<string | null>(null);
     const ubicacion = item.ubicacion || item.almacen || catalogoItem?.estante || '';
     const empaque = item.unidades_por_caja ?? catalogoItem?.unidades_por_caja ?? catalogoItem?.presentacion ?? null;
 
     return (
-        <div className="bg-white rounded-lg border border-zinc-200/80 p-2.5 shadow-sm space-y-2.5">
+        <div className="bg-surface rounded-lg border border-border-default p-2.5 shadow-sm space-y-2.5">
             {/* DETALLES DE PRODUCTO */}
             <div className="flex gap-2.5 items-start">
                 {/* IMAGEN (64×64 con placeholder elegante por categoría) */}
-                <div className="w-16 h-16 rounded-lg border border-zinc-200/80 flex-shrink-0 overflow-hidden bg-zinc-50 flex items-center justify-center">
-                    {imagenSrc ? (
+                <div className="w-16 h-16 rounded-lg border border-border-default flex-shrink-0 overflow-hidden bg-zinc-50 flex items-center justify-center">
+                    {imagenSrc && failedImage !== imagenSrc ? (
                         <Image
+                            unoptimized
                             src={imagenSrc}
                             alt={item.descripcion}
                             width={64}
                             height={64}
                             className="w-full h-full object-cover"
-                            onError={(e) => {
-                                (e.target as HTMLImageElement).style.visibility = 'hidden';
-                            }}
+                            onError={() => setFailedImage(imagenSrc)}
                         />
                     ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-accent-soft/60 text-accent-ink">
@@ -458,25 +512,25 @@ export function RecomendacionCardSection({
 
                 {/* CONTENIDO */}
                 <div className="flex-1 min-w-0 space-y-1">
-                    <div className="inline-block px-1.5 py-0.5 bg-zinc-50 rounded text-zinc-600 font-medium text-xs font-sans border border-zinc-200/80">
+                    <div className="inline-block px-1.5 py-0.5 bg-zinc-50 rounded text-zinc-600 font-medium text-xs font-sans border border-border-default">
                         {formatCode(item.codigo)}
                     </div>
 
-                    <p className="text-xs font-semibold text-zinc-900 line-clamp-2 leading-tight font-sans" title={item.descripcion}>
+                    <p className="text-xs font-semibold text-brand-subtitle line-clamp-2 leading-tight font-sans" title={item.descripcion}>
                         {item.descripcion}
                     </p>
 
                     <div className="flex flex-wrap items-center gap-1 text-xs pt-0.5 font-sans">
                         {ubicacion && (
-                            <span className="px-1.5 py-0.5 bg-zinc-100 text-zinc-700 border border-zinc-200/80 rounded font-semibold flex items-center gap-1">
-                                <Archive className="w-3 h-3 text-zinc-500" aria-hidden="true" />
+                            <span className="px-1.5 py-0.5 bg-zinc-100 text-zinc-700 border border-border-default rounded font-semibold flex items-center gap-1">
+                                <Archive className="w-3 h-3 text-brand-options" aria-hidden="true" />
                                 {ubicacion}
                             </span>
                         )}
 
                         {empaque && (
-                            <span className="px-1.5 py-0.5 bg-zinc-100 text-zinc-700 border border-zinc-200/80 rounded font-semibold flex items-center gap-1">
-                                <Package className="w-3 h-3 text-zinc-500" aria-hidden="true" />
+                            <span className="px-1.5 py-0.5 bg-zinc-100 text-zinc-700 border border-border-default rounded font-semibold flex items-center gap-1">
+                                <Package className="w-3 h-3 text-brand-options" aria-hidden="true" />
                                 {empaque}
                             </span>
                         )}
@@ -490,7 +544,18 @@ export function RecomendacionCardSection({
             </div>
 
             {/* ACCIONES */}
-            <div className="flex items-center justify-end gap-2 pt-1 border-t border-zinc-100">
+            <div className="flex items-center justify-end gap-2 pt-1 border-t border-border-default">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onDescartar}
+                    className="text-xs uppercase tracking-wider text-zinc-500 hover:text-red-600 hover:border-red-300 hover:bg-red-50"
+                    title="Descartar sugerencia"
+                >
+                    <X className="w-3.5 h-3.5" aria-hidden="true" />
+                    DESCARTAR
+                </Button>
+
                 <Button
                     variant="outline"
                     size="sm"

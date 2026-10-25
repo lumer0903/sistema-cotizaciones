@@ -9,12 +9,14 @@ import { PdfStorageService } from './pdf/pdf-storage.service';
 import { PdfExportService } from './pdf/pdf-export.service';
 import { PDF_QUEUE } from './pdf/pdf.constants';
 import { RecomendacionesModule } from './recomendaciones/recomendaciones.module';
+import { ConfiguracionModule } from '../configuracion/configuracion.module';
 
 @Module({
     imports: [
         PrismaModule,
         RecomendacionesModule,
         MinioModule,
+        ConfiguracionModule,
         BullModule.registerQueue({
             name: PDF_QUEUE,
             defaultJobOptions: {

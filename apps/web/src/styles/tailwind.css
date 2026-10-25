@@ -53,6 +53,7 @@
   --color-surface: #ffffff;
   --color-surface-muted: #f9fafb;
   --color-border-default: #e4e4e4;
+  --color-overlay: rgb(0 0 0 / 0.5);
 
   /* ── Roles / Segmentación ── */
   --color-role-tienda: #1f41af;
@@ -178,10 +179,10 @@ input:-webkit-autofill:focus {
 }
 
 /* Scroll-lock global mientras hay un modal/drawer abierto (clase en scrollLock.ts) */
+/* Conservar la altura del documento: height:100vh recorta las tarjetas y reinicia el scroll. */
 body.modal-open,
 html.modal-open {
   overflow: hidden !important;
-  height: 100vh !important;
 }
 
 /* Selección de texto con la paleta de marca */

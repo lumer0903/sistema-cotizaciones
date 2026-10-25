@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Menu } from 'lucide-react';
-import { lockBodyScroll, unlockBodyScroll } from '@/lib/scrollLock';
 import { useSidebarOpen } from '@/hooks/useSidebarOpen';
 import { useAuth } from '@/lib/authProvider';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
@@ -16,36 +15,18 @@ export function VendedorLayout({ children }: { children: React.ReactNode }) {
   const [isPerfilOpen, setIsPerfilOpen] = useState(false);
   const { usuario } = useAuth();
 
-  // Bloquea el scroll del body sólo cuando el menú es drawer (móvil < lg).
-  // En desktop el sidebar vive en flujo y la página scrollea con normalidad.
-  useEffect(() => {
-    if (!sidebarOpen || window.innerWidth >= 1024) return;
-    lockBodyScroll();
-    return unlockBodyScroll;
-  }, [sidebarOpen]);
-
-  // Escape cierra el drawer (accesibilidad)
-  useEffect(() => {
-    if (!sidebarOpen) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSidebarOpen(false);
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [sidebarOpen, setSidebarOpen]);
-
   return (
-    <div className="min-h-screen flex bg-zinc-50 text-zinc-900" data-theme="vendedor">
+    <div className="min-h-screen flex bg-surface-muted text-brand-subtitle" data-theme="vendedor">
       {/* Skip link: primer elemento enfocable para navegación por teclado */}
       <a
         href="#contenido-principal"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-vendedor-primary focus:text-sm focus:font-bold focus:px-4 focus:py-2.5 focus:rounded-xl focus:shadow-modal focus:border focus:border-border-default"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-surface focus:text-vendedor-primary focus:text-sm focus:font-bold focus:px-4 focus:py-2.5 focus:rounded-xl focus:shadow-modal focus:border focus:border-border-default"
       >
         Saltar al contenido
       </a>
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-overlay lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -53,10 +34,10 @@ export function VendedorLayout({ children }: { children: React.ReactNode }) {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className={`flex flex-col flex-1 min-w-0 transition-[padding] duration-300 ease-in-out ${sidebarOpen ? 'lg:pl-64' : 'lg:pl-0'}`}>
-        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-zinc-200 bg-white/80 backdrop-blur-md px-4 lg:px-6">
+        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border-default bg-surface/80 backdrop-blur-md px-4 lg:px-6">
           <div className="flex items-center gap-3 min-w-0">
             <button
-              className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-md text-zinc-500 hover:text-vendedor-primary hover:bg-vendedor-soft shrink-0"
+              className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-xl text-brand-options hover:text-vendedor-primary hover:bg-vendedor-soft shrink-0"
               onClick={() => setSidebarOpen(!sidebarOpen)}
               aria-label="Alternar menú"
               aria-expanded={sidebarOpen}
@@ -69,7 +50,7 @@ export function VendedorLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex flex-col items-end">
-              <span className="text-xs font-semibold text-zinc-900">{usuario?.nombre || 'Vendedor'}</span>
+              <span className="text-xs font-semibold text-brand-subtitle">{usuario?.nombre || 'Vendedor'}</span>
               <span className="text-xs font-semibold tracking-wider text-vendedor-primary uppercase">
                 {usuario?.rol ? 'Vendedor' : 'Vendedor'}
               </span>

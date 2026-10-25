@@ -12,6 +12,7 @@ import {
   CompactTable,
 } from './charts/DashboardCharts';
 import { formatCode } from '@/lib/formatters';
+import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/cn';
 
 const ROLE_ACCENT: Record<DashboardView, { accent: string; gradient: string }> = {
@@ -36,8 +37,8 @@ interface WidgetCardProps {
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="h-[300px] flex items-center justify-center">
-      <p className="text-center text-sm text-zinc-500 px-4">{message}</p>
+    <div className="min-h-36 flex items-center justify-center">
+      <p className="text-center text-sm text-brand-options px-4">{message}</p>
     </div>
   );
 }
@@ -52,24 +53,23 @@ export function WidgetCard({ widget, graficos, stockBajo, view, onOpenCustomizer
   const { accent } = ROLE_ACCENT[view];
 
   return (
-    <section
-      className="bg-white border border-zinc-200/80 rounded-2xl shadow-sm overflow-hidden"
+    <Card
+      className="min-w-0"
       aria-label={widget.title}
-      style={{ minHeight: '420px' }}
     >
-      <header className="px-5 py-4 border-b border-zinc-100 flex items-start justify-between gap-3 bg-zinc-50/50">
+      <header className="px-5 py-4 border-b border-border-default flex items-start justify-between gap-3 bg-zinc-50/50">
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-bold text-zinc-900 truncate">{widget.title}</h3>
-          <p className="mt-0.5 text-xs text-zinc-500 capitalize">
+          <h3 className="text-sm font-bold text-brand-subtitle truncate">{widget.title}</h3>
+          <p className="mt-0.5 text-xs text-brand-options capitalize">
             {CHART_TYPE_LABELS[widget.chartType]}
           </p>
         </div>
       </header>
 
-      <div className="p-5 min-h-[320px]" aria-live="polite">
+      <div className="p-4 sm:p-5" aria-live="polite">
         {renderWidget(widget, graficos, stockBajo, accent)}
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -104,7 +104,7 @@ function renderWidget(
               a.stock_actual === 0
                 ? 'bg-red-50 text-red-700'
                 : a.stock_actual <= a.stock_minimo
-                ? 'bg-amber-50 text-amber-700'
+                ? 'bg-red-50 text-red-700'
                 : 'bg-emerald-50 text-emerald-700',
             )}
           >
@@ -166,7 +166,7 @@ function renderWidget(
 
   // Ventas por tipo (Mayorista vs Minorista) - nuevo gráfico
   if (widget.id === 'ventasPorTipo') {
-    if (!graficos.cotizacionesPorEstado.length) return <EmptyState message="Sin datos de ventas por tipo." />;
+    if (!graficos.cotizadoVsVendido.length) return <EmptyState message="Sin datos de ventas por tipo." />;
     return (
       <div className="h-[320px]">
         <VentasPorTipoChart data={graficos.cotizadoVsVendido} />

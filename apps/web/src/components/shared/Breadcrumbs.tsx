@@ -204,7 +204,7 @@ export function Breadcrumbs({ accent = 'amber' }: BreadcrumbsProps) {
         : accent === 'vendedor'
           ? 'text-vendedor-primary'
           : 'text-amber-700'
-      : 'text-zinc-700';
+      : 'text-brand-subtitle';
 
   const sizeFor = (index: number) =>
     LEVEL_SIZES[Math.min(index, LEVEL_SIZES.length - 1)];
@@ -224,21 +224,22 @@ export function Breadcrumbs({ accent = 'amber' }: BreadcrumbsProps) {
           <React.Fragment key={`${item.label}-${index}`}>
             {index > 0 && (
               <ChevronRight
-                className={`${separatorFor(index)} text-zinc-700 stroke-[2.5] shrink-0 ${index < items.length - 1 ? 'hidden sm:inline-flex' : ''}`}
+                className={`${separatorFor(index)} text-brand-subtitle stroke-[2.5] shrink-0 ${index < items.length - 1 ? 'hidden sm:inline-flex' : ''}`}
                 />
             )}
 
             {href ? (
               <Link
                 href={href}
-                className={`text-zinc-700 ${size} font-extrabold font-sans hover:text-zinc-900 transition-colors ${ancestorClass}`}
+                className={`text-brand-subtitle ${size} font-extrabold font-sans hover:text-brand-subtitle transition-colors ${ancestorClass}`}
               >
                 {item.label}
               </Link>
             ) : (
               <span
+                aria-current={isLast ? 'page' : undefined}
                 className={`${size} font-extrabold font-sans ${
-                  isLast ? lastAccent : 'text-zinc-700'
+                  isLast ? lastAccent : 'text-brand-subtitle'
                 } ${isLast ? 'truncate min-w-0' : ancestorClass}`}
               >
                 {item.label}

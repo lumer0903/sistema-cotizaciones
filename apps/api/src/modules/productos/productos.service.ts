@@ -208,40 +208,50 @@ export class ProductosService {
       include:[includePrecios?'precios':'',includeCategoria?'categoria':'',includeStockActual?'stock':''].filter(Boolean).join(',') || undefined});
   }
   async findAllFiltered(q: ProductsQueryDto): Promise<PaginatedProductosResponse> {
-    const warehouse=q.id_almacen??null, category=q.id_categoria??null, active=q.activo??null;
-    const pattern=q.search?.trim() ? '%'+q.search.trim().replace(/[\\%_]/g,'\\$&')+'%' : null;
-    const scoped=Prisma.sql`
-      SELECT p.id_producto,p.created_at,p.stock_minimo,
-        CASE WHEN ${warehouse}::int IS NULL THEN p.stock_total ELSE COALESCE(s.cantidad,0) END AS stock_scope
-      FROM productos p LEFT JOIN stock_actual s ON s.id_producto=p.id_producto AND s.id_almacen=${warehouse}::int
+    const centroAlmacen = await this.prisma.almacen.findFirst({ where: { codigo: 'ALM-001', activo: true }, select: { id_almacen: true } });
+    const centroId = centroAlmacen?.id_almacen ?? 1;
+    const warehouse = q.id_almacen ?? centroId;
+    const category = q.id_categoria ?? null;
+    const active = q.activo ?? null;
+    const pattern = q.search?.trim() ? '%' + q.search.trim().replace(/[\\%_]/g, '\\$&') + '%' : null;
+    const scoped = Prisma.sql`
+      SELECT p.id_producto, p.created_at, p.stock_minimo,
+        CASE WHEN ${warehouse}::int IS NULL THEN p.stock_total ELSE COALESCE(s.cantidad, 0) END AS stock_scope
+      FROM productos p
+      LEFT JOIN stock_actual s ON s.id_producto = p.id_producto AND s.id_almacen = ${warehouse}::int
       WHERE p.deleted_at IS NULL
-        AND (${category}::int IS NULL OR p.id_categoria=${category}::int)
-        AND (${warehouse}::int IS NULL OR s.id_stock IS NOT NULL)
-        AND (${active}::boolean IS NULL OR p.activo=${active}::boolean)
+        AND (${category}::int IS NULL OR p.id_categoria = ${category}::int)
+        AND (${active}::boolean IS NULL OR p.activo = ${active}::boolean)
         AND (${pattern}::text IS NULL OR p.codigo ILIKE ${pattern}::text OR p.descripcion ILIKE ${pattern}::text)
     `;
-    const condition=q.stock_status==='agotado'?Prisma.sql`stock_scope=0`
-      :q.stock_status==='bajo'?Prisma.sql`stock_scope>0 AND stock_scope<=stock_minimo`
-      :q.stock_status==='disponible'?Prisma.sql`stock_scope>stock_minimo`:Prisma.sql`TRUE`;
-    const order=q.sortBy==='stock_estado'
-      ?(q.sortOrder==='desc' ? Prisma.sql`(stock_scope<=stock_minimo) ASC,stock_scope DESC,created_at DESC,id_producto DESC` : Prisma.sql`(stock_scope<=stock_minimo) DESC,stock_scope ASC,created_at DESC,id_producto DESC`)
-      :q.sortOrder==='asc'?Prisma.sql`created_at ASC,id_producto ASC`:Prisma.sql`created_at DESC,id_producto DESC`;
-    const includes=new Set(q.include?.split(',')??[]);
-    return this.prisma.$transaction(async tx=>{
-      const counts=await tx.$queryRaw<Array<{total:bigint}>>(Prisma.sql`WITH scoped AS (${scoped}) SELECT count(*) AS total FROM scoped WHERE ${condition}`);
-      if((q.page-1)*q.limit>=Number(counts[0].total)) return {data:[],total:Number(counts[0].total),page:q.page,limit:q.limit};
-      const rows=await tx.$queryRaw<Array<{id_producto:number;stock_scope:number}>>(Prisma.sql`
-        WITH scoped AS (${scoped}) SELECT id_producto,stock_scope FROM scoped WHERE ${condition}
-        ORDER BY ${order} LIMIT ${q.limit} OFFSET ${(q.page-1)*q.limit}`);
-      const where={id_producto:{in:rows.map(r=>r.id_producto)}};
-      const include={categoria:includes.has('categoria'),precios_actuales:includes.has('precios')};
-      const products=includes.has('stock')
-        ? await tx.producto.findMany({where,include:{...include,stock_actual:{include:{almacen:true}}}})
-        : await tx.producto.findMany({where,include});
-      const byId=new Map(products.map(p=>[p.id_producto,p]));
-      return {data:rows.map(r=>({...mapProducto(byId.get(r.id_producto)!),stock_filtrado:r.stock_scope})),
-        total:Number(counts[0].total),page:q.page,limit:q.limit};
-    },{isolationLevel:Prisma.TransactionIsolationLevel.RepeatableRead});
+    const condition = q.stock_status === 'agotado' ? Prisma.sql`stock_scope = 0`
+      : q.stock_status === 'bajo' ? Prisma.sql`stock_scope > 0 AND stock_scope <= stock_minimo`
+      : q.stock_status === 'disponible' ? Prisma.sql`stock_scope > stock_minimo` : Prisma.sql`TRUE`;
+    const order = q.sortBy === 'stock_estado'
+      ? (q.sortOrder === 'desc' ? Prisma.sql`(stock_scope <= stock_minimo) ASC, stock_scope DESC, created_at DESC, id_producto DESC` : Prisma.sql`(stock_scope <= stock_minimo) DESC, stock_scope ASC, created_at DESC, id_producto DESC`)
+      : q.sortOrder === 'asc' ? Prisma.sql`created_at ASC, id_producto ASC` : Prisma.sql`created_at DESC, id_producto DESC`;
+    const includes = new Set(q.include?.split(',') ?? []);
+    return this.prisma.$transaction(async (tx) => {
+      const counts = await tx.$queryRaw<Array<{ total: bigint }>>(Prisma.sql`WITH scoped AS (${scoped}) SELECT count(*) AS total FROM scoped WHERE ${condition}`);
+      if ((q.page - 1) * q.limit >= Number(counts[0].total)) return { data: [], total: Number(counts[0].total), page: q.page, limit: q.limit };
+      const rows = await tx.$queryRaw<Array<{ id_producto: number; stock_scope: number }>>(Prisma.sql`
+        WITH scoped AS (${scoped}) SELECT id_producto, stock_scope FROM scoped WHERE ${condition}
+        ORDER BY ${order} LIMIT ${q.limit} OFFSET ${(q.page - 1) * q.limit}`);
+      const where = { id_producto: { in: rows.map(r => r.id_producto) } };
+      const include: any = {
+        categoria: includes.has('categoria'),
+        precios_actuales: includes.has('precios'),
+      };
+      if (includes.has('stock')) {
+        include.stock_actual = {
+          where: { id_almacen: warehouse },
+          include: { almacen: true },
+        };
+      }
+      const products = await tx.producto.findMany({ where, include });
+      const byId = new Map(products.map(p => [p.id_producto, p]));
+      return { data: rows.map(r => ({ ...mapProducto(byId.get(r.id_producto)!), stock_filtrado: r.stock_scope })), total: Number(counts[0].total), page: q.page, limit: q.limit };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   }
 
   async findById(id: number, includePrecios = false, includeCategoria = false, includeStockActual = false): Promise<ProductoResponse> {

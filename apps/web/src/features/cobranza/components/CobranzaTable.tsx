@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Download, CreditCard, Clock, FileText } from 'lucide-react';
+import { Search, Download, CreditCard, Clock, FileText, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -18,7 +18,7 @@ import {
   TableCell,
   Pagination,
 } from '@/components/ui';
-import { FilterCard } from '@/components/ui/FilterCard';
+import { FilterCard, FilterGrid } from '@/components/ui/FilterCard';
 import type { BadgeVariant } from '@/components/ui/Badge';
 import type { CuentaPorCobrar } from '@/features/cobranza/types';
 import { fetchCobranza, fetchCobranzaForExport, type CobranzaFilters } from '@/features/cobranza/api/cobranza';
@@ -51,10 +51,10 @@ const ESTADO_LABELS: Record<string, string> = {
 };
 
 const ESTADO_BADGE: Record<string, { variant: BadgeVariant; className?: string }> = {
-  pendiente: { variant: 'neutral', className: 'bg-amber-50 text-amber-700 border-amber-200' },
+  pendiente: { variant: 'borrador' },
   parcial: { variant: 'parcial' },
-  pagada: { variant: 'aprobado', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  vencida: { variant: 'rechazado', className: 'bg-rose-50 text-rose-700 border-rose-200' },
+  pagada: { variant: 'aprobado' },
+  vencida: { variant: 'rechazado' },
 };
 
 function formatDate(value: string | null | undefined): string {
@@ -82,6 +82,8 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
   const router = useRouter();
   const [cuentas, setCuentas] = useState<CuentaPorCobrar[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retry, setRetry] = useState(0);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(initialFilters.page ?? 1);
   const [limit, setLimit] = useState(initialFilters.limit ?? 16);
@@ -91,6 +93,8 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
   const [tipoClienteFilter, setTipoClienteFilter] = useState(initialFilters.tipo_cliente ?? '');
   const [moraFilter, setMoraFilter] = useState(initialFilters.mora ?? '');
   const [exporting, setExporting] = useState(false);
+
+  const tieneFiltrosActivos = Boolean(search || estadoFilter || tipoClienteFilter || moraFilter);
 
   const handleExportar = async () => {
     if (exporting) return;
@@ -146,6 +150,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
   useEffect(() => {
     const fetchCuentas = async () => {
       setLoading(true);
+      setLoadError(false);
       try {
         const response = await fetchCobranza({
           page,
@@ -159,6 +164,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
         setTotal(response.total);
       } catch (error) {
         console.error('Error fetching cobranza:', error);
+        setLoadError(true);
         setCuentas([]);
         setTotal(0);
       } finally {
@@ -167,7 +173,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
     };
 
     fetchCuentas();
-  }, [page, limit, searchDebounced, estadoFilter, tipoClienteFilter, moraFilter]);
+  }, [page, limit, searchDebounced, estadoFilter, tipoClienteFilter, moraFilter, retry]);
 
   const totalPages = Math.max(Math.ceil(total / limit), 1);
 
@@ -175,13 +181,13 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
     <div className="space-y-6">
       <h1 className="sr-only">Cobranza</h1>
       <FilterCard className="w-full">
-        <div className="flex flex-col md:flex-row items-stretch md:items-end gap-x-6 gap-y-4 w-full">
-          <div className="flex-[2] min-w-[220px]">
+        <FilterGrid>
+          <div className="flex-[1.4] min-w-[200px]">
             <Input
               type="text"
               label="Buscar"
               icon={<Search className="w-4 h-4" />}
-              placeholder="Buscar"
+              placeholder="Buscar por documento o cliente..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -191,7 +197,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
             />
           </div>
 
-          <div className="flex-1 min-w-[140px]">
+          <div className="flex-1 min-w-[150px]">
             <Select
               label="Estado"
               value={estadoFilter}
@@ -204,7 +210,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
             />
           </div>
 
-          <div className="flex-1 min-w-[140px]">
+          <div className="flex-1 min-w-[150px]">
             <Select
               label="Tipo de cliente"
               value={tipoClienteFilter}
@@ -230,24 +236,89 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
             />
           </div>
 
-          <div className="w-full md:w-auto">
+          <div className="shrink-0 flex items-end">
             <Button
               variant="outline"
-              className="w-full md:w-auto gap-2"
+              className="h-9 px-3 gap-2 whitespace-nowrap"
+              aria-label="Exportar cobranza CSV"
+              title="Exportar CSV"
               loading={exporting}
               onClick={handleExportar}
             >
               <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Exportar</span>
             </Button>
           </div>
+        </FilterGrid>
+      
+      {/* FILTROS ACTIVOS */}
+      {tieneFiltrosActivos && (
+        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border-default mt-3">
+          {search && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Búsqueda:</span>
+              {search.substring(0, 20)}{search.length > 20 ? '...' : ''}
+              <button
+                onClick={() => setSearch('')}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {estadoFilter && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Estado:</span>
+              {ESTADO_CUENTA_OPTIONS.find(o => o.value === estadoFilter)?.label || estadoFilter}
+              <button
+                onClick={() => setEstadoFilter('')}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Remover estado"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {tipoClienteFilter && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Tipo cliente:</span>
+              {TIPO_CLIENTE_OPTIONS.find(o => o.value === tipoClienteFilter)?.label || tipoClienteFilter}
+              <button
+                onClick={() => setTipoClienteFilter('')}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Remover tipo de cliente"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {moraFilter && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Mora:</span>
+              {MORA_OPTIONS.find(o => o.value === moraFilter)?.label || moraFilter}
+              <button
+                onClick={() => setMoraFilter('')}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Remover mora"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
         </div>
+      )}
+      
       </FilterCard>
 
-      <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden overflow-x-auto w-full">
+      <div className="bg-surface rounded-xl border border-border-default shadow-sm overflow-hidden w-full">
         {loading ? (
           <div className="p-4 sm:p-6">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="animate-pulse flex items-center gap-4 py-4 border-b border-zinc-100">
+              <div key={i} className="animate-pulse flex items-center gap-4 py-4 border-b border-border-default">
                 <div className="h-12 w-12 bg-zinc-200 rounded-lg" />
                 <div className="flex-1">
                   <div className="h-4 w-3/4 bg-zinc-200 rounded mb-2" />
@@ -256,8 +327,8 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
               </div>
             ))}
           </div>
-        ) : cuentas.length === 0 ? (
-          <div className="p-12 text-center text-zinc-500">
+        ) : loadError ? (<div role="alert" className="p-6 text-center space-y-3"><p>No se pudieron cargar las cuentas de cobranza.</p><Button variant="outline" onClick={() => setRetry(value => value + 1)}>Reintentar</Button></div>) : cuentas.length === 0 ? (
+          <div className="p-12 text-center text-brand-options">
             <FileText className="h-12 w-12 mx-auto text-zinc-300 mb-4" />
             <p className="text-lg">No se encontraron cuentas de cobranza</p>
             <p className="text-sm mt-1">Ajusta los filtros o la búsqueda.</p>
@@ -271,7 +342,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
                   <TableHead className="w-[20%]">Cliente</TableHead>
                   <TableHead className="w-[15%]">Fecha</TableHead>
                   <TableHead className="w-[15%]">Estado</TableHead>
-                  <TableHead className="w-[15%] text-center">Total</TableHead>
+                  <TableHead className="w-[15%] text-right">Total</TableHead>
                   <TableHead className="w-[10%]">Atraso</TableHead>
                   <TableHead className="w-[10%] text-right">Acciones</TableHead>
                 </TableRow>
@@ -279,13 +350,13 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
               <TableBody>
                 {cuentas.map((cuenta) => (
                   <TableRow key={cuenta.id_cotizacion}>
-                    <TableCell className="font-medium text-zinc-900">
+                    <TableCell className="font-medium text-brand-subtitle">
                       {cuenta.numero}
                     </TableCell>
-                    <TableCell className="text-zinc-900">
+                    <TableCell className="text-brand-subtitle">
                       {cuenta.cliente?.nombre || 'Sin cliente'}
                     </TableCell>
-                    <TableCell className="text-zinc-500">
+                    <TableCell className="text-brand-options">
                       {formatDate(cuenta.created_at)}
                     </TableCell>
                     <TableCell>
@@ -297,7 +368,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
                         {ESTADO_LABELS[cuenta.estado_cobranza] || cuenta.estado_cotizacion?.toUpperCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-center font-medium text-zinc-900 tnum">
+                    <TableCell className="text-right font-medium text-brand-subtitle tnum">
                       S/ {money(cuenta.total)}
                     </TableCell>
 

@@ -294,7 +294,7 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
                                     onClick={() => setValue('tipo', opt.value)}
                                     className={`relative rounded-xl border-2 p-3 transition-[border-color,background-color,transform] duration-150 flex flex-col items-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:scale-[0.96] ${isSelected
                                             ? 'border-accent-primary bg-accent-primary/5 shadow-sm'
-                                            : 'border-zinc-200 hover:border-accent-primary/50'
+                                            : 'border-border-default hover:border-accent-primary/50'
                                         }`}
                                 >
                                     <Icon className={`w-5 h-5 ${opt.color}`} aria-hidden="true" />

@@ -1,30 +1,19 @@
 'use client';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import { AuthProvider } from '@/lib/authProvider';
 import { Toaster } from 'sonner';
+import { TableDensityProvider } from '@/hooks/useTableDensity';
+import { getQueryClient } from '@/lib/queryClient';
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  // Singleton por montaje del árbol: staleTime corto (30s) alineado con la
-  // caché del API para no repetir consultas en ráfaga.
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 30_000,
-            refetchOnWindowFocus: false,
-            retry: 1,
-          },
-        },
-      })
-  );
+  const [queryClient] = useState(() => getQueryClient());
 
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {children}
+        <TableDensityProvider>{children}</TableDensityProvider>
         <Toaster position="top-right" richColors closeButton />
       </AuthProvider>
     </QueryClientProvider>

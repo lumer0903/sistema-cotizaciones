@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { apiClient, apiErrorMessage } from '@/lib/apiClient';
+import { invalidateInventarioQueries } from '@/lib/queryClient';
 import { showToast } from '@/lib/toast';
 import { InventarioFilters } from '@/features/inventario/components/InventarioFilters';
 import { InventarioTable } from '@/features/inventario/components/InventarioTable';
@@ -38,7 +39,6 @@ function InventarioViewInner() {
   const [selectedCategoria, setSelectedCategoria] = useState('');
   const [selectedUbicacion, setSelectedUbicacion] = useState('');
   const [selectedStockEstado, setSelectedStockEstado] = useState('');
-  const [selectedActivo,setSelectedActivo]=useState('');
   const [isAlertasOpen,setIsAlertasOpen]=useState(false);
   const requestRef=useRef<AbortController|null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -59,11 +59,8 @@ function InventarioViewInner() {
   const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoInventario | null>(null);
 
   const [isMovimientoOpen, setIsMovimientoOpen] = useState(false);
-  const [productoParaMovimiento, setProductoParaMovimiento] = useState<number | null>(null);
   const [isTransferenciaOpen, setIsTransferenciaOpen] = useState(false);
-  const [productoParaTransferencia, setProductoParaTransferencia] = useState<number | null>(null);
   const [isKardexOpen, setIsKardexOpen] = useState(false);
-  const [productoParaKardex, setProductoParaKardex] = useState<ProductoInventario | null>(null);
 
   const fetchProductos = useCallback(async () => {
     requestRef.current?.abort();
@@ -83,7 +80,6 @@ function InventarioViewInner() {
       if (selectedUbicacion) params.append('id_almacen', selectedUbicacion);
       if (selectedStockEstado) params.append('stock_status', selectedStockEstado);
 
-      if(selectedActivo)params.set('activo',selectedActivo);
       const data = (await apiClient(`/productos?${params.toString()}`,{signal:controller.signal})) as PaginatedResponse<ProductoAPI>;
       if(controller.signal.aborted)return;
       const raw = Array.isArray(data?.data) ? data.data : data?.items || [];
@@ -99,7 +95,7 @@ function InventarioViewInner() {
     } finally {
       if(!controller.signal.aborted)setLoading(false);
     }
-  }, [searchDebounced, selectedCategoria, selectedUbicacion, selectedStockEstado, selectedActivo, currentPage, limit]);
+  }, [searchDebounced, selectedCategoria, selectedUbicacion, selectedStockEstado, currentPage, limit]);
 
   const handleEliminar = useCallback((id: number) => {
     setConfirmDeleteId(id);
@@ -113,6 +109,7 @@ function InventarioViewInner() {
       showToast.success('Producto eliminado correctamente');
       setConfirmDeleteId(null);
       fetchProductos();
+      await invalidateInventarioQueries();
     } catch (err) {
       console.error('Error eliminando producto:', err);
       showToast.error('Error al eliminar el producto');
@@ -121,18 +118,15 @@ function InventarioViewInner() {
     }
   }, [confirmDeleteId, fetchProductos]);
 
-  const handleAbrirMovimiento = useCallback((productoId?: number) => {
-    setProductoParaMovimiento(productoId ?? null);
+  const handleAbrirMovimiento = useCallback(() => {
     setIsMovimientoOpen(true);
   }, []);
 
-  const handleAbrirTransferencia = useCallback((productoId?: number) => {
-    setProductoParaTransferencia(productoId ?? null);
+  const handleAbrirTransferencia = useCallback(() => {
     setIsTransferenciaOpen(true);
   }, []);
 
-  const handleAbrirKardex = useCallback((producto?: ProductoInventario) => {
-    setProductoParaKardex(producto ?? null);
+  const handleAbrirKardex = useCallback(() => {
     setIsKardexOpen(true);
   }, []);
 
@@ -165,7 +159,7 @@ function InventarioViewInner() {
   const totalPages = Math.ceil(totalItems / limit) || 1;
 
   return (
-    <div className="w-full max-w-[1700px] mx-auto space-y-6 font-sans overflow-x-hidden min-w-0">
+    <div className="w-full max-w-[1700px] mx-auto space-y-6 font-sans min-w-0">
       <h1 className="sr-only">Inventario</h1>
       <InventarioFilters
         categorias={categorias}
@@ -176,8 +170,6 @@ function InventarioViewInner() {
         onCategoriaChange={(v) => { setSelectedCategoria(v); setCurrentPage(1); }}
         selectedUbicacion={selectedUbicacion}
         onUbicacionChange={(v) => { setSelectedUbicacion(v); setCurrentPage(1); }}
-        selectedActivo={selectedActivo}
-        onActivoChange={(value)=>{setSelectedActivo(value);setCurrentPage(1);}}
         onAlertas={()=>setIsAlertasOpen(true)}
         selectedStockEstado={selectedStockEstado}
         onStockEstadoChange={(v) => { setSelectedStockEstado(v); setCurrentPage(1); }}
@@ -208,7 +200,7 @@ function InventarioViewInner() {
       )}
 
       {/* Contenedor principal de la Tabla */}
-      <div className="bg-white rounded-2xl shadow-sm border border-zinc-200/80 overflow-hidden">
+      <div className="bg-surface rounded-2xl shadow-sm border border-border-default overflow-hidden">
         {!errorConexion && <>
         <InventarioTable
           productos={productos}
@@ -216,9 +208,6 @@ function InventarioViewInner() {
           loading={loading}
           onEditar={(producto) => { setModoModal('editar'); setProductoSeleccionado(producto); setIsModalOpen(true); }}
           onEliminar={handleEliminar}
-          onMovimiento={handleAbrirMovimiento}
-          onTransferencia={handleAbrirTransferencia}
-          onKardex={handleAbrirKardex}
         />
 
         <Pagination
@@ -240,7 +229,11 @@ function InventarioViewInner() {
       <ProductoModal
         open={isModalOpen}
         onClose={() => { setIsModalOpen(false); setProductoSeleccionado(null); }}
-        onSuccess={() => { fetchProductos(); showToast.success('Producto guardado correctamente'); }}
+        onSuccess={() => {
+          fetchProductos();
+          void invalidateInventarioQueries();
+          showToast.success('Producto guardado correctamente');
+        }}
         modo={modoModal}
         productoInicial={productoSeleccionado ?? undefined}
         categorias={categorias}
@@ -249,28 +242,41 @@ function InventarioViewInner() {
 
       <MovimientoModal
         open={isMovimientoOpen}
-        onClose={() => { setIsMovimientoOpen(false); setProductoParaMovimiento(null); }}
-        onSuccess={() => { fetchProductos(); showToast.success('Movimiento registrado correctamente'); }}
-        productoPreseleccionado={productoParaMovimiento}
+        onClose={() => setIsMovimientoOpen(false)}
+        onSuccess={() => {
+          fetchProductos();
+          void invalidateInventarioQueries();
+          showToast.success('Movimiento registrado correctamente');
+        }}
         almacenes={almacenes}
       />
 
       <TransferenciaModal
         open={isTransferenciaOpen}
-        onClose={() => { setIsTransferenciaOpen(false); setProductoParaTransferencia(null); }}
-        onSuccess={() => { fetchProductos(); showToast.success('Transferencia realizada correctamente'); }}
-        productoPreseleccionado={productoParaTransferencia}
+        onClose={() => setIsTransferenciaOpen(false)}
+        onSuccess={() => {
+          fetchProductos();
+          void invalidateInventarioQueries();
+          showToast.success('Transferencia realizada correctamente');
+        }}
         almacenes={almacenes}
       />
 
       <KardexModal
         open={isKardexOpen}
-        onClose={() => { setIsKardexOpen(false); setProductoParaKardex(null); }}
-        producto={productoParaKardex}
+        onClose={() => setIsKardexOpen(false)}
+        producto={null}
         almacenes={almacenes}
       />
 
-      <AlertasStockTable open={isAlertasOpen} onClose={()=>setIsAlertasOpen(false)} />
+      <AlertasStockTable
+        open={isAlertasOpen}
+        onClose={()=>setIsAlertasOpen(false)}
+        onSuccess={() => {
+          fetchProductos();
+          void invalidateInventarioQueries();
+        }}
+      />
 
       <ConfirmModal
         open={confirmDeleteId != null}

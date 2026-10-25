@@ -1,4 +1,5 @@
 'use client';
+import { Checkbox } from '@/components/ui/Checkbox';
 
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
 
@@ -106,10 +107,10 @@ function NuevoRolModal({ open, onClose, onCreated }: NuevoRolModalProps) {
             setCodigo(e.target.value);
           }}
         />
-        <p className="text-xs text-zinc-500 -mt-2">
+        <p className="text-xs text-brand-options -mt-2">
           Se usa en JWT y permisos. Minúsculas, números y guion bajo.
         </p>
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2 border-t border-zinc-100">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2 border-t border-border-default">
           <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
@@ -280,11 +281,11 @@ export function RolesYPermisosView() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
       <aside className="lg:col-span-4 xl:col-span-3">
-        <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
-          <div className="p-4 border-b border-zinc-100 flex items-center justify-between gap-3">
+        <div className="bg-surface rounded-2xl border border-border-default overflow-hidden">
+          <div className="p-4 border-b border-border-default flex items-center justify-between gap-3">
             <div>
-              <h2 className="font-semibold text-zinc-900">Roles</h2>
-              <p className="text-xs text-zinc-500">{roles.length} definidos</p>
+              <h2 className="font-semibold text-brand-subtitle">Roles</h2>
+              <p className="text-xs text-brand-options">{roles.length} definidos</p>
             </div>
             <Button type="button" variant="primary" size="sm" onClick={() => setNuevoOpen(true)}>
               <Plus className="h-4 w-4 mr-1" />
@@ -299,7 +300,7 @@ export function RolesYPermisosView() {
                 </li>
               ))
             ) : roles.length === 0 ? (
-              <li className="p-6 text-center text-sm text-zinc-500">No hay roles</li>
+              <li className="p-6 text-center text-sm text-brand-options">No hay roles</li>
             ) : (
               roles.map((rol) => {
                 const active = rol.id_rol === selectedId;
@@ -316,21 +317,21 @@ export function RolesYPermisosView() {
                     >
                       <span
                         className={`mt-0.5 p-1.5 rounded-lg ${
-                          active ? 'bg-accent-primary text-on-accent' : 'bg-zinc-100 text-zinc-500'
+                          active ? 'bg-accent-primary text-on-accent' : 'bg-zinc-100 text-brand-options'
                         }`}
                       >
                         <Shield className="h-4 w-4" />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
-                          <span className="font-medium text-zinc-900 truncate">{rol.nombre}</span>
+                          <span className="font-medium text-brand-subtitle truncate">{rol.nombre}</span>
                           {rol.es_sistema && (
                             <span className="text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600">
                               Sistema
                             </span>
                           )}
                         </span>
-                        <span className="flex items-center gap-2 text-xs text-zinc-500 mt-0.5">
+                        <span className="flex items-center gap-2 text-xs text-brand-options mt-0.5">
                           <Users className="h-3 w-3" />
                           {rol.total_usuarios ?? 0} usuarios
                           <span className="text-zinc-300">·</span>
@@ -347,12 +348,12 @@ export function RolesYPermisosView() {
       </aside>
 
       <section className="lg:col-span-8 xl:col-span-9">
-        <div className="bg-white rounded-2xl border border-zinc-200">
+        <div className="bg-surface rounded-2xl border border-border-default">
           {/* CABECERA ÚNICA: título + selector de grupo + guardar
               (antes eran dos barras con border-b apiladas) */}
-          <div className="p-4 border-b border-zinc-100 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="p-4 border-b border-border-default flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
-              <h2 className="font-semibold text-zinc-900 flex items-center gap-2 flex-wrap">
+              <h2 className="font-semibold text-brand-subtitle flex items-center gap-2 flex-wrap">
                 Matriz de permisos
                 {selected && (
                   <>
@@ -368,7 +369,7 @@ export function RolesYPermisosView() {
                 )}
               </h2>
               {bloqueado && (
-                <p className="text-sm text-zinc-500 mt-1">
+                <p className="text-sm text-brand-options mt-1">
                   El rol Administrador mantiene Edición en todos los módulos por seguridad.
                 </p>
               )}
@@ -376,7 +377,7 @@ export function RolesYPermisosView() {
             <div className="flex flex-wrap items-center gap-3">
               {/* Selector de grupo segmentado */}
               <div
-                className="inline-flex rounded-lg border border-zinc-200 bg-zinc-50 p-0.5"
+                className="inline-flex rounded-lg border border-border-default bg-zinc-50 p-0.5"
                 role="group"
                 aria-label="Grupos de módulos"
               >
@@ -388,8 +389,8 @@ export function RolesYPermisosView() {
                     aria-pressed={grupo === g}
                     className={`px-3.5 py-1.5 text-xs rounded-md transition-colors whitespace-nowrap ${
                       grupo === g
-                        ? 'bg-white text-accent-ink font-semibold shadow-sm'
-                        : 'text-zinc-500 font-medium hover:text-zinc-700'
+                        ? 'bg-surface text-accent-ink font-semibold shadow-sm'
+                        : 'text-brand-options font-medium hover:text-zinc-700'
                     }`}
                   >
                     {GRUPO_LABELS[g]}
@@ -416,12 +417,12 @@ export function RolesYPermisosView() {
                  (antes cada fila repetía las 3 etiquetas como píldoras) */
               <Table scrollLabel="Matriz de permisos">
                   <TableHeader>
-                    <TableRow className="bg-zinc-50/70 border-b border-zinc-200">
-                      <TableHead scope="col" className="text-left text-xs font-bold uppercase tracking-wider text-zinc-500 px-4 py-3">
+                    <TableRow className="bg-zinc-50/70 border-b border-border-default">
+                      <TableHead scope="col" className="text-left text-xs font-bold uppercase tracking-wider text-brand-options px-4 py-3">
                         Módulo
                       </TableHead>
                       {NIVELES.map((nivel) => (
-                        <TableHead key={nivel.value} scope="col" className="text-center text-xs font-bold uppercase tracking-wider text-zinc-500 px-4 py-3">
+                        <TableHead key={nivel.value} scope="col" className="text-center text-xs font-bold uppercase tracking-wider text-brand-options px-4 py-3">
                           {nivel.label}
                         </TableHead>
                       ))}
@@ -441,13 +442,13 @@ export function RolesYPermisosView() {
                               <TableCell key={nivel.value} className="px-4 py-1 text-center">
                                 {/* Celda completa como área de clic (hit area ≥ 44px) */}
                                 <label className="inline-flex min-h-11 min-w-11 items-center justify-center cursor-pointer align-middle">
-                                  <input
-                                    type="checkbox"
+                                  <Checkbox
+                                    
                                     checked={checked}
                                     disabled={bloqueado}
                                     onChange={() => setNivel(modulo, nivel.value)}
                                     aria-label={`${nivel.label} — ${MODULO_LABELS[modulo]}`}
-                                    className="h-4.5 w-4.5 rounded border-zinc-300 accent-accent-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                                    
                                   />
                                 </label>
                               </TableCell>

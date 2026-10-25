@@ -17,8 +17,7 @@ export const FilterCard: React.FC<FilterCardProps> = ({
     return (
         <div
             className={cn(
-        'w-full',
-        'min-w-0',
+        'w-full min-w-0',
         'bg-surface',
         'rounded-2xl',
         'border border-border-default',
@@ -33,3 +32,32 @@ export const FilterCard: React.FC<FilterCardProps> = ({
         </div>
     );
   };
+
+/**
+ * Responsive filter layout that always spans the full available width (w-full).
+ * Children fields proportionally expand to eliminate empty white space on the right,
+ * while actions and buttons marked with shrink-0 retain their natural compact size.
+ */
+export function FilterGrid({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div
+      className={cn(
+        'w-full flex flex-wrap items-end gap-3 sm:gap-4',
+        '[&>*:not(.shrink-0)]:flex-1 [&>*:not(.shrink-0)]:min-w-[140px]',
+        '[&>*]:min-w-0',
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function FilterActions({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn('shrink-0 flex flex-wrap items-center justify-end gap-2 self-end', className)}>
+      {children}
+    </div>
+  );
+}
+

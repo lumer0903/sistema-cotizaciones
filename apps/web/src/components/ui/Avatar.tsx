@@ -33,8 +33,8 @@ const SIZE_CLASSES: Record<NonNullable<AvatarProps['size']>, string> = {
 };
 
 export function Avatar({ src, nombre, size = 'md', className = '', onClick, title }: AvatarProps) {
-  const [failed, setFailed] = useState(false);
-  const showImg = Boolean(src) && !failed;
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const showImg = Boolean(src) && failedSrc !== src;
   const Tag = onClick ? 'button' : 'div';
 
   return (
@@ -44,7 +44,7 @@ export function Avatar({ src, nombre, size = 'md', className = '', onClick, titl
       title={title}
       aria-label={title}
       className={cn(
-        'shrink-0 relative rounded-full overflow-hidden bg-accent-soft border border-zinc-200 flex items-center justify-center font-bold text-accent-ink select-none',
+        'shrink-0 relative rounded-full overflow-hidden bg-accent-soft border border-border-default flex items-center justify-center font-bold text-accent-ink select-none',
         SIZE_CLASSES[size],
         onClick && 'hover:border-accent-primary transition-colors cursor-pointer',
         className
@@ -57,7 +57,7 @@ export function Avatar({ src, nombre, size = 'md', className = '', onClick, titl
           width={96}
           height={96}
           className="h-full w-full object-cover"
-          onError={() => setFailed(true)}
+          onError={() => setFailedSrc(src ?? null)}
         />
       ) : (
         initialsOf(nombre)

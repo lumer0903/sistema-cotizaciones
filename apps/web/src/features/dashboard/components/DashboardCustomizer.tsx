@@ -1,4 +1,5 @@
 'use client';
+import { Checkbox } from '@/components/ui/Checkbox';
 
 import { Modal, Button } from '@/components/ui';
 import { cn } from '@/lib/cn';
@@ -62,7 +63,7 @@ export function DashboardCustomizer({
               key={widget.id}
               className={cn(
                 'rounded-xl border p-4 transition-colors',
-                widget.isActive ? 'border-zinc-200 bg-white' : 'border-zinc-100 bg-zinc-50/60'
+                widget.isActive ? 'border-border-default bg-surface' : 'border-border-default bg-zinc-50/60'
               )}
             >
               <div className="flex items-center justify-between gap-3">
@@ -74,12 +75,12 @@ export function DashboardCustomizer({
                     {widget.title}
                   </span>
                 </label>
-                <input
+                <Checkbox
                   id={`widget-${widget.id}`}
-                  type="checkbox"
+                  
                   checked={widget.isActive}
                   onChange={() => onToggleWidget(view, widget.id)}
-                  className="size-4 shrink-0 cursor-pointer accent-accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                  
                   aria-label={`Activar widget ${widget.title}`}
                 />
               </div>
@@ -97,7 +98,7 @@ export function DashboardCustomizer({
                         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
                         widget.chartType === type.value
                           ? 'border-accent-primary bg-accent-soft text-accent-ink'
-                          : 'border-zinc-200 bg-white text-brand-options hover:border-zinc-300'
+                          : 'border-border-default bg-surface text-brand-options hover:border-zinc-300'
                       )}
                     >
                       {type.label}

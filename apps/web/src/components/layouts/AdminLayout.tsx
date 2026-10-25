@@ -9,7 +9,6 @@ import { PerfilModal } from '@/features/usuarios/components/PerfilModal';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/lib/authProvider';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
-import { lockBodyScroll, unlockBodyScroll } from '@/lib/scrollLock';
 import { useSidebarOpen } from '@/hooks/useSidebarOpen';
 import Link from 'next/link';
 
@@ -39,37 +38,19 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [fetchAlertasCount]);
 
-  // Bloquea el scroll del body sólo cuando el menú es drawer (móvil < lg).
-  // En desktop el sidebar vive en flujo y la página debe scrollear con normalidad.
-  useEffect(() => {
-    if (!sidebarOpen || window.innerWidth >= 1024) return;
-    lockBodyScroll();
-    return unlockBodyScroll;
-  }, [sidebarOpen]);
-
-  // Escape cierra el drawer del menú móvil
-  useEffect(() => {
-    if (!sidebarOpen) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSidebarOpen(false);
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [sidebarOpen, setSidebarOpen]);
-
   return (
-    <div className="min-h-screen bg-zinc-50/50 flex font-sans" data-theme="admin">
+    <div className="min-h-screen bg-surface-muted/50 flex font-sans" data-theme="admin">
       {/* Skip link: primer elemento enfocable para navegación por teclado */}
       <a
         href="#contenido-principal"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-accent-ink focus:text-sm focus:font-bold focus:px-4 focus:py-2.5 focus:rounded-xl focus:shadow-modal focus:border focus:border-border-default"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-surface focus:text-accent-ink focus:text-sm focus:font-bold focus:px-4 focus:py-2.5 focus:rounded-xl focus:shadow-modal focus:border focus:border-border-default"
       >
         Saltar al contenido
       </a>
       {/* BACKDROP MÓVIL */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/20 lg:hidden"
+          className="fixed inset-0 z-40 bg-overlay lg:hidden"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
         />
@@ -81,14 +62,14 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       {/* ÁREA PRINCIPAL */}
       <div className={`flex-1 min-w-0 flex flex-col min-h-screen transition-[padding] duration-300 ease-in-out ${sidebarOpen ? 'lg:pl-64' : 'pl-0'}`}>
         {/* NAVBAR DINÁMICO */}
-        <header className="w-full h-16 px-4 sm:px-6 lg:px-8 bg-white border-b border-zinc-200 flex items-center justify-between gap-3 sticky top-0 z-30">
+        <header className="w-full h-16 px-4 sm:px-6 lg:px-8 bg-surface border-b border-border-default flex items-center justify-between gap-3 sticky top-0 z-30">
 
           <div className="flex items-center gap-2 min-w-0 flex-1">
             {/* BOTÓN MENÚ MÓVIL Y ESCRITORIO */}
             <button
               type="button"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-md text-zinc-600 hover:text-black hover:bg-zinc-100 transition-colors shrink-0"
+              className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-xl text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted transition-colors shrink-0"
               aria-label="Alternar menú"
               aria-expanded={sidebarOpen}
               aria-controls="menu-lateral"
@@ -105,7 +86,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => setIsAlertasOpen(true)}
-              className="relative min-h-11 min-w-11 flex items-center justify-center text-zinc-700 hover:text-black hover:bg-zinc-100 rounded-lg transition-colors"
+              className="relative min-h-11 min-w-11 flex items-center justify-center text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted rounded-xl transition-colors"
               title="Notificaciones"
               aria-label={`Notificaciones${alertasCount > 0 ? ` (${alertasCount} sin leer)` : ''}`}
             >
@@ -119,7 +100,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
             <Link
               href="/configuracion"
-              className="min-h-11 min-w-11 flex items-center justify-center text-zinc-700 hover:text-black hover:bg-zinc-100 rounded-lg transition-colors"
+              className="min-h-11 min-w-11 flex items-center justify-center text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted rounded-xl transition-colors"
               title="Configuración"
               aria-label="Configuración"
             >

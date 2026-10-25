@@ -160,7 +160,7 @@ export function ProductoSearchField<T extends ProductoSearchItem>({
                     id={listboxId}
                     role="listbox"
                     aria-label={label}
-                    className="absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-xl border border-border-default bg-white shadow-popover"
+                    className="absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-xl border border-border-default bg-surface shadow-popover"
                 >
                     {loading || loadError ? (
                         <p role={loadError ? "alert" : "status"} className="p-3 text-xs">{loadError || "Buscando productos..."}</p>
@@ -174,7 +174,7 @@ export function ProductoSearchField<T extends ProductoSearchItem>({
                                 onClick={() => choose(p)}
                                 onMouseEnter={() => setActiveIndex(index)}
                                 className={cn(
-                                    'flex w-full cursor-pointer items-center justify-between gap-2 border-b border-zinc-100 px-4 py-2.5 text-left transition-colors last:border-b-0',
+                                    'flex w-full cursor-pointer items-center justify-between gap-2 border-b border-border-default px-4 py-2.5 text-left transition-colors last:border-b-0',
                                     index === active && 'bg-surface-muted'
                                 )}
                             >

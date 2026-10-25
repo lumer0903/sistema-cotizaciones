@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Camera, Trash2 } from 'lucide-react';
-import { Modal, Input, Select, Button, Avatar } from '@/components/ui';
+import { Modal, Input, Select, Button, Avatar, ModalFooter } from '@/components/ui';
 import { showToast } from '@/lib/toast';
 import { createUsuario, updateUsuario, UsuarioLista } from '../api/usuariosApi';
 import { getRoles, RolLista } from '../api/rolesApi';
@@ -64,8 +64,9 @@ interface UsuarioModalProps {
 export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModalProps) {
   const isEdit = Boolean(usuario);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [changePassword, setChangePassword] = useState(false);
   const [roles, setRoles] = useState<RolLista[]>([]);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(usuario?.avatar_url ?? null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { usuario: me, refresh } = useAuth();
   const {
@@ -77,9 +78,9 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
   } = useForm<UsuarioFormInput>({
     resolver: zodResolver(buildSchema(isEdit)),
     defaultValues: {
-      nombre: '',
-      email: '',
-      rol: 'vendedor',
+      nombre: usuario?.nombre ?? '',
+      email: usuario?.email ?? '',
+      rol: usuario?.rol ?? 'vendedor',
       password: '',
       passwordConfirm: '',
     },
@@ -107,6 +108,7 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
     setPrevOpenForm(open);
     setPrevUsuarioForm(usuario);
     if (open) {
+      setChangePassword(false);
       if (usuario) {
         reset({
           nombre: usuario.nombre,
@@ -193,13 +195,15 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
       open={open}
       onClose={onClose}
       title={isEdit ? 'Editar usuario' : 'Nuevo usuario'}
-      maxWidth="md"
+      maxWidth="form"
+      closeDisabled={isSubmitting}
+      footer={<ModalFooter><Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>Cancelar</Button><Button type="submit" form="usuario-form" variant="primary" loading={isSubmitting}>{isEdit ? 'Guardar cambios' : 'Crear usuario'}</Button></ModalFooter>}
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form id="usuario-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {isEdit && (
-          <div className="flex items-center gap-4 bg-zinc-50 rounded-xl p-4">
+          <div className="flex items-center gap-3 bg-surface-muted rounded-xl p-3">
             <div className="relative">
-              <Avatar src={avatarPreview} nombre={usuario?.nombre} size="lg" />
+              <Avatar src={avatarPreview} nombre={usuario?.nombre} size="md" />
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -211,8 +215,8 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
               </button>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-zinc-900 truncate">{usuario?.nombre}</p>
-              <p className="text-xs text-zinc-500 truncate">{usuario?.email}</p>
+              <p className="text-sm font-medium text-brand-subtitle truncate">{usuario?.nombre}</p>
+              <p className="text-xs text-brand-options truncate">{usuario?.email}</p>
               <div className="flex gap-2 mt-2">
                 <button
                   type="button"
@@ -260,7 +264,7 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
             error={errors.email?.message}
             {...register('email')}
           />
-          <Select
+          <div className="sm:col-span-2"><Select
             label="Rol"
             variant="modal"
             options={rolOptions}
@@ -268,14 +272,15 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
             error={errors.rol?.message}
             {...register('rol')}
             value={watch('rol')}
-          />
+          /></div>
         </div>
 
-        <div className="border-t border-zinc-100 pt-4">
-          <p className="text-xs font-black uppercase tracking-wider text-brand-options mb-3">
+        <div className="border-t border-border-default pt-4">
+          {isEdit && <Button type="button" variant="outline" size="sm" aria-expanded={changePassword} onClick={() => { setChangePassword(value => !value); reset({ ...watch(), password: '', passwordConfirm: '' }); }}>{changePassword ? 'Cancelar cambio de contraseña' : 'Cambiar contraseña'}</Button>}
+          {(!isEdit || changePassword) && <p className="text-xs font-semibold uppercase tracking-wider text-brand-options mb-3">
             {isEdit ? 'Cambiar contraseña (opcional)' : 'Contraseña'}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          </p>}
+          {(!isEdit || changePassword) && <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label={isEdit ? 'Nueva contraseña' : 'Contraseña'}
               type="password"
@@ -292,17 +297,9 @@ export function UsuarioModal({ open, onClose, onSuccess, usuario }: UsuarioModal
               error={errors.passwordConfirm?.message}
               {...register('passwordConfirm')}
             />
-          </div>
+          </div>}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-2 border-t border-zinc-100">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
-            Cancelar
-          </Button>
-          <Button type="submit" variant="primary" loading={isSubmitting}>
-            {isEdit ? 'Guardar cambios' : 'Crear usuario'}
-          </Button>
-        </div>
       </form>
     </Modal>
   );

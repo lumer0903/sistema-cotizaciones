@@ -77,6 +77,7 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
             selectedItemId={f.selectedItemId}
             tipoPrecioCliente={f.tipoPrecioCliente}
             idCliente={f.idCliente ?? undefined}
+            idCotizacion={f.idCotizacion}
             itemExistenteId={f.selectedItemId}
             refreshKey={f.refreshKeyRecs}
             productosCatalogo={f.productosApi}

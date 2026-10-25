@@ -81,7 +81,7 @@ function MetricCard({
   const content = (
     <div className="min-w-0">
       <p className="text-xs font-semibold text-brand-options line-clamp-2 leading-tight">{title}</p>
-      <p className="text-2xl font-bold text-zinc-900 mt-0.5 tnum">{value}</p>
+      <p className="text-2xl font-bold text-brand-subtitle mt-0.5 tnum">{value}</p>
       {subtitle && <p className="mt-0.5 text-[11px] text-brand-options line-clamp-1">{subtitle}</p>}
     </div>
   );
@@ -299,7 +299,7 @@ export function IndicadoresTesis({ kpis, view }: { kpis?: DashboardKpis; view: D
           >
             Tesis
           </span>
-          <h2 id="indicadores-tesis" className="text-base sm:text-lg font-bold text-zinc-900">
+          <h2 id="indicadores-tesis" className="text-base sm:text-lg font-bold text-brand-subtitle">
             Indicadores de Eficiencia
           </h2>
         </div>
@@ -319,7 +319,7 @@ export function IndicadoresTesis({ kpis, view }: { kpis?: DashboardKpis; view: D
                 <ind.icon className={cn('h-4 w-4', colors.primaryText)} />
               </div>
             </div>
-            <p className="text-xl sm:text-2xl font-bold text-zinc-900 tnum">{ind.value}</p>
+            <p className="text-xl sm:text-2xl font-bold text-brand-subtitle tnum">{ind.value}</p>
             <p className="mt-0.5 text-[11px] text-brand-options">{ind.description}</p>
           </div>
         ))}

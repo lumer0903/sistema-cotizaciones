@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState, ReactNode } from 'react';
+import React, { useEffect, useRef, useState, useId, ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
 export interface DropdownMenuItem {
@@ -48,14 +48,16 @@ export const DropdownMenu = ({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const isOpen = controlledOpen ?? uncontrolledOpen;
   const setOpen = (next: boolean) => {
+    if (next) setActiveIndex(items.findIndex(item => !item.disabled));
     setUncontrolledOpen(next);
     onOpenChange?.(next);
   };
 
+  const menuId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(-1);
+  const [activeIndex, setActiveIndex] = useState(() => items.findIndex(item => !item.disabled));
 
   useEffect(() => {
     if (!isOpen) return;
@@ -67,7 +69,8 @@ export const DropdownMenu = ({
     };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        e.stopPropagation();
+        e.preventDefault();
+        e.stopImmediatePropagation();
         setOpen(false);
         triggerRef.current?.focus();
       }
@@ -80,6 +83,12 @@ export const DropdownMenu = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && activeIndex >= 0) {
+      menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')[activeIndex]?.focus();
+    }
+  }, [isOpen, activeIndex]);
 
   const enabledIndexes = items.map((it, i) => (it.disabled ? -1 : i)).filter((i) => i >= 0);
 
@@ -115,6 +124,10 @@ export const DropdownMenu = ({
         e.preventDefault();
         setActiveIndex(enabledIndexes[enabledIndexes.length - 1] ?? -1);
         break;
+      case 'Tab':
+        setOpen(false);
+        triggerRef.current?.focus();
+        break;
       case 'Enter':
       case ' ': {
         e.preventDefault();
@@ -136,8 +149,16 @@ export const DropdownMenu = ({
         ref={triggerRef}
         aria-haspopup="menu"
         aria-expanded={isOpen}
+        aria-controls={isOpen ? menuId : undefined}
         aria-label={triggerAriaLabel}
         onClick={() => setOpen(!isOpen)}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            setOpen(true);
+            if (event.key === 'ArrowUp') setActiveIndex(enabledIndexes[enabledIndexes.length - 1] ?? -1);
+          }
+        }}
         className={triggerClassName}
       >
         {trigger}
@@ -147,10 +168,11 @@ export const DropdownMenu = ({
         <div
           ref={menuRef}
           role="menu"
+          id={menuId}
           aria-label={label}
           onKeyDown={onMenuKeyDown}
           className={cn(
-            'absolute mt-2 w-56 bg-white rounded-2xl shadow-popover border border-border-default px-1.5 py-1.5 z-menu',
+            'absolute mt-2 w-56 bg-surface rounded-2xl shadow-popover border border-border-default px-1.5 py-1.5 z-menu',
             'animate-in fade-in zoom-in-95 duration-100',
             align === 'right' ? 'right-0' : 'left-0'
           )}
@@ -158,7 +180,7 @@ export const DropdownMenu = ({
           {children ??
             items.map((item, index) => (
               <React.Fragment key={item.key}>
-                {item.dividerBefore && <div role="separator" className="my-1 border-t border-zinc-100" />}
+                {item.dividerBefore && <div role="separator" className="my-1 border-t border-border-default" />}
 <button
                   type="button"
                   role="menuitem"
@@ -167,15 +189,16 @@ export const DropdownMenu = ({
                   onClick={() => {
                     item.onClick();
                     setOpen(false);
+                    triggerRef.current?.focus();
                   }}
-                  onMouseEnter={() => setActiveIndex(index)}
+                  onFocus={() => setActiveIndex(index)}
                   className={cn(
-                    'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-[background-color,color] duration-150 text-left active:scale-[0.96]',
+                    'w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-[background-color,color] duration-150 text-left active:scale-[0.96]',
                     item.danger
                       ? 'text-danger hover:bg-status-rechazado-soft'
-                      : 'text-brand-subtitle hover:bg-zinc-100 hover:text-accent-ink',
+                      : 'text-brand-subtitle hover:bg-surface-muted hover:text-accent-ink',
                     item.disabled && 'opacity-50 cursor-not-allowed',
-                    index === activeIndex && !item.disabled && 'bg-zinc-100'
+                    index === activeIndex && !item.disabled && 'bg-surface-muted'
                   )}
                   >
                   {item.icon && <span aria-hidden="true">{item.icon}</span>}

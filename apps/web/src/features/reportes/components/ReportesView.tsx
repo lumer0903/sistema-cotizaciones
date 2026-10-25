@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Download, RefreshCw, FileText, BarChart2, Users } from 'lucide-react';
+import { Download, RefreshCw, FileText, BarChart2, Users, X } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 import { getUsuarios, type UsuarioLista } from '@/features/usuarios/api/usuariosApi';
 import type { Almacen, Cliente } from '@goldcontinent/shared/types';
@@ -19,12 +19,11 @@ import type {
   AuditoriaIa,
   TipoReporte,
 } from '@/features/reportes/types';
-import { FilterCard } from '@/components/ui/FilterCard';
+import { FilterCard, FilterGrid } from '@/components/ui/FilterCard';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
-import { Card } from '@/components/ui/Card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import { Pagination } from '@/components/ui/Pagination';
 import { showToast } from '@/lib/toast';
@@ -92,6 +91,8 @@ export function ReportesView() {
   const [skip, setSkip] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingMetas, setLoadingMetas] = useState(true);
+
+  const tieneFiltrosActivos = Boolean(filtros.fechaInicio || filtros.fechaFin || filtros.idVendedor || filtros.idAlmacen || filtros.idCliente);
 
   // Metadatos para selects
   const [almacenes, setAlmacenes] = useState<Almacen[]>([]);
@@ -255,13 +256,20 @@ export function ReportesView() {
             <TableCell>{new Date(row.createdAt).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</TableCell>
             <TableCell>{row.tipoSugerencia ?? '-'}</TableCell>
             <TableCell>
-              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                row.accionUsuario === 'aceptada' ? 'bg-green-100 text-green-800' :
-                row.accionUsuario === 'rechazada' ? 'bg-red-100 text-red-800' :
-                'bg-zinc-100 text-zinc-700'
-              }`}>
-                {row.accionUsuario ?? '-'}
-              </span>
+              {(() => {
+                const accion = (row.accionUsuario ?? '').toUpperCase();
+                const esAceptado = accion === 'ACEPTADO' || accion === 'ACEPTADA';
+                const esRechazado = accion === 'RECHAZADO' || accion === 'RECHAZADA';
+                return (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                    esAceptado ? 'bg-green-100 text-green-800' :
+                    esRechazado ? 'bg-red-100 text-red-800' :
+                    'bg-zinc-100 text-zinc-700'
+                  }`}>
+                    {row.accionUsuario ?? '-'}
+                  </span>
+                );
+              })()}
             </TableCell>
             <TableCell className="max-w-xs truncate">{row.productoOriginal ?? '-'}</TableCell>
             <TableCell className="max-w-xs truncate">{row.productoSugerido ?? '-'}</TableCell>
@@ -322,10 +330,9 @@ export function ReportesView() {
       <h1 className="sr-only">Reportes</h1>
 
       {/* Filtros */}
-      <FilterCard>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 items-end gap-3 w-full">
-          <div className="contents">
-            <div className="min-w-0">
+      <FilterCard className="w-full">
+        <FilterGrid>
+            <div className="flex-1 min-w-[140px]">
               <Input
                 label="Fecha inicio"
                 type="date"
@@ -334,7 +341,7 @@ export function ReportesView() {
                 disabled={loadingMetas}
               />
             </div>
-            <div className="min-w-0">
+            <div className="flex-1 min-w-[140px]">
               <Input
                 label="Fecha fin"
                 type="date"
@@ -344,7 +351,7 @@ export function ReportesView() {
               />
             </div>
             {isAdmin && (
-              <div className="min-w-0">
+              <div className="flex-1 min-w-[150px]">
                 <Select
                   label="Vendedor"
                   value={filtros.idVendedor ? String(filtros.idVendedor) : ''}
@@ -355,7 +362,7 @@ export function ReportesView() {
                 />
               </div>
             )}
-            <div className="min-w-0">
+            <div className="flex-1 min-w-[150px]">
               <Select
                 label="Almacén"
                 value={filtros.idAlmacen ? String(filtros.idAlmacen) : ''}
@@ -365,7 +372,7 @@ export function ReportesView() {
                 placeholder="Todos"
               />
             </div>
-            <div className="min-w-0">
+            <div className="flex-[1.2] min-w-[160px]">
               <Select
                 label="Cliente"
                 value={filtros.idCliente ? String(filtros.idCliente) : ''}
@@ -375,25 +382,85 @@ export function ReportesView() {
                 placeholder="Todos"
               />
             </div>
-          </div>
-          <div className="flex items-center justify-end gap-2 h-9">
+          <div className="shrink-0 flex items-end">
             <Button
               variant="primary"
-              size="sm"
               onClick={handleExport}
               disabled={dataActual.length === 0}
-              className="gap-1.5 whitespace-nowrap"
+              className="h-9 gap-1.5 whitespace-nowrap"
             >
               <Download className="w-4 h-4" aria-hidden="true" />
               <span>Exportar CSV</span>
             </Button>
           </div>
+        </FilterGrid>
+      
+      {/* FILTROS ACTIVOS */}
+      {tieneFiltrosActivos && (
+        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border-default mt-3">
+          {filtros.fechaInicio && filtros.fechaFin && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Rango:</span>
+              {filtros.fechaInicio.split('-').reverse().join('/')} - {filtros.fechaFin.split('-').reverse().join('/')}
+              <button
+                onClick={() => setFiltros((prev) => ({ ...prev, fechaInicio: undefined, fechaFin: undefined }))}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Remover rango de fechas"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {filtros.idVendedor && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Vendedor:</span>
+              {(vendedores.find(v => v.id_usuario === filtros.idVendedor)?.nombre || filtros.idVendedor)}
+              <button
+                onClick={() => setFiltros((prev) => ({ ...prev, idVendedor: undefined }))}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Remover vendedor"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {filtros.idAlmacen && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Almacén:</span>
+              {(almacenes.find(a => a.id_almacen === filtros.idAlmacen)?.nombre || filtros.idAlmacen)}
+              <button
+                onClick={() => setFiltros((prev) => ({ ...prev, idAlmacen: undefined }))}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Remover almacén"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {filtros.idCliente && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Cliente:</span>
+              {(clientes.find(c => c.id_cliente === filtros.idCliente)?.nombre || filtros.idCliente)}
+              <button
+                onClick={() => setFiltros((prev) => ({ ...prev, idCliente: undefined }))}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Remover cliente"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
         </div>
+      )}
+      
       </FilterCard>
 
       {/* Tabs de reportes */}
       <Tabs value={tipoReporte} onValueChange={(v: string) => setTipoReporte(v as TipoReporte)} className="w-full">
-        <TabsList className="flex w-fit max-w-full overflow-x-auto" aria-label="Tipo de reporte">
+        <TabsList className="flex w-full max-w-full overflow-x-auto" aria-label="Tipo de reporte">
           {(Object.keys(REPORTE_CONFIG) as TipoReporte[]).map((tipo) => (
             <TabsTrigger key={tipo} value={tipo} className="gap-2">
               {REPORTE_CONFIG[tipo].icon}
@@ -403,13 +470,13 @@ export function ReportesView() {
         </TabsList>
 
         <TabsContent value="ranking-productos" className="mt-4">
-          <Card className="shadow-none rounded-none overflow-visible">
+          <div className="space-y-3">
             <Table>
               {renderHeaders()}
               <TableBody>
                 {dataActual.length > 0 ? renderRows() : (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-zinc-500">
+                    <TableCell colSpan={5} className="text-center py-8 text-brand-options">
                       No hay datos para los filtros seleccionados
                     </TableCell>
                   </TableRow>
@@ -427,17 +494,17 @@ export function ReportesView() {
                 itemLabel="registros"
               />
             )}
-          </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="antiguedad-deuda" className="mt-4">
-          <Card className="shadow-none rounded-none overflow-visible">
+          <div className="space-y-3">
             <Table>
               {renderHeaders()}
               <TableBody>
                 {dataActual.length > 0 ? renderRows() : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
+                    <TableCell colSpan={7} className="text-center py-8 text-brand-options">
                       No hay datos para los filtros seleccionados
                     </TableCell>
                   </TableRow>
@@ -455,17 +522,17 @@ export function ReportesView() {
                 itemLabel="clientes"
               />
             )}
-          </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="auditoria-ia" className="mt-4">
-          <Card className="shadow-none rounded-none overflow-visible">
+          <div className="space-y-3">
             <Table>
               {renderHeaders()}
               <TableBody>
                 {dataActual.length > 0 ? renderRows() : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
+                    <TableCell colSpan={7} className="text-center py-8 text-brand-options">
                       No hay datos para los filtros seleccionados
                     </TableCell>
                   </TableRow>
@@ -483,7 +550,7 @@ export function ReportesView() {
                 itemLabel="registros"
               />
             )}
-          </Card>
+          </div>
         </TabsContent>
       </Tabs>
 

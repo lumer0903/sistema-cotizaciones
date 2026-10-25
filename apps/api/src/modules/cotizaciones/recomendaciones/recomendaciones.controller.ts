@@ -4,7 +4,8 @@ import { Request } from 'express';
 import { JwtAuthGuard } from '../../auth/infrastructure/jwt-auth.guard';
 import { RecomendacionesService } from './recomendaciones.service';
 import { RecomendarItemDto } from './dto/recomendar-item.dto';
-import type { RecomendarItemResponse } from './recomendaciones.service';
+import { RegistrarAccionIaDto } from './dto/registrar-accion-ia.dto';
+import type { RecomendarItemResponse, AccionIaResponse } from './recomendaciones.service';
 
 // Interfaz para extender la Request de Express con el usuario autenticado
 interface RequestWithUser extends Request {
@@ -43,6 +44,27 @@ export class RecomendacionesController {
     return {
       success: true,
       data: recomendaciones,
+    };
+  }
+
+  @Post('registrar-accion-ia')
+  @ApiOperation({
+    summary: 'Registrar la decisión del asesor sobre una recomendación IA',
+    description:
+      "Actualiza ia_interacciones.accion_usuario = 'ACEPTADO' (el asesor agrega/reemplaza el ítem sugerido) o 'RECHAZADO' (lo descarta), vinculando la cotización y el producto sugerido cuando se envían",
+  })
+  @ApiOkResponse({ description: 'Acción registrada' })
+  @ApiNotFoundResponse({ description: 'Interacción IA no encontrada' })
+  async registrarAccionIa(
+    @Body() body: RegistrarAccionIaDto,
+    @Req() req: RequestWithUser,
+  ): Promise<{ success: true; data: AccionIaResponse }> {
+    const userId = req.user?.id_usuario ?? req.user?.id ?? 1;
+    const resultado = await this.recomendacionesService.registrarAccionIa(body, userId);
+
+    return {
+      success: true,
+      data: resultado,
     };
   }
 }

@@ -1,12 +1,26 @@
 import { PrismaClient } from '@prisma/client';
+import * as fs from 'fs';
+import * as path from 'path';
 import { parseCsvProducts } from './parse-csv';
 import { parseAllPolizaPrices } from './parse-poliza';
 import { mergeData, ImportProduct } from './merge-data';
 
-const prisma = new PrismaClient();
+const MINIO_ENDPOINT = 'localhost';
+const MINIO_PORT = 9000;
+const MINIO_ACCESS_KEY = 'minioadmin';
+const MINIO_SECRET_KEY = 'minioadmin';
+const MINIO_BUCKET = 'product-images';
 
 const CHUNK_SIZE = 50;
 const ALMACEN_ID = 1; // ALM-001 Lima Centro
+
+const minioClient = new (require('minio')).Client({
+  endPoint: MINIO_ENDPOINT,
+  port: MINIO_PORT,
+  useSSL: false,
+  accessKey: MINIO_ACCESS_KEY,
+  secretKey: MINIO_SECRET_KEY,
+});
 const STOCK_MINIMO = 20;
 
 interface ImportStats {
@@ -36,7 +50,7 @@ async function importChunk(products: ImportProduct[], chunkIndex: number, stats:
             numero_cabezas: prod.n_cabezas === '-' ? null : parseInt(prod.n_cabezas, 10) || null,
             tamano: prod.tamano,
             colores_surtido: prod.colores ? prod.colores.split(',').map(c => c.trim()).filter(Boolean) : [],
-            foto_url: null,
+            foto_url: await uploadProductImage(prod.codigo),
             activo: true,
             stock_principal: prod.stockTotal,
             stock_total: prod.stockTotal,
@@ -113,6 +127,43 @@ async function importChunk(products: ImportProduct[], chunkIndex: number, stats:
       console.error(`  ERROR ${prod.codigo}:`, error instanceof Error ? error.message : error);
     }
   }
+}
+
+async function uploadProductImage(codigo: string): Promise<string | null> {
+  const possiblePaths = [
+    path.join(__dirname, '..', '..', '..', '..', 'uploads', 'productos', `${codigo}.jpg`),
+    path.join(__dirname, '..', '..', '..', '..', 'uploads', 'productos', `${codigo}.png`),
+    path.join(__dirname, '..', '..', '..', '..', 'uploads', 'productos', `${codigo}.jpeg`),
+    path.join(__dirname, '..', '..', '..', '..', 'uploads', 'productos', `${codigo}.webp`),
+  ];
+
+  for (const filePath of possiblePaths) {
+    if (fs.existsSync(filePath)) {
+      const fileBuffer = fs.readFileSync(filePath);
+      const filename = `${Date.now()}-${path.basename(filePath)}`;
+      const key = `productos/${filename}`;
+
+      try {
+        await minioClient.putObject(MINIO_BUCKET, key, fileBuffer, fileBuffer.length, {
+          'Content-Type': getMimeType(path.basename(filePath)),
+        });
+        const url = `http://${MINIO_ENDPOINT}:${MINIO_PORT}/${MINIO_BUCKET}/${key}`;
+        return url;
+      } catch (error) {
+        console.error(`  Error uploading image for ${codigo}:`, error instanceof Error ? error.message : error);
+      }
+    }
+  }
+
+  return null;
+}
+
+function getMimeType(filename: string): string {
+  const ext = filename.slice(filename.lastIndexOf('.')).toLowerCase();
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+  if (ext === '.png') return 'image/png';
+  if (ext === '.webp') return 'image/webp';
+  return 'application/octet-stream';
 }
 
 async function main() {

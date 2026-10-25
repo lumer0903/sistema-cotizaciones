@@ -9,7 +9,10 @@ import { config as loadDotenv } from 'dotenv';
 //   2) ../../.env = raíz del monorepo cuando cwd = apps/api
 const candidates = [
   path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), '../.env'),
   path.resolve(process.cwd(), '../../.env'),
+  path.resolve(__dirname, '../../.env'),
+  path.resolve(__dirname, '../../../.env'),
 ];
 
 for (const file of candidates) {
