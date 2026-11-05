@@ -1,6 +1,6 @@
 -- Una alerta de estado mutable por producto/almacén. No se deduplican datos silenciosamente.
-CREATE UNIQUE INDEX "alertas_stock_id_producto_id_almacen_key" ON "alertas_stock"("id_producto","id_almacen");
-CREATE INDEX "inventario_movimientos_producto_almacen_fecha_id_idx" ON "inventario_movimientos"("id_producto","id_almacen","created_at","id_movimiento");
+CREATE UNIQUE INDEX IF NOT EXISTS "alertas_stock_id_producto_id_almacen_key" ON "alertas_stock"("id_producto","id_almacen");
+CREATE INDEX IF NOT EXISTS "inventario_movimientos_producto_almacen_fecha_id_idx" ON "inventario_movimientos"("id_producto","id_almacen","created_at","id_movimiento");
 ALTER TABLE stock_actual ADD CONSTRAINT stock_actual_no_negativo CHECK(cantidad>=0) NOT VALID;
 ALTER TABLE productos ADD CONSTRAINT productos_stock_valido CHECK(stock_principal>=0 AND stock_total>=0 AND stock_minimo>=0 AND unidades_por_caja>0) NOT VALID;
 ALTER TABLE precios_actuales ADD CONSTRAINT precios_no_negativos CHECK(
