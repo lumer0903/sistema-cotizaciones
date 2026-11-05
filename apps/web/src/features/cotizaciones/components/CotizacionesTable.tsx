@@ -1,8 +1,13 @@
 'use client';
+import { IconButton } from '@/components/ui/IconButton';
 
 import React from 'react';
 import { Pencil, Eye } from 'lucide-react';
 import { CotizacionItem } from '../types/cotizacion';
+import { formatCode } from '@/lib/formatters';
+import { Badge, ESTADO_BADGE, TIPO_CLIENTE_BADGE, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
+import { Can } from '@/components/shared/Can';
+import { cn } from '@/lib/cn';
 
 interface CotizacionesTableProps {
     data: CotizacionItem[];
@@ -10,6 +15,17 @@ interface CotizacionesTableProps {
     onEdit?: (id: string | number) => void;
     onView?: (id: string | number) => void;
 }
+
+// Definición de columnas con anchos fluidos y comportamiento responsive
+const COLUMNS = [
+  { key: 'CODIGO', headerClassName: 'font-semibold', cellClassName: 'min-w-[100px] max-w-[140px] whitespace-nowrap' },
+  { key: 'CLIENTE', headerClassName: '', cellClassName: 'min-w-[160px] max-w-[220px] truncate' },
+  { key: 'TIPO', headerClassName: 'text-center', cellClassName: 'min-w-[80px] max-w-[100px] text-center whitespace-nowrap' },
+  { key: 'FECHA', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[120px] text-center whitespace-nowrap' },
+  { key: 'TOTAL', headerClassName: 'text-right', cellClassName: 'min-w-[100px] max-w-[120px] text-right whitespace-nowrap tabular-nums' },
+  { key: 'ESTADO', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[120px] text-center whitespace-nowrap' },
+  { key: 'ACCIONES', headerClassName: 'text-right', cellClassName: 'min-w-[100px] max-w-[120px] text-right' },
+] as const;
 
 export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
     data,
@@ -19,7 +35,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
 }) => {
     if (loading) {
         return (
-            <div className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-neutral-500 font-['DM_Sans']">
+            <div className="w-full bg-surface rounded-2xl border border-border-default shadow-card p-12 text-center text-brand-options font-sans">
                 Cargando cotizaciones...
             </div>
         );
@@ -27,119 +43,98 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
 
     if (!data || data.length === 0) {
         return (
-            <div className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-neutral-500 font-['DM_Sans']">
+            <div className="w-full bg-surface rounded-2xl border border-border-default shadow-card p-12 text-center text-brand-options font-sans">
                 No se encontraron cotizaciones.
             </div>
         );
     }
 
     return (
-        <div className="w-full bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-gray-200/60 text-neutral-700 text-xs font-extrabold font-['DM_Sans'] uppercase tracking-wider">
-                            <th className="py-3 px-4">CODIGO</th>
-                            <th className="py-3 px-4 w-36">CLIENTE</th>
-                            <th className="py-3 px-4 w-28 text-center">TIPO</th>
-                            <th className="py-3 px-4 w-28 text-center">FECHA</th>
-                            <th className="py-3 px-4 w-28 text-center">TOTAL</th>
-                            <th className="py-3 px-4 w-28 text-center">ESTADO</th>
-                            <th className="py-3 px-4 w-32 text-right">ACCIONES</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 text-sm font-['DM_Sans']">
-                        {data.map((item) => {
-                            const isBorrador = item.estado === 'BORRADOR';
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    {COLUMNS.map((col) => (
+                        <TableHead
+                            key={col.key}
+                            className={cn(
+                                col.headerClassName,
+                                col.cellClassName,
+                            )}
+                        >
+                            {col.key}
+                        </TableHead>
+                    ))}
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {data.map((item, index) => {
+                    const isBorrador = item.estado === 'BORRADOR';
+                    /* ESTADO BADGE SEGURO: validar que el estado sea un valor conocido para prevenir XSS */
+                    const safeEstado = item.estado &&
+                      Object.values(ESTADO_BADGE).includes(ESTADO_BADGE[item.estado as keyof typeof ESTADO_BADGE])
+                        ? item.estado
+                        : 'BORRADOR';
 
-                            return (
-                                <tr key={item.id} className="hover:bg-gray-50/60 transition-colors">
-                                    {/* CODIGO */}
-                                    <td className="py-3 px-4 w-36 font-normal text-zinc-600 whitespace-nowrap">
-                                        {item.codigo}
-                                    </td>
+                    return (
+                        <TableRow key={item.id_cotizacion || item.id || index}>
+                            {/* CODIGO */}
+                            <TableCell className={cn('font-normal text-zinc-600 uppercase', COLUMNS[0].cellClassName)}>
+                                {formatCode(item.codigo)}
+                            </TableCell>
 
-                                    {/* CLIENTE */}
-                                    <td className="py-3 px-4 flex-1 min-w-[200px] font-light text-neutral-700 whitespace-nowrap">
-                                        {item.cliente}
-</td>
+                            {/* CLIENTE */}
+                            <TableCell
+                                className={cn('font-light text-zinc-700 truncate', COLUMNS[1].cellClassName)}
+                                title={typeof item.cliente === 'string'
+                                    ? item.cliente
+                                    : (item.cliente as any)?.nombre || (item.cliente as any)?.nombre_cliente || '-'}
+                            >
+                                {typeof item.cliente === 'string'
+                                    ? item.cliente
+                                    : (item.cliente as any)?.nombre || (item.cliente as any)?.nombre_cliente || '-'}
+                            </TableCell>
 
-                                    {/* TIPO BADGE */}
-                                    <td className="py-3 px-4 w-28 text-center whitespace-nowrap">
-                                        <span
-                                            className={`inline-block px-3 py-1 rounded-lg text-xs font-bold border ${item.tipo === 'DISTRIBUIDOR'
-                                                ? 'border-amber-300 bg-amber-50 text-amber-800'
-                                                : 'border-blue-300 bg-blue-50 text-blue-800'
-                                            }`}
-                                        >
-                                            {item.tipo}
-                                        </span>
-                                    </td>
+                            {/* TIPO BADGE */}
+                            <TableCell className={cn('', COLUMNS[2].cellClassName)}>
+                                <Badge variant={TIPO_CLIENTE_BADGE[String(item.tipo).toLowerCase()] ?? 'brand'} size="estado">
+                                    {item.tipo}
+                                </Badge>
+                            </TableCell>
 
-                                    {/* FECHA */}
-                                    <td className="py-3 px-4 w-28 text-center font-light text-neutral-700 whitespace-nowrap">
-                                        {item.fecha}
-                                    </td>
+                            {/* FECHA */}
+                            <TableCell className={cn('font-light text-zinc-700', COLUMNS[3].cellClassName)}>
+                                {item.fecha}
+                            </TableCell>
 
-                                    {/* TOTAL */}
-                                    <td className="py-3 px-4 w-28 text-center font-light text-emerald-600 whitespace-nowrap">
-                                        S/{item.total}
-                                    </td>
+                            {/* TOTAL */}
+                            <TableCell className={cn('font-light text-estado-aprobado-text tabular-nums', COLUMNS[4].cellClassName)}>
+                                S/ {item.total}
+                            </TableCell>
 
-                                    {/* ESTADO BADGE */}
-                                    <td className="py-3 px-4 w-28 text-center whitespace-nowrap">
-                                        <span
-                                            className={`inline-block px-3 py-1 rounded-lg text-xs font-bold border ${item.estado === 'BORRADOR'
-                                                ? 'border-neutral-200 text-neutral-300 bg-gray-50'
-                                                : item.estado === 'APROBADO'
-                                                    ? 'border-emerald-300 text-emerald-600 bg-emerald-50'
-                                                    : item.estado === 'ENVIADO'
-                                                        ? 'border-blue-300 text-blue-600 bg-blue-50'
-                                                        : 'border-rose-300 text-rose-800 bg-rose-50'
-                                            }`}
-                                        >
-                                            {item.estado}
-                                        </span>
-                                    </td>
+                            {/* ESTADO BADGE SEGURO */}
+                            <TableCell className={cn('', COLUMNS[5].cellClassName)}>
+                                <Badge variant={ESTADO_BADGE[safeEstado as keyof typeof ESTADO_BADGE] ?? 'neutral'} size="estado">
+                                    {safeEstado === 'PARCIALMENTE_PAGADA' ? 'PARCIAL' : safeEstado}
+                                </Badge>
+                            </TableCell>
 
-                                    {/* ACCIONES */}
-                                    <td className="py-3 px-4 w-32 text-right whitespace-nowrap">
-                                        <div className="flex items-center justify-end gap-3">
-                                            {/* Lápiz (Editar): Activo solo en BORRADOR */}
-                                            <button
-                                                type="button"
-                                                disabled={!isBorrador}
-                                                onClick={() => onEdit?.(item.id)}
-                                                className={`p-1 transition-colors ${isBorrador
-                                                        ? 'text-yellow-500 hover:text-yellow-600 cursor-pointer'
-                                                        : 'text-gray-200 cursor-not-allowed'
-                                                    }`}
-                                                title={isBorrador ? 'Editar cotización' : 'No editable'}
-                                            >
-                                                <Pencil className="w-5 h-5" />
-                                            </button>
-
-                                            {/* Ojo (Ver): Activo si NO es BORRADOR */}
-                                            <button
-                                                type="button"
-                                                disabled={isBorrador}
-                                                onClick={() => onView?.(item.id)}
-                                                className={`p-1 transition-colors ${!isBorrador
-                                                        ? 'text-yellow-500 hover:text-yellow-600 cursor-pointer'
-                                                        : 'text-gray-200 cursor-not-allowed'
-                                                    }`}
-                                                title={!isBorrador ? 'Ver cotización' : 'No disponible en borrador'}
-                                            >
-                                                <Eye className="w-5 h-5" />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                            {/* ACCIONES */}
+                            <TableCell className={COLUMNS[6].cellClassName}>
+                                <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                                    {/* Lápiz (Editar): Activo solo en BORRADOR, protegido con Can */}
+                                    <Can modulo="cotizaciones" nivel="edicion">
+                                        <IconButton icon={Pencil} label={isBorrador ? 'Editar cotización' : 'No editable'} onClick={() => onEdit?.(item.id_cotizacion || item.id)} disabled={!isBorrador}  />
+                                    </Can>
+                                    {/* Ojo (Ver): Protegido con Can nivel lectura */}
+                                    <Can modulo="cotizaciones" nivel="lectura">
+                                        <IconButton icon={Eye} label={!isBorrador ? 'Ver documento' : 'No disponible en borrador'} onClick={() => onView?.(item.id_cotizacion || item.id)} disabled={isBorrador}  />
+                                    </Can>
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    );
+                })}
+            </TableBody>
+        </Table>
     );
 };

@@ -1,26 +1,141 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-:root {
-  --color-primary-50: #fdf2f2;
-  --color-primary-100: #fce4e4;
-  --color-primary-200: #f8c9c9;
-  --color-primary-300: #f1a1a1;
-  --color-primary-400: #e76d6d;
-  --color-primary-500: #dc3d3d;
-  --color-primary-600: #c42a2a;
-  --color-primary-700: #a81f1f;
-  --color-primary-800: #8c1d1d;
-  --color-primary-900: #751c1c;
-  --color-primary-950: #3f0a0a;
+/*
+  ============================================================
+  PALETA GLOBAL — Fuente única de verdad (Guía de marca oficial)
+  ============================================================
+  Brand:        #F8B602   (principal)
+  Selection:    #FFF5D6   (selección / highlight)
+  Subtítulo:    #414141
+  Muted:        #6E6E6E   (AA sobre blanco 5.1:1; el #8E8E8E del manual
+                          da 3.28:1 y rompe WCAG 1.4.3 en texto pequeño)
+  Tienda:       #1F41AF
+  Distribuidor: #9D3A19
+  Estados:      Borrador / Aprobado / Rechazado / Enviado
+  Danger:       #7B1C1C   (solo acciones destructivas)
+
+  Regla de contraste: el texto SOBRE amarillo (#F8B602) usa
+  --color-on-brand (#18181B) → 10.1:1 WCAG AA.
+*/
+
+@theme {
+  /* ── Tipografía: DM Sans universal (texto, mono y números) ── */
+  --font-sans: var(--font-dm-sans), 'DM Sans', sans-serif;
+  --font-mono: var(--font-dm-sans), 'DM Sans', sans-serif;
+
+  /* ── Marca ── */
+  --color-brand-primary: #f8b602;
+  --color-brand: #f8b602;
+  --color-brand-hover: #e0a300;
+  --color-brand-selection: #fff5d6;
+  --color-brand-soft: #fff5d6;
+  --color-brand-ink: #7d5b00;
+  --color-on-brand: #18181b;
+  --color-brand-subtitle: #414141;
+  /* Muted AA: 5.10:1 sobre blanco, 4.64:1 sobre zinc-100, 4.68:1 sobre brand-soft */
+  --color-brand-options: #6e6e6e;
+  --color-brand-background: #f9fafb;
+  --color-brand-focus: #c9a962;
+  --color-brand-modalFocus: #c9a962;
+  /* Anillo de foco: contraste ≥4.5:1 sobre blanco (brand-focus solo da 2.25:1) */
+  --color-focus-ring: var(--color-accent-ink);
+
+  /* Acento de interfaz según sesión; marca y estados conservan su identidad. */
+  --color-accent-primary: var(--color-brand-primary);
+  --color-accent-hover: var(--color-brand-hover);
+  --color-accent-soft: var(--color-brand-soft);
+  --color-accent-selection: var(--color-brand-selection);
+  --color-accent-ink: var(--color-brand-ink);
+  --color-on-accent: var(--color-on-brand);
+
+  /* ── Superficies ── */
+  --color-surface: #ffffff;
+  --color-surface-muted: #f9fafb;
+  --color-border-default: #e4e4e4;
+  --color-overlay: rgb(0 0 0 / 0.5);
+
+  /* ── Roles / Segmentación ── */
+  --color-role-tienda: #1f41af;
+  --color-role-tienda-soft: #e8edfa;
+  --color-role-tienda-hover: #18368f;
+  --color-role-distribuidor: #9d3a19;
+  --color-role-distribuidor-soft: #f7ebe6;
+  --color-role-distribuidor-hover: #7d2e14;
+
+  /* Aliases legacy (retrocompatibilidad) */
+  --color-tienda: var(--color-role-tienda);
+  --color-tienda-soft: var(--color-role-tienda-soft);
+  --color-tienda-hover: var(--color-role-tienda-hover);
+  --color-distribuidor: var(--color-role-distribuidor);
+  --color-distribuidor-soft: var(--color-role-distribuidor-soft);
+  --color-distribuidor-hover: var(--color-role-distribuidor-hover);
+
+  /* ── Vendedor (rojo medio) ── */
+  --color-vendedor-primary: #7b1c1c;
+  --color-vendedor-hover: #5f1515;
+  --color-vendedor-soft: #f5e8e8;
+  --color-vendedor-ink: #7b1c1c;
+  --color-vendedor-on: #ffffff;
+
+/* ── Estados (Status Badges) ── */
+  --color-status-borrador: #e4e4e4;
+  --color-status-borrador-text: #414141;
+  --color-status-aprobado: #0dc300;
+  --color-status-aprobado-text: #048200;
+  --color-status-aprobado-soft: #e6f9e6;
+  --color-status-rechazado: #7b1c1c;
+  --color-status-rechazado-text: #7b1c1c;
+  --color-status-rechazado-soft: #f5e8e8;
+  --color-status-enviado: #1f41af;
+  --color-status-enviado-text: #1f41af;
+  --color-status-enviado-soft: #e8edfa;
+  --color-status-advertencia-text: #a16207;
+  --color-status-advertencia-soft: #fef9c3;
+
+  /* Aliases legacy (retrocompatibilidad) */
+  --color-estado-borrador: var(--color-status-borrador);
+  --color-estado-borrador-text: var(--color-status-borrador-text);
+  --color-estado-aprobado: var(--color-status-aprobado);
+  --color-estado-aprobado-text: var(--color-status-aprobado-text);
+  --color-estado-aprobado-soft: var(--color-status-aprobado-soft);
+  --color-estado-rechazado: var(--color-status-rechazado);
+  --color-estado-rechazado-text: var(--color-status-rechazado-text);
+  --color-estado-rechazado-soft: var(--color-status-rechazado-soft);
+  --color-estado-enviado: var(--color-status-enviado);
+  --color-estado-enviado-text: var(--color-status-enviado-text);
+  --color-estado-enviado-soft: var(--color-status-enviado-soft);
+
+  /* ── Peligro ── */
+  --color-danger: #7b1c1c;
+  --color-danger-hover: #5f1515;
+
+  /* ── Escala de sombras ── */
+  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-card-hover: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-popover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-modal: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+  /* ── Z-index ── (namespace correcto de Tailwind v4: --z-index-*) */
+  --z-index-header: 30;
+  --z-index-drawer: 45;
+  --z-index-menu: 50;
+  --z-index-modal: 60;
+  --z-index-select: 70;
+}
+
+/* El tema vive también en html: los portales heredan la misma paleta. */
+[data-theme="vendedor"] {
+  --color-accent-primary: var(--color-vendedor-primary);
+  --color-accent-hover: var(--color-vendedor-hover);
+  --color-accent-soft: var(--color-vendedor-soft);
+  --color-accent-selection: var(--color-vendedor-soft);
+  --color-accent-ink: var(--color-vendedor-ink);
+  --color-on-accent: var(--color-vendedor-on);
 }
 
 * {
   box-sizing: border-box;
-}
-
-@theme {
-  --font-sans: var(--font-dm-sans), 'DM Sans', sans-serif;
-  --font-mono: var(--font-dm-sans), 'DM Sans', sans-serif;
 }
 
 body {
@@ -33,6 +148,76 @@ code, kbd, samp, pre {
   font-family: var(--font-dm-sans), 'DM Sans', sans-serif;
 }
 
+/*
+  Cifras tabulares: números, precios y códigos del ERP con
+  alineación vertical perfecta en tablas y campos numéricos.
+*/
+@utility tnum {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+table,
+thead,
+tbody,
+tfoot,
+th,
+td,
+input[type="number"],
+input[inputmode="decimal"],
+[data-tnum] {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* Autofill de Chrome: conserva el fondo y el color de texto del campo */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  -webkit-text-fill-color: currentColor;
+}
+
+/* Scroll-lock global mientras hay un modal/drawer abierto (clase en scrollLock.ts) */
+/* Conservar la altura del documento: height:100vh recorta las tarjetas y reinicia el scroll. */
+body.modal-open,
+html.modal-open {
+  overflow: hidden !important;
+}
+
+/* Selección de texto con la paleta de marca */
+::selection {
+  background: var(--color-brand-selection);
+  color: var(--color-brand-subtitle);
+}
+
+/* Accesibilidad: respeta preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Densidad de tabla: normal vs compacto */
+:root {
+  --table-cell-py: 12px; /* py-3 = 12px */
+  --table-cell-px: 16px; /* px-4 = 16px */
+  --table-head-py: 14px; /* py-3.5 = 14px */
+  --table-head-px: 16px; /* px-4 = 16px */
+}
+
+[data-table-density="compact"] {
+  --table-cell-py: 6px; /* py-1.5 = 6px */
+  --table-cell-px: 12px; /* px-3 = 12px */
+  --table-head-py: 8px; /* py-2 = 8px */
+  --table-head-px: 12px; /* px-3 = 12px */
+}
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -41,7 +226,7 @@ code, kbd, samp, pre {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }
@@ -53,3 +238,4 @@ code, kbd, samp, pre {
     border-radius: 20px;
   }
 }
+

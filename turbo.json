@@ -16,8 +16,8 @@
       "outputs": []
     },
     "test": {
-      "outputs": ["coverage/**"],
-      "dependsOn": []
+      "outputs": [],
+      "dependsOn": ["^build"]
     },
     "db:generate": {
       "outputs": ["node_modules/.prisma/**"]

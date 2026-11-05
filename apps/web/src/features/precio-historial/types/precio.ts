@@ -1,7 +1,7 @@
 export interface EscalaPrecio {
-    unidad: number;
-    docena: number;
-    mayor: number;
+    unidad: number | null;
+    docena: number | null;
+    mayor: number | null;
 }
 
 export interface ProductoConsulta {
@@ -9,6 +9,7 @@ export interface ProductoConsulta {
     codigo: string;
     descripcion: string;
     stock: number;
+    stockMinimo?: number | null;
     imagenUrl?: string;
     precioDistribuidor: EscalaPrecio;
     precioTienda: EscalaPrecio;

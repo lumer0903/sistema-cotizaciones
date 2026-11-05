@@ -1,101 +1,111 @@
-"use client";
+'use client';
+import { priceLabels, priceEventLabels } from '../priceLabels';
+import { useCallback, useState } from 'react';
+import { Modal, Input, Button, Pagination, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
+import { getHistorialPrecios } from '../api/precioApi';
+import { usePriceRequest } from '../usePriceRequest';
 
-import { X } from "lucide-react";
-
-export interface HistorialPrecioItem {
-    id: string | number;
-    campoModificado: string;
-    fechaCambio: string;
-    usuario: string;
-    valorAnterior: number;
-    valorNuevo: number;
+function formatDateLima(iso: string): string {
+  const date = new Date(iso);
+  return date.toLocaleString('es-PE', {
+    timeZone: 'America/Lima',
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).replace(',', '').replace('a. m.', 'a. m.').replace('p. m.', 'p. m.');
 }
 
-interface HistorialPrecioModalProps {
-    open: boolean;
-    onClose: () => void;
-    codigoProducto?: string;
-    historial?: HistorialPrecioItem[];
+function formatSoles(value: number): string {
+  return 'S/ ' + value.toFixed(2);
 }
 
 export function HistorialPrecioModal({
-    open,
-    onClose,
-    codigoProducto = "RYG5-B",
-    historial = [],
-}: HistorialPrecioModalProps) {
-    if (!open) return null;
+  open,
+  onClose,
+  productoId,
+  codigoProducto,
+}: { open: boolean; onClose: () => void; productoId: string; codigoProducto: string }) {
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(24);
+  const [inicio, setInicio] = useState('');
+  const [fin, setFin] = useState('');
+  const [retry, setRetry] = useState(0);
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-            <div className="relative w-full max-w-4xl bg-white rounded-2xl p-6 shadow-2xl space-y-5">
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (inicio) params.set('fecha_inicio', inicio);
+  if (fin) params.set('fecha_fin', fin);
+  const query = params.toString();
 
-                {/* ENCABEZADO */}
-                <div className="flex items-center justify-between pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-3">
-                        <h2 className="text-xl font-bold text-gray-800">Historial de precio</h2>
-                        <span className="w-2 h-2 rounded-full bg-gray-300" />
-                        <div className="px-3 py-1 bg-amber-50/80 border border-amber-200/60 rounded-lg">
-                            <span className="text-amber-500 font-bold text-lg">{codigoProducto}</span>
-                        </div>
-                    </div>
+  const load = useCallback(
+    (signal: AbortSignal) => getHistorialPrecios(productoId, query, signal),
+    [productoId, query],
+  );
+  const state = usePriceRequest(open ? productoId + '/' + query + '/' + retry : null, load);
+  const data = state.data;
 
-                    <button
-                        onClick={onClose}
-                        className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
-
-                {/* TABLA DE HISTORIAL */}
-                <div className="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                    <div className="max-h-72 overflow-y-auto">
-                        <table className="w-full text-sm text-center">
-                            <thead className="bg-gray-200/60 sticky top-0 font-extrabold text-neutral-700 uppercase text-xs">
-                                <tr>
-                                    <th className="py-3 px-4 text-left">CAMPO MODIFICADO</th>
-                                    <th className="py-3 px-4">FECHA DE CAMBIO</th>
-                                    <th className="py-3 px-4">USUARIO</th>
-                                    <th className="py-3 px-4">VALOR ANTERIOR</th>
-                                    <th className="py-3 px-4">VALOR NUEVO</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100 bg-white">
-                                {historial.length > 0 ? (
-                                    historial.map((item) => {
-                                        const esAumento = item.valorNuevo > item.valorAnterior;
-                                        const esDistrib = item.campoModificado.toLowerCase().includes("distrib");
-
-                                        return (
-                                            <tr key={item.id} className="hover:bg-gray-50/60 transition-colors">
-                                                <td className={`py-2.5 px-4 text-left font-light ${esDistrib ? "text-amber-800" : "text-blue-800"}`}>
-                                                    {item.campoModificado}
-                                                </td>
-                                                <td className="py-2.5 px-4 text-neutral-700 font-light">{item.fechaCambio}</td>
-                                                <td className="py-2.5 px-4 text-neutral-700 font-light">{item.usuario}</td>
-                                                <td className="py-2.5 px-4 text-neutral-700 font-light">
-                                                    S/{item.valorAnterior.toFixed(2)}
-                                                </td>
-                                                <td className={`py-2.5 px-4 font-light ${esAumento ? "text-red-900" : "text-green-600"}`}>
-                                                    S/{item.valorNuevo.toFixed(2)}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
-                                ) : (
-                                    <tr>
-                                        <td colSpan={5} className="py-8 text-gray-400 text-center">
-                                            No hay cambios registrados para este producto.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
+  return (
+    <Modal open={open} onClose={onClose} title={'Historial: ' + codigoProducto} maxWidth="xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        <Input label="DESDE (LIMA)" type="date" value={inicio} onChange={e => { setInicio(e.target.value); setPage(1); }} />
+        <Input label="HASTA (LIMA)" type="date" value={fin} onChange={e => { setFin(e.target.value); setPage(1); }} />
+      </div>
+      {state.loading ? (
+        <p role="status">Cargando historial…</p>
+      ) : state.error ? (
+        <div role="alert">
+          {state.error}
+          <Button onClick={() => setRetry(v => v + 1)}>Reintentar</Button>
         </div>
-    );
+      ) : !data?.data.length ? (
+        <p>No hay cambios registrados en este rango.</p>
+      ) : (
+        <>
+          <Table scrollLabel="Historial de precios">
+            <TableHeader>
+              <TableRow>
+                {['TIPO DE PRECIO', 'FECHA Y HORA', 'USUARIO / MOTIVO', 'COSTO UNITARIO', 'ANTERIOR', 'NUEVO'].map(x => (
+                  <TableHead key={x}>{x}</TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.data.map(item => (
+                <TableRow key={item.id}>
+                  <TableCell>
+                    {priceLabels[item.campoModificado] ?? item.campoModificado}
+                    <div className="text-xs text-muted-foreground">
+                      {priceEventLabels[item.evento] ?? item.evento}
+                    </div>
+                  </TableCell>
+                  <TableCell>{formatDateLima(item.fechaCambio)}</TableCell>
+                  <TableCell>
+                    <div>{item.usuario}</div>
+                    <div className="text-xs text-muted-foreground">{item.motivoLimpio || item.motivo}</div>
+                  </TableCell>
+                  <TableCell>
+                    {item.costoUnitario !== null ? formatSoles(item.costoUnitario) : '—'}
+                  </TableCell>
+                  <TableCell>{formatSoles(item.valorAnterior)}</TableCell>
+                  <TableCell>{formatSoles(item.valorNuevo)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <Pagination
+            loading={state.loading}
+            currentPage={page}
+            totalPages={Math.max(1, Math.ceil((data?.total ?? 0) / limit))}
+            totalItems={data?.total ?? 0}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={v => { setLimit(v); setPage(1); }}
+            itemLabel="cambios"
+          />
+        </>
+      )}
+    </Modal>
+  );
 }

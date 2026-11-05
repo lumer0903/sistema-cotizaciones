@@ -1,6 +1,8 @@
+import { Permission } from '../../common/decorators/permission.decorator';
 import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiProperty } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { CategoriasService, PaginatedCategoriasResponse, CategoriaResponse } from './categorias.service';
 import { IsString, MaxLength } from 'class-validator';
 
@@ -18,25 +20,30 @@ class UpdateCategoriaDto {
 
 @ApiTags('Categorias')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Permission('productos')
 @Controller('categorias')
 export class CategoriasController {
   constructor(private readonly categoriasService: CategoriasService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List all categories' })
+  // Lectura para todos los roles: el catálogo del vendedor necesita las categorías
+    @ApiOperation({ summary: 'List all categories' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async findAll(
     @Query('page') page = 1,
     @Query('limit') limit = 100,
   ): Promise<{ success: true; data: PaginatedCategoriasResponse['data']; total: number; page: number; limit: number }> {
-    const result = await this.categoriasService.findAll(Number(page), Number(limit));
+    const result = await this.categoriasService.findAll(
+      Math.max(1, Number(page) || 1),
+      Math.min(Math.max(1, Number(limit) || 50), 100),
+    );
     return { success: true, ...result };
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get category by ID' })
+    @ApiOperation({ summary: 'Get category by ID' })
   async findById(@Param('id', ParseIntPipe) id: number): Promise<{ success: true; data: CategoriaResponse | null }> {
     const categoria = await this.categoriasService.findById(id);
     return { success: true, data: categoria };

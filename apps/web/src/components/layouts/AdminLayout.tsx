@@ -1,71 +1,136 @@
 'use client';
 
-import React from 'react';
-import { usePathname } from 'next/navigation';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from '@/components/ui/Sidebar';
-import { Settings } from 'lucide-react';
-
-const ROUTE_TITLES: Record<string, string> = {
-  '/admin/dashboard': 'DASHBOARD',
-  '/admin/inventario': 'INVENTARIO',
-  '/admin/precios': 'PRECIO & HISTORIAL',
-  '/admin/cotizaciones': 'COTIZACIONES',
-  '/admin/cotizaciones/crear': 'CREAR COTIZACIÓN',
-  '/admin/ventas': 'VENTAS',
-  '/admin/ventas/nueva': 'NUEVA VENTA',
-  '/admin/cobranza': 'COBRANZA',
-  '/admin/reportes': 'REPORTES',
-  '/admin/usuarios': 'USUARIOS',
-  '/admin/configuracion': 'CONFIGURACIÓN',
-};
+import { Settings, Bell, Menu } from 'lucide-react';
+import { apiClient } from '@/lib/apiClient';
+import { NotificacionesDrawer } from '@/components/ui/NotificacionesDrawer';
+import { PerfilModal } from '@/features/usuarios/components/PerfilModal';
+import { Avatar } from '@/components/ui/Avatar';
+import { useAuth } from '@/lib/authProvider';
+import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
+import { useSidebarOpen } from '@/hooks/useSidebarOpen';
+import Link from 'next/link';
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const { usuario } = useAuth();
+  const [isAlertasOpen, setIsAlertasOpen] = useState(false);
+  const [alertasCount, setAlertasCount] = useState(0);
+  const [isPerfilOpen, setIsPerfilOpen] = useState(false);
+  // Preferencia persistida del sidebar (localStorage) fuera de los efectos
+  const [sidebarOpen, setSidebarOpen] = useSidebarOpen();
 
-  // Detecta el título según la ruta actual
-  const matchedRoute = Object.keys(ROUTE_TITLES).find(
-    (route) => pathname === route || (route !== '/admin/dashboard' && pathname.startsWith(route))
-  );
-  const currentTitle = matchedRoute ? ROUTE_TITLES[matchedRoute] : 'DASHBOARD';
+  const fetchAlertasCount = useCallback(() => {
+    return apiClient('/notificaciones')
+      .then((res) => (res.data || []).filter((n: { leida?: boolean }) => !n.leida).length)
+      .catch((e) => {
+        console.error('Error cargando contador de notificaciones:', e);
+        return 0;
+      });
+  }, []);
+
+  useEffect(() => {
+    fetchAlertasCount().then((count) => setAlertasCount(count));
+    const interval = setInterval(() => {
+      fetchAlertasCount().then((count) => setAlertasCount(count));
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [fetchAlertasCount]);
 
   return (
-    <div className="min-h-screen bg-neutral-50/50 flex font-['DM_Sans']">
+    <div className="min-h-screen bg-surface-muted/50 flex font-sans" data-theme="admin">
+      {/* Skip link: primer elemento enfocable para navegación por teclado */}
+      <a
+        href="#contenido-principal"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-surface focus:text-accent-ink focus:text-sm focus:font-bold focus:px-4 focus:py-2.5 focus:rounded-xl focus:shadow-modal focus:border focus:border-border-default"
+      >
+        Saltar al contenido
+      </a>
+      {/* BACKDROP MÓVIL */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-overlay lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* SIDEBAR */}
-      <Sidebar />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* ÁREA PRINCIPAL */}
-      <div className="flex-1 pl-64 flex flex-col min-h-screen">
+      <div className={`flex-1 min-w-0 flex flex-col min-h-screen transition-[padding] duration-300 ease-in-out ${sidebarOpen ? 'lg:pl-64' : 'pl-0'}`}>
         {/* NAVBAR DINÁMICO */}
-        <header className="w-full h-16 px-8 bg-white border-b border-gray-200 flex items-center justify-between sticky top-0 z-30">
-          {/* TÍTULO QUE CAMBIA SEGÚN EL MÓDULO */}
-          <h1 className="text-xl font-black text-yellow-500 tracking-wider uppercase">
-            {currentTitle}
-          </h1>
+        <header className="w-full h-16 px-4 sm:px-6 lg:px-8 bg-surface border-b border-border-default flex items-center justify-between gap-3 sticky top-0 z-30">
 
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                alt="Perfil"
-                className="w-full h-full object-cover"
-              />
-            </div>
-
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {/* BOTÓN MENÚ MÓVIL Y ESCRITORIO */}
             <button
               type="button"
-              className="w-8 h-8 flex items-center justify-center text-neutral-700 hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-xl text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted transition-colors shrink-0"
+              aria-label="Alternar menú"
+              aria-expanded={sidebarOpen}
+              aria-controls="menu-lateral"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
+            {/* BREADCRUMB / MIGA DE PAN */}
+            <Breadcrumbs />
+          </div>
+
+          {/* ICONOS / AVATAR */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsAlertasOpen(true)}
+              className="relative min-h-11 min-w-11 flex items-center justify-center text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted rounded-xl transition-colors"
+              title="Notificaciones"
+              aria-label={`Notificaciones${alertasCount > 0 ? ` (${alertasCount} sin leer)` : ''}`}
+            >
+              <Bell className="w-5 h-5 stroke-[2]" />
+              {alertasCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-danger text-white text-xs font-bold min-w-5 h-5 px-1 rounded-full flex items-center justify-center">
+                  {alertasCount > 9 ? '9+' : alertasCount}
+                </span>
+              )}
+            </button>
+
+            <Link
+              href="/configuracion"
+              className="min-h-11 min-w-11 flex items-center justify-center text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted rounded-xl transition-colors"
               title="Configuración"
+              aria-label="Configuración"
             >
               <Settings className="w-5 h-5 stroke-[2]" />
-            </button>
+            </Link>
+            <Avatar
+              src={usuario?.avatar_url}
+              nombre={usuario?.nombre}
+              size="md"
+              onClick={() => setIsPerfilOpen(true)}
+              title="Mi perfil"
+            />
+
+
           </div>
         </header>
 
         {/* CONTENIDO INTERNO */}
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
+          <main id="contenido-principal" className="flex-1 w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>
+
+      <NotificacionesDrawer
+        open={isAlertasOpen}
+        onClose={() => setIsAlertasOpen(false)}
+        onSuccess={() => fetchAlertasCount().then((count) => setAlertasCount(count))}
+      />
+
+      <PerfilModal open={isPerfilOpen} onClose={() => setIsPerfilOpen(false)} />
     </div>
   );
 }

@@ -1,40 +1,71 @@
 'use client';
 
-import { forwardRef, InputHTMLAttributes, ReactNode } from 'react';
+import { forwardRef, InputHTMLAttributes, ReactNode, useId } from 'react';
+import { cn } from '@/lib/cn';
+import {
+  FIELD_BASE,
+  FIELD_ERROR,
+  FIELD_ERROR_TEXT,
+  FIELD_HEIGHT,
+  FIELD_LABEL,
+} from './fieldStyles';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-    label?: string;
-    error?: string;
-    icon?: ReactNode;
+  label?: string;
+  error?: string;
+  icon?: ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-    ({ label, error, icon, className = '', disabled, ...props }, ref) => {
-        return (
-            <div className="w-full space-y-1">
-                {label && (
-                    <label className="block text-[10px] sm:text-xs font-black text-amber-500 uppercase tracking-wider">
-                        {label}
-                    </label>
-                )}
-                <div className="relative flex items-center">
-                    {icon && (
-                        <div className="absolute left-3 text-amber-500 pointer-events-none flex items-center justify-center">
-                            {icon}
-                        </div>
-                    )}
-                    <input
-                        ref={ref}
-                        disabled={disabled}
-                        className={`w-full h-10 rounded-xl border border-amber-400/80 bg-white text-xs sm:text-sm font-medium text-zinc-800 transition-colors placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 disabled:bg-gray-100 disabled:cursor-not-allowed ${icon ? 'pl-9 pr-3' : 'px-3'
-                            } ${error ? 'border-red-500 focus:ring-red-500' : ''} ${className}`}
-                        {...props}
-                    />
-                </div>
-                {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
+  ({ label, error, icon, className, disabled, id, required, ...props }, ref) => {
+    const autoId = useId();
+    const inputId = id ?? autoId;
+    const errorId = `${inputId}-error`;
+
+    return (
+      <div className="w-full space-y-1.5">
+        {label && (
+          <label htmlFor={inputId} className={FIELD_LABEL}>
+            {label}
+            {required && <span className="text-danger ml-1" aria-hidden="true">*</span>}
+          </label>
+        )}
+        <div className="relative flex items-center">
+          {icon && (
+            <div
+              className="absolute left-3 pointer-events-none flex items-center justify-center text-brand-options"
+              aria-hidden="true"
+            >
+              {icon}
             </div>
-        );
-    }
+          )}
+          <input
+            ref={ref}
+            id={inputId}
+            disabled={disabled}
+            required={required}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? errorId : undefined}
+            className={cn(
+              'w-full',
+              FIELD_HEIGHT,
+              'px-3',
+              FIELD_BASE,
+              icon ? 'pl-9' : undefined,
+              error && FIELD_ERROR,
+              className
+            )}
+            {...props}
+          />
+        </div>
+        {error && (
+          <p id={errorId} className={FIELD_ERROR_TEXT} role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  }
 );
 
-Input.displayName = 'Input'; 
+Input.displayName = 'Input';

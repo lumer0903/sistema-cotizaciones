@@ -1,6 +1,8 @@
+import { Permission } from '../../common/decorators/permission.decorator';
 import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { AlmacenesService } from './almacenes.service';
 import { CreateAlmacenDto } from './dto/create-almacen.dto';
 import { UpdateAlmacenDto } from './dto/update-almacen.dto';
@@ -8,7 +10,8 @@ import type { AlmacenResponse, PaginatedAlmacenesResponse } from './almacenes.se
 
 @ApiTags('Almacenes')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Permission('productos')
 @Controller('almacenes')
 export class AlmacenesController {
   constructor(private readonly almacenesService: AlmacenesService) {}
@@ -25,7 +28,12 @@ export class AlmacenesController {
     @Query('search') search?: string,
     @Query('activo') activo?: string,
   ): Promise<{ success: true; data: PaginatedAlmacenesResponse['data']; total: number; page: number; limit: number }> {
-    const result = await this.almacenesService.findAll(Number(page), Number(limit), search, activo === 'true');
+    const result = await this.almacenesService.findAll(
+      Math.max(1, Number(page) || 1),
+      Math.min(Math.max(1, Number(limit) || 50), 100),
+      search,
+      activo === 'true',
+    );
     return { success: true, ...result };
   }
 

@@ -1,4 +1,4 @@
-name: Deploy to Fly.io
+name: CI / Deploy
 
 on:
   push:
@@ -7,38 +7,95 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  ci:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci-test-only
+          POSTGRES_DB: goldcontinent_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ci -d goldcontinent_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      DATABASE_URL: postgresql://ci:ci-test-only@localhost:5432/goldcontinent_test
+      JWT_SECRET: ci-only-access-secret-at-least-32-characters
+      JWT_REFRESH_SECRET: ci-only-refresh-secret-at-least-32-characters
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
     steps:
       - uses: actions/checkout@v4
-      
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: Gold_back/package-lock.json
-      
-      - name: Install backend dependencies
-        run: cd Gold_back && npm ci
-      
-      - name: Run lint
-        run: cd Gold_back && npm run lint
-      
-      - name: Run tests
-        run: cd Gold_back && npm run test
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
-  deploy:
-    needs: test
-    if: github.ref == 'refs/heads/main'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      - name: Apply test database migrations
+        run: pnpm --filter=@goldcontinent/database run db:migrate:deploy
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Test AI service
+        run: |
+          python -m pip install -r apps/ai-service/requirements.txt
+          python -m unittest discover -s apps/ai-service -p test_consistency.py
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+  deploy-api:
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.ENABLE_FLY_DEPLOY == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
-      
-      - name: Deploy to Fly.io
-        run: flyctl deploy --remote-only
+
+      - name: Deploy API to Fly.io
+        run: flyctl deploy --config fly-api.toml --remote-only
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_API }}
+
+  deploy-web:
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.ENABLE_FLY_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy Web to Fly.io
+        run: flyctl deploy --config fly-web.toml --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_WEB }}

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Select } from './Select';
 
 interface PaginationProps {
     currentPage: number;
@@ -27,61 +28,105 @@ export const Pagination: React.FC<PaginationProps> = ({
     const startItem = totalItems === 0 ? 0 : (currentPage - 1) * limit + 1;
     const endItem = Math.min(currentPage * limit, totalItems);
 
+    const limitOptions = Array.from(new Set([8, 16, 24, ...(limit > 0 ? [limit] : [])])).sort((a, b) => a - b).map((n) => ({
+        label: String(n),
+        value: n,
+    }));
+
+    const displayLimit = limitOptions.some((o) => o.value === limit) ? limit : 8;
+
+    // Ventana de páginas: evita renderizar decenas de botones y desbordar en móvil
+    const getPageItems = (): (number | 'ellipsis')[] => {
+        const total = totalPages || 1;
+        if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+        const candidates = Array.from(
+            new Set(
+                [1, total, currentPage - 1, currentPage, currentPage + 1].filter(
+                    (p) => p >= 1 && p <= total
+                )
+            )
+        ).sort((a, b) => a - b);
+
+        const items: (number | 'ellipsis')[] = [];
+        let prev = 0;
+        for (const page of candidates) {
+            if (prev && page - prev > 1) items.push('ellipsis');
+            items.push(page);
+            prev = page;
+        }
+        return items;
+    };
+
     return (
-        <div className="px-5 py-3 bg-gray-50/80 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500">
-            <div className="flex items-center gap-2">
+        <div className="px-5 py-3 bg-surface-muted/80 border-t border-border-default flex flex-wrap items-center justify-between gap-3 text-xs text-brand-options tnum">
+            <div className="flex items-center gap-2 whitespace-nowrap">
                 <span>Mostrar</span>
-                <select
-                    value={limit}
+                <Select
+                    disabled={loading}
+                    value={displayLimit}
                     onChange={(e) => onLimitChange(Number(e.target.value))}
-                    className="h-8 border border-amber-400/80 rounded-lg px-2 bg-white text-xs font-bold text-zinc-700 focus:outline-none focus:border-amber-500"
-                >
-                    <option value={8}>8</option>
-                    <option value={16}>16</option>
-                    <option value={24}>24</option>
-                </select>
+                    options={limitOptions}
+                    sizeVariant="sm"
+                    aria-label="Registros por página"
+                    className="w-20"
+                />
                 <span>registros por página</span>
             </div>
 
             <div>
-                Mostrando <span className="font-bold text-zinc-800">{startItem}</span> a{' '}
-                <span className="font-bold text-zinc-800">{endItem}</span> de{' '}
-                <span className="font-bold text-zinc-800">{totalItems}</span> {itemLabel}
+                Mostrando <span className="font-bold text-brand-subtitle">{startItem}</span> a{' '}
+                <span className="font-bold text-brand-subtitle">{endItem}</span> de{' '}
+                <span className="font-bold text-brand-subtitle">{totalItems}</span> {itemLabel}
             </div>
 
-            <div className="flex items-center gap-1">
+            <nav aria-label="Paginación" className="flex items-center gap-1 flex-wrap justify-end">
                 <button
                     type="button"
-                    disabled={currentPage === 1 || loading}
+                    disabled={currentPage <= 1 || loading}
                     onClick={() => onPageChange(currentPage - 1)}
-                    className="p-1.5 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Página anterior"
+                    className="min-h-11 min-w-11 flex items-center justify-center border border-border-default rounded-xl hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
-                    <ChevronLeft className="size-4 text-zinc-600" />
+                    <ChevronLeft className="size-4 text-brand-subtitle" />
                 </button>
 
-                {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map((numPage) => (
-                    <button
-                        key={numPage}
-                        type="button"
-                        onClick={() => onPageChange(numPage)}
-                        className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors ${currentPage === numPage
-                            ? 'bg-amber-500 text-white'
-                            : 'border border-gray-200 text-zinc-600 hover:bg-gray-100'
+                {getPageItems().map((item, index) =>
+                    item === 'ellipsis' ? (
+                        <span
+                            key={`ellipsis-${index}`}
+                            className="min-h-11 min-w-11 flex items-center justify-center text-xs text-brand-options select-none"
+                        >
+                            …
+                        </span>
+                    ) : (
+                        <button
+                            key={item}
+                            disabled={loading}
+                            type="button"
+                            onClick={() => onPageChange(item)}
+                            aria-label={`Página ${item}`}
+                            aria-current={currentPage === item ? 'page' : undefined}
+                            className={`min-h-11 min-w-11 flex items-center justify-center rounded-xl text-xs font-bold transition-colors ${currentPage === item
+                                ? 'bg-accent-primary text-on-accent'
+                                : 'border border-border-default text-brand-subtitle hover:bg-surface-muted'
                             }`}
-                    >
-                        {numPage}
-                    </button>
-                ))}
+                        >
+                            {item}
+                        </button>
+                    )
+                )}
 
                 <button
                     type="button"
-                    disabled={currentPage === totalPages || totalItems === 0 || loading}
+                    disabled={currentPage >= totalPages || totalItems === 0 || loading}
                     onClick={() => onPageChange(currentPage + 1)}
-                    className="p-1.5 border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="Página siguiente"
+                    className="min-h-11 min-w-11 flex items-center justify-center border border-border-default rounded-xl hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
-                    <ChevronRight className="size-4 text-zinc-600" />
+                    <ChevronRight className="size-4 text-brand-subtitle" />
                 </button>
-            </div>
+            </nav>
         </div>
     );
 };

@@ -9,8 +9,11 @@ export type Rol = (typeof Rol)[keyof typeof Rol];
 export const EstadoCotizacion = {
   borrador: 'borrador',
   enviada: 'enviada',
+  parcialmente_pagada: 'parcialmente_pagada',
   aprobada: 'aprobada',
   rechazada: 'rechazada',
+  expirada: 'expirada',
+  convertida_a_venta: 'convertida_a_venta',
 } as const;
 
 export type EstadoCotizacion = (typeof EstadoCotizacion)[keyof typeof EstadoCotizacion];
@@ -30,16 +33,19 @@ export const TipoVenta = {
 
 export type TipoVenta = (typeof TipoVenta)[keyof typeof TipoVenta];
 
+// LEGACY: módulo de ventas eliminado de la app; enums se conservan por si hay migración/histórico.
 export const EstadoVenta = {
   borrador: 'borrador',
   emitida: 'emitida',
   pagada: 'pagada',
   parcial: 'parcial',
   anulada: 'anulada',
+  devuelta: 'devuelta',
 } as const;
 
 export type EstadoVenta = (typeof EstadoVenta)[keyof typeof EstadoVenta];
 
+// LEGACY: uso preferente en cotizaciones/pagos; nombre histórico TipoPago (contado/crédito).
 export const TipoPago = {
   contado: 'contado',
   credito: 'credito',

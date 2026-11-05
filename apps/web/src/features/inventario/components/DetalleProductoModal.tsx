@@ -1,15 +1,19 @@
 'use client';
 
-import React from 'react';
-import { Package, Store, Tag, Box, Layers, Palette } from 'lucide-react';
-import { Modal, Badge, Button } from '@/components/ui';
+import React, { useState } from 'react';
+import Image from 'next/image';
+import { Store, Box, Image as ImageIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import { Modal, Button } from '@/components/ui';
 import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
-import { ColorTags } from './ColorTags';
+import { getImageUrl, handleImageError } from '@/lib/imageUtils';
+import { formatCode, formatText, formatPrice, obtenerPreciosEstandarizados } from '@/lib/formatters';
+import { ProductoConsulta } from '@/features/precio-historial/types/precio';
 
 interface DetalleProductoModalProps {
     open: boolean;
     onClose: () => void;
-    producto: ProductoInventario | null;
+    producto: ProductoInventario | ProductoConsulta | null;
+    tipoPrecio?: 'distribuidor' | 'tienda' | '';
     onEditar?: (p: ProductoInventario) => void;
     canEdit?: boolean;
 }
@@ -18,94 +22,294 @@ export function DetalleProductoModal({
     open,
     onClose,
     producto,
+    tipoPrecio = '',
     onEditar,
     canEdit = false,
 }: DetalleProductoModalProps) {
+    const [showDetails, setShowDetails] = useState(false);
+
     if (!producto) return null;
 
+    // Casteo seguro a 'any' para extraer variables comunes sin conflictos de TypeScript
+    const prod = producto as any;
+
+    const stockVal = prod.stock_total ?? prod.stock_actual?.[0]?.cantidad ?? prod.stock ?? 0;
+    const categoria = prod.categoria?.nombre_categoria || prod.categoria || 'ADORNO';
+    const imagenUrl = prod.foto_url || prod.imagenUrl;
+
+    const { tienda, distribuidor } = obtenerPreciosEstandarizados(producto);
+
     return (
-        <Modal open={open} onClose={onClose} title={`Ficha Técnica: ${producto.codigo}`} maxWidth="lg">
-            <div className="space-y-6">
-                {/* TITULAR Y BADGES DE ESTADO */}
-                <div className="flex items-start justify-between border-b border-gray-100 pb-4">
-                    <div>
-                        <h3 className="text-lg font-bold text-brand-subtitle">{producto.descripcion}</h3>
-                        <p className="text-xs text-brand-options mt-0.5">
-                            Código Único: <span className="font-mono font-bold text-brand-subtitle">{producto.codigo}</span>
-                        </p>
-                    </div>
-                    <Badge variant={producto.stock_total <= producto.stock_minimo ? 'warning' : 'success'}>
-                        Stock Total: {producto.stock_total} u.
-                    </Badge>
-                </div>
+        <Modal open={open} onClose={onClose} title="Ficha Técnica" maxWidth="md">
+            <div className="space-y-5 pt-1">
 
-                {/* ESPECIFICACIONES TÉCNICAS */}
-                <div>
-                    <h4 className="text-xs font-bold text-brand-options uppercase tracking-wider mb-3">
-                        Especificaciones Técnicas
-                    </h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50/80 p-3.5 rounded-xl border border-gray-200/80">
-                        <div>
-                            <span className="block text-[10px] text-brand-options uppercase font-bold">Categoría</span>
-                            <span className="text-xs font-semibold text-brand-subtitle">
-                                {producto.categoria?.nombre_categoria || 'Sin asignación'}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="block text-[10px] text-brand-options uppercase font-bold">Tipo Flor</span>
-                            <span className="text-xs font-semibold text-brand-subtitle">{producto.tipo_flor || '-'}</span>
-                        </div>
-                        <div>
-                            <span className="block text-[10px] text-brand-options uppercase font-bold">Material</span>
-                            <span className="text-xs font-semibold text-brand-subtitle">{producto.material || '-'}</span>
-                        </div>
-                        <div>
-                            <span className="block text-[10px] text-brand-options uppercase font-bold">Presentación</span>
-                            <span className="text-xs font-semibold text-brand-subtitle">{producto.presentacion || '-'}</span>
-                        </div>
-                    </div>
-                </div>
+                {/* BLOQUE SUPERIOR: Imagen + Info y Especificaciones */}
+                <div className="flex gap-4 items-start">
 
-                {/* COLORES Y SURTIDO */}
-                {producto.colores_surtido && producto.colores_surtido.length > 0 && (
-                    <div>
-                        <h4 className="text-xs font-bold text-brand-options uppercase tracking-wider mb-2">
-                            Colores Disponibles en Caja Surtida
-                        </h4>
-                        <ColorTags colors={producto.colores_surtido} maxVisible={10} size="md" />
-                    </div>
-                )}
-
-                {/* DISPONIBILIDAD POR ALMACÉN */}
-                <div>
-                    <h4 className="text-xs font-bold text-brand-options uppercase tracking-wider mb-3">
-                        Ubicación y Stock por Almacén
-                    </h4>
-                    <div className="space-y-2">
-                        {producto.stock_actual && producto.stock_actual.length > 0 ? (
-                            producto.stock_actual.map((st) => (
-                                <div
-                                    key={st.id_almacen}
-                                    className="flex items-center justify-between px-4 py-2.5 bg-white border border-gray-200/80 rounded-xl"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Store className="w-4 h-4 text-brand-primary" />
-                                        <span className="text-xs font-bold text-brand-subtitle">{st.almacen?.nombre}</span>
-                                    </div>
-                                    <span className="text-xs font-mono font-bold text-brand-subtitle">
-                                        {st.cantidad} unidades
-                                    </span>
-                                </div>
-                            ))
+                    {/* Imagen del producto */}
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 bg-surface-muted rounded-2xl border border-stone-200 flex items-center justify-center overflow-hidden">
+                        {imagenUrl ? (
+                            <Image
+                                unoptimized
+                                src={getImageUrl(imagenUrl, '200')}
+                                alt={prod.codigo}
+                                width={150}
+                                height={150}
+                                className="w-full h-full object-cover"
+                                onError={(e) => handleImageError(e, '200')}
+                            />
                         ) : (
-                            <p className="text-xs text-brand-options italic">Sin registros de almacén asignados.</p>
+                            <ImageIcon className="w-8 h-8 text-stone-300" />
                         )}
+                    </div>
+
+                    {/* Lado derecho: Código, Stock y Especificaciones */}
+                    <div className="flex-1 space-y-2.5 min-w-0">
+                        {/* Cabecera con Código y Stock */}
+                        <div className="flex items-center justify-between gap-2">
+                            <div>
+                                <span className="text-xs uppercase font-bold text-brand-options tracking-wider block">Código Producto</span>
+                                <h3 className="text-lg sm:text-xl font-black text-brand-subtitle leading-none mt-0.5">
+                                    {formatCode(prod.codigo)}
+                                </h3>
+                            </div>
+
+                            <div
+                                className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold shrink-0 ${stockVal <= (prod.stock_minimo || 0)
+                                    ? 'bg-status-rechazado-soft text-status-rechazado-text'
+                                    : 'bg-estado-aprobado-soft text-estado-aprobado-text'
+                                    }`}
+                            >
+                                <Box className="w-4 h-4" /> {stockVal} u.
+                            </div>
+                        </div>
+
+                        {/* DESCRIPCIÓN DESTACADA */}
+                        <div className="pt-1">
+                            <p className="text-sm font-semibold text-zinc-800 leading-snug">
+                                {prod.nombre_producto || prod.descripcion_autogenerada || prod.descripcion || 'Sin descripción disponible'}
+                            </p>
+                        </div>
+
+                        {/* BOTÓN ACORDEÓN */}
+                        <button
+                            type="button"
+                            onClick={() => setShowDetails(!showDetails)}
+                            className="flex items-center gap-1.5 text-xs font-bold text-accent-ink hover:text-accent-ink transition-colors mt-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                        >
+                            {showDetails ? (
+                                <>Ocultar <ChevronUp className="w-3.5 h-3.5" /></>
+                            ) : (
+                                <>Mostrar más <ChevronDown className="w-3.5 h-3.5" /></>
+                            )}
+                        </button>
+
+                        {/* ESPECIFICACIONES TÉCNICAS DESPLEGABLES */}
+                        <div className={`overflow-hidden transition-[max-height,opacity,margin-top] duration-300 ease-out ${showDetails ? 'max-h-[500px] opacity-100 mt-3' : 'max-h-0 opacity-0 mt-0'}`}>
+                            <div className="bg-zinc-50/80 p-3 rounded-2xl border border-border-default">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                    <div>
+                                        <span className="block text-xs text-brand-options uppercase font-bold">Categoría</span>
+                                        <span className="text-xs font-semibold text-brand-subtitle truncate block">
+                                            {formatText(categoria)}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="block text-xs text-brand-options uppercase font-bold">Presentación</span>
+                                        <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.presentacion || '-'}</span>
+                                    </div>
+                                    {prod.tipo_flor && prod.tipo_flor !== '-' && (
+                                        <div>
+                                            <span className="block text-xs text-brand-options uppercase font-bold">Tipo Flor</span>
+                                            <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.tipo_flor}</span>
+                                        </div>
+                                    )}
+                                    {prod.material && prod.material !== '-' && (
+                                        <div>
+                                            <span className="block text-xs text-brand-options uppercase font-bold">Material</span>
+                                            <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.material}</span>
+                                        </div>
+                                    )}
+                                    {prod.alto && prod.alto !== '-' && (
+                                        <div>
+                                            <span className="block text-xs text-brand-options uppercase font-bold">Alto</span>
+                                            <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.alto}</span>
+                                        </div>
+                                    )}
+                                    {prod.ancho && prod.ancho !== '-' && (
+                                        <div>
+                                            <span className="block text-xs text-brand-options uppercase font-bold">Ancho</span>
+                                            <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.ancho}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* BLOQUE INFERIOR: Precios / Almacén / Colores */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+
+                    {/* COLUMNA IZQUIERDA: PRECIOS */}
+                    <div className="flex flex-col gap-2">
+                        <h4 className="text-xs font-bold text-brand-options uppercase tracking-wider">
+                            Precios y Costos
+                        </h4>
+                        <div className="flex flex-col gap-2">
+                            {/* BLOQUE PRECIO DISTRIBUIDOR */}
+                            {(tipoPrecio === '' || tipoPrecio === 'distribuidor') && (
+                                <div className="w-full p-1 bg-distribuidor-soft/60 border border-distribuidor/40 rounded-2xl flex flex-col items-center gap-1.5">
+                                    <span className="text-distribuidor text-xs font-black tracking-wider uppercase">
+                                        Precio Distribuidor
+                                    </span>
+
+                                    <div className="w-full grid grid-cols-3 gap-1 text-center min-w-0">
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-brand-options text-xs font-bold uppercase leading-tight">Unidad</span>
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
+                                                {formatPrice(distribuidor.unidad)}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-brand-options text-xs font-bold uppercase leading-tight">Docena</span>
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
+                                                {formatPrice(distribuidor.docena)}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-brand-options text-xs font-bold uppercase leading-tight">Mayor</span>
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
+                                                {formatPrice(distribuidor.mayor)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* BLOQUE PRECIO TIENDA */}
+                            {(tipoPrecio === '' || tipoPrecio === 'tienda') && (
+                                <div className="w-full p-1 bg-estado-enviado-soft/60 border border-estado-enviado/30 rounded-2xl flex flex-col items-center gap-1.5">
+                                    <span className="text-estado-enviado text-xs font-black tracking-wider uppercase">
+                                        Precio Tienda
+                                    </span>
+
+                                    <div className="w-full grid grid-cols-3 gap-1 text-center min-w-0">
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-brand-options text-xs font-bold uppercase leading-tight">Unidad</span>
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
+                                                {formatPrice(tienda.unidad)}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-brand-options text-xs font-bold uppercase leading-tight">Docena</span>
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
+                                                {formatPrice(tienda.docena)}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex flex-col items-center">
+                                            <span className="text-brand-options text-xs font-bold uppercase leading-tight">Mayor</span>
+                                            <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
+                                                {formatPrice(tienda.mayor)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* COLUMNA DERECHA: ALMACÉN Y COLORES */}
+                    <div className="flex flex-col gap-4">
+                        {/* ALMACENES */}
+                        <div>
+                            <h4 className="text-xs text-brand-options font-bold uppercase tracking-wider mb-2">
+                                Ubicación y Stock por Almacén
+                            </h4>
+                            <div className="space-y-1.5">
+                                {prod.stock_actual && prod.stock_actual.length > 0 ? (
+                                    prod.stock_actual.map((st: any) => (
+                                        <div
+                                            key={st.id_almacen}
+                                            className="flex items-center justify-between px-3.5 py-2 bg-surface border border-border-default rounded-xl"
+                                        >
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <Store className="w-4 h-4 text-accent-ink shrink-0" />
+                                                <span className="text-xs font-bold text-brand-subtitle truncate">
+                                                    {formatText(st.almacen?.nombre || '')}
+                                                </span>
+                                            </div>
+                                            <span className="text-xs font-mono font-bold text-brand-subtitle shrink-0">
+                                                {st.cantidad} u.
+                                            </span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-xs text-brand-options italic">Sin registros de almacén asignados.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* COLORES */}
+                        <div>
+                            <h4 className="text-xs font-bold text-brand-options uppercase tracking-wider mb-2">
+                                Colores disponibles
+                            </h4>
+                            {prod.colores_surtido && prod.colores_surtido.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {prod.colores_surtido.map((c: any, i: number) => {
+                                        const colorObj = c.color || c;
+                                        const nombreColor = colorObj.nombre_color || colorObj.nombre || 'Desconocido';
+
+                                        // Mapa básico de colores comunes como fallback
+                                        const colorMap: Record<string, string> = {
+                                            'rojo': '#ef4444',
+                                            'azul': '#3b82f6',
+                                            'verde': '#22c55e',
+                                            'amarillo': '#eab308',
+                                            'blanco': '#ffffff',
+                                            'negro': '#000000',
+                                            'gris': '#6b7280',
+                                            'rosa': '#ec4899',
+                                            'naranja': '#f97316',
+                                            'morado': '#a855f7',
+                                            'celeste': '#38bdf8',
+                                            'beige': '#f5f5dc',
+                                            'marron': '#8b4513',
+                                            'dorado': '#fbbf24',
+                                            'plateado': '#94a3b8'
+                                        };
+
+                                        const hex = colorObj.hex || colorMap[nombreColor.toLowerCase()] || '#e5e7eb';
+
+                                        return (
+                                            <div
+                                                key={colorObj.id_color || i}
+                                                className="w-6 h-6 rounded-full border border-border-default shadow-sm transition-transform hover:scale-110 cursor-help"
+                                                style={{ backgroundColor: hex }}
+                                                title={nombreColor}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-brand-options italic">Sin colores asignados.</p>
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 {/* BOTONES DE ACCIÓN */}
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-                    <Button variant="outline" onClick={onClose}>
+                <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 sm:gap-3 pt-3 border-t border-stone-100">
+                    <Button
+                        variant="ghost"
+                        size="md"
+                        onClick={onClose}
+                    >
                         Cerrar
                     </Button>
                     {canEdit && onEditar && (
@@ -113,7 +317,7 @@ export function DetalleProductoModal({
                             variant="primary"
                             onClick={() => {
                                 onClose();
-                                onEditar(producto);
+                                onEditar(prod as ProductoInventario);
                             }}
                         >
                             Editar Producto

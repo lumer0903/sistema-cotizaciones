@@ -1,8 +1,22 @@
-'use client';
-
-import React, { useState } from 'react';
-import { Search, ChevronDown, LayoutList, LayoutGrid, Plus, RotateCw, SlidersHorizontal } from 'lucide-react';
+import React from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import {
+  Search,
+  RotateCw,
+  PackagePlus,
+  ArrowLeftRight,
+  ClipboardList,
+  Bell,
+  MoreVertical,
+  X
+} from 'lucide-react';
 import { Categoria, Almacen } from '@goldcontinent/shared/types/inventario';
+import { FilterCard, FilterGrid } from '@/components/ui/FilterCard';
+import { Plus } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { DropdownMenu, DropdownMenuItem } from '@/components/ui/DropdownMenu';
 
 interface InventarioFiltersProps {
   categorias?: Categoria[];
@@ -13,10 +27,17 @@ interface InventarioFiltersProps {
   onCategoriaChange: (value: string) => void;
   selectedUbicacion: string;
   onUbicacionChange: (value: string) => void;
+  selectedStockEstado: string;
+  onStockEstadoChange: (value: string) => void;
   onAgregarProducto: () => void;
+  onMovimiento?: () => void;
+  onTransferencia?: () => void;
+  onKardex?: () => void;
+  onAlertas?: () => void;
   onRefresh?: () => void;
-  onAjustarStock?: () => void;
   loading?: boolean;
+  metaLoading?: boolean;
+  alertasCount?: number;
 }
 
 export function InventarioFilters({
@@ -28,117 +49,235 @@ export function InventarioFilters({
   onCategoriaChange,
   selectedUbicacion,
   onUbicacionChange,
+  selectedStockEstado,
+  onStockEstadoChange,
   onAgregarProducto,
-  onAjustarStock,
+  onMovimiento,
+  onTransferencia,
+  onKardex,
+  onAlertas,
   onRefresh,
   loading = false,
+  metaLoading = false,
+  alertasCount = 0,
 }: InventarioFiltersProps) {
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const metaDisabled = loading || metaLoading;
+  const { can } = usePermissions();
+  const canEdit = can('productos', 'edicion');
+
+  const tieneFiltrosActivos = Boolean(
+    selectedCategoria ||
+    selectedUbicacion ||
+    selectedStockEstado ||
+    searchValue
+  );
+
+  const categoriaOptions = categorias.map((cat) => ({
+    label: cat.nombre_categoria,
+    value: cat.id_categoria.toString(),
+  }));
+
+  const almacenOptions = almacenes.map((alm) => ({
+    label: alm.nombre,
+    value: alm.id_almacen.toString(),
+  }));
+
+  const stockEstadoOptions = [
+    { label: 'Todos', value: '' },
+    { label: 'Stock Bajo', value: 'bajo' },
+    { label: 'Stock Suficiente', value: 'disponible' },
+    { label: 'Agotado', value: 'agotado' },
+  ];
+
+  const menuItems: DropdownMenuItem[] = [
+    {
+      key: 'refresh',
+      label: 'Actualizar lista',
+      icon: <RotateCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />,
+      onClick: () => onRefresh?.(),
+      disabled: loading,
+    },
+    ...(canEdit && onMovimiento
+      ? [
+        {
+          key: 'movimiento',
+          label: 'Nuevo Movimiento',
+          icon: <PackagePlus className="w-4 h-4" />,
+          onClick: onMovimiento,
+        },
+      ]
+      : []),
+    ...(canEdit && onTransferencia
+      ? [
+        {
+          key: 'transferencia',
+          label: 'Transferencia Global',
+          icon: <ArrowLeftRight className="w-4 h-4" />,
+          onClick: onTransferencia,
+        },
+      ]
+      : []),
+    ...(onKardex
+      ? [
+        {
+          key: 'kardex',
+          label: 'Kárdex Global',
+          icon: <ClipboardList className="w-4 h-4" />,
+          onClick: onKardex,
+        },
+      ]
+      : []),
+    ...(onAlertas
+      ? [
+        {
+          key: 'alertas',
+          label: 'Ver Alertas',
+          icon: <Bell className="w-4 h-4" />,
+          onClick: onAlertas,
+          danger: true,
+          dividerBefore: true,
+          badge: alertasCount,
+        },
+      ]
+      : []),
+  ];
 
   return (
-    <div className="w-full bg-white rounded-2xl shadow-sm border-l-4 border-yellow-500 p-4 flex flex-wrap lg:flex-nowrap justify-between items-end gap-4 text-xs font-['DM_Sans']">
-      {/* BUSCADOR */}
-      <div className="flex-1 min-w-[200px] flex flex-col gap-1">
-        <span className="text-xs font-black tracking-wide uppercase text-zinc-500">
-          BUSCAR
-        </span>
-        <div className="relative w-full h-10 px-3 bg-white rounded-lg border border-yellow-500 flex items-center gap-2">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-yellow-500 shrink-0" />
-          <input
-            type="text"
+    <FilterCard className="w-full">
+      <FilterGrid>
+        {/* BUSCADOR Y FILTROS ALINEADOS A LA BASE */}
+        {/* BUSCAR */}
+        <div className="flex-[1.4] min-w-[200px]">
+          <Input
+            label="BUSCAR"
+            icon={<Search className="w-4 h-4" />}
+            placeholder="Buscar"
             value={searchValue}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Buscar por código o flor..."
-            className="w-full bg-transparent text-neutral-700 text-xs focus:outline-none pl-3"
+            onChange={(e) => onSearchChange(e.target.value.toUpperCase())}
+            aria-label="Buscar productos"
           />
         </div>
-      </div>
 
-      {/* CATEGORIA */}
-      <div className="w-36 flex flex-col gap-1">
-        <span className="text-xs font-black tracking-wide uppercase text-zinc-500">
-          CATEGORIA
-        </span>
-        <div className="relative w-full h-10 bg-white rounded-lg border border-yellow-500 flex items-center">
-          <select
+        {/* CATEGORÍA */}
+        <div className="flex-1 min-w-[150px]">
+          <Select
+            label="CATEGORÍA"
             value={selectedCategoria}
-            onChange={(e) => onCategoriaChange(e.target.value)}
-            className="w-full h-full bg-transparent text-neutral-700 text-xs appearance-none pl-3 pr-7 focus:outline-none cursor-pointer z-10"
-          >
-            <option value="" className="bg-white">Seleccionar</option>
-            {categorias.map((cat) => (
-              <option key={cat.id_categoria} value={cat.id_categoria.toString()} className="bg-white">
-                {cat.nombre_categoria}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="w-4 h-4 text-yellow-500 absolute right-2 pointer-events-none z-0" />
+            onChange={(e) => onCategoriaChange(String(e.target.value))}
+            options={[{ label: 'Seleccionar', value: '' }, ...categoriaOptions]}
+            disabled={metaDisabled}
+          />
         </div>
-      </div>
 
-      {/* UBICACIÓN */}
-      <div className="w-36 flex flex-col gap-1">
-        <span className="text-xs font-black tracking-wide uppercase text-zinc-500">
-          UBICACIÓN
-        </span>
-        <div className="relative w-full h-10 bg-white rounded-lg border border-yellow-500 flex items-center">
-          <select
+        {/* UBICACIÓN */}
+        <div className="flex-1 min-w-[150px]">
+          <Select
+            label="UBICACIÓN"
             value={selectedUbicacion}
-            onChange={(e) => onUbicacionChange(e.target.value)}
-            className="w-full h-full bg-transparent text-neutral-700 text-xs appearance-none pl-3 pr-7 focus:outline-none cursor-pointer z-10"
-          >
-            <option value="" className="bg-white">Seleccionar</option>
-            {almacenes.map((alm) => (
-              <option key={alm.id_almacen} value={alm.id_almacen.toString()} className="bg-white">
-                {alm.nombre}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="w-4 h-4 text-yellow-500 absolute right-2 pointer-events-none z-0" />
+            onChange={(e) => onUbicacionChange(String(e.target.value))}
+            options={[{ label: 'Seleccionar', value: '' }, ...almacenOptions]}
+            disabled={metaDisabled}
+          />
         </div>
-      </div>
 
-      {/* ICONOS EN FILTRO: ACTUALIZAR, AJUSTAR STOCK, VISTAS */}
-      <div className="flex items-center gap-1 h-10">
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={loading}
-          className="h-10 w-10 rounded-lg border border-yellow-500 bg-white hover:bg-yellow-50 text-yellow-600 flex items-center justify-center transition-colors disabled:opacity-50"
-          title="Actualizar lista"
-        >
-          <RotateCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-        </button>
-        <button
-          type="button"
-          onClick={() => setViewMode('list')}
-          className={`h-10 w-10 rounded-lg border border-yellow-500 flex items-center justify-center transition-colors ${viewMode === 'list' ? 'bg-yellow-500/20 text-yellow-600' : 'bg-white text-yellow-500'
-            }`}
-          title="Vista Lista"
-        >
-          <LayoutList className="w-4 h-4" />
-        </button>
+        {/* ESTADO STOCK */}
+        <div className="flex-1 min-w-[140px]">
+          <Select
+            label="ESTADO STOCK"
+            value={selectedStockEstado}
+            onChange={(e) => onStockEstadoChange(String(e.target.value))}
+            options={stockEstadoOptions}
+            disabled={metaDisabled}
+          />
+        </div>
 
-        <button
-          type="button"
-          onClick={() => setViewMode('grid')}
-          className={`h-10 w-10 rounded-lg border border-yellow-500 flex items-center justify-center transition-colors ${viewMode === 'grid' ? 'bg-yellow-500/20 text-yellow-600' : 'bg-white text-yellow-500'
-            }`}
-          title="Vista Cuadrícula"
-        >
-          <LayoutGrid className="w-4 h-4" />
-        </button>
-      </div>
+        {/* Acciones juntas, alineadas a la derecha */}
+        <div className="shrink-0 flex items-end gap-2">
+          {canEdit && <Button
+            variant="primary"
+            onClick={onAgregarProducto}
+            className="h-9 gap-1.5 whitespace-nowrap shadow-sm"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" /><span>Agregar</span>
+          </Button>}
 
-      {/* BOTÓN AGREGAR */}
-      <button
-        type="button"
-        onClick={onAgregarProducto}
-        className="h-10 px-4 bg-yellow-500 hover:bg-yellow-600 rounded-lg text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm transition-colors shrink-0"
-      >
-        <Plus className="w-4 h-4 stroke-[3]" />
-        <span>Agregar Producto</span>
-      </button>
-    </div>
+          <DropdownMenu
+            items={menuItems}
+            label="Acciones de inventario"
+            triggerAriaLabel="Más opciones"
+            trigger={
+              <span className="relative flex items-center justify-center">
+                <MoreVertical className="w-5 h-5" aria-hidden="true" />
+                {alertasCount > 0 && (
+                  <span className="absolute top-1 right-1 bg-danger w-2.5 h-2.5 rounded-full border-2 border-white" />
+                )}
+              </span>
+            }
+            triggerClassName="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-transparent text-brand-subtitle hover:bg-surface-muted hover:text-accent-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+          />
+        </div>
+      </FilterGrid>
+
+      {/* FILTROS ACTIVOS */}
+      {tieneFiltrosActivos && (
+        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border-default mt-3">
+          {selectedCategoria && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Categoría:</span>
+              {categoriaOptions.find(c => c.value === selectedCategoria)?.label || selectedCategoria}
+              <button
+                onClick={() => onCategoriaChange('')}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Remover categoría"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {selectedUbicacion && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Ubicación:</span>
+              {almacenOptions.find(a => a.value === selectedUbicacion)?.label || selectedUbicacion}
+              <button
+                onClick={() => onUbicacionChange('')}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Remover ubicación"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {selectedStockEstado && selectedStockEstado !== '' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Stock:</span>
+              {stockEstadoOptions.find(s => s.value === selectedStockEstado)?.label || selectedStockEstado}
+              <button
+                onClick={() => onStockEstadoChange('')}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Remover estado de stock"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {searchValue && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+              <span className="font-bold">Búsqueda:</span>
+              {searchValue.substring(0, 20)}{searchValue.length > 20 ? '...' : ''}
+              <button
+                onClick={() => onSearchChange('')}
+                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+        </div>
+      )}
+    </FilterCard>
   );
 }

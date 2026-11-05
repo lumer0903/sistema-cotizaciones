@@ -4,6 +4,7 @@ import { AiController } from '../adapters/ai.controller';
 import { GetAiQuoteSuggestionsUseCase } from '../application/use-cases/get-ai-quote-suggestions.use-case';
 import { IAiService } from '../domain/contracts/ai-service.interface';
 import { HttpAiService } from './clients/http-ai.service';
+import { AiCacheRefreshService } from './ai-cache-refresh.service';
 
 @Module({
   imports: [HttpModule],
@@ -14,7 +15,8 @@ import { HttpAiService } from './clients/http-ai.service';
       provide: IAiService,
       useClass: HttpAiService,
     },
+    AiCacheRefreshService,
   ],
-  exports: [IAiService],
+  exports: [IAiService, AiCacheRefreshService],
 })
 export class AiModule {}

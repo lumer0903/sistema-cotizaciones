@@ -1,0 +1,67 @@
+'use client';
+
+import { useState } from 'react';
+import Image from 'next/image';
+import { cn } from '@/lib/cn';
+
+function initialsOf(nombre?: string | null): string {
+  if (!nombre?.trim()) return 'U';
+  return nombre
+    .trim()
+    .split(/\s+/)
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+export interface AvatarProps {
+  src?: string | null;
+  nombre?: string | null;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  className?: string;
+  onClick?: () => void;
+  title?: string;
+}
+
+const SIZE_CLASSES: Record<NonNullable<AvatarProps['size']>, string> = {
+  xs: 'h-7 w-7 text-xs',
+  sm: 'h-8 w-8 text-xs',
+  md: 'h-9 w-9 text-sm',
+  lg: 'h-12 w-12 text-base',
+  xl: 'h-24 w-24 text-2xl',
+};
+
+export function Avatar({ src, nombre, size = 'md', className = '', onClick, title }: AvatarProps) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const showImg = Boolean(src) && failedSrc !== src;
+  const Tag = onClick ? 'button' : 'div';
+
+  return (
+    <Tag
+      type={onClick ? 'button' : undefined}
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+      className={cn(
+        'shrink-0 relative rounded-full overflow-hidden bg-accent-soft border border-border-default flex items-center justify-center font-bold text-accent-ink select-none',
+        SIZE_CLASSES[size],
+        onClick && 'hover:border-accent-primary transition-colors cursor-pointer',
+        className
+      )}
+    >
+      {showImg ? (
+        <Image
+          src={src as string}
+          alt={nombre || 'Avatar'}
+          width={96}
+          height={96}
+          className="h-full w-full object-cover"
+          onError={() => setFailedSrc(src ?? null)}
+        />
+      ) : (
+        initialsOf(nombre)
+      )}
+    </Tag>
+  );
+}

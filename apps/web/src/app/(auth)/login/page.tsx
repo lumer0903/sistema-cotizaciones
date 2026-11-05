@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/authProvider';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { showToast } from '@/lib/toast';
 
 const loginSchema = z.object({
   email: z.string().email('Correo inválido'),
@@ -15,15 +17,15 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, usuario } = useAuth();
+  const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirectTo') || '/admin/inventario';
+  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
 
   const {
     register,
@@ -40,43 +42,52 @@ export default function LoginPage() {
 
     try {
       await login(data.email.trim().toLowerCase(), data.password);
+      showToast.success('Inicio de sesión exitoso');
       router.push(redirectTo);
     } catch (err: any) {
       const errorMessage = err?.response?.data?.message || err?.message || 'Error al iniciar sesión';
-      setError(Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage);
+      const msg = Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage;
+      setError(msg);
+      showToast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full bg-white flex items-center justify-center p-4 sm:p-6 md:p-8">
-      <main className="w-full max-w-[1280px] flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 my-auto">
+    <div className="min-h-[100dvh] w-full bg-white flex items-center justify-center p-4 sm:p-6 md:p-8">
+      <main className="w-full max-w-[1280px] flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-12 my-auto">
         {/* LOGO PRINCIPAL */}
         <div className="w-full lg:w-[666px] flex justify-center lg:justify-start">
-          <img
-            className="w-full lg:h-[500px] object-contain"
+          <Image
+            className="w-full max-h-32 sm:max-h-40 lg:max-h-none lg:h-[500px] object-contain"
             alt="Gold Continent Import & Export"
             src="/LOGO_GRANDE.svg"
+            width={666}
+            height={500}
+            priority
           />
         </div>
 
         {/* TARJETA DE LOGIN (Derecha) */}
         <section
-          className="relative w-full max-w-[468px] min-h-[558px] bg-white rounded-2xl border border-gray-200 shadow-xl p-6 sm:p-10 flex flex-col justify-center"
+          className="relative w-full max-w-[468px] lg:min-h-[558px] bg-white rounded-2xl border border-zinc-200 shadow-xl p-6 sm:p-10 flex flex-col justify-center"
           aria-labelledby="login-heading"
         >
           {/* ISOTIPO SECUNDARIO */}
-          <img
-            className="absolute top-8 right-8 w-[120px] h-[120px] object-contain opacity-50"
-            alt="Gold Continent Icon"
+          <Image
+            className="absolute top-8 right-8 w-[120px] h-[120px] object-contain opacity-50 pointer-events-none"
+            alt=""
+            aria-hidden="true"
             src="/MUNDO.svg"
+            width={120}
+            height={120}
           />
 
-          <form className="w-full flex flex-col mt-10 sm:mt-12" onSubmit={handleSubmit(onSubmit)}>
+          <form className="w-full flex flex-col mt-6 sm:mt-12" onSubmit={handleSubmit(onSubmit)}>
             {/* MENSAJE DE ERROR */}
             {error && (
-              <div className="mb-6 flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-3 rounded-lg shadow-sm" role="alert">
+              <div className="relative z-10 mb-6 flex items-center gap-2 text-sm text-danger bg-estado-rechazado-soft border border-estado-rechazado/30 px-4 py-3 rounded-lg shadow-sm" role="alert">
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <span>{error}</span>
               </div>
@@ -86,11 +97,11 @@ export default function LoginPage() {
             <div className="flex flex-col items-start w-full mb-8">
               <h1
                 id="login-heading"
-                className="font-black text-[#f8b602] text-4xl sm:text-5xl tracking-tight leading-tight m-0"
+                className="font-black text-amber-600 text-4xl sm:text-5xl tracking-tight leading-tight m-0"
               >
                 Bienvenido,
               </h1>
-              <p className="font-medium text-gray-700 text-base sm:text-lg leading-normal m-0 mt-2">
+              <p className="font-medium text-zinc-700 text-base sm:text-lg leading-normal m-0 mt-2">
                 Ingresa tu correo y contraseña
               </p>
             </div>
@@ -99,12 +110,12 @@ export default function LoginPage() {
             <div className="w-full flex flex-col gap-2 mb-6">
               <label
                 htmlFor="email"
-                className="font-medium text-gray-600 text-sm"
+                className="font-medium text-zinc-600 text-sm"
               >
                 Correo electrónico
               </label>
               <div className="relative w-full">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" aria-hidden="true" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500" aria-hidden="true" />
                 <input
                   id="email"
                   type="email"
@@ -114,11 +125,11 @@ export default function LoginPage() {
                   aria-label="Correo electrónico"
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? 'email-error' : undefined}
-                  className="w-full h-11 pl-12 pr-4 rounded-xl border border-gray-200 text-sm text-gray-900 bg-white outline-none transition-colors
-                    placeholder:text-gray-400
-                    focus:border-[#f8b602] focus:ring-2 focus:ring-[#f8b602]/20
-                    disabled:bg-gray-50 disabled:cursor-not-allowed
-                    error:border-red-300 error:focus:border-red-500 error:focus:ring-red-200"
+                  className="w-full h-11 pl-12 pr-4 rounded-xl border border-zinc-200 text-sm text-zinc-900 bg-white transition-colors
+                    focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring
+                    placeholder:text-zinc-500
+                    disabled:bg-zinc-50 disabled:cursor-not-allowed
+                    error:border-red-300 error:focus:border-red-500"
                   placeholder="correo@ejemplo.com"
                 />
               </div>
@@ -133,12 +144,12 @@ export default function LoginPage() {
             <div className="w-full flex flex-col gap-2 mb-8">
               <label
                 htmlFor="password"
-                className="font-medium text-gray-600 text-sm"
+                className="font-medium text-zinc-600 text-sm"
               >
                 Contraseña
               </label>
               <div className="relative w-full">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" aria-hidden="true" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500" aria-hidden="true" />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -148,17 +159,17 @@ export default function LoginPage() {
                   aria-label="Contraseña"
                   aria-invalid={!!errors.password}
                   aria-describedby={errors.password ? 'password-error' : undefined}
-                  className="w-full h-11 pl-12 pr-14 rounded-xl border border-gray-200 text-sm text-gray-900 bg-white outline-none transition-colors
-                    placeholder:text-gray-400
-                    focus:border-[#f8b602] focus:ring-2 focus:ring-[#f8b602]/20
-                    disabled:bg-gray-50 disabled:cursor-not-allowed
-                    error:border-red-300 error:focus:border-red-500 error:focus:ring-red-200"
+                  className="w-full h-11 pl-12 pr-14 rounded-xl border border-zinc-200 text-sm text-zinc-900 bg-white transition-colors
+                    focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring
+                    placeholder:text-zinc-500
+                    disabled:bg-zinc-50 disabled:cursor-not-allowed
+                    error:border-red-300 error:focus:border-red-500"
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 min-h-11 min-w-11 flex items-center justify-center text-zinc-500 hover:text-zinc-700 cursor-pointer transition-colors rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                   aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   aria-pressed={showPassword}
                 >
@@ -176,11 +187,11 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 bg-[#f8b602] rounded-xl shadow-md text-white font-bold text-sm tracking-wide
+              className="w-full h-11 bg-accent-primary rounded-xl shadow-md text-on-accent font-bold text-sm tracking-wide
                 flex items-center justify-center gap-2
-                hover:bg-[#e0a400] active:scale-[0.98] transition-all
-                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#f8b602] disabled:active:scale-100
-                focus:outline-none focus:ring-2 focus:ring-[#f8b602] focus:ring-offset-2"
+                hover:bg-accent-hover active:scale-[0.96] transition-[scale,background-color,box-shadow] duration-150
+                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-accent-primary disabled:active:scale-100
+                focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
             >
               {loading ? (
                 <>
@@ -195,5 +206,43 @@ export default function LoginPage() {
         </section>
       </main>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="min-h-[100dvh] w-full bg-white flex items-center justify-center p-4 sm:p-6 md:p-8">
+        <div className="w-full max-w-[1280px] flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12 my-auto">
+          <div className="w-full lg:w-[666px] flex justify-center lg:justify-start">
+            <Image
+              className="w-full lg:h-[500px] object-contain"
+              alt="Gold Continent Import & Export"
+              src="/LOGO_GRANDE.svg"
+              width={666}
+              height={500}
+            />
+          </div>
+          <section className="relative w-full max-w-[468px] min-h-[558px] bg-white rounded-2xl border border-zinc-200 shadow-xl p-6 sm:p-10 flex flex-col justify-center">
+            <Image
+              className="absolute top-8 right-8 w-[120px] h-[120px] object-contain opacity-50"
+              alt="Gold Continent Icon"
+              src="/MUNDO.svg"
+              width={120}
+              height={120}
+            />
+            <div className="w-full flex flex-col mt-10 sm:mt-12 animate-pulse space-y-6">
+              <div className="h-8 bg-zinc-200 rounded w-3/4" />
+              <div className="h-4 bg-zinc-200 rounded w-1/2" />
+              <div className="h-11 bg-zinc-200 rounded" />
+              <div className="h-11 bg-zinc-200 rounded" />
+              <div className="h-11 bg-zinc-200 rounded" />
+            </div>
+          </section>
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </React.Suspense>
   );
 }
