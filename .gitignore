@@ -60,3 +60,6 @@ prisma/migrations/.migration_lock.toml
 # Artefactos de QA visual (scripts/qa-routes.mjs)
 qa-screenshots/
 qa-report.json
+
+# Archivos Excel que exceden el límite de 100 MB de GitHub
+archivos_excel/PRECIOS POLIZAS GOLD 2020.xlsx
