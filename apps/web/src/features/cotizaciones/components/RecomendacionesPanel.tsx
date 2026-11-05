@@ -13,12 +13,11 @@ import {
     Sparkles,
     Package,
     Archive,
-    X,
 } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { Button } from '@/components/ui';
 import { getImageUrl } from '@/lib/imageUtils';
-import { obtenerRecomendacionesItem, registrarAccionIa, RecomendarItemRequest, RecomendacionItem, RecomendarItemResponse } from '../api/cotizacionApi';
+import { obtenerRecomendacionesItem, RecomendarItemRequest, RecomendacionItem, RecomendarItemResponse } from '../api/cotizacionApi';
 import { formatCode } from '@/lib/formatters';
 import type { ProductoBase } from './AgregarProductoModal';
 
@@ -224,8 +223,6 @@ export function RecomendacionesPanel({
 }: RecomendacionesPanelProps) {
     const [isMinimized, setIsMinimized] = useState(false);
     const [activeTab, setActiveTab] = useState<TipoRecomendacion>('similar');
-    /** Tarjetas descartadas por el asesor en la interacción actual (clave: `${tipo}-${id_producto}`) */
-    const [descartados, setDescartados] = useState<Record<string, boolean>>({});
 
     const baseItem: SidebarCartItem | undefined = useMemo(() => {
         if (!selectedItemId) return undefined;
@@ -263,13 +260,6 @@ export function RecomendacionesPanel({
 
     const baseCartId = itemExistenteId ?? baseItem?.id ?? null;
 
-    // Cada fetch crea una interacción nueva: los descartados anteriores no aplican
-    const prevInteraccion = React.useRef<number | null | undefined>(undefined);
-    if (prevInteraccion.current !== idInteraccion) {
-        prevInteraccion.current = idInteraccion;
-        if (Object.keys(descartados).length > 0) setDescartados({});
-    }
-
     const catalogoById = useMemo(() => {
         const mapa = new Map<number, ProductoBase>();
         (productosCatalogo ?? []).forEach((p) => {
@@ -289,32 +279,8 @@ export function RecomendacionesPanel({
         }
     };
 
-    /** RECHAZADO: el asesor descarta la tarjeta (ocultar y notificar al backend) */
-    const handleDescartar = async (item: RecomendacionItem, tipo: TipoRecomendacion) => {
-        const key = `${tipo}-${item.id_producto}`;
-        setDescartados((prev) => ({ ...prev, [key]: true }));
-        if (idInteraccion == null) return;
-        try {
-            await registrarAccionIa({
-                id_interaccion: idInteraccion,
-                accion: 'RECHAZADO',
-                ...(idCotizacion != null ? { id_cotizacion: idCotizacion } : {}),
-                ...(item.id_producto != null ? { id_producto_sugerido: item.id_producto } : {}),
-            });
-        } catch (err) {
-            console.warn('[ia] No se pudo registrar RECHAZADO:', err);
-            setDescartados((prev) => {
-                const next = { ...prev };
-                delete next[key];
-                return next;
-            });
-        }
-    };
-
     const tipos: TipoRecomendacion[] = ['similar', 'equilibrio', 'upsell'];
-    const currentList = (recomendaciones[activeTab] || []).filter(
-        (it) => !descartados[`${activeTab}-${it.id_producto}`],
-    );
+    const currentList = recomendaciones[activeTab] || [];
     const activeConfig = TIPO_CONFIG[activeTab];
 
     return (
@@ -362,9 +328,7 @@ export function RecomendacionesPanel({
                         {tipos.map((tipo) => {
                             const cfg = TIPO_CONFIG[tipo];
                             const isActive = activeTab === tipo;
-                            const count = (recomendaciones[tipo] || []).filter(
-                                (it) => !descartados[`${tipo}-${it.id_producto}`],
-                            ).length;
+                            const count = (recomendaciones[tipo] || []).length;
 
 return (
                             <button
@@ -422,9 +386,7 @@ return (
                         ) : currentList.length === 0 ? (
                             <div className="text-center py-8 text-brand-options">
                                 <p className="text-xs">
-                                    {(recomendaciones[activeTab] || []).length > 0
-                                        ? 'Descartaste todas las sugerencias de esta categoría'
-                                        : <>No hay productos en la categoría <strong>{activeConfig.label}</strong></>}
+                                    <>No hay productos en la categoría <strong>{activeConfig.label}</strong></>
                                 </p>
                             </div>
                         ) : (
@@ -440,7 +402,6 @@ return (
                                             catalogoItem={catalogoById.get(Number(item.id_producto))}
                                             onAgregar={() => handleSelectAgregar(item, activeTab)}
                                             onReemplazar={() => handleSelectReemplazar(item, activeTab)}
-                                            onDescartar={() => handleDescartar(item, activeTab)}
                                             showReemplazar={!!baseCartId && !!onSelectReemplazar}
                                         />
                                     ))}
@@ -465,7 +426,6 @@ export interface RecomendacionCardSectionProps {
     catalogoItem?: ProductoBase;
     onAgregar: () => void;
     onReemplazar: () => void;
-    onDescartar: () => void;
     showReemplazar: boolean;
 }
 
@@ -474,7 +434,6 @@ export function RecomendacionCardSection({
     catalogoItem,
     onAgregar,
     onReemplazar,
-    onDescartar,
     showReemplazar,
 }: RecomendacionCardSectionProps) {
     const rawImagen =
@@ -545,17 +504,6 @@ export function RecomendacionCardSection({
 
             {/* ACCIONES */}
             <div className="flex items-center justify-end gap-2 pt-1 border-t border-border-default">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onDescartar}
-                    className="text-xs uppercase tracking-wider text-zinc-500 hover:text-red-600 hover:border-red-300 hover:bg-red-50"
-                    title="Descartar sugerencia"
-                >
-                    <X className="w-3.5 h-3.5" aria-hidden="true" />
-                    DESCARTAR
-                </Button>
-
                 <Button
                     variant="outline"
                     size="sm"

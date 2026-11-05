@@ -153,14 +153,39 @@ export async function getCotizacionById(id: string | number): Promise<Cotizacion
 
 export async function obtenerProductosImportados(): Promise<ProductoBase[]> {
     try {
-        const response = await apiClient('/productos?include=precios');
-        if (Array.isArray(response)) return response as ProductoBase[];
-        if (response && typeof response === 'object') {
-            const res = response as Record<string, unknown>;
-            if (Array.isArray(res.data)) return res.data as ProductoBase[];
-            if (Array.isArray(res.items)) return res.items as ProductoBase[];
-        }
-        return [];
+        const PAGE_LIMIT = 1000;
+        const MAX_PAGES = 100;
+        const todos: ProductoBase[] = [];
+        let page = 1;
+        let total = 0;
+
+        do {
+            const response = await apiClient(`/productos?include=precios&page=${page}&limit=${PAGE_LIMIT}`);
+            let batch: ProductoBase[] = [];
+            let batchTotal: number | null = null;
+
+            if (Array.isArray(response)) {
+                batch = response as ProductoBase[];
+                batchTotal = batch.length;
+            } else if (response && typeof response === 'object') {
+                const res = response as Record<string, unknown>;
+                if (Array.isArray(res.data)) {
+                    batch = res.data as ProductoBase[];
+                    batchTotal = Number((res as any).total ?? batch.length);
+                } else if (Array.isArray(res.items)) {
+                    batch = res.items as ProductoBase[];
+                    batchTotal = Number((res as any).total ?? batch.length);
+                }
+            }
+
+            todos.push(...batch);
+            total = batchTotal ?? todos.length;
+
+            if (batch.length === 0 || batch.length < PAGE_LIMIT) break;
+            page += 1;
+        } while (todos.length < total && page <= MAX_PAGES);
+
+        return todos;
     } catch (error) {
         console.error('[cotizacionApi] Error al obtener productos:', error);
         return [];

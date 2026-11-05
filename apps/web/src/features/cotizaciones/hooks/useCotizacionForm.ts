@@ -333,7 +333,7 @@ export function useCotizacionForm(modo: 'crear' | 'editar') {
       id_producto: rec.id_producto,
       codigo: rec.codigo,
       descripcion: rec.descripcion,
-      foto_url: rec.imagen_url ?? catalogo?.foto_url ?? null,
+      foto_url: rec.imagen_url || catalogo?.foto_url || null,
       imagenUrl: catalogo?.imagenUrl ?? null,
       estante: rec.ubicacion ?? catalogo?.estante,
       stock,

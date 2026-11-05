@@ -40,7 +40,7 @@ export function CarritoPanel({
     const query = searchQuery.toLowerCase();
     return productos
       .filter((p) => p.codigo?.toLowerCase().includes(query) || p.descripcion?.toLowerCase().includes(query))
-      .slice(0, 3);
+      .slice(0, 8);
   }, [searchQuery, productos]);
 
   const handleSeleccionarProducto = (producto: ProductoBase) => {
