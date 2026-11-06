@@ -1,0 +1,280 @@
+'use client';
+
+import { useState, useRef } from 'react';
+import { X, Plus, FileText } from 'lucide-react';
+import { Modal, Button, Textarea } from '@/components/ui';
+
+export interface ColorItem {
+  hex: string;
+  name: string;
+}
+
+interface ColorConfigModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSave: (colors: ColorItem[]) => void;
+  initialColors: ColorItem[];
+}
+
+export const COLOR_MAP: Record<string, string> = {
+  rojo: '#ef4444',
+  rosado: '#ec4899',
+  rosa: '#ec4899',
+  'rosa pastel': '#f9a8d4',
+  azul: '#3b82f6',
+  verde: '#22c55e',
+  'verde oliva': '#808000',
+  'verde eucalipto': '#2e8b57',
+  amarillo: '#eab308',
+  'amarillo intenso': '#facc15',
+  naranja: '#f97316',
+  morado: '#a855f7',
+  fucsia: '#ff00ff',
+  fuscia: '#ff00ff',
+  fuchsia: '#ff00ff',
+  magenta: '#ff00ff',
+  blanco: '#ffffff',
+  marfil: '#fffff0',
+  negro: '#000000',
+  gris: '#6b7280',
+  celeste: '#0ea5e9',
+  coral: '#ff7f50',
+  marron: '#8b4513',
+  dorado: '#f59e0b',
+  plata: '#9ca3af',
+  vino: '#7f1d1d',
+  lila: '#d8b4e2',
+  menta: '#98ff98',
+  durazno: '#ffcba4',
+  turquesa: '#40e0d0',
+  burdeos: '#800020',
+  lavanda: '#e6e6fa',
+  beige: '#f5f5dc',
+  crema: '#fffdd0',
+  durazno_claro: '#ffdab9',
+};
+
+const COLOR_ALIASES: Array<{ keys: string[]; hex: string }> = [
+  { keys: ['fucsia', 'fuscia', 'fuchsia', 'magenta'], hex: '#ff00ff' },
+  { keys: ['rosado', 'rosa', 'pink'], hex: '#ec4899' },
+  { keys: ['marfil', 'ivory', 'crema', 'cream'], hex: '#fffff0' },
+  { keys: ['verde oliva', 'oliva', 'olive'], hex: '#808000' },
+  { keys: ['eucalipto', 'eucalyptus'], hex: '#2e8b57' },
+  { keys: ['amarillo intenso', 'amarillo brillante'], hex: '#facc15' },
+  { keys: ['burdeos', 'burdeos oscuro'], hex: '#800020' },
+  { keys: ['celeste', 'cielo', 'sky'], hex: '#0ea5e9' },
+  { keys: ['dorado', 'oro', 'gold'], hex: '#f59e0b' },
+  { keys: ['plata', 'silver'], hex: '#9ca3af' },
+];
+
+export function resolveColorHex(name: string): string {
+  const normalized = name.toLowerCase().trim().replace(/\s+/g, ' ');
+  if (COLOR_MAP[normalized]) return COLOR_MAP[normalized];
+  for (const alias of COLOR_ALIASES) {
+    if (alias.keys.some((k) => normalized.includes(k))) return alias.hex;
+  }
+  for (const [key, hex] of Object.entries(COLOR_MAP)) {
+    if (normalized.includes(key) || key.includes(normalized)) return hex;
+  }
+  return '#6b7280';
+}
+
+export function ColorConfigModal({ open, onClose, onSave, initialColors }: ColorConfigModalProps) {
+  const [colors, setColors] = useState<ColorItem[]>(initialColors);
+  const [isAdding, setIsAdding] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newHex, setNewHex] = useState('#ef4444');
+  const [importText, setImportText] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const [prevInitialColors, setPrevInitialColors] = useState(initialColors);
+  const [prevOpen, setPrevOpen] = useState(open);
+
+  const canSave = colors.length > 0;
+
+  const handleNameChange = (val: string) => {
+    setNewName(val);
+    const mappedHex = resolveColorHex(val);
+    if (mappedHex && mappedHex !== '#6b7280') setNewHex(mappedHex);
+  };
+
+  if (prevInitialColors !== initialColors || prevOpen !== open) {
+    setPrevInitialColors(initialColors);
+    setPrevOpen(open);
+    setColors(initialColors);
+    setIsAdding(false);
+    setIsImporting(false);
+    setNewName('');
+    setNewHex('#ef4444');
+    setImportText('');
+  }
+
+  const addColor = () => {
+    const trimmed = newName.trim();
+    if (trimmed && !colors.some((c) => c.name.toLowerCase() === trimmed.toLowerCase())) {
+      setColors([...colors, { name: trimmed, hex: newHex }]);
+      setNewName('');
+      setIsAdding(false);
+    }
+  };
+
+  const parseImportText = (text: string): ColorItem[] => {
+    const lines = text.split(/[\n,]/).map(l => l.trim()).filter(Boolean);
+    const newColors: ColorItem[] = [];
+    for (const line of lines) {
+      const name = line.trim();
+      if (name && !colors.some((c) => c.name.toLowerCase() === name.toLowerCase()) &&
+        !newColors.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+        const hex = resolveColorHex(name);
+        newColors.push({ name, hex });
+      }
+    }
+    return newColors;
+  };
+
+  const handleImport = () => {
+    const parsed = parseImportText(importText);
+    if (parsed.length > 0) {
+      setColors([...colors, ...parsed]);
+      setImportText('');
+      setIsImporting(false);
+    }
+  };
+
+  const removeColor = (colorName: string) => {
+    setColors(colors.filter((c) => c.name !== colorName));
+  };
+
+  const handleSave = () => {
+    onSave(colors);
+    onClose();
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title="Configuración de colores" maxWidth="md">
+      <div className="space-y-6">
+        <div>
+          <p className="text-xs font-bold text-brand-options uppercase tracking-wider mb-4">
+            COLORES EN CAJA SURTIDA:
+          </p>
+
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            {colors.map((color) => (
+              <div
+                key={`${color.name}-${color.hex}`}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-surface border border-brand-options/30 rounded-lg text-sm text-brand-subtitle shadow-sm"
+              >
+                <span
+                  className="w-2.5 h-2.5 rounded-full border border-zinc-300"
+                  style={{ backgroundColor: color.hex || resolveColorHex(color.name) }}
+                />
+                <span>{color.name}</span>
+                <button
+                  onClick={() => removeColor(color.name)}
+                  aria-label={`Quitar ${color.name}`}
+                  className="min-h-8 min-w-8 -my-1 -mr-1 inline-flex items-center justify-center text-brand-options hover:text-red-500 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setIsAdding(true); setIsImporting(false); }}
+                className="text-sm font-medium text-brand-subtitle hover:underline underline-offset-2 flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Añadir
+              </button>
+              <button
+                onClick={() => { setIsImporting(true); setIsAdding(false); }}
+                className="text-sm font-medium text-brand-subtitle hover:underline underline-offset-2 flex items-center gap-1"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                Importar
+              </button>
+            </div>
+          </div>
+
+          {isAdding && (
+            <div className="flex items-center gap-2 bg-surface border border-border-default shadow-sm rounded-xl p-2">
+              {/* Selector circular: muestra el color actual y abre el picker nativo */}
+              <label
+                className="relative w-7 h-7 shrink-0 rounded-full border border-border-default shadow-sm cursor-pointer overflow-hidden transition-shadow"
+                style={{ backgroundColor: newHex }}
+                title="Elegir color"
+              >
+                <input
+                  type="color"
+                  value={newHex}
+                  aria-label="Seleccionar color"
+                  onChange={(e) => setNewHex(e.target.value)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+              </label>
+              <input
+                ref={inputRef}
+                type="text"
+                value={newName}
+                onChange={(e) => handleNameChange(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addColor()}
+                placeholder="Color"
+                aria-label="Nombre del color"
+                autoComplete="off"
+                autoFocus
+                className="w-28 min-h-9 px-3 text-xs rounded-lg border border-border-default bg-surface transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-brand-options focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring"
+              />
+              <Button type="button" variant="primary" size="sm" onClick={addColor}>
+                OK
+              </Button>
+              <button
+                type="button"
+                onClick={() => setIsAdding(false)}
+                aria-label="Cancelar alta de color"
+                className="min-h-8 min-w-8 inline-flex items-center justify-center text-brand-options hover:text-brand-subtitle"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {isImporting && (
+            <div className="space-y-2">
+              <Textarea
+                label="Importar colores (uno por línea o separados por coma)"
+                placeholder="Morado, Rosado, Blanco&#10;Lila/Blanco, Melon&#10;Rosado BB, Medio Lila Oscuro Gris, Marron"
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+                rows={4}
+                className="text-xs"
+              />
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => setIsImporting(false)} size="sm">
+                  Cancelar
+                </Button>
+                <Button variant="primary" onClick={handleImport} size="sm">
+                  Importar
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-border-default">
+          <Button variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            variant={canSave ? 'primary' : 'secondary'}
+            onClick={handleSave}
+            disabled={!canSave}
+          >
+            Guardar
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}

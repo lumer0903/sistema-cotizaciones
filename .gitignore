@@ -10,7 +10,8 @@ build/
 # Environment
 .env
 .env.local
-.env.*.local
+.env.*
+!.env.example
 
 # IDE
 .idea/
@@ -32,6 +33,22 @@ pnpm-debug.log*
 coverage/
 .nyc_output/
 
+# Runtime artifacts (PDFs generados por la API y almacenamiento persistente)
+apps/api/uploads/
+uploads/
+storage/
+*.pdf
+
+# Playwright
+apps/web/test-results/
+apps/web/playwright-report/
+apps/web/blob-report/
+playwright/.cache/
+
+# Python
+__pycache__/
+*.pyc
+
 # Turbo
 .turbo/
 
@@ -40,3 +57,9 @@ docker-compose.override.yml
 
 # Prisma
 prisma/migrations/.migration_lock.toml
+# Artefactos de QA visual (scripts/qa-routes.mjs)
+qa-screenshots/
+qa-report.json
+
+# Archivos Excel que exceden el límite de 100 MB de GitHub
+archivos_excel/PRECIOS POLIZAS GOLD 2020.xlsx

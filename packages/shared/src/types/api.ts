@@ -1,5 +1,5 @@
 import { UsuarioAutenticado, JWTPayload, TokenPair } from '../auth/jwt';
-import { ProductoConPrecios, CotizacionConDetalle, VentaConDetalle } from './database';
+import { ProductoConPrecios, CotizacionConDetalle } from './database';
 
 export interface AuthResponse {
   token: string;
@@ -88,97 +88,6 @@ export interface CotizacionDetalleResponse {
   precio_unidad_dist: number;
   precio_docena_dist: number;
   precio_mayor_dist: number;
-}
-
-export interface VentaResponse {
-  id_venta: number;
-  serie: string;
-  correlativo: number;
-  numero_completo: string;
-  tipo_documento: string;
-  estado: string;
-  fecha_emision: Date;
-  fecha_vencimiento: Date | null;
-  id_cotizacion: number | null;
-  id_cliente: number;
-  id_usuario: number;
-  id_almacen: number;
-  subtotal: number;
-  igv: number;
-  total: number;
-  descuento_global: number;
-  tipoPago: string;
-  diasPlazo: number | null;
-  montoPagado: number;
-  montoPendiente: number;
-  autorizadoPor: number | null;
-  autorizadoAt: Date | null;
-  observaciones: string | null;
-  created_at: Date;
-  updated_at: Date;
-  cliente: {
-    id_cliente: number;
-    nombre: string;
-    tipo: string;
-  };
-  usuario: {
-    id_usuario: number;
-    nombre: string;
-  };
-  almacen: {
-    id_almacen: number;
-    nombre: string;
-  };
-  detalles: VentaDetalleResponse[];
-  pagos: VentaPagoResponse[];
-  cuentasCobrar: CuentaCobrarResponse[];
-}
-
-export interface VentaDetalleResponse {
-  id_detalle: number;
-  id_venta: number;
-  id_producto: number;
-  tipo_venta: string;
-  cantidad: number;
-  precio_unitario: number;
-  descuento_item: number;
-  subtotal: number;
-  igv_item: number;
-  total_item: number;
-  es_sugerido_ia: boolean;
-  producto: {
-    id_producto: number;
-    codigo: string;
-    descripcion: string;
-    precios_actuales: ProductoConPrecios['precios_actuales'];
-  };
-}
-
-export interface VentaPagoResponse {
-  id_pago: number;
-  id_venta: number;
-  monto: number;
-  metodo_pago: string;
-  referencia: string | null;
-  id_usuario: number | null;
-  fecha_pago: Date;
-  usuario: {
-    id_usuario: number;
-    nombre: string;
-  } | null;
-}
-
-export interface CuentaCobrarResponse {
-  id_cuenta: number;
-  id_venta: number;
-  id_cliente: number;
-  id_usuario: number | null;
-  montoOriginal: number;
-  montoPendiente: number;
-  estado: string;
-  fechaVencimiento: Date;
-  fechaPago: Date | null;
-  created_at: Date;
 }
 
 export interface RecomendacionResponse {

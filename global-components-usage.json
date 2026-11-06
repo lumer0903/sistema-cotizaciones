@@ -1,0 +1,376 @@
+[
+  {
+    "component": "AdminLayout",
+    "names": [
+      "AdminLayout"
+    ],
+    "consumers": [
+      "app/(dashboard)/layout.tsx"
+    ]
+  },
+  {
+    "component": "VendedorLayout",
+    "names": [
+      "VendedorLayout"
+    ],
+    "consumers": [
+      "app/(dashboard)/layout.tsx"
+    ]
+  },
+  {
+    "component": "Breadcrumbs",
+    "names": [
+      "Breadcrumbs"
+    ],
+    "consumers": [
+      "components/layouts/AdminLayout.tsx",
+      "components/layouts/VendedorLayout.tsx"
+    ]
+  },
+  {
+    "component": "Can",
+    "names": [
+      "Can"
+    ],
+    "consumers": [
+      "features/cotizaciones/components/CotizacionesTable.tsx",
+      "features/inventario/components/InventarioTable.tsx"
+    ]
+  },
+  {
+    "component": "ProtectedRoute",
+    "names": [
+      "ProtectedRoute"
+    ],
+    "consumers": []
+  },
+  {
+    "component": "StatCard",
+    "names": [
+      "StatCard",
+      "StatCardSkeleton"
+    ],
+    "consumers": []
+  },
+  {
+    "component": "Avatar",
+    "names": [
+      "Avatar"
+    ],
+    "consumers": [
+      "components/layouts/AdminLayout.tsx",
+      "components/layouts/VendedorLayout.tsx",
+      "components/ui/Header.tsx",
+      "features/usuarios/components/UsuarioModal.tsx"
+    ]
+  },
+  {
+    "component": "Badge",
+    "names": [
+      "Badge",
+      "StatusBadge"
+    ],
+    "consumers": [
+      "app/(dashboard)/cobranza/[id]/page.tsx",
+      "features/cobranza/components/CobranzaTable.tsx",
+      "features/cotizaciones/components/cotizacion-form/FormularioHeader.tsx",
+      "features/cotizaciones/components/CotizacionesTable.tsx",
+      "features/inventario/components/AlertasStockTable.tsx",
+      "features/inventario/components/KardexModal.tsx",
+      "features/reportes/components/AlertasStockTable.tsx",
+      "features/reportes/components/CotizacionesChart.tsx",
+      "features/usuarios/components/PermisosModal.tsx",
+      "features/usuarios/components/UsuariosView.tsx"
+    ]
+  },
+  {
+    "component": "Button",
+    "names": [
+      "Button"
+    ],
+    "consumers": [
+      "app/(dashboard)/cobranza/[id]/page.tsx",
+      "app/(dashboard)/cotizaciones/crear/resumen/page.tsx",
+      "app/(dashboard)/cotizaciones/detalle/[id]/page.tsx",
+      "features/cobranza/components/CobranzaTable.tsx",
+      "features/configuracion/components/ConfiguracionView.tsx",
+      "features/cotizaciones/components/AgregarProductoModal.tsx",
+      "features/cotizaciones/components/cotizacion-form/CarritoPanel.tsx",
+      "features/cotizaciones/components/cotizacion-form/FormularioHeader.tsx",
+      "features/cotizaciones/components/CotizacionEditarLoader.tsx",
+      "features/cotizaciones/components/CotizacionesTable.tsx",
+      "features/cotizaciones/components/CotizacionesView.tsx",
+      "features/cotizaciones/components/RecomendacionesPanel.tsx",
+      "features/cotizaciones/components/ResumenCotizacionCard.tsx",
+      "features/dashboard/components/DashboardCustomizer.tsx",
+      "features/dashboard/components/DashboardFiltersBar.tsx",
+      "features/dashboard/components/DashboardView.tsx",
+      "features/inventario/components/AlertasStockTable.tsx",
+      "features/inventario/components/ColorConfigModal.tsx",
+      "features/inventario/components/DetalleProductoModal.tsx",
+      "features/inventario/components/InventarioFilters.tsx",
+      "features/inventario/components/InventarioTable.tsx",
+      "features/inventario/components/InventarioView.tsx",
+      "features/inventario/components/KardexModal.tsx",
+      "features/inventario/components/MovimientoModal.tsx",
+      "features/inventario/components/producto-form/SurtidoColorsField.tsx",
+      "features/inventario/components/ProductoModal.tsx",
+      "features/inventario/components/TransferenciaModal.tsx",
+      "features/precio-historial/components/BulkPriceModal.tsx",
+      "features/precio-historial/components/HistorialPrecioModal.tsx",
+      "features/precio-historial/components/PreciosView.tsx",
+      "features/precio-historial/components/PriceCard.tsx",
+      "features/reportes/components/ReportesView.tsx",
+      "features/usuarios/components/PerfilModal.tsx",
+      "features/usuarios/components/PermisosModal.tsx",
+      "features/usuarios/components/RolesYPermisosView.tsx",
+      "features/usuarios/components/UsuarioModal.tsx",
+      "features/usuarios/components/UsuariosView.tsx"
+    ]
+  },
+  {
+    "component": "Card",
+    "names": [
+      "Card",
+      "CardHeader",
+      "CardContent",
+      "CardFooter"
+    ],
+    "consumers": [
+      "features/reportes/components/ReportesView.tsx"
+    ]
+  },
+  {
+    "component": "ConfirmModal",
+    "names": [
+      "ConfirmModal"
+    ],
+    "consumers": [
+      "app/(dashboard)/cotizaciones/detalle/[id]/page.tsx",
+      "features/inventario/components/AlertasStockTable.tsx",
+      "features/inventario/components/InventarioView.tsx",
+      "features/inventario/components/ProductoModal.tsx"
+    ]
+  },
+  {
+    "component": "DensityToggle",
+    "names": [
+      "DensityToggle"
+    ],
+    "consumers": []
+  },
+  {
+    "component": "DropdownMenu",
+    "names": [
+      "DropdownMenu"
+    ],
+    "consumers": [
+      "features/inventario/components/InventarioFilters.tsx"
+    ]
+  },
+  {
+    "component": "FilterCard",
+    "names": [
+      "FilterCard"
+    ],
+    "consumers": [
+      "app/(dashboard)/cotizaciones/page.tsx",
+      "features/cobranza/components/CobranzaTable.tsx",
+      "features/dashboard/components/DashboardFiltersBar.tsx",
+      "features/inventario/components/InventarioFilters.tsx",
+      "features/precio-historial/components/PreciosView.tsx",
+      "features/reportes/components/AlertasStockTable.tsx",
+      "features/reportes/components/CotizacionesChart.tsx",
+      "features/reportes/components/CotizadoVsVendido.tsx",
+      "features/reportes/components/ReportesView.tsx",
+      "features/usuarios/components/UsuariosView.tsx"
+    ]
+  },
+  {
+    "component": "Header",
+    "names": [
+      "Header"
+    ],
+    "consumers": []
+  },
+  {
+    "component": "Input",
+    "names": [
+      "Input"
+    ],
+    "consumers": [
+      "app/(dashboard)/cobranza/[id]/page.tsx",
+      "app/(dashboard)/cotizaciones/page.tsx",
+      "features/cobranza/components/CobranzaTable.tsx",
+      "features/configuracion/components/ConfiguracionView.tsx",
+      "features/cotizaciones/components/AgregarProductoModal.tsx",
+      "features/cotizaciones/components/ClienteAutocomplete.tsx",
+      "features/cotizaciones/components/ClienteSection.tsx",
+      "features/cotizaciones/components/cotizacion-form/CarritoPanel.tsx",
+      "features/cotizaciones/components/cotizacion-form/InformacionGeneral.tsx",
+      "features/dashboard/components/DashboardFiltersBar.tsx",
+      "features/inventario/components/InventarioFilters.tsx",
+      "features/inventario/components/KardexModal.tsx",
+      "features/inventario/components/MovimientoModal.tsx",
+      "features/inventario/components/producto-form/PriceMatrix.tsx",
+      "features/inventario/components/ProductoModal.tsx",
+      "features/inventario/components/ProductoSearchField.tsx",
+      "features/inventario/components/TransferenciaModal.tsx",
+      "features/precio-historial/components/BulkPriceModal.tsx",
+      "features/precio-historial/components/HistorialPrecioModal.tsx",
+      "features/precio-historial/components/PreciosView.tsx",
+      "features/reportes/components/ReportesView.tsx",
+      "features/usuarios/components/PerfilModal.tsx",
+      "features/usuarios/components/RolesYPermisosView.tsx",
+      "features/usuarios/components/UsuarioModal.tsx",
+      "features/usuarios/components/UsuariosView.tsx"
+    ]
+  },
+  {
+    "component": "Modal",
+    "names": [
+      "Modal",
+      "ModalFooter"
+    ],
+    "consumers": [
+      "features/cotizaciones/components/AgregarProductoModal.tsx",
+      "features/dashboard/components/DashboardCustomizer.tsx",
+      "features/inventario/components/AlertasStockTable.tsx",
+      "features/inventario/components/ColorConfigModal.tsx",
+      "features/inventario/components/DetalleProductoModal.tsx",
+      "features/inventario/components/KardexModal.tsx",
+      "features/inventario/components/MovimientoModal.tsx",
+      "features/inventario/components/ProductoModal.tsx",
+      "features/inventario/components/TransferenciaModal.tsx",
+      "features/precio-historial/components/BulkPriceModal.tsx",
+      "features/precio-historial/components/HistorialPrecioModal.tsx",
+      "features/usuarios/components/PerfilModal.tsx",
+      "features/usuarios/components/PermisosModal.tsx",
+      "features/usuarios/components/RolesYPermisosView.tsx",
+      "features/usuarios/components/UsuarioModal.tsx"
+    ]
+  },
+  {
+    "component": "NotificacionesDrawer",
+    "names": [
+      "NotificacionesDrawer"
+    ],
+    "consumers": [
+      "components/layouts/AdminLayout.tsx"
+    ]
+  },
+  {
+    "component": "Pagination",
+    "names": [
+      "Pagination"
+    ],
+    "consumers": [
+      "app/(dashboard)/cotizaciones/page.tsx",
+      "features/cobranza/components/CobranzaTable.tsx",
+      "features/inventario/components/AlertasStockTable.tsx",
+      "features/inventario/components/InventarioView.tsx",
+      "features/precio-historial/components/HistorialPrecioModal.tsx",
+      "features/precio-historial/components/PreciosView.tsx",
+      "features/reportes/components/ReportesView.tsx"
+    ]
+  },
+  {
+    "component": "Select",
+    "names": [
+      "Select"
+    ],
+    "consumers": [
+      "app/(dashboard)/cobranza/[id]/page.tsx",
+      "app/(dashboard)/cotizaciones/crear/resumen/page.tsx",
+      "app/(dashboard)/cotizaciones/detalle/[id]/page.tsx",
+      "app/(dashboard)/cotizaciones/page.tsx",
+      "features/cobranza/components/CobranzaTable.tsx",
+      "features/configuracion/components/ConfiguracionView.tsx",
+      "features/cotizaciones/components/AgregarProductoModal.tsx",
+      "features/cotizaciones/components/ClienteSection.tsx",
+      "features/cotizaciones/components/cotizacion-form/InformacionGeneral.tsx",
+      "features/dashboard/components/DashboardFiltersBar.tsx",
+      "features/inventario/components/AlertasStockTable.tsx",
+      "features/inventario/components/InventarioFilters.tsx",
+      "features/inventario/components/KardexModal.tsx",
+      "features/inventario/components/MovimientoModal.tsx",
+      "features/inventario/components/ProductoModal.tsx",
+      "features/inventario/components/TransferenciaModal.tsx",
+      "features/precio-historial/components/PreciosView.tsx",
+      "features/reportes/components/ReportesView.tsx",
+      "features/usuarios/components/PermisosModal.tsx",
+      "features/usuarios/components/UsuarioModal.tsx",
+      "features/usuarios/components/UsuariosView.tsx"
+    ]
+  },
+  {
+    "component": "Sidebar",
+    "names": [
+      "Sidebar"
+    ],
+    "consumers": [
+      "components/layouts/AdminLayout.tsx",
+      "components/layouts/VendedorLayout.tsx"
+    ]
+  },
+  {
+    "component": "Table",
+    "names": [
+      "Table",
+      "TableHeader",
+      "TableBody",
+      "TableRow",
+      "TableHead",
+      "TableCell"
+    ],
+    "consumers": [
+      "app/(dashboard)/cobranza/[id]/page.tsx",
+      "app/(dashboard)/cotizaciones/crear/resumen/page.tsx",
+      "app/(dashboard)/cotizaciones/detalle/[id]/page.tsx",
+      "features/cobranza/components/CobranzaTable.tsx",
+      "features/cotizaciones/components/cotizacion-form/CarritoPanel.tsx",
+      "features/cotizaciones/components/CotizacionesTable.tsx",
+      "features/dashboard/components/charts/DashboardCharts.tsx",
+      "features/inventario/components/AlertasStockTable.tsx",
+      "features/inventario/components/InventarioTable.tsx",
+      "features/inventario/components/KardexModal.tsx",
+      "features/precio-historial/components/HistorialPrecioModal.tsx",
+      "features/reportes/components/AlertasStockTable.tsx",
+      "features/reportes/components/CotizadoVsVendido.tsx",
+      "features/reportes/components/ReportesView.tsx",
+      "features/usuarios/components/RolesYPermisosView.tsx",
+      "features/usuarios/components/UsuariosView.tsx"
+    ]
+  },
+  {
+    "component": "Tabs",
+    "names": [
+      "Tabs",
+      "TabsList",
+      "TabsTrigger",
+      "TabsContent"
+    ],
+    "consumers": [
+      "features/reportes/components/ReportesView.tsx",
+      "features/usuarios/components/UsuariosView.tsx"
+    ]
+  },
+  {
+    "component": "Textarea",
+    "names": [
+      "Textarea"
+    ],
+    "consumers": [
+      "app/(dashboard)/cotizaciones/crear/resumen/page.tsx",
+      "features/inventario/components/ColorConfigModal.tsx",
+      "features/inventario/components/ProductoModal.tsx"
+    ]
+  },
+  {
+    "component": "Tooltip",
+    "names": [
+      "Tooltip"
+    ],
+    "consumers": []
+  }
+]

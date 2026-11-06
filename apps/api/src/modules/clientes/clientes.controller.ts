@@ -1,3 +1,4 @@
+import { Permission } from '../../common/decorators/permission.decorator';
 import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
@@ -5,11 +6,11 @@ import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 import type { ClienteResponse, PaginatedClientesResponse } from './clientes.service';
-import { TipoPrecio } from '@goldcontinent/shared/constants/enums';
 
 @ApiTags('Clientes')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@Permission('cotizaciones')
 @Controller('clientes')
 export class ClientesController {
   constructor(private readonly clientesService: ClientesService) {}
@@ -24,7 +25,11 @@ export class ClientesController {
     @Query('limit') limit = 50,
     @Query('search') search?: string,
   ): Promise<{ success: true; data: PaginatedClientesResponse['data']; total: number; page: number; limit: number }> {
-    const result = await this.clientesService.findAll(Number(page), Number(limit), search);
+    const result = await this.clientesService.findAll(
+      Math.max(1, Number(page) || 1),
+      Math.min(Math.max(1, Number(limit) || 50), 100),
+      search,
+    );
     return { success: true, ...result };
   }
 

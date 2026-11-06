@@ -1,0 +1,35 @@
+# fly.toml — API (NestJS)
+# Reemplaza al fly.toml antiguo que apuntaba a Gold_back/Dockerfile (borrado).
+#
+# IMPORTANTE:
+#  - Ajusta `app` al nombre real de tu app Fly (`fly apps list`). Cada app
+#    necesita su propio token: `fly tokens create deploy -a <app>` y guárdalo
+#    como secreto de GitHub FLY_API_TOKEN_API.
+#  - DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET, REDIS_*, MINIO_* se inyectan
+#    con `fly secrets set` (no van en este archivo).
+
+app = 'goldcontinent-api'
+primary_region = 'dfw'
+
+[build]
+  dockerfile = 'apps/api/Dockerfile'
+
+[env]
+  NODE_ENV = 'production'
+  PORT = '3001'
+  # Origen permitido (CORS): la URL pública del front web
+  CLIENT_URL = 'https://goldcontinent-web.fly.dev'
+
+[http_service]
+  internal_port = 3001
+  force_https = true
+  auto_stop_machines = 'off'
+  auto_start_machines = true
+  min_machines_running = 1
+
+# El API genera PDFs con Chromium (Puppeteer): 512 MB se queda corto.
+[[vm]]
+  memory = '1024mb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024

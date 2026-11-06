@@ -1,18 +1,50 @@
+# Desarrollo del API — contexto = raíz del monorepo
 FROM node:20-slim
 
-WORKDIR /app
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl \
+# unzip es obligatorio: la descarga de Chrome (Puppeteer) extrae un .zip
+RUN apt-get update && apt-get install -y --no-install-recommends unzip \
     && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g pnpm@9.15.0
 
-COPY package.json pnpm-lock.yaml* ./
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/web/package.json apps/web/package.json
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/database/package.json packages/database/package.json
 RUN pnpm install --frozen-lockfile
 
 COPY . .
 
+# Prisma client + tipos de @goldcontinent/shared
+RUN pnpm --filter @goldcontinent/database db:generate
+RUN pnpm --filter @goldcontinent/shared build
+
+# Dependencias de sistema de Chromium (PDFs con Puppeteer en contenedor)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libx11-6 \
+    libxcb1 \
+    libxext6 \
+    fonts-liberation \
+    && rm -rf /var/lib/apt/lists/*
+
 EXPOSE 3001
 
-CMD ["pnpm", "dev"]
+CMD ["sh", "-c", "pnpm --filter @goldcontinent/shared build && pnpm --filter @goldcontinent/api dev"]

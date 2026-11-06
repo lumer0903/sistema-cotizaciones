@@ -1,0 +1,10 @@
+
+export * from './InventarioFilters';
+export * from './InventarioTable';
+export * from './MovimientoModal';
+export * from './TransferenciaModal';
+export * from './AlertasStockTable';
+export * from './ProductoModal';
+export * from './KardexModal';
+export * from './DetalleProductoModal';
+export * from './ColorConfigModal';

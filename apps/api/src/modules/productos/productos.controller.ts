@@ -1,3 +1,5 @@
+import { ProductsQueryDto, ProductIncludeQueryDto } from '../../common/dto/inventory-query.dto';
+import { Permission } from '../../common/decorators/permission.decorator';
 import {
   Controller,
   Get,
@@ -11,52 +13,43 @@ import {
   Req,
   BadRequestException,
   ParseIntPipe,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/infrastructure/jwt-auth.guard';
 import { ProductosService } from './productos.service';
+import { MinioService } from '../../common/storage/minio.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
 import { UpdatePreciosDto } from './dto/update-precios.dto';
 import type {
   ProductoResponse,
-  PaginatedProductosResponse,
   PreciosActualesResponse,
 } from './productos.service';
 
 @ApiTags('Productos')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@Permission('productos')
 @Controller('productos')
 export class ProductosController {
-  constructor(private readonly productosService: ProductosService) { }
+  constructor(
+    private readonly productosService: ProductosService,
+    private readonly minioService: MinioService,
+  ) { }
 
   @Get()
   @ApiOperation({ summary: 'List all products with pagination, search, and optional relations' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'stock_status', required: false, type: String, description: 'disponible, bajo, agotado' })
   @ApiQuery({ name: 'include', required: false, type: String, description: 'Comma-separated: precios,categoria,stock' })
-  async findAll(
-    @Query('page') page = 1,
-    @Query('limit') limit = 50,
-    @Query('search') search?: string,
-    @Query('include') include?: string,
-  ): Promise<{ success: true; data: PaginatedProductosResponse['data']; total: number; page: number; limit: number }> {
-    const includePrecios = include?.includes('precios') ?? false;
-    const includeCategoria = include?.includes('categoria') ?? false;
-    const includeStockActual = include?.includes('stock') ?? false;
-
-    const result = await this.productosService.findAll(
-      Number(page),
-      Number(limit),
-      search,
-      includePrecios,
-      includeCategoria,
-      includeStockActual,
-    );
-    return { success: true, ...result };
+  async findAll(@Query() query: ProductsQueryDto) {
+    return { success: true, ...await this.productosService.findAllFiltered(query) };
   }
 
   @Get(':id')
@@ -64,11 +57,11 @@ export class ProductosController {
   @ApiQuery({ name: 'include', required: false, type: String, description: 'Comma-separated: precios,categoria,stock' })
   async findById(
     @Param('id', ParseIntPipe) id: number,
-    @Query('include') include?: string,
+    @Query() query: ProductIncludeQueryDto,
   ): Promise<{ success: true; data: ProductoResponse | null }> {
-    const includePrecios = include?.includes('precios') ?? false;
-    const includeCategoria = include?.includes('categoria') ?? false;
-    const includeStockActual = include?.includes('stock') ?? false;
+    const includePrecios = query.include?.includes('precios') ?? false;
+    const includeCategoria = query.include?.includes('categoria') ?? false;
+    const includeStockActual = query.include?.includes('stock') ?? false;
 
     const producto = await this.productosService.findById(id, includePrecios, includeCategoria, includeStockActual);
     return { success: true, data: producto };
@@ -76,8 +69,8 @@ export class ProductosController {
 
   @Post()
   @ApiOperation({ summary: 'Create new product' })
-  async create(@Body() body: CreateProductoDto): Promise<{ success: true; data: ProductoResponse }> {
-    const producto = await this.productosService.create(body);
+  async create(@Body() body: CreateProductoDto, @Req() req: Request & { user: { id_usuario: number } }): Promise<{ success: true; data: ProductoResponse }> {
+    const producto = await this.productosService.create(body, req.user.id_usuario);
     return { success: true, data: producto };
   }
 
@@ -86,8 +79,9 @@ export class ProductosController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateProductoDto,
+    @Req() req: Request & { user: { id_usuario: number } },
   ): Promise<{ success: true; data: ProductoResponse }> {
-    const producto = await this.productosService.update(id, body);
+    const producto = await this.productosService.update(id, body, req.user.id_usuario);
     return { success: true, data: producto };
   }
 
@@ -118,5 +112,38 @@ export class ProductosController {
   async delete(@Param('id', ParseIntPipe) id: number): Promise<{ success: true; message: string }> {
     await this.productosService.delete(id);
     return { success: true, message: 'Producto eliminado correctamente' };
+  }
+
+  @Post('upload')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+      fileFilter: (req, file, callback) => {
+        const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowedMimeTypes.includes(file.mimetype)) {
+          return callback(new BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed.'), false);
+        }
+        callback(null, true);
+      },
+    }),
+  )
+  @ApiOperation({ summary: 'Upload product image to MinIO' })
+  async uploadImage(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<{ url: string }> {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    const url = await this.minioService.uploadProductImage(file);
+    return { url: url || '' };
   }
 }

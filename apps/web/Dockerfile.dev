@@ -1,14 +1,28 @@
+# Desarrollo del Web — contexto = raíz del monorepo
 FROM node:20-slim
 
-WORKDIR /app
+# unzip: el install del workspace incluye Puppeteer (descarga de Chrome)
+RUN apt-get update && apt-get install -y --no-install-recommends unzip \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g pnpm@9.15.0
 
-COPY package.json pnpm-lock.yaml* ./
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/web/package.json apps/web/package.json
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/database/package.json packages/database/package.json
 RUN pnpm install --frozen-lockfile
 
 COPY . .
 
+# @goldcontinent/shared importa tipos de @prisma/client
+RUN pnpm --filter @goldcontinent/database db:generate
+# Tipos/JS de @goldcontinent/shared (el bind mount de ./packages lo re-genera al arrancar)
+RUN pnpm --filter @goldcontinent/shared build
+
 EXPOSE 3000
 
-CMD ["pnpm", "dev"]
+CMD ["sh", "-c", "pnpm --filter @goldcontinent/shared build && pnpm --filter @goldcontinent/web dev"]
