@@ -171,7 +171,7 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
                 onClick={handleMarcarTodos}
                 className="text-xs font-medium text-accent-ink hover:text-accent-ink/80 transition-colors"
               >
-                Marcar todas leídas
+                Marca todas como leídas
               </button>
             )}
           </div>

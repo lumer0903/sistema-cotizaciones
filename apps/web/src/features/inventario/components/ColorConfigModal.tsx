@@ -186,11 +186,11 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={() => { setIsAdding(true); setIsImporting(false); }} size="sm">
                   <Plus className="w-3.5 h-3.5" />
-                  Añadir
+                  Añade color
                 </Button>
                 <Button variant="outline" onClick={() => { setIsImporting(true); setIsAdding(false); }} size="sm">
                   <FileText className="w-3.5 h-3.5" />
-                  Importar
+                  Importa colores
                 </Button>
             </div>
           </div>
@@ -249,10 +249,10 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
               />
               <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={() => setIsImporting(false)} size="sm">
-                  Cancelar
+                  Cancela
                 </Button>
                 <Button variant="outline" onClick={handleImport} size="sm">
-                  Importar
+                  Importa colores
                 </Button>
               </div>
             </div>
@@ -261,7 +261,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
 
         <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-border-default">
           <Button variant="ghost" onClick={onClose}>
-            Cancelar
+            Cancela
           </Button>
 <Button
   variant={canSave ? 'primary' : 'secondary'}
@@ -269,7 +269,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
   disabled={!canSave}
   loading={isSaving}
 >
-  Guardar
+  Guarda
 </Button>
         </div>
       </div>

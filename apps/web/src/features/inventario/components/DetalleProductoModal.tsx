@@ -310,7 +310,7 @@ export function DetalleProductoModal({
                         size="md"
                         onClick={onClose}
                     >
-                        Cerrar
+                        Cierra
                     </Button>
                     {canEdit && onEditar && (
                         <Button
@@ -320,7 +320,7 @@ export function DetalleProductoModal({
                                 onEditar(prod as ProductoInventario);
                             }}
                         >
-                            Editar Producto
+                            Edita producto
                         </Button>
                     )}
                 </div>

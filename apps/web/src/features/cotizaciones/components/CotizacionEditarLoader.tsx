@@ -140,7 +140,7 @@ export function CotizacionEditarLoader() {
       </p>
       <Button variant="secondary" onClick={() => router.replace(base)}>
         <ArrowLeft className="size-4" />
-        Volver al listado
+        Vuelve al listado
       </Button>
     </div>
   );

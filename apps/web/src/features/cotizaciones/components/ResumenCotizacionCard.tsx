@@ -136,7 +136,7 @@ export function ResumenCotizacionCard({
               onClick={onContinuar}
               className="min-h-11 px-6 !rounded-xl text-sm font-bold transition-[background-color,color,transform] active:scale-[0.96]"
             >
-              Continuar
+Continúa
             </Button>
           </div>
         </>

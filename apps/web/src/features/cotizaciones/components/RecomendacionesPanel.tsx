@@ -493,7 +493,7 @@ export function RecomendacionCardSection({
                     className="text-xs font-bold"
                 >
                     <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-                    Agregar
+Agrega
                 </Button>
 
                 {showReemplazar && (
@@ -503,7 +503,7 @@ export function RecomendacionCardSection({
                         onClick={onReemplazar}
                         className="text-xs font-bold text-accent-ink bg-accent-primary/10 hover:bg-accent-primary/20 border-accent-primary/40"
                     >
-                        Reemplazar
+Reemplaza
                     </Button>
                 )}
             </div>

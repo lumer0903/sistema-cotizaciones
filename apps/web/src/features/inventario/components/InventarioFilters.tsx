@@ -198,7 +198,7 @@ export function InventarioFilters({
             onClick={onAgregarProducto}
             className="h-9 gap-1.5 whitespace-nowrap shadow-sm"
           >
-            <Plus className="h-4 w-4" aria-hidden="true" /><span>Agregar</span>
+            <Plus className="h-4 w-4" aria-hidden="true" /><span>Agrega</span>
           </Button>}
 
           <DropdownMenu

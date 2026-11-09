@@ -216,14 +216,14 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
             footer={
                 <>
                     <Button type="button" variant="ghost" onClick={handleLimpiar} disabled={isSubmitting}>
-                        Limpiar
+Limpia
                     </Button>
                     <div className="flex gap-2 sm:gap-3">
                         <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
-                            Cancelar
+                            Cancela
                         </Button>
                         <Button type="submit" form="movimiento-form" variant="primary" loading={isSubmitting}>
-                            Registrar movimiento
+Registra movimiento
                         </Button>
                     </div>
                 </>

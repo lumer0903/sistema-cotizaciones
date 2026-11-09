@@ -194,7 +194,7 @@ function InventarioViewInner() {
             onClick={fetchProductos}
             className="ml-2 underline font-bold text-danger hover:text-danger-hover"
           >
-            Reintentar
+            Reintenta
           </Button>
         </div>
       )}

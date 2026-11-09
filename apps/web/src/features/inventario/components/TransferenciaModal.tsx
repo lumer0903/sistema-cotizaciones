@@ -190,11 +190,11 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
             footer={
                 <>
                     <Button type="button" variant="ghost" onClick={handleLimpiar} disabled={isSubmitting}>
-                        Limpiar
+Limpia
                     </Button>
                     <div className="flex gap-2 sm:gap-3">
                         <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
-                            Cancelar
+                            Cancela
                         </Button>
                         <Button
                             type="submit"
@@ -202,7 +202,7 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                             variant="primary"
                             loading={isSubmitting}
                         >
-                            Realizar transferencia
+                            Realiza transferencia
                         </Button>
                     </div>
                 </>

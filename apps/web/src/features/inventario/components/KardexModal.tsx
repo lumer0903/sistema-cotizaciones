@@ -212,10 +212,10 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                         loading={exportando}
                     >
                         <Download className="w-4 h-4" aria-hidden="true" />
-                        Exportar CSV
+                        Exporta CSV
                     </Button>
                     <Button variant="ghost" onClick={onClose}>
-                        Cerrar
+                        Cierra
                     </Button>
                 </>
             }
@@ -296,7 +296,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                             onClick={limpiarFiltros}
                             disabled={!selectedProducto}
                         >
-                            Limpiar filtros
+                            Limpia los filtros
                         </Button>
                     </div>
                 </div>

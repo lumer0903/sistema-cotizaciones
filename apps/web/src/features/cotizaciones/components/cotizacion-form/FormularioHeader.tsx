@@ -26,7 +26,7 @@ export function FormularioHeader({ numeroCotizacion, hayContenido, onLimpiar }: 
             onClick={onLimpiar}
             title="Descartar el borrador y empezar una cotización nueva"
           >
-            Limpiar
+Limpia
           </Button>
         )}
         <Badge size="estado" variant="borrador">

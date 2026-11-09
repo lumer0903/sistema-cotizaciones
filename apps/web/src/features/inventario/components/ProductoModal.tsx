@@ -492,11 +492,11 @@ export function ProductoModal({
               onClick={handleRequestReset}
               disabled={isSubmitting}
             >
-              Restablecer
+Restablece
             </Button>
             <div className="flex gap-2 sm:gap-3">
               <Button type="button" variant="ghost" onClick={handleClose} disabled={isSubmitting}>
-                Cancelar
+                Cancela
               </Button>
               <Button
                 type="submit"
@@ -505,7 +505,7 @@ export function ProductoModal({
                 loading={isSubmitting}
                 disabled={isSubmitting}
               >
-                Guardar Producto
+                Guarda producto
               </Button>
             </div>
           </>

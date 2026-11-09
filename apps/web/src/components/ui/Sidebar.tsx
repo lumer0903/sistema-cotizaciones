@@ -250,7 +250,7 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
                     className="w-full h-11 px-4 py-2 rounded-xl inline-flex items-center gap-3 text-xs sm:text-sm text-brand-options font-semibold hover:bg-estado-rechazado-soft hover:text-danger active:bg-estado-rechazado-soft/80 transition-[background-color,color] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring active:scale-[0.96]"
                 >
                     <LogOut className="w-4.5 h-4.5 text-brand-options transition-colors group-hover:text-danger" />
-                    <span>Cerrar sesión</span>
+                    <span>Cierra sesión</span>
                 </button>
             </div>
         </aside>

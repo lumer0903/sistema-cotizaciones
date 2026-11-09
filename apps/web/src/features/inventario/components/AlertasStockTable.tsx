@@ -40,10 +40,10 @@ export function AlertasStockTable({open,onClose,onSuccess}:{open:boolean;onClose
           <Select label="Estado" value={estado} onChange={e=>{setEstado(e.target.value as Estado);setPage(1);}}
             options={[{label:'Abiertas',value:'abiertas'},{label:'Activas',value:'activa'},
               {label:'Reconocidas',value:'reconocida'},{label:'Resueltas',value:'resuelta'},{label:'Todas',value:'todas'}]} />
-          <Button onClick={fetchAlertas} disabled={loading} variant="outline">Actualizar</Button>
+          <Button onClick={fetchAlertas} disabled={loading} variant="outline">Actualiza</Button>
         </div>
         {loading?<p role="status">Cargando alertas...</p>:error?
-          <div role="alert">{error}<Button onClick={fetchAlertas}>Reintentar</Button></div>:
+          <div role="alert">{error}<Button onClick={fetchAlertas}>Reintenta</Button></div>:
           alertas.length===0?<p>No hay alertas con estos filtros.</p>:
           <Table scrollLabel="Alertas de stock"><TableHeader><TableRow>
             <TableHead>Producto</TableHead><TableHead>Almacén</TableHead><TableHead>Stock</TableHead>
@@ -53,13 +53,13 @@ export function AlertasStockTable({open,onClose,onSuccess}:{open:boolean;onClose
             <TableCell>{a.almacen?.codigo} — {a.almacen?.nombre}</TableCell>
             <TableCell>{a.stock_actual}</TableCell><TableCell>{a.stock_minimo}</TableCell>
             <TableCell><Badge variant={a.estado==='activa'?'danger':a.estado==='reconocida'?'warning':'success'}>{a.estado}</Badge></TableCell>
-            <TableCell>{a.estado==='activa' && <Button onClick={()=>setConfirmId(a.id_alerta)} variant="ghost">Reconocer</Button>}</TableCell>
+            <TableCell>{a.estado==='activa' && <Button onClick={()=>setConfirmId(a.id_alerta)} variant="ghost">Reconoce</Button>}</TableCell>
           </TableRow>)}</TableBody></Table>}
         <Pagination currentPage={page} totalPages={Math.max(1,Math.ceil(total/limit))} totalItems={total}
           limit={limit} onPageChange={setPage} onLimitChange={n=>{setLimit(n);setPage(1);}} loading={loading} itemLabel="alertas" />
       </div>
     </Modal>
     <ConfirmModal open={confirmId!=null} onClose={()=>{if(!saving)setConfirmId(null);}} onConfirm={reconocer}
-      title="Reconocer alerta" message="La alerta seguirá abierta hasta que se reponga el stock." confirmLabel="Reconocer" loading={saving} />
+      title="Reconocer alerta" message="La alerta seguirá abierta hasta que se reponga el stock." confirmLabel="Reconoce" loading={saving} />
   </>;
 }

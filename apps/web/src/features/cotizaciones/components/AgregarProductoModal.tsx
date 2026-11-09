@@ -399,7 +399,7 @@ export default function AgregarProductoModal({
                         onClick={onClose}
                         className="min-h-11 px-5 text-sm font-bold text-brand-options hover:text-zinc-600 transition-colors"
                     >
-                        Cancelar
+                        Cancela
                     </Button>
                 </div>
             </div>
