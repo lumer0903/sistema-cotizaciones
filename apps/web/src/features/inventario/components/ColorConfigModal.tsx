@@ -83,6 +83,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
   const [colors, setColors] = useState<ColorItem[]>(initialColors);
   const [isAdding, setIsAdding] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [newName, setNewName] = useState('');
   const [newHex, setNewHex] = useState('#ef4444');
   const [importText, setImportText] = useState('');
@@ -147,7 +148,9 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
   };
 
   const handleSave = () => {
+    setIsSaving(true);
     onSave(colors);
+    setIsSaving(false);
     onClose();
   };
 
@@ -260,13 +263,14 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button
-            variant={canSave ? 'primary' : 'secondary'}
-            onClick={handleSave}
-            disabled={!canSave}
-          >
-            Guardar
-          </Button>
+<Button
+  variant={canSave ? 'primary' : 'secondary'}
+  onClick={handleSave}
+  disabled={!canSave}
+  loading={isSaving}
+>
+  Guardar
+</Button>
         </div>
       </div>
     </Modal>
