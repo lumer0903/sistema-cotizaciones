@@ -41,7 +41,7 @@ const XL_STYLES: Record<string, string> = {
   enviado: 'bg-status-enviado-soft outline-status-enviado text-status-enviado-text',
   aprobado: 'bg-status-aprobado-soft outline-status-aprobado text-status-aprobado-text',
   rechazado: 'bg-status-rechazado-soft outline-status-rechazado text-status-rechazado-text',
-  parcial: 'bg-amber-50 outline-amber-500 text-amber-600',
+  parcial: 'bg-status-advertencia-soft outline-status-advertencia-text text-status-advertencia-text',
 };
 
 /** Cápsula de estado/tipo (tabla, listas y reportes). */
@@ -50,7 +50,7 @@ const ESTADO_STYLES: Record<string, string> = {
   enviado: 'bg-status-enviado-soft text-status-enviado-text border-status-enviado/40',
   aprobado: 'bg-status-aprobado-soft text-status-aprobado-text border-status-aprobado/40',
   rechazado: 'bg-status-rechazado-soft text-status-rechazado-text border-status-rechazado/40',
-  parcial: 'bg-amber-50 text-amber-700 border-amber-500/40',
+  parcial: 'bg-status-advertencia-soft text-status-advertencia-text border-status-advertencia-text/40',
   tienda: 'bg-role-tienda-soft text-role-tienda border-role-tienda/40',
   distribuidor: 'bg-role-distribuidor-soft text-role-distribuidor border-role-distribuidor/40',
   neutral: 'bg-status-borrador text-status-borrador-text border-brand-options/40',
@@ -63,14 +63,14 @@ const PLAIN_TEXT_STYLES: Record<string, string> = {
   enviado: 'text-role-tienda font-bold uppercase tracking-wide',
   aprobado: 'text-status-aprobado-text font-bold uppercase tracking-wide',
   rechazado: 'text-status-rechazado font-bold uppercase tracking-wide',
-  parcial: 'text-amber-700 font-bold uppercase tracking-wide',
+  parcial: 'text-status-advertencia-text font-bold uppercase tracking-wide',
   tienda: 'text-role-tienda font-bold uppercase',
   distribuidor: 'text-role-distribuidor font-bold uppercase',
   vendedor: 'text-vendedor-ink font-semibold',
   gerente: 'text-brand-ink font-semibold',
   administrador: 'text-brand-ink font-semibold',
-  activo: 'text-emerald-600 font-bold uppercase',
-  inactivo: 'text-rose-500 font-bold uppercase',
+  activo: 'text-status-aprobado-text font-bold uppercase',
+  inactivo: 'text-status-rechazado-text font-bold uppercase',
 };
 
 /** Pills con fondo y borde (variantes genéricas). */

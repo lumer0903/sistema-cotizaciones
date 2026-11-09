@@ -97,7 +97,7 @@ function LoginForm() {
             <div className="flex flex-col items-start w-full mb-8">
               <h1
                 id="login-heading"
-                className="font-black text-amber-600 text-4xl sm:text-5xl tracking-tight leading-tight m-0"
+                className="font-black text-brand-primary text-4xl sm:text-5xl tracking-tight leading-tight m-0"
               >
                 Bienvenido,
               </h1>
@@ -129,12 +129,12 @@ function LoginForm() {
                     focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring
                     placeholder:text-zinc-500
                     disabled:bg-zinc-50 disabled:cursor-not-allowed
-                    error:border-red-300 error:focus:border-red-500"
+                    aria-invalid:border-danger aria-invalid:focus:border-danger"
                   placeholder="correo@ejemplo.com"
                 />
               </div>
               {errors.email && (
-                <p id="email-error" className="text-xs text-red-600" role="alert">
+                <p id="email-error" className="text-xs text-danger" role="alert">
                   {errors.email.message}
                 </p>
               )}
@@ -163,7 +163,7 @@ function LoginForm() {
                     focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring
                     placeholder:text-zinc-500
                     disabled:bg-zinc-50 disabled:cursor-not-allowed
-                    error:border-red-300 error:focus:border-red-500"
+                    aria-invalid:border-danger aria-invalid:focus:border-danger"
                   placeholder="••••••••"
                 />
                 <button
@@ -177,7 +177,7 @@ function LoginForm() {
                 </button>
               </div>
               {errors.password && (
-                <p id="password-error" className="text-xs text-red-600" role="alert">
+                <p id="password-error" className="text-xs text-danger" role="alert">
                   {errors.password.message}
                 </p>
               )}
