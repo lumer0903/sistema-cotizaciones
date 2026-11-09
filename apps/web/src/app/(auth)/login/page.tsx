@@ -97,7 +97,7 @@ function LoginForm() {
             <div className="flex flex-col items-start w-full mb-8">
               <h1
                 id="login-heading"
-                className="font-black text-brand-primary text-4xl sm:text-5xl tracking-tight leading-tight m-0"
+                className="font-black text-zinc-900 text-4xl sm:text-5xl tracking-tight leading-tight m-0"
               >
                 Bienvenido,
               </h1>
