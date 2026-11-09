@@ -4,8 +4,8 @@
  * triplicación de estilos entre componentes.
  */
 
-/** Etiqueta de campo: 12px, bold, uppercase, tracking amplio. */
-export const FIELD_LABEL = 'block text-xs font-bold uppercase tracking-wider text-brand-subtitle';
+/** Etiqueta de campo: 12px, bold, sin uppercase, tracking amplio. */
+export const FIELD_LABEL = 'block text-xs font-bold text-brand-subtitle';
 
 /** Altura estándar de campo (idéntica en Input, Select y Textarea). */
 export const FIELD_HEIGHT = 'h-9';

@@ -102,7 +102,7 @@ export function CarritoPanel({
                     className="group p-3 hover:bg-zinc-50 cursor-pointer transition-colors flex items-center justify-between gap-3"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="inline-flex items-center gap-1.5 font-bold text-sm text-zinc-700 uppercase shrink-0">
+                      <span className="inline-flex items-center gap-1.5 font-bold text-sm text-zinc-700 shrink-0">
                         <span className="size-2 rounded-full bg-zinc-400" aria-hidden="true" />
                         {String(prod.codigo).toUpperCase()}
                       </span>
@@ -143,11 +143,11 @@ export function CarritoPanel({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>CÓDIGO</TableHead>
-              <TableHead>PRECIO UNITARIO</TableHead>
-              <TableHead>CANTIDAD</TableHead>
-              <TableHead>TOTAL</TableHead>
-              <TableHead className="text-center">ACCIONES</TableHead>
+              <TableHead>Código</TableHead>
+              <TableHead>Precio unitario</TableHead>
+              <TableHead>Cantidad</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead className="text-center">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -58,7 +58,7 @@ function PriceRow({
       <div className="flex items-center justify-between gap-3">
         <label
           htmlFor={inputId}
-          className={cn('text-xs font-bold uppercase tracking-wider shrink-0', accentClass)}
+          className={cn('text-xs font-bold tracking-wider shrink-0', accentClass)}
         >
           {label}
         </label>
@@ -135,7 +135,7 @@ function ClientCard({ chip, hint, icon: Icon, accentClass, borderClass, softClas
         <header className="flex flex-wrap items-center justify-between gap-2">
           <span
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-full border bg-surface px-2.5 py-1 text-xs font-black uppercase tracking-wider shadow-sm',
+              'inline-flex items-center gap-1.5 rounded-full border bg-surface px-2.5 py-1 text-xs font-black tracking-wider shadow-sm',
               borderClass,
               accentClass
             )}
@@ -143,7 +143,7 @@ function ClientCard({ chip, hint, icon: Icon, accentClass, borderClass, softClas
             <Icon className="h-3.5 w-3.5" aria-hidden="true" />
             {chip}
           </span>
-          <span className={cn('text-xs font-semibold uppercase tracking-wider', accentClass)}>
+          <span className={cn('text-xs font-semibold tracking-wider', accentClass)}>
             {hint}
           </span>
         </header>

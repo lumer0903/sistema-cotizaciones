@@ -331,7 +331,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                         </div>
                         <div className="flex items-center gap-3 border-t md:border-t-0 md:border-l border-accent-primary/40 pt-2 md:pt-0 md:pl-4">
                             <div className="text-center">
-                                <span className="block text-sm font-bold text-zinc-700 uppercase">Stock Actual</span>
+                                <span className="block text-sm font-bold text-zinc-700">Stock Actual</span>
                                 <span className="text-lg font-bold tabular-nums text-estado-aprobado-text">
                                     {selectedProducto.stock_total ?? selectedProducto.stock_actual?.[0]?.cantidad ?? 0} u.
                                 </span>
@@ -353,7 +353,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                         Cargando historial de movimientos del Kárdex...
                     </div>
                 ) : requestError ? (
-                    <div role="alert" className="p-4 text-danger">{requestError}<Button onClick={()=>fetchKardex(page)}>Reintentar</Button></div>
+                    <div role="alert" className="p-4 text-danger">{requestError}<Button variant="outline" onClick={()=>fetchKardex(page)}>Reintentar</Button></div>
                 ) : movimientos.length === 0 ? (
                     <div className="p-6 sm:p-8 text-center bg-zinc-50/50 rounded-xl border border-dashed border-zinc-300">
                         <p className="text-sm font-semibold text-brand-options">
@@ -428,7 +428,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                                         return (
                                             <Button
                                                 key={pageNum}
-                                                variant={page === pageNum ? 'primary' : 'outline'}
+                                                variant="outline"
                                                 size="sm"
                                                 onClick={() => setPage(pageNum)}
                                                 aria-label={`Página ${pageNum}`}

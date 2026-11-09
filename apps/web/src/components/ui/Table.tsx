@@ -50,9 +50,9 @@ export const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeader
   ({ children, className, sticky = false, ...props }, ref) => (
     <thead
       ref={ref}
-      className={cn(
-        'bg-surface-muted/80 border-b border-border-default uppercase tracking-wider [&_tr]:hover:bg-transparent',
-        sticky && '[&>tr>th]:sticky [&>tr>th]:top-0 [&>tr>th]:z-10 [&>tr>th]:bg-surface-muted',
+className={cn(
+        'bg-surface-muted/80 border-b border-border-default [&_tr]:hover:bg-transparent',
+        sticky && '[&>tr>th]:sticky [&>tr>th]:top-0 [&>tr>th]:bg-surface-muted',
         className
       )}
       {...props}

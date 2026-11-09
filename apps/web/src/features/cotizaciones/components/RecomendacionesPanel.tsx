@@ -443,7 +443,7 @@ export function RecomendacionCardSection({
                     ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-accent-soft/60 text-accent-ink">
                             <Package className="size-5" aria-hidden="true" />
-                            <span className="text-xs font-bold uppercase tracking-wider text-brand-options text-center leading-none px-1 line-clamp-1" title={item.categoria || 'Producto'}>
+                            <span className="text-xs font-bold text-brand-options text-center leading-none px-1 line-clamp-1" title={item.categoria || 'Producto'}>
                                 {item.categoria || 'Producto'}
                             </span>
                         </div>
@@ -490,10 +490,10 @@ export function RecomendacionCardSection({
                     variant="outline"
                     size="sm"
                     onClick={onAgregar}
-                    className="uppercase tracking-wider"
+                    className="text-xs font-bold"
                 >
                     <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-                    AGREGAR
+                    Agregar
                 </Button>
 
                 {showReemplazar && (
@@ -501,9 +501,9 @@ export function RecomendacionCardSection({
                         variant="outline"
                         size="sm"
                         onClick={onReemplazar}
-                        className="uppercase tracking-wider text-accent-ink bg-accent-primary/10 hover:bg-accent-primary/20 border-accent-primary/40"
+                        className="text-xs font-bold text-accent-ink bg-accent-primary/10 hover:bg-accent-primary/20 border-accent-primary/40"
                     >
-                        REEMPLAZAR
+                        Reemplazar
                     </Button>
                 )}
             </div>

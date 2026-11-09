@@ -217,7 +217,7 @@ export default function AgregarProductoModal({
                     </div>
                     <div className="flex flex-col justify-between py-0.5 min-w-0 flex-1 gap-1">
                         <div>
-                            <span className="inline-flex items-center gap-1.5 text-zinc-600 text-xs font-bold uppercase">
+                            <span className="inline-flex items-center gap-1.5 text-zinc-600 text-xs font-bold">
                                 <span className="size-2 rounded-full bg-zinc-400" aria-hidden="true" />
                                 {formatCode(producto.codigo)}
                             </span>
@@ -348,29 +348,29 @@ export default function AgregarProductoModal({
                         : 'bg-role-distribuidor-soft border-role-distribuidor/30 text-role-distribuidor'
                         }`}
                 >
-                    <span className="text-center text-sm font-extrabold uppercase tracking-wide block mb-2">
+                    <span className="text-center text-sm font-extrabold block mb-2">
                         {tituloEscala}
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-current/20 text-center">
                         <div className="px-2">
-                            <span className="block text-sm font-bold uppercase opacity-75">
-                                UNIDAD
+                            <span className="block text-sm font-bold">
+                                Unidad
                             </span>
                             <span className="text-sm font-extrabold mt-0.5 block">
                                 S/ {Number(preciosDisplay.unidad || 0).toFixed(2)}
                             </span>
                         </div>
                         <div className="px-2">
-                            <span className="block text-sm font-bold uppercase opacity-75">
-                                DOCENA
+                            <span className="block text-sm font-bold">
+                                Docena
                             </span>
                             <span className="text-sm font-extrabold mt-0.5 block">
                                 S/ {Number(preciosDisplay.docena || 0).toFixed(2)}
                             </span>
                         </div>
                         <div className="px-2">
-                            <span className="block text-sm font-bold uppercase opacity-75">
-                                MAYOR
+                            <span className="block text-sm font-bold">
+                                Mayor
                             </span>
                             <span className="text-sm font-extrabold mt-0.5 block">
                                 S/ {Number(preciosDisplay.mayor || 0).toFixed(2)}
@@ -383,22 +383,23 @@ export default function AgregarProductoModal({
                 <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 sm:gap-3 pt-2">
                     <Button
                         type="button"
-                        variant="ghost"
-                        onClick={onClose}
-                        className="min-h-11 px-5 text-sm font-bold text-brand-options hover:text-zinc-600 transition-colors"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        type="button"
-                        disabled={sinStock}
+                        variant="primary"
                         onClick={handleGuardar}
+                        disabled={sinStock}
                         className={`px-8 py-2.5 text-sm font-bold rounded-xl shadow-none transition-colors ${sinStock
                             ? 'bg-zinc-200 text-brand-options cursor-not-allowed'
                             : 'bg-accent-primary hover:bg-accent-hover text-on-accent'
                             }`}
                     >
                         {confirmLabel}
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onClose}
+                        className="min-h-11 px-5 text-sm font-bold text-brand-options hover:text-zinc-600 transition-colors"
+                    >
+                        Cancelar
                     </Button>
                 </div>
             </div>

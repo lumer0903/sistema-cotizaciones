@@ -59,18 +59,18 @@ const ESTADO_STYLES: Record<string, string> = {
 
 /** Texto plano (sin fondo ni bordes) — tabla del sistema. */
 const PLAIN_TEXT_STYLES: Record<string, string> = {
-  borrador: 'text-brand-options font-bold uppercase tracking-wide',
-  enviado: 'text-role-tienda font-bold uppercase tracking-wide',
-  aprobado: 'text-status-aprobado-text font-bold uppercase tracking-wide',
-  rechazado: 'text-status-rechazado font-bold uppercase tracking-wide',
-  parcial: 'text-status-advertencia-text font-bold uppercase tracking-wide',
-  tienda: 'text-role-tienda font-bold uppercase',
+borrador: 'text-brand-options font-bold',
+enviado: 'text-role-tienda font-bold',
+aprobado: 'text-status-aprobado-text font-bold',
+rechazado: 'text-status-rechazado font-bold',
+parcial: 'text-status-advertencia-text font-bold',
+tienda: 'text-role-tienda font-bold',
   distribuidor: 'text-role-distribuidor font-bold uppercase',
-  vendedor: 'text-vendedor-ink font-semibold',
-  gerente: 'text-brand-ink font-semibold',
-  administrador: 'text-brand-ink font-semibold',
-  activo: 'text-status-aprobado-text font-bold uppercase',
-  inactivo: 'text-status-rechazado-text font-bold uppercase',
+vendedor: 'text-vendedor-ink font-semibold',
+gerente: 'text-brand-ink font-semibold',
+administrador: 'text-brand-ink font-semibold',
+activo: 'text-status-aprobado-text font-bold',
+inactivo: 'text-status-rechazado-text font-bold',
 };
 
 /** Pills con fondo y borde (variantes genéricas). */
@@ -86,9 +86,9 @@ const PILL_STYLES: Record<string, string> = {
 };
 
 const PILL_SIZES: Record<string, string> = {
-  sm: 'px-2 py-0.5 text-xs font-bold tracking-wider uppercase',
+  sm: 'px-2 py-0.5 text-xs font-bold tracking-wider',
   md: 'px-2.5 py-1 text-xs font-semibold',
-  estado: 'px-2 py-0.5 text-xs font-bold tracking-wider uppercase',
+  estado: 'px-2 py-0.5 text-xs font-bold tracking-wider',
 };
 
 export const Badge: React.FC<BadgeProps> = ({

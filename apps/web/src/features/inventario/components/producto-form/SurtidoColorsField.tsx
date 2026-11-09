@@ -15,7 +15,7 @@ export interface SurtidoColorsFieldProps {
 export function SurtidoColorsField({ colors, onConfigure, disabled }: SurtidoColorsFieldProps) {
   return (
     <div className="flex flex-col space-y-1.5">
-      <span className="block text-xs font-bold uppercase tracking-wider text-brand-subtitle">
+      <span className="block text-xs font-bold tracking-wider text-brand-subtitle">
         COLORES SURTIDOS
       </span>
       <Button type="button" variant="secondary" onClick={onConfigure} disabled={disabled}>

@@ -68,7 +68,7 @@ export function DetalleProductoModal({
                         {/* Cabecera con Código y Stock */}
                         <div className="flex items-center justify-between gap-2">
                             <div>
-                                <span className="text-xs uppercase font-bold text-brand-options tracking-wider block">Código Producto</span>
+                                <span className="text-xs font-bold text-brand-options tracking-wider block">Código Producto</span>
                                 <h3 className="text-lg sm:text-xl font-black text-brand-subtitle leading-none mt-0.5">
                                     {formatCode(prod.codigo)}
                                 </h3>
@@ -109,36 +109,36 @@ export function DetalleProductoModal({
                             <div className="bg-zinc-50/80 p-3 rounded-2xl border border-border-default">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                     <div>
-                                        <span className="block text-sm text-brand-options uppercase font-bold">Categoría</span>
+                                        <span className="block text-sm text-brand-options font-bold">Categoría</span>
                                         <span className="text-xs font-semibold text-brand-subtitle truncate block">
                                             {formatText(categoria)}
                                         </span>
                                     </div>
 <div>
-                                            <span className="block text-sm text-brand-options uppercase font-bold">Presentación</span>
+                                            <span className="block text-sm text-brand-options font-bold">Presentación</span>
                                             <span className="text-sm font-semibold text-brand-subtitle truncate block">{prod.presentacion || '-'}</span>
                                         </div>
                                     {prod.tipo_flor && prod.tipo_flor !== '-' && (
                                         <div>
-                                            <span className="block text-sm text-brand-options uppercase font-bold">Tipo Flor</span>
+                                            <span className="block text-sm text-brand-options font-bold">Tipo Flor</span>
                                             <span className="text-sm font-semibold text-brand-subtitle truncate block">{prod.tipo_flor}</span>
                                         </div>
                                     )}
                                     {prod.material && prod.material !== '-' && (
                                         <div>
-                                            <span className="block text-sm text-brand-options uppercase font-bold">Material</span>
+                                            <span className="block text-sm text-brand-options font-bold">Material</span>
                                             <span className="text-sm font-semibold text-brand-subtitle truncate block">{prod.material}</span>
                                         </div>
                                     )}
                                     {prod.alto && prod.alto !== '-' && (
                                         <div>
-                                            <span className="block text-sm text-brand-options uppercase font-bold">Alto</span>
+                                            <span className="block text-sm text-brand-options font-bold">Alto</span>
                                             <span className="text-sm font-semibold text-brand-subtitle truncate block">{prod.alto}</span>
                                         </div>
                                     )}
                                     {prod.ancho && prod.ancho !== '-' && (
                                         <div>
-                                            <span className="block text-sm text-brand-options uppercase font-bold">Ancho</span>
+                                            <span className="block text-sm text-brand-options font-bold">Ancho</span>
                                             <span className="text-sm font-semibold text-brand-subtitle truncate block">{prod.ancho}</span>
                                         </div>
                                     )}
@@ -153,34 +153,34 @@ export function DetalleProductoModal({
 
                     {/* COLUMNA IZQUIERDA: PRECIOS */}
                     <div className="flex flex-col gap-2">
-                        <h4 className="text-xs font-bold text-brand-options uppercase tracking-wider">
-                            Precios y Costos
+                        <h4 className="text-xs font-bold text-brand-options tracking-wider">
+                            Precios y costos
                         </h4>
                         <div className="flex flex-col gap-2">
                             {/* BLOQUE PRECIO DISTRIBUIDOR */}
                             {(tipoPrecio === '' || tipoPrecio === 'distribuidor') && (
                                 <div className="w-full p-1 bg-distribuidor-soft/60 border border-distribuidor/40 rounded-2xl flex flex-col items-center gap-1.5">
-                                    <span className="text-distribuidor text-xs font-black tracking-wider uppercase">
-                                        Precio Distribuidor
+<span className="text-distribuidor text-xs font-black tracking-wider">
+                                            Precio Distribuidor
                                     </span>
 
                                     <div className="w-full grid grid-cols-3 gap-1 text-center min-w-0">
                                         <div className="flex flex-col items-center">
-                                            <span className="text-brand-options text-xs font-bold uppercase leading-tight">Unidad</span>
+                                            <span className="text-brand-options text-xs font-bold leading-tight">Unidad</span>
                                             <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(distribuidor.unidad)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
-                                            <span className="text-brand-options text-xs font-bold uppercase leading-tight">Docena</span>
+                                            <span className="text-brand-options text-xs font-bold leading-tight">Docena</span>
                                             <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(distribuidor.docena)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
-                                            <span className="text-brand-options text-xs font-bold uppercase leading-tight">Mayor</span>
+                                            <span className="text-brand-options text-xs font-bold leading-tight">Mayor</span>
                                             <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(distribuidor.mayor)}
                                             </span>
@@ -192,27 +192,27 @@ export function DetalleProductoModal({
                             {/* BLOQUE PRECIO TIENDA */}
                             {(tipoPrecio === '' || tipoPrecio === 'tienda') && (
                                 <div className="w-full p-1 bg-estado-enviado-soft/60 border border-estado-enviado/30 rounded-2xl flex flex-col items-center gap-1.5">
-                                    <span className="text-estado-enviado text-xs font-black tracking-wider uppercase">
+                                    <span className="text-estado-enviado text-xs font-black tracking-wider">
                                         Precio Tienda
                                     </span>
 
                                     <div className="w-full grid grid-cols-3 gap-1 text-center min-w-0">
                                         <div className="flex flex-col items-center">
-                                            <span className="text-brand-options text-xs font-bold uppercase leading-tight">Unidad</span>
+                                            <span className="text-brand-options text-xs font-bold leading-tight">Unidad</span>
                                             <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(tienda.unidad)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
-                                            <span className="text-brand-options text-xs font-bold uppercase leading-tight">Docena</span>
+                                            <span className="text-brand-options text-xs font-bold leading-tight">Docena</span>
                                             <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(tienda.docena)}
                                             </span>
                                         </div>
 
                                         <div className="flex flex-col items-center">
-                                            <span className="text-brand-options text-xs font-bold uppercase leading-tight">Mayor</span>
+                                            <span className="text-brand-options text-xs font-bold leading-tight">Mayor</span>
                                             <span className="text-brand-subtitle text-xs font-bold font-mono mt-0.5 whitespace-nowrap">
                                                 {formatPrice(tienda.mayor)}
                                             </span>
@@ -227,7 +227,7 @@ export function DetalleProductoModal({
                     <div className="flex flex-col gap-4">
                         {/* ALMACENES */}
                         <div>
-                            <h4 className="text-xs text-brand-options font-bold uppercase tracking-wider mb-2">
+                            <h4 className="text-xs text-brand-options font-bold tracking-wider mb-2">
                                 Ubicación y Stock por Almacén
                             </h4>
                             <div className="space-y-1.5">
@@ -256,7 +256,7 @@ export function DetalleProductoModal({
 
                         {/* COLORES */}
                         <div>
-                            <h4 className="text-xs font-bold text-brand-options uppercase tracking-wider mb-2">
+                            <h4 className="text-xs font-bold text-brand-options tracking-wider mb-2">
                                 Colores disponibles
                             </h4>
                             {prod.colores_surtido && prod.colores_surtido.length > 0 ? (

@@ -78,7 +78,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                     return (
                         <TableRow key={item.id_cotizacion || item.id || index}>
                             {/* CODIGO */}
-                            <TableCell className={cn('font-normal text-zinc-600 uppercase', COLUMNS[0].cellClassName)}>
+                            <TableCell className={cn('font-normal text-zinc-600', COLUMNS[0].cellClassName)}>
                                 {formatCode(item.codigo)}
                             </TableCell>
 

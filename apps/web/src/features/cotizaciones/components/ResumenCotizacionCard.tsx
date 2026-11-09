@@ -60,8 +60,8 @@ export function ResumenCotizacionCard({
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
           <FileText className="size-5 text-accent-ink" strokeWidth={2.2} />
-          <span className="text-lg font-black text-zinc-700 tracking-wide uppercase">
-            RESUMEN
+          <span className="text-lg font-black text-zinc-700 tracking-wide">
+            Resumen
           </span>
         </div>
 
@@ -88,7 +88,7 @@ export function ResumenCotizacionCard({
             )}
 
             <div className="border-t border-border-default mt-3 pt-3 flex justify-between items-center">
-              <span className="text-sm font-bold text-brand-options uppercase tracking-wider">Total</span>
+              <span className="text-sm font-bold text-brand-options">Total</span>
               <span className="text-xl font-bold text-accent-ink">
                 S/ {total.toFixed(2)}
               </span>

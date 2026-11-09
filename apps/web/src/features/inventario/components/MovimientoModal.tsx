@@ -350,7 +350,7 @@ export function MovimientoModal({ open, onClose, onSuccess, productoPreseleccion
 
                     {tipo === 'salida' && stockDisponible !== null && (
                         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-estado-enviado/30 bg-estado-enviado-soft px-3.5 py-2.5">
-                            <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-estado-enviado-text">
+                            <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-estado-enviado-text">
                                 <AlertCircle className="h-4 w-4" aria-hidden="true" />
                                 Stock en el almacén
                             </span>

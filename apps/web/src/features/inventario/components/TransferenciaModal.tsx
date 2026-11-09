@@ -276,7 +276,7 @@ export function TransferenciaModal({ open, onClose, onSuccess, productoPreselecc
                 <div className="space-y-3.5">
                     {stockOrigen !== null && (
                         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-estado-enviado/30 bg-estado-enviado-soft px-3.5 py-2.5">
-                            <span className="text-xs font-bold uppercase tracking-wider text-estado-enviado-text">
+                            <span className="text-xs font-bold tracking-wider text-estado-enviado-text">
                                 Stock en origen
                             </span>
                             <span className="text-sm font-bold tabular-nums text-estado-enviado-text">

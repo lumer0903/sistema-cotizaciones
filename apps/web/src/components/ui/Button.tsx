@@ -66,7 +66,7 @@ const SIZE_STYLES: Record<NonNullable<ButtonProps['size']>, string> = {
 export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(
   (
     {
-      variant = 'primary',
+      variant = 'secondary',
       size = 'md',
       loading = false,
       disabled,

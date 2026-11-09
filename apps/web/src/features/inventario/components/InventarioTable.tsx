@@ -22,11 +22,11 @@ interface InventarioTableProps {
 
 // Definición de columnas con anchos fluidos y comportamiento responsive
 const COLUMNS = [
-  { key: 'CÓDIGO', headerClassName: 'font-semibold px-4 py-3 text-left', cellClassName: 'px-4 py-3 text-left font-semibold whitespace-nowrap' },
-  { key: 'CATEGORÍA', headerClassName: 'px-4 py-3 text-left', cellClassName: 'px-4 py-3 text-left truncate' },
-  { key: 'UBICACIÓN', headerClassName: 'px-4 py-3 text-left', cellClassName: 'px-4 py-3 text-left truncate' },
-  { key: 'STOCK', headerClassName: 'px-6 py-3 text-center', cellClassName: 'px-6 py-3 text-center' },
-  { key: 'ACCIONES', headerClassName: 'px-4 py-3 text-right', cellClassName: 'px-4 py-3 text-right whitespace-nowrap' },
+  { key: 'Código', headerClassName: 'font-semibold px-4 py-3 text-left', cellClassName: 'px-4 py-3 text-left font-semibold whitespace-nowrap' },
+  { key: 'Categoría', headerClassName: 'px-4 py-3 text-left', cellClassName: 'px-4 py-3 text-left truncate' },
+  { key: 'Ubicación', headerClassName: 'px-4 py-3 text-left', cellClassName: 'px-4 py-3 text-left truncate' },
+  { key: 'Stock', headerClassName: 'px-6 py-3 text-center', cellClassName: 'px-6 py-3 text-center' },
+  { key: 'Acciones', headerClassName: 'px-4 py-3 text-right', cellClassName: 'px-4 py-3 text-right whitespace-nowrap' },
 ] as const;
 
 function TableSkeleton() {
@@ -37,7 +37,7 @@ function TableSkeleton() {
       aria-live="polite"
       aria-label="Cargando inventario"
     >
-      <div className="flex items-center gap-2 px-4 py-3 bg-surface-muted/80 border-b border-border-default text-xs font-semibold text-brand-options uppercase tracking-wider">
+      <div className="flex items-center gap-2 px-4 py-3 bg-surface-muted/80 border-b border-border-default text-xs font-semibold text-brand-options tracking-wider">
         <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
         Cargando inventario...
       </div>

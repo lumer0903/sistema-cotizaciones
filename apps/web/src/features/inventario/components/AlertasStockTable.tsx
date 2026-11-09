@@ -40,7 +40,7 @@ export function AlertasStockTable({open,onClose,onSuccess}:{open:boolean;onClose
           <Select label="Estado" value={estado} onChange={e=>{setEstado(e.target.value as Estado);setPage(1);}}
             options={[{label:'Abiertas',value:'abiertas'},{label:'Activas',value:'activa'},
               {label:'Reconocidas',value:'reconocida'},{label:'Resueltas',value:'resuelta'},{label:'Todas',value:'todas'}]} />
-          <Button onClick={fetchAlertas} disabled={loading}>Actualizar</Button>
+          <Button onClick={fetchAlertas} disabled={loading} variant="outline">Actualizar</Button>
         </div>
         {loading?<p role="status">Cargando alertas...</p>:error?
           <div role="alert">{error}<Button onClick={fetchAlertas}>Reintentar</Button></div>:
@@ -53,7 +53,7 @@ export function AlertasStockTable({open,onClose,onSuccess}:{open:boolean;onClose
             <TableCell>{a.almacen?.codigo} — {a.almacen?.nombre}</TableCell>
             <TableCell>{a.stock_actual}</TableCell><TableCell>{a.stock_minimo}</TableCell>
             <TableCell><Badge variant={a.estado==='activa'?'danger':a.estado==='reconocida'?'warning':'success'}>{a.estado}</Badge></TableCell>
-            <TableCell>{a.estado==='activa' && <Button onClick={()=>setConfirmId(a.id_alerta)}>Reconocer</Button>}</TableCell>
+            <TableCell>{a.estado==='activa' && <Button onClick={()=>setConfirmId(a.id_alerta)} variant="ghost">Reconocer</Button>}</TableCell>
           </TableRow>)}</TableBody></Table>}
         <Pagination currentPage={page} totalPages={Math.max(1,Math.ceil(total/limit))} totalItems={total}
           limit={limit} onPageChange={setPage} onLimitChange={n=>{setLimit(n);setPage(1);}} loading={loading} itemLabel="alertas" />

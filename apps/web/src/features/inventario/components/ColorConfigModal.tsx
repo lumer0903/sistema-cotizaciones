@@ -155,7 +155,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
     <Modal open={open} onClose={onClose} title="Configuración de colores" maxWidth="md">
       <div className="space-y-6">
         <div>
-          <p className="text-xs font-bold text-brand-options uppercase tracking-wider mb-4">
+          <p className="text-xs font-bold text-brand-options tracking-wider mb-4">
             COLORES EN CAJA SURTIDA:
           </p>
 
@@ -181,20 +181,14 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
             ))}
 
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => { setIsAdding(true); setIsImporting(false); }}
-                className="text-sm font-medium text-brand-subtitle hover:underline underline-offset-2 flex items-center gap-1"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Añadir
-              </button>
-              <button
-                onClick={() => { setIsImporting(true); setIsAdding(false); }}
-                className="text-sm font-medium text-brand-subtitle hover:underline underline-offset-2 flex items-center gap-1"
-              >
-                <FileText className="w-3.5 h-3.5" />
-                Importar
-              </button>
+              <Button variant="outline" onClick={() => { setIsAdding(true); setIsImporting(false); }} size="sm">
+                  <Plus className="w-3.5 h-3.5" />
+                  Añadir
+                </Button>
+                <Button variant="outline" onClick={() => { setIsImporting(true); setIsAdding(false); }} size="sm">
+                  <FileText className="w-3.5 h-3.5" />
+                  Importar
+                </Button>
             </div>
           </div>
 
@@ -254,7 +248,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
                 <Button variant="outline" onClick={() => setIsImporting(false)} size="sm">
                   Cancelar
                 </Button>
-                <Button variant="primary" onClick={handleImport} size="sm">
+                <Button variant="outline" onClick={handleImport} size="sm">
                   Importar
                 </Button>
               </div>
