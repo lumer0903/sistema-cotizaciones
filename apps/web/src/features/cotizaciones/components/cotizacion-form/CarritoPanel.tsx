@@ -102,7 +102,8 @@ export function CarritoPanel({
                     className="group p-3 hover:bg-zinc-50 cursor-pointer transition-colors flex items-center justify-between gap-3"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="font-bold text-xs bg-surface-muted px-2 py-1 rounded text-zinc-700 border border-stone-200 uppercase shrink-0">
+                      <span className="inline-flex items-center gap-1.5 font-bold text-xs text-zinc-700 uppercase shrink-0">
+                        <span className="size-2 rounded-full bg-zinc-400" aria-hidden="true" />
                         {String(prod.codigo).toUpperCase()}
                       </span>
                       <div className="min-w-0">
@@ -178,7 +179,7 @@ export function CarritoPanel({
                       onClick={() => onEliminarItem(item.id)}
                       aria-label={`Eliminar ${item.codigo} del carrito`}
                       title="Eliminar del carrito"
-                      className="!px-1.5 !text-brand-options hover:!text-red-500"
+                      className="!px-1.5 !text-brand-options hover:!text-danger"
                     >
                       <Trash2 className="size-4" />
                     </Button>

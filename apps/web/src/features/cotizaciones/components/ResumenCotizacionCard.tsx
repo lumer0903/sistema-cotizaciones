@@ -104,7 +104,7 @@ export function ResumenCotizacionCard({
             >
               <span className="flex items-center gap-2">
                 <span
-                  className={`w-9 h-5 inline-flex items-center rounded-full p-0.5 transition-colors duration-200 ${incluyeCarreta ? 'bg-emerald-500' : 'bg-zinc-300'
+                  className={`w-9 h-5 inline-flex items-center rounded-full p-0.5 transition-colors duration-200 ${incluyeCarreta ? 'bg-brand-primary' : 'bg-zinc-300'
                     }`}
                 >
                   <span

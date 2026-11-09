@@ -173,7 +173,7 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
                 <button
                   onClick={() => removeColor(color.name)}
                   aria-label={`Quitar ${color.name}`}
-                  className="min-h-8 min-w-8 -my-1 -mr-1 inline-flex items-center justify-center text-brand-options hover:text-red-500 transition-colors"
+                  className="min-h-8 min-w-8 -my-1 -mr-1 inline-flex items-center justify-center text-brand-options hover:text-danger transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>

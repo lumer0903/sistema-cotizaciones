@@ -12,7 +12,6 @@ import {
     RotateCcw,
     Sparkles,
     Package,
-    Archive,
 } from 'lucide-react';
 import { showToast } from '@/lib/toast';
 import { Button } from '@/components/ui';
@@ -65,34 +64,16 @@ export const TIPO_CONFIG = {
     similar: {
         label: 'SIMILAR',
         icon: Zap,
-        badgeBg: 'bg-blue-600',
-        activeTabBg: 'bg-blue-600 text-white shadow-sm',
-        inactiveTabBg: 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',
-        containerBg: 'bg-blue-50/30',
-        borderColor: 'border-blue-200',
-        textColor: 'text-blue-800',
         desc: 'Productos parecidos al seleccionado',
     },
     equilibrio: {
         label: 'EQUILIBRIO',
         icon: Scale,
-        badgeBg: 'bg-emerald-600',
-        activeTabBg: 'bg-emerald-600 text-white shadow-sm',
-        inactiveTabBg: 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',
-        containerBg: 'bg-emerald-50/30',
-        borderColor: 'border-emerald-200',
-        textColor: 'text-emerald-700',
         desc: 'Mejor relación precio-calidad',
     },
     upsell: {
         label: 'MEJOR OPCIÓN',
         icon: TrendingUp,
-        badgeBg: 'bg-amber-500',
-        activeTabBg: 'bg-amber-500 text-on-brand shadow-sm',
-        inactiveTabBg: 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',
-        containerBg: 'bg-amber-50/30',
-        borderColor: 'border-amber-200',
-        textColor: 'text-accent-ink',
         desc: 'Alternativas de mayor valor/margen',
     },
 } as const;
@@ -336,13 +317,13 @@ return (
                                 type="button"
                                 onClick={() => setActiveTab(tipo)}
                                 aria-pressed={isActive}
-                                className={`flex-1 min-h-11 px-2 rounded-lg text-xs font-extrabold font-sans tracking-wider transition-[background-color,color,transform] flex items-center justify-center gap-1 active:scale-[0.96] ${isActive ? cfg.activeTabBg : cfg.inactiveTabBg
+                                className={`flex-1 min-h-11 px-2 rounded-lg text-xs font-extrabold font-sans tracking-wider transition-[background-color,color,transform] flex items-center justify-center gap-1 active:scale-[0.96] ${isActive ? 'bg-brand-primary text-on-brand shadow-sm' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
                                     }`}
                             >
                                 <span>{cfg.label}</span>
                                 {count > 0 && (
                                     <span
-                                        className={`px-1 py-0.2 text-xs rounded-full ${isActive ? 'bg-surface/30 text-white' : 'bg-zinc-200 text-zinc-700'
+                                        className={`px-1 py-0.2 text-xs rounded-full ${isActive ? 'bg-on-brand/10 text-on-brand' : 'bg-zinc-200 text-zinc-700'
                                             }`}
                                     >
                                         {count}
@@ -372,7 +353,7 @@ return (
                                 <p className="text-xs font-medium">El producto seleccionado no tiene ID válido para recomendar</p>
                             </div>
                         ) : error ? (
-                            <div className="text-center py-6 text-red-600">
+                            <div className="text-center py-6 text-danger">
                                 <p className="text-xs">{error}</p>
                                 <Button variant="outline" size="sm" onClick={refetch} className="mt-2">
                                     <RotateCcw className="w-3.5 h-3.5" /> Reintentar
@@ -390,7 +371,7 @@ return (
                                 </p>
                             </div>
                         ) : (
-                            <div className={`p-3 rounded-xl border ${activeConfig.borderColor} ${activeConfig.containerBg} space-y-3`}>
+                            <div className="p-3 rounded-xl border border-border-default bg-surface-muted space-y-3">
 
                                 <div className="space-y-3">
                                     {currentList.map((item, idx) => (
@@ -471,7 +452,8 @@ export function RecomendacionCardSection({
 
                 {/* CONTENIDO */}
                 <div className="flex-1 min-w-0 space-y-1">
-                    <div className="inline-block px-1.5 py-0.5 bg-zinc-50 rounded text-zinc-600 font-medium text-xs font-sans border border-border-default">
+                    <div className="inline-flex items-center gap-1.5 text-zinc-600 font-medium text-xs font-sans">
+                        <span className="size-2 rounded-full bg-zinc-400" aria-hidden="true" />
                         {formatCode(item.codigo)}
                     </div>
 
@@ -481,15 +463,15 @@ export function RecomendacionCardSection({
 
                     <div className="flex flex-wrap items-center gap-1 text-xs pt-0.5 font-sans">
                         {ubicacion && (
-                            <span className="px-1.5 py-0.5 bg-zinc-100 text-zinc-700 border border-border-default rounded font-semibold flex items-center gap-1">
-                                <Archive className="w-3 h-3 text-brand-options" aria-hidden="true" />
+                            <span className="text-zinc-700 font-semibold flex items-center gap-1.5">
+                                <span className="size-2 rounded-full bg-zinc-400" aria-hidden="true" />
                                 {ubicacion}
                             </span>
                         )}
 
                         {empaque && (
-                            <span className="px-1.5 py-0.5 bg-zinc-100 text-zinc-700 border border-border-default rounded font-semibold flex items-center gap-1">
-                                <Package className="w-3 h-3 text-brand-options" aria-hidden="true" />
+                            <span className="text-zinc-700 font-semibold flex items-center gap-1.5">
+                                <span className="size-2 rounded-full bg-zinc-400" aria-hidden="true" />
                                 {empaque}
                             </span>
                         )}

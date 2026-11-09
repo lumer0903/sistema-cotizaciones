@@ -192,7 +192,7 @@ function InventarioViewInner() {
             variant="outline"
             size="sm"
             onClick={fetchProductos}
-            className="ml-2 underline font-bold text-red-700 hover:text-red-800"
+            className="ml-2 underline font-bold text-danger hover:text-danger-hover"
           >
             Reintentar
           </Button>

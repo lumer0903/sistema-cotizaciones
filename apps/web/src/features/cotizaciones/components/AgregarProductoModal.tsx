@@ -3,7 +3,7 @@ import { Checkbox } from '@/components/ui/Checkbox';
 
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { Package, Archive, Info } from 'lucide-react';
+import { Package, Info } from 'lucide-react';
 import { ProductoCarrito } from '../types/cotizacion';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
@@ -217,7 +217,8 @@ export default function AgregarProductoModal({
                     </div>
                     <div className="flex flex-col justify-between py-0.5 min-w-0 flex-1 gap-1">
                         <div>
-                            <span className="inline-block bg-zinc-100 text-zinc-600 text-xs font-bold px-2.5 py-0.5 rounded-md uppercase">
+                            <span className="inline-flex items-center gap-1.5 text-zinc-600 text-xs font-bold uppercase">
+                                <span className="size-2 rounded-full bg-zinc-400" aria-hidden="true" />
                                 {formatCode(producto.codigo)}
                             </span>
                             <p className="text-xs text-zinc-700 font-medium leading-tight truncate mt-1">
@@ -225,8 +226,8 @@ export default function AgregarProductoModal({
                             </p>
                         </div>
                         <div className="flex items-center gap-1.5 text-xs pt-1">
-                            <span className="inline-flex items-center gap-1 bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-md font-medium">
-                                <Archive className="size-3 text-brand-options" />
+                            <span className="inline-flex items-center gap-1.5 text-zinc-600 font-medium">
+                                <span className="size-2 rounded-full bg-zinc-400" aria-hidden="true" />
                                 {estanteDisplay}
                             </span>
                             <span className="inline-flex items-center gap-1 bg-estado-rechazado-soft text-danger font-bold px-2 py-0.5 rounded-md">
