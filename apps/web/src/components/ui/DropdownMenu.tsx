@@ -204,7 +204,7 @@ export const DropdownMenu = ({
                   {item.icon && <span aria-hidden="true">{item.icon}</span>}
                   <span className="flex-1 truncate">{item.label}</span>
                   {typeof item.badge === 'number' && item.badge > 0 && (
-                    <span className="bg-danger text-white text-[10px] font-bold h-4 min-w-4 px-1.5 rounded-full flex items-center justify-center">
+                    <span className="bg-danger text-white text-xs font-bold h-4 min-w-4 px-1.5 rounded-full flex items-center justify-center">
                       {item.badge > 9 ? '9+' : item.badge}
                     </span>
                   )}

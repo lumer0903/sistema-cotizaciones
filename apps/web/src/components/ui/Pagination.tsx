@@ -59,7 +59,7 @@ export const Pagination: React.FC<PaginationProps> = ({
     };
 
     return (
-        <div className="px-5 py-3 bg-surface-muted/80 border-t border-border-default flex flex-wrap items-center justify-between gap-3 text-xs text-brand-options tnum">
+        <div className="px-5 py-3 bg-surface-muted/80 border-t border-border-default flex flex-wrap items-center justify-between gap-3 text-sm text-brand-options tnum">
             <div className="flex items-center gap-2 whitespace-nowrap">
                 <span>Mostrar</span>
                 <Select
@@ -95,7 +95,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                     item === 'ellipsis' ? (
                         <span
                             key={`ellipsis-${index}`}
-                            className="min-h-11 min-w-11 flex items-center justify-center text-xs text-brand-options select-none"
+                            className="min-h-11 min-w-11 flex items-center justify-center text-sm text-brand-options select-none"
                         >
                             …
                         </span>
@@ -107,7 +107,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                             onClick={() => onPageChange(item)}
                             aria-label={`Página ${item}`}
                             aria-current={currentPage === item ? 'page' : undefined}
-                            className={`min-h-11 min-w-11 flex items-center justify-center rounded-xl text-xs font-bold transition-colors ${currentPage === item
+                            className={`min-h-11 min-w-11 flex items-center justify-center rounded-xl text-sm font-bold transition-colors ${currentPage === item
                                 ? 'bg-accent-primary text-on-accent'
                                 : 'border border-border-default text-brand-subtitle hover:bg-surface-muted'
                             }`}

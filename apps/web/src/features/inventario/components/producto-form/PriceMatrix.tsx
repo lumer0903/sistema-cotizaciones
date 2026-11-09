@@ -66,7 +66,7 @@ function PriceRow({
           <span
             aria-hidden="true"
             className={cn(
-              'pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-black',
+              'pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-black',
               accentClass
             )}
           >
@@ -93,7 +93,7 @@ function PriceRow({
         </div>
       </div>
       {error && (
-        <p id={errorId} className="text-[11px] font-medium text-danger text-right" role="alert">
+        <p id={errorId} className="text-xs font-medium text-danger text-right" role="alert">
           {error}
         </p>
       )}
@@ -135,7 +135,7 @@ function ClientCard({ chip, hint, icon: Icon, accentClass, borderClass, softClas
         <header className="flex flex-wrap items-center justify-between gap-2">
           <span
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-full border bg-surface px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shadow-sm',
+              'inline-flex items-center gap-1.5 rounded-full border bg-surface px-2.5 py-1 text-xs font-black uppercase tracking-wider shadow-sm',
               borderClass,
               accentClass
             )}
@@ -143,7 +143,7 @@ function ClientCard({ chip, hint, icon: Icon, accentClass, borderClass, softClas
             <Icon className="h-3.5 w-3.5" aria-hidden="true" />
             {chip}
           </span>
-          <span className={cn('text-[10px] font-semibold uppercase tracking-wider', accentClass)}>
+          <span className={cn('text-xs font-semibold uppercase tracking-wider', accentClass)}>
             {hint}
           </span>
         </header>

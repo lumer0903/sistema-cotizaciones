@@ -102,14 +102,14 @@ export function CarritoPanel({
                     className="group p-3 hover:bg-zinc-50 cursor-pointer transition-colors flex items-center justify-between gap-3"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="inline-flex items-center gap-1.5 font-bold text-xs text-zinc-700 uppercase shrink-0">
+                      <span className="inline-flex items-center gap-1.5 font-bold text-sm text-zinc-700 uppercase shrink-0">
                         <span className="size-2 rounded-full bg-zinc-400" aria-hidden="true" />
                         {String(prod.codigo).toUpperCase()}
                       </span>
                       <div className="min-w-0">
-                        <p className="text-xs font-medium text-zinc-700 leading-tight truncate">{prod.descripcion}</p>
+                        <p className="text-sm font-medium text-zinc-700 leading-tight truncate">{prod.descripcion}</p>
                         {typeof prod.stockTotal === 'number' && (
-                          <p className="text-xs text-brand-options mt-0.5 tnum">Stock: {prod.stockTotal}</p>
+                          <p className="text-sm text-brand-options mt-0.5 tnum">Stock: {prod.stockTotal}</p>
                         )}
                       </div>
                     </div>
@@ -120,7 +120,7 @@ export function CarritoPanel({
                   </div>
                 ))
               ) : (
-                <div className="p-4 text-center text-xs text-brand-options">
+                <div className="p-4 text-center text-sm text-brand-options">
                   {isLoadingProductos
                     ? 'Cargando catálogo...'
                     : `No se encontraron productos importados con "${searchQuery}"`}
@@ -137,7 +137,7 @@ export function CarritoPanel({
           className="h-44 border-2 border-dashed border-border-default rounded-xl flex flex-col justify-center items-center gap-2 cursor-pointer hover:bg-surface-muted/80 transition-colors"
         >
           <ShoppingCart className="size-8 text-zinc-300" />
-          <span className="text-brand-options font-medium text-xs">Busca un producto importado arriba para agregarlo</span>
+          <span className="text-brand-options font-medium text-sm">Busca un producto importado arriba para agregarlo</span>
         </div>
       ) : (
         <Table>

@@ -339,34 +339,34 @@ return (
                         {cartItems.length === 0 ? (
                             <div className="text-center py-10 text-brand-options space-y-2">
                                 <Sparkles className="size-7 mx-auto text-accent-ink opacity-80" />
-                                <p className="text-xs font-medium">Agrega un producto al carrito para ver sugerencias de IA</p>
+                                <p className="text-sm font-medium">Agrega un producto al carrito para ver sugerencias de IA</p>
                             </div>
                         ) : !baseItem ? (
                             <div className="text-center py-10 text-brand-options space-y-2">
                                 <Sparkles className="size-7 mx-auto text-accent-ink opacity-80" />
-                                <p className="text-xs font-medium">
+<p className="text-sm font-medium">
                                     Haz clic en el icono de recomendaciones IA de un producto para ver sugerencias
                                 </p>
                             </div>
                         ) : !productoBase ? (
                             <div className="text-center py-8 text-brand-options">
-                                <p className="text-xs font-medium">El producto seleccionado no tiene ID válido para recomendar</p>
+                                <p className="text-sm font-medium">El producto seleccionado no tiene ID válido para recomendar</p>
                             </div>
                         ) : error ? (
                             <div className="text-center py-6 text-danger">
-                                <p className="text-xs">{error}</p>
+                                <p className="text-sm">{error}</p>
                                 <Button variant="outline" size="sm" onClick={refetch} className="mt-2">
                                     <RotateCcw className="w-3.5 h-3.5" /> Reintentar
                                 </Button>
                             </div>
                         ) : loading ? (
-                            <div className="py-12 text-center text-brand-options text-xs animate-pulse">
+                            <div className="py-12 text-center text-brand-options text-sm animate-pulse">
                                 <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-accent-ink" />
                                 Analizando con IA y consultando precios/stock...
                             </div>
                         ) : currentList.length === 0 ? (
                             <div className="text-center py-8 text-brand-options">
-                                <p className="text-xs">
+                                <p className="text-sm">
                                     <>No hay productos en la categoría <strong>{activeConfig.label}</strong></>
                                 </p>
                             </div>
@@ -390,7 +390,7 @@ return (
                             </div>
                         )}
 
-                        <p className="text-xs text-brand-options text-right pt-1 border-t border-border-default">
+                        <p className="text-sm text-brand-options text-right pt-1 border-t border-border-default">
                             Precios según: <strong>{tipoPrecioCliente}</strong>
                         </p>
                     </div>
@@ -452,16 +452,16 @@ export function RecomendacionCardSection({
 
                 {/* CONTENIDO */}
                 <div className="flex-1 min-w-0 space-y-1">
-                    <div className="inline-flex items-center gap-1.5 text-zinc-600 font-medium text-xs font-sans">
+                    <div className="inline-flex items-center gap-1.5 text-zinc-600 font-medium text-sm font-sans">
                         <span className="size-2 rounded-full bg-zinc-400" aria-hidden="true" />
                         {formatCode(item.codigo)}
                     </div>
 
-                    <p className="text-xs font-semibold text-brand-subtitle line-clamp-2 leading-tight font-sans" title={item.descripcion}>
+                    <p className="text-sm font-semibold text-brand-subtitle line-clamp-2 leading-tight font-sans" title={item.descripcion}>
                         {item.descripcion}
                     </p>
 
-                    <div className="flex flex-wrap items-center gap-1 text-xs pt-0.5 font-sans">
+                    <div className="flex flex-wrap items-center gap-1 text-sm pt-0.5 font-sans">
                         {ubicacion && (
                             <span className="text-zinc-700 font-semibold flex items-center gap-1.5">
                                 <span className="size-2 rounded-full bg-zinc-400" aria-hidden="true" />
@@ -490,7 +490,7 @@ export function RecomendacionCardSection({
                     variant="outline"
                     size="sm"
                     onClick={onAgregar}
-                    className="text-xs uppercase tracking-wider"
+                    className="uppercase tracking-wider"
                 >
                     <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                     AGREGAR
@@ -501,7 +501,7 @@ export function RecomendacionCardSection({
                         variant="outline"
                         size="sm"
                         onClick={onReemplazar}
-                        className="text-xs uppercase tracking-wider text-accent-ink bg-accent-primary/10 hover:bg-accent-primary/20 border-accent-primary/40"
+                        className="uppercase tracking-wider text-accent-ink bg-accent-primary/10 hover:bg-accent-primary/20 border-accent-primary/40"
                     >
                         REEMPLAZAR
                     </Button>

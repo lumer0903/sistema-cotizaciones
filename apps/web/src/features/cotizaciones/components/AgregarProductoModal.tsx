@@ -192,7 +192,7 @@ export default function AgregarProductoModal({
             <div className="space-y-5 text-zinc-700 p-1">
                 {/* Aviso contextual (flujo de recomendaciones: reemplazo) */}
                 {aviso && (
-                    <div className="flex items-center gap-2 rounded-xl border border-accent-primary/30 bg-accent-soft px-3.5 py-2.5 text-xs font-semibold text-brand-subtitle">
+                    <div className="flex items-center gap-2 rounded-xl border border-accent-primary/30 bg-accent-soft px-3.5 py-2.5 text-sm font-semibold text-brand-subtitle">
                         <Info className="size-4 shrink-0 text-accent-ink" />
                         <span>{aviso}</span>
                     </div>
@@ -221,11 +221,11 @@ export default function AgregarProductoModal({
                                 <span className="size-2 rounded-full bg-zinc-400" aria-hidden="true" />
                                 {formatCode(producto.codigo)}
                             </span>
-                            <p className="text-xs text-zinc-700 font-medium leading-tight truncate mt-1">
+                            <p className="text-sm text-zinc-700 font-medium leading-tight truncate mt-1">
                                 {producto.descripcion}
                             </p>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs pt-1">
+                        <div className="flex items-center gap-1.5 text-sm pt-1">
                             <span className="inline-flex items-center gap-1.5 text-zinc-600 font-medium">
                                 <span className="size-2 rounded-full bg-zinc-400" aria-hidden="true" />
                                 {estanteDisplay}
@@ -244,11 +244,11 @@ export default function AgregarProductoModal({
 
                 {/* Tipo de Venta por Color (Checkbox con accent-amber-500) */}
                 <div className="space-y-2">
-                    <label className="block text-xs font-semibold text-zinc-600">
+                    <label className="block text-sm font-semibold text-zinc-600">
                         Tipo de venta en color
                     </label>
                     <div className="flex items-center gap-6">
-                        <label className="flex items-center gap-2 text-xs font-medium text-zinc-700 cursor-pointer select-none">
+                        <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 cursor-pointer select-none">
                             <Checkbox
                                 
                                 checked={tipoColor === 'SURTIDO'}
@@ -257,7 +257,7 @@ export default function AgregarProductoModal({
                             />
                             Surtido
                         </label>
-                        <label className="flex items-center gap-2 text-xs font-medium text-zinc-700 cursor-pointer select-none">
+                        <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 cursor-pointer select-none">
                             <Checkbox
                                 
                                 checked={tipoColor === 'ESPECIFICO'}
@@ -348,31 +348,31 @@ export default function AgregarProductoModal({
                         : 'bg-role-distribuidor-soft border-role-distribuidor/30 text-role-distribuidor'
                         }`}
                 >
-                    <span className="text-center text-xs font-extrabold uppercase tracking-wide block mb-2">
+                    <span className="text-center text-sm font-extrabold uppercase tracking-wide block mb-2">
                         {tituloEscala}
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-current/20 text-center">
                         <div className="px-2">
-                            <span className="block text-xs font-bold uppercase opacity-75">
+                            <span className="block text-sm font-bold uppercase opacity-75">
                                 UNIDAD
                             </span>
-                            <span className="text-xs font-extrabold mt-0.5 block">
+                            <span className="text-sm font-extrabold mt-0.5 block">
                                 S/ {Number(preciosDisplay.unidad || 0).toFixed(2)}
                             </span>
                         </div>
                         <div className="px-2">
-                            <span className="block text-xs font-bold uppercase opacity-75">
+                            <span className="block text-sm font-bold uppercase opacity-75">
                                 DOCENA
                             </span>
-                            <span className="text-xs font-extrabold mt-0.5 block">
+                            <span className="text-sm font-extrabold mt-0.5 block">
                                 S/ {Number(preciosDisplay.docena || 0).toFixed(2)}
                             </span>
                         </div>
                         <div className="px-2">
-                            <span className="block text-xs font-bold uppercase opacity-75">
+                            <span className="block text-sm font-bold uppercase opacity-75">
                                 MAYOR
                             </span>
-                            <span className="text-xs font-extrabold mt-0.5 block">
+                            <span className="text-sm font-extrabold mt-0.5 block">
                                 S/ {Number(preciosDisplay.mayor || 0).toFixed(2)}
                             </span>
                         </div>

@@ -331,7 +331,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                         </div>
                         <div className="flex items-center gap-3 border-t md:border-t-0 md:border-l border-accent-primary/40 pt-2 md:pt-0 md:pl-4">
                             <div className="text-center">
-                                <span className="block text-xs font-bold text-zinc-700 uppercase">Stock Actual</span>
+                                <span className="block text-sm font-bold text-zinc-700 uppercase">Stock Actual</span>
                                 <span className="text-lg font-bold tabular-nums text-estado-aprobado-text">
                                     {selectedProducto.stock_total ?? selectedProducto.stock_actual?.[0]?.cantidad ?? 0} u.
                                 </span>
@@ -343,7 +343,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                 {/* TABLA DE MOVIMIENTOS */}
                 {!selectedProducto ? (
                     <div className="p-12 text-center bg-zinc-50/50 rounded-xl border border-dashed border-border-default">
-                        <p className="text-xs font-medium text-stone-500">
+                        <p className="text-sm font-medium text-stone-500">
                             Selecciona un producto para cargar el historial de movimientos.
                         </p>
                     </div>
@@ -356,7 +356,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                     <div role="alert" className="p-4 text-danger">{requestError}<Button onClick={()=>fetchKardex(page)}>Reintentar</Button></div>
                 ) : movimientos.length === 0 ? (
                     <div className="p-6 sm:p-8 text-center bg-zinc-50/50 rounded-xl border border-dashed border-zinc-300">
-                        <p className="text-xs font-semibold text-brand-options">
+                        <p className="text-sm font-semibold text-brand-options">
                             No se registraron movimientos con los filtros seleccionados.
                         </p>
                     </div>
@@ -377,10 +377,10 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                             <TableBody>
                                 {movimientos.map((mov) => (
                                     <TableRow key={mov.id_movimiento}>
-                                        <TableCell className="font-mono text-xs">{new Date(mov.fecha).toLocaleString('es-PE')}</TableCell>
+                                        <TableCell className="font-mono text-sm">{new Date(mov.fecha).toLocaleString('es-PE')}</TableCell>
                                         <TableCell>{renderBadgeTipo(mov.tipo)}</TableCell>
-                                        <TableCell className="text-xs text-brand-options">{mov.almacen || '—'}</TableCell>
-                                        <TableCell className="font-medium text-xs">{renderOrigen(mov.origen, mov.tipo, mov.referencia)}</TableCell>
+                                        <TableCell className="text-sm text-brand-options">{mov.almacen || '—'}</TableCell>
+                                        <TableCell className="font-medium text-sm">{renderOrigen(mov.origen, mov.tipo, mov.referencia)}</TableCell>
                                         <TableCell className={`text-right font-bold ${mov.tipo === 'entrada' ? 'text-estado-aprobado-text' :
                                                 mov.tipo === 'salida' ? 'text-danger' :
                                                     mov.tipo === 'ajuste' ? 'text-accent-ink' :
@@ -391,7 +391,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                                         <TableCell className="text-right font-bold text-brand-subtitle">
                                             {mov.stock_posterior} u.
                                         </TableCell>
-                                        <TableCell className="text-xs text-brand-options">{mov.usuario || 'Sistema'}</TableCell>
+                                        <TableCell className="text-sm text-brand-options">{mov.usuario || 'Sistema'}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -400,7 +400,7 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                         {/* PAGINACIÓN */}
                         {totalPages > 1 && (
                             <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-3 border-t border-border-default">
-                                <div className="text-xs text-brand-options">
+                                <div className="text-sm text-brand-options">
                                     Mostrando {((page - 1) * limit) + 1} - {Math.min(page * limit, total)} de {total} movimientos
                                 </div>
                                 <div className="flex items-center gap-1 flex-wrap">

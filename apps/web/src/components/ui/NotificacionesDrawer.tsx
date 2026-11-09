@@ -204,7 +204,7 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
               >
                 {tab.label}
                 {count > 0 && (
-                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
+                  <span className={`px-1.5 py-0.5 rounded-full text-xs leading-none ${
                     active ? 'bg-accent-primary text-on-accent' : 'bg-surface-muted text-brand-subtitle'
                   }`}>
                     {count}
@@ -220,11 +220,11 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
           {loading ? (
             <div className="flex flex-col items-center justify-center h-40 text-brand-options">
               <Loader2 className="w-5 h-5 animate-spin mb-2" />
-              <span className="text-xs">Cargando...</span>
+              <span className="text-sm">Cargando...</span>
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 text-brand-options">
-              <span className="text-xs">No hay notificaciones</span>
+              <span className="text-sm">No hay notificaciones</span>
             </div>
           ) : (
             filtered.map((item) => {
@@ -243,14 +243,14 @@ export function NotificacionesDrawer({ open, onClose, onSuccess }: Notificacione
                   </span>
                   <span className="flex-1 min-w-0">
                     <span className="flex items-center justify-between gap-2">
-                      <span className={`text-xs font-semibold truncate ${isUnread ? 'text-brand-subtitle' : 'text-brand-subtitle'}`}>
+                      <span className={`text-sm font-semibold truncate ${isUnread ? 'text-brand-subtitle' : 'text-brand-subtitle'}`}>
                         {item.titulo}
                       </span>
-                      <span className="text-[10px] font-medium text-brand-options whitespace-nowrap shrink-0">
+                      <span className="text-sm font-medium text-brand-options whitespace-nowrap shrink-0">
                         {getRelativeTime(item.createdAt)}
                       </span>
                     </span>
-                    <span className="block text-[11px] text-brand-options leading-snug truncate">
+                    <span className="block text-sm text-brand-options leading-snug truncate">
                       {renderDetalle(item)}
                     </span>
                   </span>

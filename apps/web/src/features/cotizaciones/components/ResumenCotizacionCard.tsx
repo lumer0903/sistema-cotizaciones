@@ -115,7 +115,7 @@ export function ResumenCotizacionCard({
                 <span className="text-sm font-semibold text-zinc-700">Carreta</span>
               </span>
               <span
-                className={`text-xs font-bold px-2 py-0.5 rounded-full tabular-nums transition-colors ${incluyeCarreta
+                className={`text-sm font-bold px-2 py-0.5 rounded-full tabular-nums transition-colors ${incluyeCarreta
                   ? 'bg-emerald-50 text-emerald-600'
                   : 'bg-zinc-100 text-brand-options'
                   }`}
@@ -123,7 +123,7 @@ export function ResumenCotizacionCard({
                 {incluyeCarreta ? '+ S/ 15.00' : 'S/ 0.00'}
               </span>
             </button>
-            <p className="text-xs text-brand-options font-light pl-0.5 mt-1">
+            <p className="text-sm text-brand-options font-light pl-0.5 mt-1">
               *Carreta precio aproximado S/15
             </p>
           </div>

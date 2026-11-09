@@ -109,37 +109,37 @@ export function DetalleProductoModal({
                             <div className="bg-zinc-50/80 p-3 rounded-2xl border border-border-default">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                     <div>
-                                        <span className="block text-xs text-brand-options uppercase font-bold">Categoría</span>
+                                        <span className="block text-sm text-brand-options uppercase font-bold">Categoría</span>
                                         <span className="text-xs font-semibold text-brand-subtitle truncate block">
                                             {formatText(categoria)}
                                         </span>
                                     </div>
-                                    <div>
-                                        <span className="block text-xs text-brand-options uppercase font-bold">Presentación</span>
-                                        <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.presentacion || '-'}</span>
-                                    </div>
+<div>
+                                            <span className="block text-sm text-brand-options uppercase font-bold">Presentación</span>
+                                            <span className="text-sm font-semibold text-brand-subtitle truncate block">{prod.presentacion || '-'}</span>
+                                        </div>
                                     {prod.tipo_flor && prod.tipo_flor !== '-' && (
                                         <div>
-                                            <span className="block text-xs text-brand-options uppercase font-bold">Tipo Flor</span>
-                                            <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.tipo_flor}</span>
+                                            <span className="block text-sm text-brand-options uppercase font-bold">Tipo Flor</span>
+                                            <span className="text-sm font-semibold text-brand-subtitle truncate block">{prod.tipo_flor}</span>
                                         </div>
                                     )}
                                     {prod.material && prod.material !== '-' && (
                                         <div>
-                                            <span className="block text-xs text-brand-options uppercase font-bold">Material</span>
-                                            <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.material}</span>
+                                            <span className="block text-sm text-brand-options uppercase font-bold">Material</span>
+                                            <span className="text-sm font-semibold text-brand-subtitle truncate block">{prod.material}</span>
                                         </div>
                                     )}
                                     {prod.alto && prod.alto !== '-' && (
                                         <div>
-                                            <span className="block text-xs text-brand-options uppercase font-bold">Alto</span>
-                                            <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.alto}</span>
+                                            <span className="block text-sm text-brand-options uppercase font-bold">Alto</span>
+                                            <span className="text-sm font-semibold text-brand-subtitle truncate block">{prod.alto}</span>
                                         </div>
                                     )}
                                     {prod.ancho && prod.ancho !== '-' && (
                                         <div>
-                                            <span className="block text-xs text-brand-options uppercase font-bold">Ancho</span>
-                                            <span className="text-xs font-semibold text-brand-subtitle truncate block">{prod.ancho}</span>
+                                            <span className="block text-sm text-brand-options uppercase font-bold">Ancho</span>
+                                            <span className="text-sm font-semibold text-brand-subtitle truncate block">{prod.ancho}</span>
                                         </div>
                                     )}
                                 </div>
