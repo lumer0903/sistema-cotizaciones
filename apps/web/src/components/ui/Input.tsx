@@ -25,12 +25,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full space-y-1.5">
         {label && (
-          <label htmlFor={inputId} className={FIELD_LABEL}>
+          <label
+            htmlFor={inputId}
+            className={cn(FIELD_LABEL, 'peer-focus:text-brand-primary')}
+          >
             {label}
             {required && <span className="text-danger ml-1" aria-hidden="true">*</span>}
           </label>
         )}
-        <div className="relative flex items-center">
+        <div className="relative flex items-center peer">
           {icon && (
             <div
               className="absolute left-3 pointer-events-none flex items-center justify-center text-brand-options"
@@ -59,7 +62,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           />
         </div>
         {error && (
-          <p id={errorId} className={FIELD_ERROR_TEXT} role="alert">
+          <p id={errorId} className={FIELD_ERROR_TEXT} role="alert" style={{ textAlign: 'left' }}>
             {error}
           </p>
         )}

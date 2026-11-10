@@ -134,7 +134,7 @@ function LoginForm() {
                 />
               </div>
               {errors.email && (
-                <p id="email-error" className="text-xs text-danger" role="alert">
+                <p id="email-error" className="text-xs text-danger text-left" role="alert">
                   {errors.email.message}
                 </p>
               )}
@@ -177,7 +177,7 @@ function LoginForm() {
                 </button>
               </div>
               {errors.password && (
-                <p id="password-error" className="text-xs text-danger" role="alert">
+                <p id="password-error" className="text-xs text-danger text-left" role="alert">
                   {errors.password.message}
                 </p>
               )}

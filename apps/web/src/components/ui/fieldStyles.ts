@@ -24,7 +24,7 @@ export const FIELD_TRANSITION =
  * Estado hover/focus (versión sin error).
  * Foco visible con el mismo token de contraste que el resto de controles.
  */
-export const FIELD_FOCUS = 'hover:border-brand-options focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring';
+export const FIELD_FOCUS = 'hover:border-brand-options focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring focus-within:border-brand-primary focus-within:ring-brand-primary';
 
 /** Estado deshabilitado. */
 export const FIELD_DISABLED =
