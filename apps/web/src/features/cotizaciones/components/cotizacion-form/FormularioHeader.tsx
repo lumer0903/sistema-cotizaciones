@@ -21,12 +21,12 @@ export function FormularioHeader({ numeroCotizacion, hayContenido, onLimpiar }: 
       <div className="flex flex-wrap items-center gap-2">
         {hayContenido && (
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={onLimpiar}
             title="Descartar el borrador y empezar una cotización nueva"
           >
-Limpia
+            Limpia
           </Button>
         )}
         <Badge size="estado" variant="borrador">
