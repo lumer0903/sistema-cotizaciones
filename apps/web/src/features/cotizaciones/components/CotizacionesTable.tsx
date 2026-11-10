@@ -18,8 +18,8 @@ interface CotizacionesTableProps {
 
 // Definición de columnas con anchos fluidos y comportamiento responsive
 const COLUMNS = [
-  { key: 'CODIGO', headerClassName: 'font-semibold', cellClassName: 'min-w-[100px] max-w-[140px] whitespace-nowrap' },
-  { key: 'CLIENTE', headerClassName: '', cellClassName: 'min-w-[160px] max-w-[220px] truncate' },
+  { key: 'Código', headerClassName: 'font-semibold', cellClassName: 'min-w-[100px] max-w-[140px] whitespace-nowrap' },
+  { key: 'Cliente', headerClassName: '', cellClassName: 'min-w-[160px] max-w-[220px] truncate' },
   { key: 'TIPO', headerClassName: 'text-center', cellClassName: 'min-w-[80px] max-w-[100px] text-center whitespace-nowrap' },
   { key: 'FECHA', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[120px] text-center whitespace-nowrap' },
   { key: 'TOTAL', headerClassName: 'text-right', cellClassName: 'min-w-[100px] max-w-[120px] text-right whitespace-nowrap tabular-nums' },

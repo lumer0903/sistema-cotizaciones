@@ -22,11 +22,12 @@ export const FIELD_TRANSITION =
 
 /**
  * Estado hover/focus (versión sin error).
- * Foco visible con inversión de tonalidad para efecto de peso e inserción:
- * - Borde interior: tono oscuro (amber-900) para sensación de presión
- * - Anillo externo: tono dorado/amarillo claro y translúcido para halo
+ * Efecto de peso e inserción usando exclusivamente border y ring:
+ * - focus: aplica el tono oscuro al borde principal
+ * - focus:ring: halo dorado/amarillo translúcido
+ * - focus:outline-none: elimina la doble línea nativa desalineada
  */
-export const FIELD_FOCUS = 'hover:border-brand-options focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-900 focus-visible:ring-2 ring-amber-300/30 focus-within:border-amber-900/20 focus-within:ring-2 ring-amber-300/20';
+export const FIELD_FOCUS = 'hover:border-brand-options focus:border-amber-900 focus:ring-2 ring-amber-300/30 focus:outline-none focus-within:border-amber-900/20 focus-within:ring-2 ring-amber-300/20';
 
 /** Estado deshabilitado. */
 export const FIELD_DISABLED =
