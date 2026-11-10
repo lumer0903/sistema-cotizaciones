@@ -65,16 +65,22 @@ export const TIPO_CONFIG = {
         label: 'SIMILAR',
         icon: Zap,
         desc: 'Productos parecidos al seleccionado',
+        bg: 'bg-blue-100 text-blue-800 border-blue-400',
+        bg_hover: 'bg-blue-50',
     },
     equilibrio: {
         label: 'EQUILIBRIO',
         icon: Scale,
         desc: 'Mejor relación precio-calidad',
+        bg: 'bg-emerald-100 text-emerald-800 border-emerald-400',
+        bg_hover: 'bg-emerald-50',
     },
     upsell: {
         label: 'MEJOR OPCIÓN',
         icon: TrendingUp,
         desc: 'Alternativas de mayor valor/margen',
+        bg: 'bg-amber-100 text-amber-900 border-amber-400',
+        bg_hover: 'bg-amber-50',
     },
 } as const;
 
