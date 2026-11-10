@@ -9,6 +9,7 @@ import {
     Scale,
     Plus,
     Minus,
+    Info,
     RotateCcw,
     Sparkles,
     Package,
@@ -312,7 +313,7 @@ export function RecomendacionesPanel({
                 <>
                     {/* NAVEGACIÓN POR TABS */}
                     <div className="p-2 bg-zinc-50/50 border-b border-border-default flex items-center justify-between gap-1">
-                        {tipos.map((tipo) => {
+{tipos.map((tipo) => {
                             const cfg = TIPO_CONFIG[tipo];
                             const isActive = activeTab === tipo;
                             const count = (recomendaciones[tipo] || []).length;
@@ -323,8 +324,8 @@ return (
                                 type="button"
                                 onClick={() => setActiveTab(tipo)}
                                 aria-pressed={isActive}
-                                className={`flex-1 min-h-11 px-2 rounded-lg text-xs font-extrabold font-sans tracking-wider transition-[background-color,color,transform] duration-200 ease-out flex items-center justify-center gap-1 active:scale-[0.96] ${isActive ? 'bg-brand-primary text-on-brand shadow-sm' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
-                                    }`}
+                                className={`flex-1 min-h-11 px-2 rounded-lg text-xs font-extrabold font-sans tracking-wider transition-[background-color,color,transform] duration-200 ease-out flex items-center justify-center gap-1 active:scale-[0.96] ${isActive ? cfg.bg : cfg.bg_hover
+                                }`}
                             >
                                 <span>{cfg.label}</span>
                                 {count > 0 && (
@@ -428,72 +429,80 @@ export function RecomendacionCardSection({
 
     return (
         <div className="bg-surface rounded-lg border border-border-default p-2.5 shadow-sm hover:bg-zinc-50/80 transition-colors ease-out">
-            {/* DETALLES DE PRODUCTO - 3 NIVELES JERARQUIA */}
-            <div className="flex items-start gap-3">
-                {/* IMAGEN */}
-                <div className="w-16 h-16 rounded-lg border border-border-default flex-shrink-0 overflow-hidden bg-zinc-50 flex-shrink-0">
+            {/* FILA 1: Encabezado superior - Imagen/Ícono a la izquierda, Nombre + Precio a la derecha */}
+            <div className="mb-3 flex items-start gap-3">
+                {/* Imagen/Ícono a la izquierda */}
+                <div className="w-14 h-18 rounded-lg border border-border-default flex-shrink-0 overflow-hidden bg-zinc-50">
                     {imagenSrc && failedImage !== imagenSrc ? (
                         <Image
                             unoptimized
                             src={imagenSrc}
                             alt={item.descripcion}
-                            width={64}
-                            height={64}
+                            width={56}
+                            height={72}
                             className="w-full h-full object-cover"
                             onError={() => setFailedImage(imagenSrc)}
                         />
                     ) : (
-                        <div className="w-full h-16 flex items-center justify-center bg-zinc-50">
+                        <div className="w-full h-full flex items-center justify-center bg-zinc-50">
                             <Package className="size-5" aria-hidden="true" />
                         </div>
                     )}
                 </div>
 
-                {/* CONTENIDO - 3 NIVELES */}
-                <div className="flex-1 min-w-0 space-y-1">
-                    {/* NIVEL PRIMARIO: Nombre + Precio a la derecha */}
-                    <div className="flex flex-col gap-1">
-                        <p className="text-sm font-semibold text-zinc-700 font-sans line-clamp-2" title={item.descripcion}>
-                            {item.descripcion}
-                        </p>
-
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-xs text-zinc-500 font-medium">S/ {item.precio}</span>
-                        </div>
-                    </div>
-
-                    {/* NIVEL SECUNDARIO: Badge stock al lado del nombre */}
-                    <div className="flex items-center gap-1.5 text-zinc-600 font-medium text-sm">
-                        <span className="size-2 rounded-full bg-zinc-400" aria-hidden="true" />
-                        {item.stock > 0 ? (
-                            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded font-semibold">
-                                {item.stock}
-                            </span>
-                        ) : (
-                            <span className="px-2 py-0.5 bg-zinc-200 text-zinc-500 rounded font-semibold text-xs">
-                                Sin stock
-                            </span>
-                        )}
-                    </div>
-
-                    {/* NIVEL TERCIARIO: Punto gris código/categoría en línea inferior */}
-                    <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-300" aria-hidden="true" />
-                        {item.categoria && <span title={item.categoria}>{item.categoria}</span>}
-                        {item.codigo && <span title={item.codigo} className="ml-1">-{item.codigo}</span>}
+                {/* Nombre del producto + Precio a la derecha */}
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-zinc-900 font-sans line-clamp-2" title={item.descripcion}>
+                        {item.descripcion}
+                    </p>
+                    <div className="flex items-baseline gap-2 mt-1">
+                        <span className="text-sm font-medium text-zinc-700">S/ {item.precio}</span>
                     </div>
                 </div>
             </div>
 
-            {/* ACCIONES - consistentes al final de tarjeta */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-default">
+            {/* FILA 2: Metadata horizontal - Stock + Categoría + SKU */}
+            <div className="flex items-center gap-3 mb-3">
+                {/* Stock badge */}
+                <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+                    <span className="size-2 rounded-full bg-zinc-400" aria-hidden="true" />
+                    {item.stock > 0 ? (
+                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded font-semibold">
+                            Stock: {item.stock}
+                        </span>
+                    ) : (
+                        <span className="px-2 py-0.5 bg-zinc-200 text-zinc-500 rounded font-semibold text-xs">
+                            Sin stock
+                        </span>
+                    )}
+                    <span className="text-zinc-400">•</span>
+                    {item.categoria && <span title={item.categoria}>{item.categoria}</span>}
+                    <span className="text-zinc-400">•</span>
+                    {item.codigo && <span title={item.codigo}> {item.codigo}</span>}
+                </div>
+            </div>
+
+            {/* Botón de Información */}
+            <div className="text-right">
+                <Button
+                    variant="ghost"
+                    title="Ver detalles del producto"
+                    aria-label="Ver detalles del producto"
+                    className="p-1.5 rounded-lg hover:bg-zinc-100 transition-colors"
+                >
+                    <Info className="h-4 w-4" />
+                </Button>
+            </div>
+
+            {/* FILA 3: Acciones - Botones compactos al final */}
+            <div className="mt-2 flex justify-end gap-1">
                 <Button
                     variant="outline"
                     size="sm"
                     onClick={onAgregar}
-                    className="text-xs font-bold"
+                    className="h-8 text-xs font-bold"
                 >
-                    <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                    <Plus className="w-3 h-3" aria-hidden="true" />
                     Agrega
                 </Button>
 
@@ -502,7 +511,7 @@ export function RecomendacionCardSection({
                         variant="outline"
                         size="sm"
                         onClick={onReemplazar}
-                        className="text-xs font-bold text-accent-ink bg-accent-primary/10 hover:bg-accent-primary/20 border-accent-primary/40"
+                        className="h-8 text-xs font-bold text-accent-ink bg-accent-primary/10 hover:bg-accent-primary/20 border-accent-primary/40"
                     >
                         Reemplaza
                     </Button>
