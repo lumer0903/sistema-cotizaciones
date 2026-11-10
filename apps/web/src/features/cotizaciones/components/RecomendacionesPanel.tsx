@@ -265,7 +265,7 @@ export function RecomendacionesPanel({
     const activeConfig = TIPO_CONFIG[activeTab];
 
     return (
-        <div className="w-full max-w-sm bg-surface rounded-xl shadow-md border border-border-default overflow-hidden transition-[box-shadow,transform,background-color,color] duration-300 font-sans">
+        <div className="w-full max-w-sm bg-surface rounded-xl shadow-md border border-border-default overflow-hidden transition-[box-shadow,transform,background-color,color] duration-300 ease-out font-sans">
             {/* CABECERA PRINCIPAL */}
             <div className={`p-4 flex items-center justify-between ${!isMinimized ? 'border-b border-border-default' : ''}`}>
                 <div className="flex items-center gap-2">
@@ -317,7 +317,7 @@ return (
                                 type="button"
                                 onClick={() => setActiveTab(tipo)}
                                 aria-pressed={isActive}
-                                className={`flex-1 min-h-11 px-2 rounded-lg text-xs font-extrabold font-sans tracking-wider transition-[background-color,color,transform] flex items-center justify-center gap-1 active:scale-[0.96] ${isActive ? 'bg-brand-primary text-on-brand shadow-sm' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                                className={`flex-1 min-h-11 px-2 rounded-lg text-xs font-extrabold font-sans tracking-wider transition-[background-color,color,transform] duration-200 ease-out flex items-center justify-center gap-1 active:scale-[0.96] ${isActive ? 'bg-brand-primary text-on-brand shadow-sm' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
                                     }`}
                             >
                                 <span>{cfg.label}</span>
@@ -421,7 +421,7 @@ export function RecomendacionCardSection({
     const [failedImage, setFailedImage] = useState<string | null>(null);
 
     return (
-        <div className="bg-surface rounded-lg border border-border-default p-2.5 shadow-sm hover:bg-zinc-50/80 transition-colors">
+        <div className="bg-surface rounded-lg border border-border-default p-2.5 shadow-sm hover:bg-zinc-50/80 transition-colors ease-out">
             {/* DETALLES DE PRODUCTO - 3 NIVELES JERARQUIA */}
             <div className="flex items-start gap-3">
                 {/* IMAGEN */}

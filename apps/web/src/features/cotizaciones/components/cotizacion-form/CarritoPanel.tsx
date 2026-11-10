@@ -99,7 +99,7 @@ export function CarritoPanel({
                   <div
                     key={prod.id || prod.codigo || index}
                     onClick={() => handleSeleccionarProducto(prod)}
-                    className="group p-3 hover:bg-zinc-50 cursor-pointer transition-colors flex items-center justify-between gap-3"
+                    className="group p-3 hover:bg-zinc-50 cursor-pointer transition-colors ease-out flex items-center justify-between gap-3"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="inline-flex items-center gap-1.5 font-bold text-sm text-zinc-700 shrink-0">
@@ -114,7 +114,7 @@ export function CarritoPanel({
                       </div>
                     </div>
                     <ChevronRight
-                      className="size-4 shrink-0 text-zinc-300 group-hover:text-accent-primary transition-colors"
+                      className="size-4 shrink-0 text-zinc-300 group-hover:text-accent-primary transition-colors ease-out"
                       aria-hidden="true"
                     />
                   </div>
@@ -134,7 +134,7 @@ export function CarritoPanel({
 {items.length === 0 ? (
         <div
           onClick={() => searchInputRef.current?.focus()}
-          className="h-44 border-2 border-dashed border-border-default rounded-xl p-6 flex flex-col gap-2 cursor-pointer hover:bg-surface-muted/80 transition-colors"
+          className="h-44 border-2 border-dashed border-border-default rounded-xl p-6 flex flex-col gap-2 cursor-pointer hover:bg-surface-muted/80 transition-colors ease-out"
         >
           <ShoppingCart className="size-8 text-zinc-300" />
           <p className="text-zinc-600 font-medium text-sm">Busca un producto importado arriba para agregarlo</p>
