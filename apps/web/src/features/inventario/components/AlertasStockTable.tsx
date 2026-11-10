@@ -60,6 +60,6 @@ export function AlertasStockTable({open,onClose,onSuccess}:{open:boolean;onClose
       </div>
     </Modal>
     <ConfirmModal open={confirmId!=null} onClose={()=>{if(!saving)setConfirmId(null);}} onConfirm={reconocer}
-      title="Reconocer alerta" message="La alerta seguirá abierta hasta que se reponga el stock." confirmLabel="Reconoce" loading={saving} />
+      title="Reconoce alerta" message="La alerta cambiará a estado revisado y permanecerá abierta hasta que se registre la reposición de stock." confirmLabel="Reconoce" loading={saving} />
   </>;
 }

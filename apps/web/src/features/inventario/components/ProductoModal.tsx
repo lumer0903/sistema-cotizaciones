@@ -699,10 +699,10 @@ Restablece
           resetForm();
           setConfirmResetOpen(false);
         }}
-        title="Restablecer formulario"
-        message="Se perderán todos los cambios realizados. ¿Desea continuar?"
-        confirmLabel="Restablecer"
-        variant="danger"
+        title="Restablece formulario"
+        message="Se descartarán todos los datos ingresados en el formulario actual."
+        confirmLabel="Restableces"
+        variant="outline"
       />
 
       <ColorConfigModal

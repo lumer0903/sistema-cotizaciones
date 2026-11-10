@@ -13,7 +13,7 @@ export interface ConfirmModalProps {
   confirmLabel?: string;
   cancelLabel?: string;
   loading?: boolean;
-  variant?: 'primary' | 'danger';
+  variant?: 'primary' | 'danger' | 'outline';
 }
 
 export const ConfirmModal = ({
@@ -47,8 +47,9 @@ export const ConfirmModal = ({
           {confirmLabel}
         </Button>
       </ModalFooter>
-    }
-  >
-    <div className="text-sm text-brand-subtitle leading-relaxed">{message}</div>
+    }>
+    <div className="text-left">
+      <div className="text-sm text-brand-subtitle leading-relaxed">{message}</div>
+    </div>
   </Modal>
 );

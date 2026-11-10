@@ -282,8 +282,8 @@ function InventarioViewInner() {
         open={confirmDeleteId != null}
         onClose={() => { if (!deleting) setConfirmDeleteId(null); }}
         onConfirm={confirmarEliminar}
-        title="Eliminar producto"
-        message="¿Eliminar producto? Esta acción no se puede deshacer."
+        title="Elimina producto"
+        message="Se borrará este ítem del catálogo junto con su historial de precios. Esta acción no se puede deshacer."
         confirmLabel="Eliminar"
         loading={deleting}
       />
