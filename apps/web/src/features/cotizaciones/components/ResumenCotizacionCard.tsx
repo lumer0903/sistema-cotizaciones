@@ -9,7 +9,6 @@ export interface ResumenCotizacionCardProps {
   itemsCount: number;
   subtotal: number;
   incluyeCarreta: boolean;
-  costoCarreta: number;
   igv?: number;
   total: number;
   onToggleCarreta: (checked: boolean) => void;
@@ -17,35 +16,10 @@ export interface ResumenCotizacionCardProps {
   continuarDisabled?: boolean;
 }
 
-function ResumenRow({
-  label,
-  value,
-  divider = false,
-}: {
-  label: string;
-  value: string;
-  divider?: boolean;
-}) {
-  return (
-    <div
-      className={`py-1.5 flex justify-between items-center ${divider ? 'border-b border-border-default pb-2 mb-1' : ''
-        }`}
-    >
-      <span className="text-sm font-medium text-zinc-600 tracking-tight">
-        {label}
-      </span>
-      <span className="text-sm font-medium text-zinc-600">
-        {value}
-      </span>
-    </div>
-  );
-}
-
 export function ResumenCotizacionCard({
   itemsCount,
   subtotal,
   incluyeCarreta,
-  costoCarreta,
   igv,
   total,
   onToggleCarreta,
@@ -79,24 +53,42 @@ export function ResumenCotizacionCard({
       {/* Contenido colapsable */}
       {!isMinimized && (
         <>
-          {/* Desglose de Totales */}
-          <div className="flex flex-col">
-            <ResumenRow label={`Subtotal (${itemsCount} items)`} value={`S/ ${subtotal.toFixed(2)}`} />
-            <ResumenRow label="Carreta" value={`S/ ${costoCarreta.toFixed(2)}`} />
-            {igv !== undefined && (
-              <ResumenRow label="IGV (18%)" value={`S/ ${igv.toFixed(2)}`} />
-            )}
+          {/* Desglose de Totales en 2 renglones + Total con acción primaria */}
+          <div className="flex flex-col space-y-3">
+            {/* Renglón secundario: Subtotal */}
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-zinc-600 tracking-tight">Subtotal ({itemsCount} items)</span>
+              <span className="text-sm font-medium text-zinc-600">S/ {subtotal.toFixed(2)}</span>
+            </div>
 
-            <div className="border-t border-border-default mt-3 pt-3 flex justify-between items-center">
-              <span className="text-sm font-bold text-brand-options">Total</span>
-              <span className="text-xl font-bold text-accent-ink">
-                S/ {total.toFixed(2)}
-              </span>
+            {/* Renglón terciario: Carreta + IGV agrupados */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`w-9 h-5 inline-flex items-center rounded-full p-0.5 transition-colors duration-200 ${incluyeCarreta ? 'bg-brand-primary' : 'bg-zinc-300'
+                    }`}
+                >
+                  <span
+                    className={`bg-surface size-4 rounded-full shadow-md transform transition-transform duration-200 ${incluyeCarreta ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                  />
+                </span>
+                <span className="text-sm font-semibold text-zinc-700">Carreta</span>
+              </div>
+              {igv !== undefined && (
+                <span className="text-sm font-medium text-zinc-600">IGV (18%) S/ {igv.toFixed(2)}</span>
+              )}
             </div>
           </div>
 
+          {/* Total con botón acción primaria en misma línea */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-bold text-brand-options">Total</span>
+            <span className="text-xl font-bold text-accent-ink">S/ {total.toFixed(2)}</span>
+          </div>
+
           {/* Toggle de Carreta */}
-          <div className="pt-1 border-t border-border-default">
+          <div className="pt-2 border-t border-border-default">
             <button
               type="button"
               onClick={() => onToggleCarreta(!incluyeCarreta)}
@@ -128,7 +120,7 @@ export function ResumenCotizacionCard({
             </p>
           </div>
 
-          {/* Botón Continuar */}
+          {/* Botón Continuar - acción primaria */}
           <div className="flex justify-end pt-2">
             <Button
               variant={continuarDisabled ? 'ghost' : 'primary'}
@@ -136,7 +128,7 @@ export function ResumenCotizacionCard({
               onClick={onContinuar}
               className="min-h-11 px-6 !rounded-xl text-sm font-bold transition-[background-color,color,transform] active:scale-[0.96]"
             >
-Continúa
+              Continúa
             </Button>
           </div>
         </>

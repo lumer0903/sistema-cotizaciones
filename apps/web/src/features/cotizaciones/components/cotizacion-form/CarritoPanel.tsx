@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/Card';
 import { useMemo, useRef, useState } from 'react';
 import { Search, ShoppingCart, X, Loader2, ChevronRight, Sparkles, Trash2 } from 'lucide-react';
 import { Input, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Button } from '@/components/ui';
-import { ProductoCarrito, getItemTotal } from '@/features/cotizaciones/types/cotizacion';
+import { ProductoCarrito } from '@/features/cotizaciones/types/cotizacion';
 import type { ProductoBase } from '@/features/cotizaciones/components/AgregarProductoModal';
 
 export interface CarritoPanelProps {
@@ -131,7 +131,7 @@ export function CarritoPanel({
         )}
       </div>
 
-      {items.length === 0 ? (
+{items.length === 0 ? (
         <div
           onClick={() => searchInputRef.current?.focus()}
           className="h-44 border-2 border-dashed border-border-default rounded-xl p-6 flex flex-col gap-2 cursor-pointer hover:bg-surface-muted/80 transition-colors"
@@ -144,9 +144,9 @@ export function CarritoPanel({
           <TableHeader>
             <TableRow>
               <TableHead>Código</TableHead>
+              <TableHead>Descripción</TableHead>
               <TableHead>Precio unitario</TableHead>
               <TableHead>Cantidad</TableHead>
-              <TableHead>Total</TableHead>
               <TableHead className="text-center">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -154,9 +154,9 @@ export function CarritoPanel({
             {items.map((item) => (
               <TableRow key={item.id} className={selectedItemId === item.id ? 'bg-accent-soft/60' : ''}>
                 <TableCell className="font-bold text-zinc-800">{item.codigo}</TableCell>
+                <TableCell className="font-medium text-zinc-700 truncate">{item.descripcion}</TableCell>
                 <TableCell className="text-zinc-600">S/ {item.precioUnitario.toFixed(2)}</TableCell>
                 <TableCell className="text-zinc-600">{item.cantidad}</TableCell>
-                <TableCell className="font-bold text-zinc-800">S/ {getItemTotal(item).toFixed(2)}</TableCell>
                 <TableCell>
                   <div className="flex justify-center items-center gap-2">
                     <Button
@@ -169,7 +169,7 @@ export function CarritoPanel({
                         selectedItemId === item.id
                           ? '!bg-accent-selection !text-accent-ink outline outline-1 outline-offset-[-1px] outline-brand-modalFocus'
                           : '!text-brand-options hover:!text-accent-ink'
-                      }`}
+                        }`}
                     >
                       <Sparkles className="size-4" />
                     </Button>

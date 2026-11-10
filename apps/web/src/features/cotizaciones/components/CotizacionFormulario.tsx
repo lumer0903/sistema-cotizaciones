@@ -65,7 +65,6 @@ export function CotizacionFormulario({ modo }: CotizacionFormularioProps) {
             itemsCount={f.items.length}
             subtotal={f.subtotal}
             incluyeCarreta={f.incluyeCarreta}
-            costoCarreta={f.costoCarreta}
             total={f.total}
             onToggleCarreta={f.setIncluyeCarreta}
             continuarDisabled={f.items.length === 0}
