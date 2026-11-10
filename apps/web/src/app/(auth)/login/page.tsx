@@ -74,15 +74,7 @@ function LoginForm() {
           className="relative w-full max-w-[468px] lg:min-h-[558px] bg-white rounded-2xl border border-zinc-200 shadow-xl p-6 sm:p-10 flex flex-col justify-center"
           aria-labelledby="login-heading"
         >
-          {/* ISOTIPO SECUNDARIO */}
-          <Image
-            className="absolute top-8 right-8 w-[120px] h-[120px] object-contain opacity-50 pointer-events-none"
-            alt=""
-            aria-hidden="true"
-            src="/MUNDO.svg"
-            width={120}
-            height={120}
-          />
+          
 
           <form className="w-full flex flex-col mt-6 sm:mt-12" onSubmit={handleSubmit(onSubmit)}>
             {/* MENSAJE DE ERROR */}
@@ -130,7 +122,7 @@ function LoginForm() {
                     placeholder:text-zinc-500
                     disabled:bg-zinc-50 disabled:cursor-not-allowed
                     aria-invalid:border-danger aria-invalid:focus:border-danger"
-                  placeholder="correo@ejemplo.com"
+                  placeholder="usuario@empresa.com"
                 />
               </div>
               {errors.email && (
@@ -223,22 +215,15 @@ export default function LoginPage() {
               height={500}
             />
           </div>
-          <section className="relative w-full max-w-[468px] min-h-[558px] bg-white rounded-2xl border border-zinc-200 shadow-xl p-6 sm:p-10 flex flex-col justify-center">
-            <Image
-              className="absolute top-8 right-8 w-[120px] h-[120px] object-contain opacity-50"
-              alt="Gold Continent Icon"
-              src="/MUNDO.svg"
-              width={120}
-              height={120}
-            />
-            <div className="w-full flex flex-col mt-10 sm:mt-12 animate-pulse space-y-6">
-              <div className="h-8 bg-zinc-200 rounded w-3/4" />
-              <div className="h-4 bg-zinc-200 rounded w-1/2" />
-              <div className="h-11 bg-zinc-200 rounded" />
-              <div className="h-11 bg-zinc-200 rounded" />
-              <div className="h-11 bg-zinc-200 rounded" />
-            </div>
-          </section>
+<section className="relative w-full max-w-[468px] min-h-[558px] bg-white rounded-2xl border border-zinc-200 shadow-xl p-6 sm:p-10 flex flex-col justify-center">
+              <div className="w-full flex flex-col mt-10 sm:mt-12 animate-pulse space-y-6">
+                <div className="h-8 bg-zinc-200 rounded w-3/4" />
+                <div className="h-4 bg-zinc-200 rounded w-1/2" />
+                <div className="h-11 bg-zinc-200 rounded" />
+                <div className="h-11 bg-zinc-200 rounded" />
+                <div className="h-11 bg-zinc-200 rounded" />
+              </div>
+            </section>
         </div>
       </div>
     }>
