@@ -134,10 +134,10 @@ export function CarritoPanel({
       {items.length === 0 ? (
         <div
           onClick={() => searchInputRef.current?.focus()}
-          className="h-44 border-2 border-dashed border-border-default rounded-xl flex flex-col justify-center items-center gap-2 cursor-pointer hover:bg-surface-muted/80 transition-colors"
+          className="h-44 border-2 border-dashed border-border-default rounded-xl p-6 flex flex-col gap-2 cursor-pointer hover:bg-surface-muted/80 transition-colors"
         >
           <ShoppingCart className="size-8 text-zinc-300" />
-          <span className="text-brand-options font-medium text-sm">Busca un producto importado arriba para agregarlo</span>
+          <p className="text-zinc-600 font-medium text-sm">Busca un producto importado arriba para agregarlo</p>
         </div>
       ) : (
         <Table>

@@ -336,36 +336,34 @@ return (
 
                     {/* LISTADO */}
                     <div className="p-4 space-y-4 max-h-[550px] overflow-y-auto">
-                        {cartItems.length === 0 ? (
-                            <div className="text-center py-10 text-brand-options space-y-2">
+{cartItems.length === 0 ? (
+                            <div className="py-10 text-left space-y-2">
                                 <Sparkles className="size-7 mx-auto text-accent-ink opacity-80" />
                                 <p className="text-sm font-medium">Agrega un producto al carrito para ver sugerencias de IA</p>
                             </div>
                         ) : !baseItem ? (
-                            <div className="text-center py-10 text-brand-options space-y-2">
+                            <div className="py-10 text-left">
                                 <Sparkles className="size-7 mx-auto text-accent-ink opacity-80" />
-<p className="text-sm font-medium">
-                                    Haz clic en el icono de recomendaciones IA de un producto para ver sugerencias
-                                </p>
+                                <p className="text-sm font-medium">Haz clic en el icono de recomendaciones IA de un producto para ver sugerencias</p>
                             </div>
                         ) : !productoBase ? (
-                            <div className="text-center py-8 text-brand-options">
+                            <div className="py-8 text-left">
                                 <p className="text-sm font-medium">El producto seleccionado no tiene ID válido para recomendar</p>
                             </div>
                         ) : error ? (
-                            <div className="text-center py-6 text-danger">
+                            <div className="py-6 text-left text-danger">
                                 <p className="text-sm">{error}</p>
                                 <Button variant="outline" size="sm" onClick={refetch} className="mt-2">
                                     <RotateCcw className="w-3.5 h-3.5" /> Reintentar
                                 </Button>
                             </div>
                         ) : loading ? (
-                            <div className="py-12 text-center text-brand-options text-sm animate-pulse">
+                            <div className="py-12 text-left text-sm animate-pulse">
                                 <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-accent-ink" />
                                 Analizando con IA y consultando precios/stock...
                             </div>
                         ) : currentList.length === 0 ? (
-                            <div className="text-center py-8 text-brand-options">
+                            <div className="py-8 text-left">
                                 <p className="text-sm">
                                     <>No hay productos en la categoría <strong>{activeConfig.label}</strong></>
                                 </p>
@@ -390,7 +388,7 @@ return (
                             </div>
                         )}
 
-                        <p className="text-sm text-brand-options text-right pt-1 border-t border-border-default">
+                        <p className="text-sm text-brand-options text-left pt-1 border-t border-border-default">
                             Precios según: <strong>{tipoPrecioCliente}</strong>
                         </p>
                     </div>
@@ -425,7 +423,7 @@ export function RecomendacionCardSection({
     const empaque = item.unidades_por_caja ?? catalogoItem?.unidades_por_caja ?? catalogoItem?.presentacion ?? null;
 
     return (
-        <div className="bg-surface rounded-lg border border-border-default p-2.5 shadow-sm space-y-2.5">
+        <div className="bg-surface rounded-lg border border-border-default p-2.5 shadow-sm space-y-2.5 hover:bg-zinc-50/80 transition-colors">
             {/* DETALLES DE PRODUCTO */}
             <div className="flex gap-2.5 items-start">
                 {/* IMAGEN (64×64 con placeholder elegante por categoría) */}

@@ -35,15 +35,15 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
 }) => {
     if (loading) {
         return (
-            <div className="w-full bg-surface rounded-2xl border border-border-default shadow-card p-12 text-center text-brand-options font-sans">
-                Cargando cotizaciones...
+            <div className="w-full bg-surface rounded-2xl border border-border-default shadow-card p-12 text-left text-sm text-zinc-600">
+                Cargando tabla...
             </div>
         );
     }
 
     if (!data || data.length === 0) {
         return (
-            <div className="w-full bg-surface rounded-2xl border border-border-default shadow-card p-12 text-center text-brand-options font-sans">
+            <div className="w-full bg-surface rounded-2xl border border-border-default shadow-card p-12 text-left text-sm text-zinc-600">
                 No se encontraron cotizaciones.
             </div>
         );

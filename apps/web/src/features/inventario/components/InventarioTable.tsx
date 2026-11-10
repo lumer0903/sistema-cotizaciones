@@ -30,38 +30,38 @@ const COLUMNS = [
 ] as const;
 
 function TableSkeleton() {
-  return (
-    <div
-      className="w-full"
-      role="status"
-      aria-live="polite"
-      aria-label="Cargando inventario"
-    >
-      <div className="flex items-center gap-2 px-4 py-3 bg-surface-muted/80 border-b border-border-default text-xs font-semibold text-brand-options tracking-wider">
-        <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-        Cargando inventario...
+    return (
+      <div
+        className="w-full"
+        role="status"
+        aria-live="polite"
+        aria-label="Cargando inventario"
+      >
+        <div className="flex items-center gap-2 px-4 py-3 bg-surface-muted/80 border-b border-border-default text-xs font-semibold text-zinc-600 tracking-wider">
+          <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+          Cargando tabla...
+        </div>
+        <div className="divide-y divide-border-default">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 px-4 py-3.5 animate-pulse">
+              <div className="h-4 w-[140px] bg-surface-muted rounded" />
+              <div className="h-4 w-[180px] bg-surface-muted rounded" />
+              <div className="h-4 w-[140px] bg-surface-muted rounded" />
+              <div className="h-6 w-[100px] bg-surface-muted rounded-full" />
+              <div className="h-4 w-28 bg-surface-muted rounded ml-auto" />
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="divide-y divide-border-default">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 px-4 py-3.5 animate-pulse">
-            <div className="h-4 w-[140px] bg-surface-muted rounded" />
-            <div className="h-4 w-[180px] bg-surface-muted rounded" />
-            <div className="h-4 w-[140px] bg-surface-muted rounded" />
-            <div className="h-6 w-[100px] bg-surface-muted rounded-full" />
-            <div className="h-4 w-28 bg-surface-muted rounded ml-auto" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+    );
+  }
 
 function TableEmpty() {
   return (
-    <div className="w-full p-8 sm:p-16 text-center text-brand-options">
-      <PackageSearch className="w-10 h-10 mx-auto mb-3 text-brand-options/70" aria-hidden="true" />
-      <p className="font-medium text-brand-subtitle">No se encontraron productos</p>
-      <p className="text-sm mt-1">Ajuste los filtros o agregue un producto al inventario.</p>
+    <div className="w-full p-8 sm:p-16 text-left text-sm text-zinc-600">
+      <PackageSearch className="w-10 h-10 mx-auto mb-3 text-zinc-400/70" aria-hidden="true" />
+      <p className="font-medium text-zinc-600">No se encontraron productos</p>
+      <p className="mt-1 text-xs">Ajuste los filtros o agregue un producto al inventario.</p>
     </div>
   );
 }

@@ -102,7 +102,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
       }
       tabIndex={onClick ? 0 : undefined}
       className={cn(
-        'group transition-colors duration-100 ease-in-out hover:bg-surface-muted/50',
+        'group transition-colors duration-100 ease-in-out hover:bg-zinc-50/80',
         onClick && 'cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
         className
       )}
