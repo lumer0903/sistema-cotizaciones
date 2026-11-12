@@ -1,38 +1,28 @@
 'use client';
-import { Checkbox } from '@/components/ui/Checkbox';
 
+import React from 'react';
 import { Modal, Button } from '@/components/ui';
-import { cn } from '@/lib/cn';
-import type { ChartType, DashboardView, WidgetConfig } from '../store/useDashboardStore';
-
-const CHART_TYPES: Array<{ value: ChartType; label: string }> = [
-  { value: 'bar', label: 'Barras' },
-  { value: 'line', label: 'Área' },
-  { value: 'donut', label: 'Dona' },
-  { value: 'table', label: 'Tabla' },
-];
+import { Checkbox } from '@/components/ui/Checkbox';
+import { RotateCcw } from 'lucide-react';
+import type { KpiConfig, WidgetConfig } from '../types/dashboard';
 
 interface DashboardCustomizerProps {
   open: boolean;
   onClose: () => void;
-  view: DashboardView;
+  kpis: KpiConfig[];
   widgets: WidgetConfig[];
-  onToggleWidget: (view: DashboardView, id: string) => void;
-  onChartTypeChange: (view: DashboardView, id: string, type: ChartType) => void;
+  onToggleKpi: (id: string) => void;
+  onToggleWidget: (id: string) => void;
   onReset: () => void;
 }
 
-/**
- * Modal de personalización: activar/desactivar widgets y elegir el tipo de
- * representación visual (barras, área, dona, tabla) para cada uno.
- */
 export function DashboardCustomizer({
   open,
   onClose,
-  view,
+  kpis,
   widgets,
+  onToggleKpi,
   onToggleWidget,
-  onChartTypeChange,
   onReset,
 }: DashboardCustomizerProps) {
   return (
@@ -40,75 +30,88 @@ export function DashboardCustomizer({
       open={open}
       onClose={onClose}
       title="Personalizar Dashboard"
-      maxWidth="sm"
+      maxWidth="md"
       footer={
-        <>
-          <Button variant="ghost" onClick={onReset} type="button">
-            Restablecer
+        <div className="w-full flex items-center justify-between gap-3">
+          <Button
+            variant="ghost"
+            onClick={onReset}
+            type="button"
+            className="text-xs font-medium text-neutral-600 hover:text-neutral-900 inline-flex items-center gap-1.5"
+          >
+            <RotateCcw className="size-3.5 strokeWidth={1.5}" />
+            Restaurar diseño
           </Button>
-          <Button variant="primary" onClick={onClose} type="button">
+          <Button variant="primary" onClick={onClose} type="button" className="text-xs">
             Listo
           </Button>
-        </>
+        </div>
       }
     >
-      <div className="space-y-4">
-        <p className="text-sm text-brand-options">
-          Activa o desactiva los indicadores y elige cómo se visualizan.
+      <div className="space-y-6">
+        <p className="text-xs text-neutral-500">
+          Selecciona los indicadores y widgets que deseas visualizar en tu pantalla. Puedes arrastrarlos directamente en la vista para reordenarlos.
         </p>
 
-        <ul className="space-y-3">
-          {widgets.map((widget) => (
-            <li
-              key={widget.id}
-              className={cn(
-                'rounded-xl border p-4 transition-colors',
-                widget.isActive ? 'border-border-default bg-surface' : 'border-border-default bg-zinc-50/60'
-              )}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <label
-                  htmlFor={`widget-${widget.id}`}
-                  className="min-w-0 flex-1 cursor-pointer"
-                >
-                  <span className="text-sm font-semibold text-brand-subtitle">
-                    {widget.title}
-                  </span>
-                </label>
+        {/* Sección Tarjetas KPI */}
+        <div>
+          <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider mb-3">
+            Métricas y Tarjetas KPI
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {kpis.map((kpi) => (
+              <label
+                key={kpi.id}
+                htmlFor={`kpi-${kpi.id}`}
+                className={`p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition-colors ${
+                  kpi.isActive
+                    ? 'border-stone-300 bg-white shadow-xs'
+                    : 'border-stone-200 bg-zinc-50 opacity-60'
+                }`}
+              >
+                <span className="text-xs font-medium text-neutral-900 leading-tight">
+                  {kpi.title}
+                </span>
+                <Checkbox
+                  id={`kpi-${kpi.id}`}
+                  checked={kpi.isActive}
+                  onChange={() => onToggleKpi(kpi.id)}
+                  aria-label={`Mostrar ${kpi.title}`}
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Sección Widgets Gráficos */}
+        <div>
+          <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider mb-3">
+            Widgets Gráficos y Tablas
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {widgets.map((widget) => (
+              <label
+                key={widget.id}
+                htmlFor={`widget-${widget.id}`}
+                className={`p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition-colors ${
+                  widget.isActive
+                    ? 'border-stone-300 bg-white shadow-xs'
+                    : 'border-stone-200 bg-zinc-50 opacity-60'
+                }`}
+              >
+                <span className="text-xs font-medium text-neutral-900 leading-tight">
+                  {widget.title}
+                </span>
                 <Checkbox
                   id={`widget-${widget.id}`}
-                  
                   checked={widget.isActive}
-                  onChange={() => onToggleWidget(view, widget.id)}
-                  
-                  aria-label={`Activar widget ${widget.title}`}
+                  onChange={() => onToggleWidget(widget.id)}
+                  aria-label={`Mostrar widget ${widget.title}`}
                 />
-              </div>
-
-              {widget.isActive && (
-                <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label={`Tipo de gráfico para ${widget.title}`}>
-                  {CHART_TYPES.map((type) => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => onChartTypeChange(view, widget.id, type.value)}
-                      aria-pressed={widget.chartType === type.value}
-                      className={cn(
-                        'rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors',
-                        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
-                        widget.chartType === type.value
-                          ? 'border-accent-primary bg-accent-soft text-accent-ink'
-                          : 'border-border-default bg-surface text-brand-options hover:border-zinc-300'
-                      )}
-                    >
-                      {type.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
+              </label>
+            ))}
+          </div>
+        </div>
       </div>
     </Modal>
   );
