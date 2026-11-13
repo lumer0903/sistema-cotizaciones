@@ -22,15 +22,22 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
   ) => (
     <div
       className={cn(
-        'w-full rounded-2xl border-2 border-[#E5E7EB] bg-white overflow-hidden',
+        'w-full rounded-2xl border-2 border-[#E5E7EB] bg-white overflow-hidden outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0',
         wrapperClassName
       )}
       role="region"
       aria-label={scrollLabel}
       tabIndex={0}
     >
-      <div className="w-full overflow-x-auto">
-        <table ref={ref} className={cn('w-full border-collapse text-left', className)} {...props}>
+      <div className="w-full overflow-x-auto outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0">
+        <table
+          ref={ref}
+          className={cn(
+            'w-full border-collapse text-left outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0',
+            className
+          )}
+          {...props}
+        >
           {children}
         </table>
       </div>

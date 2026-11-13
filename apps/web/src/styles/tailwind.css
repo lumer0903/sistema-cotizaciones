@@ -185,11 +185,6 @@ html.modal-open {
   overflow: hidden !important;
 }
 
-/* Selección de texto con la paleta de marca */
-::selection {
-  background: var(--color-brand-selection);
-  color: var(--color-brand-subtitle);
-}
 
 /* Accesibilidad: respeta preferencia de movimiento reducido */
 @media (prefers-reduced-motion: reduce) {
