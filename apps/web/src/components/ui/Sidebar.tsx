@@ -66,9 +66,11 @@ interface SidebarProps {
     onToggleLogo?: () => void;
     sidebarOpen?: boolean;
     setSidebarOpen?: (open: boolean) => void;
+    collapsed?: boolean;
+    onToggleCollapse?: () => void;
 }
 
-export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
+export function Sidebar({ open = false, onClose, onToggleLogo, collapsed = false }: SidebarProps) {
     const mobile = useMobileViewport();
     const dialogRef = useDialogLayer(open && mobile, () => onClose?.());
     const pathname = usePathname();
@@ -82,6 +84,7 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
 
     const [openSubmenu, setOpenSubmenu] = useState<string | null>(() => findActiveSubmenu(pathname, visibleItems));
     const [prevPathname, setPrevPathname] = useState(pathname);
+    const [cotizacionesPopoverOpen, setCotizacionesPopoverOpen] = useState(false);
 
     if (prevPathname !== pathname) {
         setPrevPathname(pathname);
@@ -98,6 +101,7 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
 
     // En móvil (<1024px) es un drawer sobre el contenido, así que sí se cierra para no tapar la vista.
     const navegar = () => {
+        setCotizacionesPopoverOpen(false);
         if (typeof window !== 'undefined' && window.innerWidth < 1024) {
             onClose?.();
         }
@@ -107,34 +111,50 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
         <aside
             ref={dialogRef}
             tabIndex={-1}
-            inert={!open}
+            inert={mobile && !open ? true : undefined}
             role={open && mobile ? 'dialog' : undefined}
             aria-modal={open && mobile ? true : undefined}
             aria-label="Menú principal"
             id="menu-lateral"
-            className={`w-60 bg-white border-r border-[#E5E7EB] flex flex-col justify-between min-h-screen fixed left-0 top-0 z-50 select-none transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'}`}
+            className={`bg-white border-r border-[#E5E7EB] flex flex-col justify-between min-h-screen fixed left-0 top-0 z-50 select-none transition-all duration-200 ease-in-out ${
+                mobile
+                    ? `w-60 ${open ? 'translate-x-0' : '-translate-x-full'}`
+                    : `${collapsed ? 'w-16' : 'w-60'} translate-x-0`
+            }`}
         >
             <div className="flex flex-col w-full flex-1 min-h-0">
-                {/* LOGO SUPERIOR COMPACTO */}
-                <div className="py-4 px-4 flex justify-center">
-                    <Link
-                        href="/dashboard"
-                        className="flex-1 min-w-0 flex justify-center items-center group py-0.5 focus:outline-none rounded-lg"
-                        onClick={onToggleLogo}
-                    >
-                        <Image
-                            src="/LOGO_GRANDE.svg"
-                            alt="Import & Export Gold Continent"
-                            width={180}
-                            height={42}
-                            priority
-                            className="w-44 h-10 object-contain transition-transform duration-150 group-hover:scale-105"
-                        />
-                    </Link>
+                {/* LOGO SUPERIOR */}
+                <div className={`py-4 flex justify-center items-center ${collapsed && !mobile ? 'px-2' : 'px-4'}`}>
+                    {collapsed && !mobile ? (
+                        <Link
+                            href="/dashboard"
+                            className="size-9 rounded-xl bg-[#FFF8E6] border border-[#F8B602]/40 flex items-center justify-center font-black text-xs text-[#F8B602] hover:scale-105 transition-transform focus:outline-none"
+                            title="IMPORT & EXPORT GOLD CONTINENT"
+                            aria-label="IMPORT & EXPORT GOLD CONTINENT"
+                            onClick={onToggleLogo}
+                        >
+                            GC
+                        </Link>
+                    ) : (
+                        <Link
+                            href="/dashboard"
+                            className="flex-1 min-w-0 flex justify-center items-center group py-0.5 focus:outline-none rounded-lg"
+                            onClick={onToggleLogo}
+                        >
+                            <Image
+                                src="/LOGO_GRANDE.svg"
+                                alt="Import & Export Gold Continent"
+                                width={180}
+                                height={42}
+                                priority
+                                className="w-44 h-10 object-contain transition-transform duration-150 group-hover:scale-105"
+                            />
+                        </Link>
+                    )}
                 </div>
 
                 {/* MENÚ DE NAVEGACIÓN */}
-                <nav className="w-full flex-1 flex flex-col overflow-y-auto pb-2">
+                <nav className="w-full flex-1 flex flex-col overflow-y-auto pb-2 custom-scrollbar">
                     {visibleItems.map((item) => {
                         const Icon = item.icon;
                         const hasSubItems = Boolean(item.subItems && item.subItems.length > 0);
@@ -142,6 +162,92 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
                         const isActive = pathname.startsWith(item.href);
                         const etiqueta = item.historial && (isAdmin || isGerente) ? 'Precio & Historial' : item.name;
 
+                        // MODO COLAPSADO EN ESCRITORIO
+                        if (collapsed && !mobile) {
+                            if (hasSubItems) {
+                                return (
+                                    <div
+                                        key={item.name}
+                                        className="relative w-full py-1 flex justify-center"
+                                        onMouseEnter={() => setCotizacionesPopoverOpen(true)}
+                                        onMouseLeave={() => setCotizacionesPopoverOpen(false)}
+                                    >
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setCotizacionesPopoverOpen((prev) => !prev);
+                                                router.push(item.href);
+                                            }}
+                                            title={etiqueta}
+                                            aria-label={etiqueta}
+                                            aria-expanded={cotizacionesPopoverOpen}
+                                            className={`size-10 rounded-xl flex items-center justify-center transition-colors focus:outline-none cursor-pointer ${
+                                                isActive
+                                                    ? 'bg-[#FFF3E4] text-[#9D3A19] border border-[#F8B602]/50'
+                                                    : 'text-[#414141] hover:bg-neutral-100 hover:text-[#F8B602]'
+                                            }`}
+                                        >
+                                            <Icon className="size-5 shrink-0" strokeWidth={isActive ? 2 : 1.75} />
+                                        </button>
+
+                                        {/* Menú flotante compacto a la derecha */}
+                                        {cotizacionesPopoverOpen && (
+                                            <div className="absolute left-full top-0 ml-2 w-44 rounded-xl bg-white border border-[#E5E7EB] shadow-lg p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                                                <p className="px-2.5 py-1 text-[11px] font-bold text-[#8D8D8D] uppercase tracking-wider">
+                                                    {etiqueta}
+                                                </p>
+                                                <div className="flex flex-col gap-0.5 mt-0.5">
+                                                    {item.subItems
+                                                        ?.filter(
+                                                            (sub) =>
+                                                                !sub.href.startsWith('/cotizaciones/crear') ||
+                                                                can('cotizaciones', 'edicion')
+                                                        )
+                                                        .map((sub) => {
+                                                            const isSubActive = pathname === sub.href.split('?')[0];
+                                                            return (
+                                                                <Link
+                                                                    key={sub.name}
+                                                                    href={sub.href}
+                                                                    onClick={navegar}
+                                                                    className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                                                        isSubActive
+                                                                            ? 'bg-[#F8B602]/15 text-[#9D3A19] font-bold'
+                                                                            : 'text-[#414141] hover:bg-neutral-50 hover:text-[#F8B602]'
+                                                                    }`}
+                                                                >
+                                                                    {sub.name}
+                                                                </Link>
+                                                            );
+                                                        })}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div key={item.href} className="w-full py-1 flex justify-center">
+                                    <Link
+                                        href={item.href}
+                                        onClick={navegar}
+                                        title={etiqueta}
+                                        aria-label={etiqueta}
+                                        aria-current={isActive ? 'page' : undefined}
+                                        className={`size-10 rounded-xl flex items-center justify-center transition-colors focus:outline-none ${
+                                            isActive
+                                                ? 'bg-[#FFF3E4] text-[#9D3A19] border border-[#F8B602]/50'
+                                                : 'text-[#414141] hover:bg-neutral-100 hover:text-[#F8B602]'
+                                        }`}
+                                    >
+                                        <Icon className="size-5 shrink-0" strokeWidth={isActive ? 2 : 1.75} />
+                                    </Link>
+                                </div>
+                            );
+                        }
+
+                        // MODO EXPANDIDO (O MÓVIL)
                         if (hasSubItems) {
                             return (
                                 <div key={item.name} className="w-full flex flex-col">
@@ -149,7 +255,7 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
                                         type="button"
                                         onClick={() => handleItemClick(item)}
                                         aria-expanded={isSubmenuOpen}
-                                        className={`w-full h-10 px-4 py-2 border-l-4 flex items-center gap-2.5 text-[13px] font-normal transition-colors focus:outline-none ${
+                                        className={`w-full h-10 px-4 py-2 border-l-4 flex items-center gap-2.5 text-[13px] font-normal transition-colors focus:outline-none cursor-pointer ${
                                             isActive
                                                 ? 'bg-[#F8B602]/20 border-[#F8B602] text-[#414141]'
                                                 : 'border-transparent text-[#414141] hover:bg-neutral-50'
@@ -232,17 +338,34 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
             </div>
 
             {/* PIE DEL SIDEBAR: Cerrar Sesión */}
-            <button
-                type="button"
-                onClick={async () => {
-                    await logout();
-                    router.push('/login');
-                }}
-                className="w-full h-12 px-4 border-t border-[#E5E7EB] shadow-[0_-2px_6px_rgba(0,0,0,0.04)] flex items-center gap-2.5 text-[13px] font-medium text-[#414141] hover:bg-neutral-50 transition-colors cursor-pointer text-left shrink-0 focus:outline-none"
-            >
-                <LogOut className="size-4 text-[#414141] shrink-0" strokeWidth={1.5} />
-                <span>Cerrar Sesión</span>
-            </button>
+            {collapsed && !mobile ? (
+                <div className="w-full py-3 border-t border-[#E5E7EB] flex justify-center shrink-0">
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            await logout();
+                            router.push('/login');
+                        }}
+                        title="Cerrar Sesión"
+                        aria-label="Cerrar Sesión"
+                        className="size-10 rounded-xl flex items-center justify-center text-[#575757] hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer focus:outline-none"
+                    >
+                        <LogOut className="size-5 shrink-0" strokeWidth={1.5} />
+                    </button>
+                </div>
+            ) : (
+                <button
+                    type="button"
+                    onClick={async () => {
+                        await logout();
+                        router.push('/login');
+                    }}
+                    className="w-full h-12 px-4 border-t border-[#E5E7EB] shadow-[0_-2px_6px_rgba(0,0,0,0.04)] flex items-center gap-2.5 text-[13px] font-medium text-[#414141] hover:bg-neutral-50 transition-colors cursor-pointer text-left shrink-0 focus:outline-none"
+                >
+                    <LogOut className="size-4 text-[#414141] shrink-0" strokeWidth={1.5} />
+                    <span>Cerrar Sesión</span>
+                </button>
+            )}
         </aside>
     );
 }

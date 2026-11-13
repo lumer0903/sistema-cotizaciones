@@ -2,7 +2,7 @@
 
 import { useCallback, useSyncExternalStore } from 'react';
 
-const STORAGE_KEY = 'sidebarOpen';
+const STORAGE_KEY = 'sidebarExpanded';
 
 /** Oyentes de la misma pestaña (el evento `storage` llega de otras pestañas). */
 const listeners = new Set<() => void>();
@@ -18,21 +18,21 @@ const subscribe = (onStoreChange: () => void) => {
   };
 };
 
-/** Preferencia guardada; sin dato, abierto en desktop (>= 1024px). */
+/** Preferencia guardada; sin dato, expandido en desktop (true). */
 const getSnapshot = (): boolean => {
   const stored = window.localStorage.getItem(STORAGE_KEY);
   if (stored !== null) return stored === 'true';
-  return window.innerWidth >= 1024;
+  // Soporte legacy de sidebarOpen si existía
+  const legacy = window.localStorage.getItem('sidebarOpen');
+  if (legacy !== null) return legacy === 'true';
+  return true;
 };
 
-/** SSR: siempre cerrado; React aplica el snapshot real tras la hidratación. */
-const getServerSnapshot = (): boolean => false;
+/** SSR: true en servidor para evitar saltos. */
+const getServerSnapshot = (): boolean => true;
 
 /**
- * Estado del sidebar persistido en localStorage.
- * `useSyncExternalStore` en lugar de `useState` + `useEffect`: React resuelve
- * la hidratación SSR/cliente sin setState dentro de efectos y mantiene
- * sincronizadas las pestañas.
+ * Estado expandido/colapsado del sidebar en escritorio (persistido en localStorage).
  */
 export function useSidebarOpen(): [boolean, (open: boolean) => void] {
   const open = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);

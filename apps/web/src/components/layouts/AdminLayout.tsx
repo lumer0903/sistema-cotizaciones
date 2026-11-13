@@ -17,8 +17,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isAlertasOpen, setIsAlertasOpen] = useState(false);
   const [alertasCount, setAlertasCount] = useState(0);
   const [isPerfilOpen, setIsPerfilOpen] = useState(false);
-  // Preferencia persistida del sidebar (localStorage) fuera de los efectos
+  // Preferencia persistida del sidebar en escritorio (expandido = true, colapsado = false)
   const [sidebarOpen, setSidebarOpen] = useSidebarOpen();
+  // Estado del drawer para móviles (< 1024px)
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const fetchAlertasCount = useCallback(() => {
     return apiClient('/notificaciones')
@@ -48,19 +50,24 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         Saltar al contenido
       </a>
       {/* BACKDROP MÓVIL */}
-      {sidebarOpen && (
+      {mobileDrawerOpen && (
         <div
           className="fixed inset-0 z-40 bg-overlay lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => setMobileDrawerOpen(false)}
           aria-hidden="true"
         />
       )}
 
       {/* SIDEBAR */}
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        open={mobileDrawerOpen}
+        onClose={() => setMobileDrawerOpen(false)}
+        collapsed={!sidebarOpen}
+        onToggleCollapse={() => setSidebarOpen(!sidebarOpen)}
+      />
 
       {/* ÁREA PRINCIPAL */}
-      <div className={`flex-1 min-w-0 flex flex-col min-h-screen transition-[padding] duration-300 ease-in-out ${sidebarOpen ? 'lg:pl-60' : 'lg:pl-0'}`}>
+      <div className={`flex-1 min-w-0 flex flex-col min-h-screen transition-all duration-200 ease-in-out ${sidebarOpen ? 'lg:pl-60' : 'lg:pl-16'}`}>
         {/* NAVBAR DINÁMICO */}
         <header className="w-full h-14 px-4 sm:px-5 lg:px-6 bg-surface border-b border-border-default flex items-center justify-between gap-3 sticky top-0 z-30">
 
@@ -68,8 +75,14 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             {/* BOTÓN MENÚ MÓVIL Y ESCRITORIO */}
             <button
               type="button"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 min-h-9 min-w-9 flex items-center justify-center rounded-lg text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted transition-colors shrink-0"
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                  setMobileDrawerOpen(!mobileDrawerOpen);
+                } else {
+                  setSidebarOpen(!sidebarOpen);
+                }
+              }}
+              className="p-2 min-h-9 min-w-9 flex items-center justify-center rounded-lg text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted transition-colors shrink-0 cursor-pointer"
               aria-label="Alternar menú"
               aria-expanded={sidebarOpen}
               aria-controls="menu-lateral"
