@@ -28,7 +28,7 @@ export const Pagination: React.FC<PaginationProps> = ({
     const startItem = totalItems === 0 ? 0 : (currentPage - 1) * limit + 1;
     const endItem = Math.min(currentPage * limit, totalItems);
 
-    const limitOptions = Array.from(new Set([8, 16, 24, ...(limit > 0 ? [limit] : [])])).sort((a, b) => a - b).map((n) => ({
+    const limitOptions = Array.from(new Set([8, 12, 16, 24, ...(limit > 0 ? [limit] : [])])).sort((a, b) => a - b).map((n) => ({
         label: String(n),
         value: n,
     }));

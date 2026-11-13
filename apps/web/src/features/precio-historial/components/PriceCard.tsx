@@ -30,21 +30,24 @@ export const PriceCard: React.FC<PriceCardProps> = ({
 
   return (
     <div className="w-full bg-white rounded-lg shadow-[3px_3px_10px_0px_rgba(0,0,0,0.25)] p-2.5 flex flex-col gap-2 overflow-hidden transition-transform hover:-translate-y-0.5">
-      {/* Bloque superior: Imagen / Placeholder + Acción rápida */}
-      <div className="relative w-full h-20 bg-[#F8B602]/20 rounded-lg flex items-center justify-center overflow-hidden">
+      {/* 1. Bloque superior: Imagen / Placeholder + Acción rápida de Historial */}
+      <div className="relative w-full h-24 bg-[#F8B602]/20 rounded-lg flex items-center justify-center overflow-hidden">
         {producto.imagenUrl ? (
           <Image
             fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 20vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             unoptimized
             loading="lazy"
             src={producto.imagenUrl}
-            alt={producto.descripcion}
+            alt={producto.codigo}
             className="w-full h-full object-cover"
             onError={(e) => handleImageError(e, '200')}
           />
         ) : (
-          <Package className="size-6 text-[#F8B602]/70" strokeWidth={1.5} />
+          <div className="flex flex-col items-center justify-center gap-1 text-[#F8B602]/70">
+            <Package className="size-6" strokeWidth={1.5} />
+            <span className="text-[10px] font-semibold tracking-wide uppercase">Sin Imagen</span>
+          </div>
         )}
 
         {onVerHistorial && (
@@ -53,48 +56,38 @@ export const PriceCard: React.FC<PriceCardProps> = ({
             onClick={() => onVerHistorial(producto.id)}
             title="Ver historial de precios"
             aria-label={`Ver historial de precios de ${producto.codigo}`}
-            className="absolute top-1.5 right-1.5 size-6 rounded-md bg-white/90 hover:bg-white text-[#F8B602] shadow-xs flex items-center justify-center transition-transform hover:scale-105 active:scale-95 focus:outline-none z-10"
+            className="absolute top-1.5 right-1.5 size-6 rounded-md bg-white/90 hover:bg-white text-[#F8B602] shadow-xs flex items-center justify-center transition-transform hover:scale-105 active:scale-95 focus:outline-none z-10 cursor-pointer"
           >
             <History className="size-3.5" strokeWidth={1.5} />
           </button>
         )}
       </div>
 
-      {/* Bloque de información del producto */}
-      <div className="flex flex-col gap-0.5 min-w-0">
-        {/* Fila superior: Código e indicador de stock */}
-        <div className="flex items-center justify-between gap-1.5 min-w-0">
-          <span
-            className="text-xs font-black text-[#F8B602] truncate"
-            title={formatCode(producto.codigo)}
-          >
-            {formatCode(producto.codigo)}
-          </span>
-          <div className="inline-flex items-center gap-1 shrink-0">
-            <span
-              className={`size-1.5 rounded-full ${
-                tieneStock ? 'bg-[#0CC200]' : 'bg-rose-500'
-              }`}
-            />
-            <span
-              className={`text-[10px] font-bold uppercase tabular-nums ${
-                tieneStock ? 'text-[#0CC200]' : 'text-rose-500'
-              }`}
-            >
-              STOCK: {producto.stock}
-            </span>
-          </div>
-        </div>
-
-        {/* Descripción */}
-        <p
-          className="text-[11px] font-light text-[#8D8D8D] line-clamp-2 min-h-[2rem] leading-tight"
-          title={producto.descripcion}
+      {/* 2. Cabecera de datos: Código a la izquierda y Stock a la derecha (sin descripción) */}
+      <div className="flex items-center justify-between gap-1.5 min-w-0">
+        <span
+          className="text-xs font-black text-[#F8B602] truncate"
+          title={formatCode(producto.codigo)}
         >
-          {producto.descripcion}
-        </p>
+          {formatCode(producto.codigo)}
+        </span>
+        <div className="inline-flex items-center gap-1 shrink-0">
+          <span
+            className={`size-1.5 rounded-full ${
+              tieneStock ? 'bg-[#0CC200]' : 'bg-rose-500'
+            }`}
+          />
+          <span
+            className={`text-[10px] font-bold uppercase tabular-nums ${
+              tieneStock ? 'text-[#0CC200]' : 'text-rose-500'
+            }`}
+          >
+            STOCK: {producto.stock}
+          </span>
+        </div>
       </div>
 
+      {/* 3. Bloque(s) de precios */}
       {/* Bloque 1: PRECIO DISTRIBUIDOR */}
       {tipoPrecio !== 'tienda' && (
         <div className="w-full rounded-md bg-[#FFF3E4] border border-[#FEDEBA] px-2 py-1 flex flex-col items-center gap-0.5">
