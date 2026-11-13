@@ -60,7 +60,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* ÁREA PRINCIPAL */}
-      <div className={`flex-1 min-w-0 flex flex-col min-h-screen transition-[padding] duration-300 ease-in-out ${sidebarOpen ? 'lg:pl-64' : 'pl-0'}`}>
+      <div className={`flex-1 min-w-0 flex flex-col min-h-screen transition-[padding] duration-300 ease-in-out ${sidebarOpen ? 'lg:pl-72' : 'lg:pl-0'}`}>
         {/* NAVBAR DINÁMICO */}
         <header className="w-full h-16 px-4 sm:px-6 lg:px-8 bg-surface border-b border-border-default flex items-center justify-between gap-3 sticky top-0 z-30">
 
