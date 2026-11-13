@@ -18,7 +18,7 @@ export function VendedorLayout({ children }: { children: React.ReactNode }) {
   const { usuario } = useAuth();
 
   return (
-    <div className="min-h-screen flex bg-surface-muted text-brand-subtitle" data-theme="vendedor">
+    <div className="min-h-screen bg-[#F1F5F9] flex font-sans" data-theme="vendedor">
       {/* Skip link: primer elemento enfocable para navegación por teclado */}
       <a
         href="#contenido-principal"
@@ -41,7 +41,7 @@ export function VendedorLayout({ children }: { children: React.ReactNode }) {
       />
 
       <div className={`flex-1 min-w-0 flex flex-col min-h-screen transition-all duration-200 ease-in-out ${sidebarOpen ? 'lg:pl-60' : 'lg:pl-16'}`}>
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border-default bg-surface/80 backdrop-blur-md px-4 lg:px-6">
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-[#E2E8F0] bg-white/80 backdrop-blur-md px-4 lg:px-6">
           <div className="flex items-center gap-2.5 min-w-0">
             <button
               className="p-2 min-h-9 min-w-9 flex items-center justify-center rounded-lg text-brand-options hover:text-vendedor-primary hover:bg-vendedor-soft shrink-0 cursor-pointer"

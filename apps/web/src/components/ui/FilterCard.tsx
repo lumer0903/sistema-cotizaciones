@@ -19,7 +19,7 @@ export const FilterCard: React.FC<FilterCardProps> = ({
     return (
         <div
             className={cn(
-                'w-full min-w-0 bg-white rounded-lg px-5 py-3.5 shadow-[3px_3px_10px_0px_rgba(0,0,0,0.04)] border border-[#F3F4F6] border-l-2 border-l-[#F8B602] flex flex-wrap items-end gap-3.5 transition-[background-color,border-color,box-shadow] duration-150',
+                'w-full min-w-0 bg-white rounded-xl border border-[#E2E8F0] border-l-3 border-l-[#F8B602] shadow-[0_2px_6px_rgba(15,23,42,0.05)] flex flex-wrap items-end gap-3.5 transition-[background-color,border-color,box-shadow] duration-150',
                 className
             )}
         >

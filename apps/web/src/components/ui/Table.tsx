@@ -22,7 +22,7 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
   ) => (
     <div
       className={cn(
-        'w-full rounded-2xl border-2 border-[#E5E7EB] bg-white overflow-hidden outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0',
+        'w-full rounded-xl border border-[#E2E8F0] bg-white overflow-hidden outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0',
         wrapperClassName
       )}
       role="region"
@@ -60,7 +60,7 @@ export interface TableHeaderProps extends React.HTMLAttributes<HTMLTableSectionE
 
 export const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
   ({ children, className, _sticky = false, ...props }, ref) => (
-    <thead ref={ref} className={cn('bg-[#E5E7EB]/60 border-b border-[#E5E7EB]', className)} {...props}>
+    <thead ref={ref} className={cn('bg-[#F8FAFC] border-b border-[#E2E8F0]', className)} {...props}>
       {children}
     </thead>
   )
@@ -105,7 +105,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
           : undefined
       }
       tabIndex={onClick ? 0 : undefined}
-      className={cn('h-11 bg-white hover:bg-neutral-50/80 transition-colors', className)}
+      className={cn('h-11 bg-white border-b border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors', className)}
       {...props}
     >
       {children}

@@ -41,7 +41,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   }, [fetchAlertasCount]);
 
   return (
-    <div className="min-h-screen bg-surface-muted/50 flex font-sans" data-theme="admin">
+    <div className="min-h-screen bg-[#F1F5F9] flex font-sans" data-theme="admin">
       {/* Skip link: primer elemento enfocable para navegación por teclado */}
       <a
         href="#contenido-principal"
@@ -69,7 +69,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       {/* ÁREA PRINCIPAL */}
       <div className={`flex-1 min-w-0 flex flex-col min-h-screen transition-all duration-200 ease-in-out ${sidebarOpen ? 'lg:pl-60' : 'lg:pl-16'}`}>
         {/* NAVBAR DINÁMICO */}
-        <header className="w-full h-14 px-4 sm:px-5 lg:px-6 bg-surface border-b border-border-default flex items-center justify-between gap-3 sticky top-0 z-30">
+        <header className="w-full h-14 px-4 sm:px-5 lg:px-6 bg-white border-b border-[#E2E8F0] flex items-center justify-between gap-3 sticky top-0 z-30">
 
           <div className="flex items-center gap-2 min-w-0 flex-1">
             {/* BOTÓN MENÚ MÓVIL Y ESCRITORIO */}
@@ -82,7 +82,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   setSidebarOpen(!sidebarOpen);
                 }
               }}
-              className="p-2 min-h-9 min-w-9 flex items-center justify-center rounded-lg text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted transition-colors shrink-0 cursor-pointer"
+              className="p-2 min-h-9 min-w-9 flex items-center justify-center rounded-lg border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-[#414141] outline-none focus-visible:ring-2 focus-visible:ring-[#F8B602]/30 transition-colors cursor-pointer"
               aria-label="Alternar menú"
               aria-expanded={sidebarOpen}
               aria-controls="menu-lateral"
