@@ -9,42 +9,35 @@ interface FilterCardProps {
     accentBorder?: boolean;
 }
 
+/**
+ * Contenedor base de la barra de filtros según estilo Figma con acento dorado #F8B602.
+ */
 export const FilterCard: React.FC<FilterCardProps> = ({
     children,
     className = '',
-    accentBorder = false
 }) => {
     return (
         <div
             className={cn(
-        'w-full min-w-0',
-        'bg-surface',
-        'rounded-xl',
-        'border border-border-default',
-        accentBorder && 'border-l-4 border-l-accent-primary',
-        'p-3.5',
-        'shadow-card',
-        'transition-[background-color,border-color,box-shadow] duration-150',
-        className
-      )}
+                'w-full min-w-0 bg-white rounded-lg px-5 py-3.5 shadow-[3px_3px_10px_0px_rgba(0,0,0,0.04)] border border-[#F3F4F6] border-l-2 border-l-[#F8B602] flex flex-wrap items-end gap-3.5 transition-[background-color,border-color,box-shadow] duration-150',
+                className
+            )}
         >
             {children}
         </div>
     );
-  };
+};
+
+export const FilterBar = FilterCard;
 
 /**
- * Responsive filter layout that always spans the full available width (w-full).
- * Children fields proportionally expand to eliminate empty white space on the right,
- * while actions and buttons marked with shrink-0 retain their natural compact size.
+ * Layout flexible responsivo para items de filtros.
  */
 export function FilterGrid({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div
       className={cn(
-        'w-full flex flex-wrap items-end gap-3 sm:gap-4',
-        '[&>*:not(.shrink-0)]:flex-1 [&>*:not(.shrink-0)]:min-w-[140px]',
-        '[&>*]:min-w-0',
+        'w-full flex flex-wrap items-end gap-3.5 min-w-0',
         className
       )}
     >
@@ -60,4 +53,3 @@ export function FilterActions({ children, className }: { children: React.ReactNo
     </div>
   );
 }
-

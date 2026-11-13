@@ -1,44 +1,38 @@
 /**
- * Tokens compartidos para campos de formulario (Input / Select / Textarea).
- * Fuente única de verdad de la "piel" de los campos → elimina la
- * triplicación de estilos entre componentes.
+ * Tokens compartidos para campos de formulario y filtros (Input / Select / Textarea).
+ * Estilo base Figma con acento dorado #F8B602.
  */
 
-/** Etiqueta de campo: 11px, semi-bold, sin uppercase. */
-export const FIELD_LABEL = 'block text-[11px] font-semibold text-brand-subtitle mb-1';
+/** Etiquetas de cada filtro (FilterLabel): uppercase, 11px, font-black, dorado #F8B602. */
+export const FIELD_LABEL = 'block mb-1.5 text-[11px] font-black uppercase tracking-wide text-[#F8B602]';
 
-/** Altura estándar de campo (idéntica en Input, Select y Textarea). */
+/** Altura estándar de campo (h-9 = 36px). */
 export const FIELD_HEIGHT = 'h-9';
 
-/** Texto del campo. */
-export const FIELD_TEXT = 'text-[13px] font-medium text-brand-subtitle';
+/** Texto del campo: font-light 13px, color #414141. */
+export const FIELD_TEXT = 'text-[13px] font-light text-[#414141]';
 
-/** Borde base del campo. */
-export const FIELD_BORDER = 'border border-border-default bg-surface rounded-xl';
+/** Borde y contenedor base: redondeado rounded-lg con borde dorado #F8B602 y fondo blanco. */
+export const FIELD_BORDER = 'rounded-lg border border-[#F8B602] bg-white';
 
-/** Transición + placeholder comunes. */
+/** Transición + placeholder text-[#787878]. */
 export const FIELD_TRANSITION =
-  'transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-brand-options';
+  'transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-[#787878]';
 
-/**
- * Estado hover/focus (versión sin error).
- * Efecto de peso e inserción usando exclusivamente border y ring:
- * - focus: aplica el tono oscuro al borde principal
- * - focus:ring: halo dorado/amarillo translúcido
- * - focus:outline-none: elimina la doble línea nativa desalineada
- */
-export const FIELD_FOCUS = 'hover:border-brand-options focus:border-amber-900 focus:ring-2 ring-amber-300/30 focus:outline-none focus-within:border-amber-900/20 focus-within:ring-2 ring-amber-300/20';
+/** Estado focus con halo dorado suave (#F8B602/25). */
+export const FIELD_FOCUS =
+  'focus:outline-none focus:ring-2 focus:ring-[#F8B602]/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F8B602]/25';
 
 /** Estado deshabilitado. */
 export const FIELD_DISABLED =
-  'disabled:bg-status-borrador/40 disabled:text-brand-options disabled:border-border-default disabled:cursor-not-allowed';
+  'disabled:bg-neutral-100 disabled:text-neutral-400 disabled:border-neutral-200 disabled:cursor-not-allowed';
 
-/** Estado de error (usa !important para ganarle a las reglas base). */
+/** Estado de error. */
 export const FIELD_ERROR =
-  '!border-danger';
+  '!border-[#EF4444] focus:!ring-[#EF4444]/25';
 
 /** Texto de mensaje de error bajo el campo. */
-export const FIELD_ERROR_TEXT = 'mt-1.5 text-xs font-medium text-danger';
+export const FIELD_ERROR_TEXT = 'mt-1 text-xs font-medium text-[#EF4444]';
 
 /** Clases completas para un campo sin error. */
 export const FIELD_BASE = [

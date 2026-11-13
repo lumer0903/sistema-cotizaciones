@@ -175,11 +175,11 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
       <h1 className="sr-only">Cobranza</h1>
       <FilterCard className="w-full">
         <FilterGrid>
-          <div className="flex-[1.4] min-w-[200px]">
+          <div className="flex-[2] min-w-[240px] lg:min-w-[300px]">
             <Input
               type="text"
               label="Buscar"
-              icon={<Search className="w-4 h-4" />}
+              icon={<Search className="w-4 h-4 text-[#F8B602]" strokeWidth={2} />}
               placeholder="Buscar por documento o cliente..."
               value={search}
               onChange={(e) => {
@@ -190,7 +190,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
             />
           </div>
 
-          <div className="flex-1 min-w-[150px]">
+          <div className="flex-1 min-w-[140px] max-w-[195px]">
             <Select
               label="Estado"
               value={estadoFilter}
@@ -203,7 +203,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
             />
           </div>
 
-          <div className="flex-1 min-w-[150px]">
+          <div className="flex-1 min-w-[140px] max-w-[195px]">
             <Select
               label="Tipo de cliente"
               value={tipoClienteFilter}
@@ -216,7 +216,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
             />
           </div>
 
-          <div className="flex-1 min-w-[140px]">
+          <div className="flex-1 min-w-[140px] max-w-[195px]">
             <Select
               label="Mora"
               value={moraFilter}
@@ -231,14 +231,14 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
 
           <div className="shrink-0 flex items-end">
             <Button
-              variant="outline"
-              className="h-9 px-3 gap-2 whitespace-nowrap"
+              variant="primary"
+              className="h-9 px-4 gap-2 whitespace-nowrap"
               aria-label="Exportar cobranza CSV"
               title="Exportar CSV"
               loading={exporting}
               onClick={handleExportar}
             >
-              <Download className="h-4 w-4" />
+              <Download className="size-4 text-white" strokeWidth={2} />
               <span className="hidden sm:inline">Exportar</span>
             </Button>
           </div>

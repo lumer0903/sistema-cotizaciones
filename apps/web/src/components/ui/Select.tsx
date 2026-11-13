@@ -247,10 +247,10 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       (opt) => String(opt.value) === String(selectedValue)
     );
     const hasValue = selectedOption !== undefined;
-    const heightClass = cn(sizeVariant === 'sm' ? 'h-8' : FIELD_HEIGHT, 'text-sm');
+    const heightClass = cn(sizeVariant === 'sm' ? 'h-8' : FIELD_HEIGHT);
 
     return (
-      <div className="w-full space-y-1.5" ref={containerRef}>
+      <div className="w-full" ref={containerRef}>
         {/* select nativo real: mantiene RHF/submit y valor accesible */}
         <select
           ref={(element) => {
@@ -328,22 +328,23 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           >
             {icon && (
               <div
-                className="absolute left-3 pointer-events-none flex items-center justify-center text-brand-options"
+                className="absolute left-3 pointer-events-none flex items-center justify-center text-[#F8B602]"
                 aria-hidden="true"
               >
                 {icon}
               </div>
             )}
 
-            <span className={cn('block truncate', !hasValue && 'text-brand-options')}>
+            <span className={cn('block truncate', !hasValue && 'text-[#787878]')}>
               {selectedOption && hasValue ? selectedOption.label : placeholder}
             </span>
 
             <ChevronDown
               className={cn(
-                'absolute right-2.5 size-4 text-brand-options transition-transform duration-200 pointer-events-none',
-                isOpen && 'rotate-180 text-accent-ink'
+                'absolute right-2.5 size-4 text-[#F8B602] transition-transform duration-200 pointer-events-none',
+                isOpen && 'rotate-180'
               )}
+              strokeWidth={1.75}
               aria-hidden="true"
             />
           </button>

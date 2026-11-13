@@ -147,11 +147,11 @@ export function InventarioFilters({
       <FilterGrid>
         {/* BUSCADOR Y FILTROS ALINEADOS A LA BASE */}
         {/* BUSCAR */}
-        <div className="flex-[1.4] min-w-[200px]">
+        <div className="flex-[2] min-w-[240px] lg:min-w-[300px]">
           <Input
             label="BUSCAR"
-            icon={<Search className="w-4 h-4" />}
-            placeholder="Buscar"
+            icon={<Search className="w-4 h-4 text-[#F8B602]" strokeWidth={2} />}
+            placeholder="Buscar por código o descripción…"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value.toUpperCase())}
             aria-label="Buscar productos"
@@ -159,7 +159,7 @@ export function InventarioFilters({
         </div>
 
         {/* CATEGORÍA */}
-        <div className="flex-1 min-w-[150px]">
+        <div className="flex-1 min-w-[140px] max-w-[195px]">
           <Select
             label="CATEGORÍA"
             value={selectedCategoria}
@@ -170,7 +170,7 @@ export function InventarioFilters({
         </div>
 
         {/* UBICACIÓN */}
-        <div className="flex-1 min-w-[150px]">
+        <div className="flex-1 min-w-[140px] max-w-[195px]">
           <Select
             label="UBICACIÓN"
             value={selectedUbicacion}
@@ -181,7 +181,7 @@ export function InventarioFilters({
         </div>
 
         {/* ESTADO STOCK */}
-        <div className="flex-1 min-w-[140px]">
+        <div className="flex-1 min-w-[140px] max-w-[195px]">
           <Select
             label="ESTADO STOCK"
             value={selectedStockEstado}
@@ -191,15 +191,18 @@ export function InventarioFilters({
           />
         </div>
 
-        {/* Acciones juntas, alineadas a la derecha */}
-        <div className="shrink-0 flex items-end gap-2">
-          {canEdit && <Button
-            variant="primary"
-            onClick={onAgregarProducto}
-            className="h-9 gap-1.5 whitespace-nowrap shadow-sm"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" /><span>Agrega</span>
-          </Button>}
+        {/* Acciones juntas, perfectamente alineadas a la derecha */}
+        <div className="shrink-0 flex items-end gap-2 self-end">
+          {canEdit && (
+            <Button
+              variant="primary"
+              onClick={onAgregarProducto}
+              className="h-9 px-4 gap-2 whitespace-nowrap shadow-xs"
+            >
+              <Plus className="size-4 text-white" strokeWidth={2} aria-hidden="true" />
+              <span>Agregar Producto</span>
+            </Button>
+          )}
 
           <DropdownMenu
             items={menuItems}
@@ -213,7 +216,7 @@ export function InventarioFilters({
                 )}
               </span>
             }
-            triggerClassName="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-transparent text-brand-subtitle hover:bg-surface-muted hover:text-accent-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            triggerClassName="h-9 w-9 shrink-0 flex items-center justify-center rounded-lg bg-transparent text-brand-subtitle hover:bg-surface-muted hover:text-accent-ink transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           />
         </div>
       </FilterGrid>

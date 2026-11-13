@@ -330,7 +330,7 @@ export function ReportesView() {
       {/* Filtros */}
       <FilterCard className="w-full">
         <FilterGrid>
-            <div className="flex-1 min-w-[140px]">
+            <div className="flex-1 min-w-[140px] max-w-[195px]">
               <Input
                 label="Fecha inicio"
                 type="date"
@@ -339,7 +339,7 @@ export function ReportesView() {
                 disabled={loadingMetas}
               />
             </div>
-            <div className="flex-1 min-w-[140px]">
+            <div className="flex-1 min-w-[140px] max-w-[195px]">
               <Input
                 label="Fecha fin"
                 type="date"
@@ -349,7 +349,7 @@ export function ReportesView() {
               />
             </div>
             {isAdmin && (
-              <div className="flex-1 min-w-[150px]">
+              <div className="flex-1 min-w-[140px] max-w-[195px]">
                 <Select
                   label="Vendedor"
                   value={filtros.idVendedor ? String(filtros.idVendedor) : ''}
@@ -360,7 +360,7 @@ export function ReportesView() {
                 />
               </div>
             )}
-            <div className="flex-1 min-w-[150px]">
+            <div className="flex-1 min-w-[140px] max-w-[195px]">
               <Select
                 label="Almacén"
                 value={filtros.idAlmacen ? String(filtros.idAlmacen) : ''}
@@ -370,7 +370,7 @@ export function ReportesView() {
                 placeholder="Todos"
               />
             </div>
-            <div className="flex-[1.2] min-w-[160px]">
+            <div className="flex-1 min-w-[140px] max-w-[195px]">
               <Select
                 label="Cliente"
                 value={filtros.idCliente ? String(filtros.idCliente) : ''}
@@ -385,9 +385,9 @@ export function ReportesView() {
               variant="primary"
               onClick={handleExport}
               disabled={dataActual.length === 0}
-              className="h-9 gap-1.5 whitespace-nowrap"
+              className="h-9 px-4 gap-2 whitespace-nowrap"
             >
-              <Download className="w-4 h-4" aria-hidden="true" />
+              <Download className="size-4 text-white" strokeWidth={2} aria-hidden="true" />
               <span>Exportar CSV</span>
             </Button>
           </div>

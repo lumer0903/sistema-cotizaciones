@@ -19,10 +19,9 @@ const BASE_STYLES =
   'inline-flex items-center justify-center font-bold rounded-xl transition-[scale,background-color,border-color,box-shadow] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed select-none shrink-0 active:scale-[0.96]';
 
 const VARIANT_STYLES: Record<NonNullable<ButtonProps['variant']>, string> = {
-  // Primary: amarillo de marca con texto on-brand (#18181B) → 10.1:1 WCAG AA
   primary: [
-    'bg-accent-primary text-on-accent hover:bg-accent-hover active:bg-accent-primary/90 active:scale-[0.96]',
-    'shadow-sm',
+    'bg-[#F8B602] hover:bg-[#e0a402] text-white font-black',
+    'rounded-lg shadow-xs active:scale-[0.96]',
     'disabled:bg-status-borrador disabled:text-brand-options',
   ].join(' '),
 

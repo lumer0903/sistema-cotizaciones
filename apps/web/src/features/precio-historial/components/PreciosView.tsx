@@ -50,17 +50,17 @@ export function PreciosView(){
  return <div className="w-full space-y-6">
  <h1 className="sr-only">Consulta de precios</h1>
  <FilterCard className="w-full"><FilterGrid>
- <div className="flex-[1.5] min-w-[220px]">
-   <Input icon={<Search className="h-4 w-4" />} label="Buscar código/descripción" placeholder="Código o descripción…" value={filters.search} onChange={e=>update('search',e.target.value)}/>
+ <div className="flex-[2] min-w-[240px] lg:min-w-[300px]">
+   <Input icon={<Search className="h-4 w-4 text-[#F8B602]" strokeWidth={2} />} label="Buscar código/descripción" placeholder="Buscar por código o descripción…" value={filters.search} onChange={e=>update('search',e.target.value)}/>
  </div>
- <div className="flex-1 min-w-[150px]">
+ <div className="flex-1 min-w-[140px] max-w-[195px]">
    <Select label="Tipo de cliente" value={tipoCliente} onChange={e=>setTipoCliente(e.target.value==='tienda'?'tienda':'distribuidor')} options={[
    {label:'Distribuidor',value:'distribuidor'},{label:'Tienda',value:'tienda'}]}/>
  </div>
- <div className="flex-1 min-w-[140px]">
+ <div className="flex-1 min-w-[140px] max-w-[195px]">
    <Select label="Stock" value={filters.stock_status} onChange={e=>update('stock_status',String(e.target.value))} options={[{label:'Bajo',value:'bajo'},{label:'Todos',value:''},{label:'Disponible',value:'disponible'}]}/>
  </div>
- <div className="flex-[1.2] min-w-[160px]">
+ <div className="flex-1 min-w-[140px] max-w-[195px]">
    <Select label="Categoría" disabled={categoriesQuery.isLoading||!!categoriesQuery.error} value={filters.id_categoria} onChange={e=>update('id_categoria',String(e.target.value))} options={[{label:'Todas las categorías',value:''},...(categoriesQuery.data?.data??[]).map(c=>({label:c.nombre_categoria,value:String(c.id_categoria)}))]}/>
    {categoriesQuery.isLoading&&<p role="status">Buscando categorías…</p>}{categoriesQuery.error&&<p role="alert">{apiErrorMessage(categoriesQuery.error)}</p>}
  </div>

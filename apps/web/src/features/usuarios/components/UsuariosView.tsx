@@ -81,18 +81,18 @@ export function UsuariosView() {
       {activeTab === 'usuarios' && (
         <FilterCard className="w-full">
           <FilterGrid>
-            <div className="flex-[2] min-w-[220px]">
+            <div className="flex-[2] min-w-[240px] lg:min-w-[300px]">
               <Input
                 type="text"
                 label="Buscar"
-                icon={<Search className="w-4 h-4" />}
+                icon={<Search className="w-4 h-4 text-[#F8B602]" strokeWidth={2} />}
                 placeholder="Buscar por nombre o correo..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full"
               />
             </div>
-            <div className="flex-1 min-w-[160px]">
+            <div className="flex-1 min-w-[140px] max-w-[195px]">
               <Select
                 label="Rol"
                 value={rolFilter}
@@ -112,9 +112,9 @@ export function UsuariosView() {
                 type="button"
                 variant="primary"
                 onClick={() => setUsuarioModalOpen({ isEditing: false })}
-                className="h-9 gap-1.5 whitespace-nowrap"
+                className="h-9 px-4 gap-2 whitespace-nowrap"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="size-4 text-white" strokeWidth={2} />
                 <span>Nuevo Usuario</span>
               </Button>
             </div>

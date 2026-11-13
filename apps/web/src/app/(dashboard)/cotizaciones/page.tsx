@@ -93,11 +93,11 @@ export default function MisCotizacionesPage() {
       <FilterCard>
         <FilterGrid>
           {/* BUSCAR */}
-          <div className="flex-[1.5] min-w-[220px]">
+          <div className="flex-[2] min-w-[240px] lg:min-w-[300px]">
             <Input
               label="Buscar"
               type="text"
-              icon={<Search className="w-4 h-4" />}
+              icon={<Search className="w-4 h-4 text-[#F8B602]" strokeWidth={2} />}
               value={buscar}
               onChange={(e) => {
                 setBuscar(e.target.value);
@@ -107,7 +107,7 @@ export default function MisCotizacionesPage() {
           </div>
 
           {/* FECHA */}
-          <div className="flex-1 min-w-[150px]">
+          <div className="flex-1 min-w-[140px] max-w-[195px]">
             <Input
               label="Fecha"
               type="date"
@@ -119,7 +119,7 @@ export default function MisCotizacionesPage() {
           </div>
 
           {/* ESTADO */}
-          <div className="flex-1 min-w-[150px]">
+          <div className="flex-1 min-w-[140px] max-w-[195px]">
             <Select
               label="Estado"
               value={estadoFilter}
@@ -132,7 +132,7 @@ export default function MisCotizacionesPage() {
           </div>
 
           {/* TIPO DE CLIENTE */}
-          <div className="flex-1 min-w-[150px]">
+          <div className="flex-1 min-w-[140px] max-w-[195px]">
             <Select
               label="Tipo de cliente"
               value={tipoFilter}
