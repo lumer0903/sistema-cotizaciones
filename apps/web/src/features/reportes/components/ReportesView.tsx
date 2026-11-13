@@ -407,7 +407,7 @@ export function ReportesView() {
               {filtros.fechaInicio.split('-').reverse().join('/')} - {filtros.fechaFin.split('-').reverse().join('/')}
               <button
                 onClick={() => setFiltros((prev) => ({ ...prev, fechaInicio: undefined, fechaFin: undefined }))}
-                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors"
                 aria-label="Remover rango de fechas"
               >
                 <X className="w-3 h-3" />
@@ -421,7 +421,7 @@ export function ReportesView() {
               {(vendedores.find(v => v.id_usuario === filtros.idVendedor)?.nombre || filtros.idVendedor)}
               <button
                 onClick={() => setFiltros((prev) => ({ ...prev, idVendedor: undefined }))}
-                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors"
                 aria-label="Remover vendedor"
               >
                 <X className="w-3 h-3" />
@@ -435,7 +435,7 @@ export function ReportesView() {
               {(almacenes.find(a => a.id_almacen === filtros.idAlmacen)?.nombre || filtros.idAlmacen)}
               <button
                 onClick={() => setFiltros((prev) => ({ ...prev, idAlmacen: undefined }))}
-                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors"
                 aria-label="Remover almacén"
               >
                 <X className="w-3 h-3" />
@@ -449,7 +449,7 @@ export function ReportesView() {
               {(clientes.find(c => c.id_cliente === filtros.idCliente)?.nombre || filtros.idCliente)}
               <button
                 onClick={() => setFiltros((prev) => ({ ...prev, idCliente: undefined }))}
-                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors"
                 aria-label="Remover cliente"
               >
                 <X className="w-3 h-3" />
@@ -462,11 +462,19 @@ export function ReportesView() {
       </FilterCard>
 
       {/* Tabs de reportes */}
-      <Tabs value={tipoReporte} onValueChange={(v: string) => setTipoReporte(v as TipoReporte)} className="w-full">
+<Tabs value={tipoReporte} onValueChange={(v: string) => setTipoReporte(v as TipoReporte)} className="w-full">
         <TabsList className="flex w-full max-w-full overflow-x-auto border-b border-slate-200 items-end">
           {(Object.keys(REPORTE_CONFIG) as TipoReporte[]).map((tipo) => (
-            <TabsTrigger key={tipo} value={tipo} className="gap-2 flex flex-col select-none justify-end">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#F8B602] font-bold border-b-2 border-[#F8B602] hover:border-transparent hover:text-slate-900 transition-colors">
+            <TabsTrigger
+              key={tipo}
+              value={tipo}
+              className="inline-flex items-center gap-2 pb-3 text-sm font-medium transition-colors cursor-pointer"
+            >
+              <span
+                className={tipoReporte === (tipo as string)
+                  ? 'text-[11px] font-semibold text-[#F8B602] border-b-2 border-[#F8B602] outline-none focus:outline-none'
+                  : 'text-[11px] font-medium text-slate-600 hover:text-slate-900 border-b-2 border-transparent outline-none focus:outline-none transition-colors'}
+                >
                 {REPORTE_CONFIG[tipo].icon}
                 {REPORTE_CONFIG[tipo].label}
               </span>

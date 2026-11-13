@@ -56,7 +56,7 @@ return (
             onClick={() => onVerHistorial(producto.id)}
             title="Ver historial de precios"
             aria-label={`Ver historial de precios de ${producto.codigo}`}
-            className="absolute top-1.5 right-1.5 size-7 rounded-lg bg-white/95 border border-[#E5E7EB] shadow-2xs flex items-center justify-center text-[#F8B602] hover:bg-[#FFF8E6] transition-colors cursor-pointer"
+            className="absolute top-1.5 right-1.5 size-7 rounded-lg bg-white/95 border border-[#E5E7EB] shadow-2xs flex items-center justify-center text-[#F8B602] hover:bg-slate-200/75 transition-colors cursor-pointer"
           >
             <History className="size-3.5" strokeWidth={1.5} />
           </button>

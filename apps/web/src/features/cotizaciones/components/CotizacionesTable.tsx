@@ -133,7 +133,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                         disabled={!isBorrador}
                         title={isBorrador ? 'Editar cotización' : 'No editable'}
                         aria-label={isBorrador ? 'Editar cotización' : 'No editable'}
-                        className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#F8B602]/15 hover:text-[#F8B600] text-[#F8B600]"
+                        className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-200/15 hover:text-[#F8B600] text-[#F8B600]"
                       >
                         <Pencil className="size-4 text-[#F8B600]" strokeWidth={1.75} />
                       </button>
@@ -146,7 +146,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                         disabled={isBorrador}
                         title={!isBorrador ? 'Ver documento' : 'No disponible en borrador'}
                         aria-label={!isBorrador ? 'Ver documento' : 'No disponible en borrador'}
-                        className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#F8B602]/15 hover:text-[#F8B600] text-[#F8B600]"
+                        className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-200/15 hover:text-[#F8B600] text-[#F8B600]"
                       >
                         <Eye className="size-4 text-[#F8B600]" strokeWidth={1.75} />
                       </button>

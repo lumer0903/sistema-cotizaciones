@@ -198,7 +198,7 @@ export function UsuariosView() {
                       onClick={() => setUsuarioModalOpen({ usuario: u, isEditing: true })}
                       title={`Editar usuario ${u.nombre}`}
                       aria-label={`Editar usuario ${u.nombre}`}
-                      className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#F8B602]/15 hover:text-[#F8B600] text-[#F8B600]"
+                      className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-200/15 hover:text-[#F8B600] text-[#F8B600]"
                     >
                       <Pencil className="size-4 text-[#F8B600]" strokeWidth={1.75} />
                     </button>

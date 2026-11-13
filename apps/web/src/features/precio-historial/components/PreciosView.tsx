@@ -75,7 +75,7 @@ export function PreciosView() {
             {filters.search.substring(0, 15)}{filters.search.length > 15 ? '...' : ''}
             <button
               onClick={() => setFilters(old => ({ ...old, search: '' }))}
-              className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+              className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors"
               aria-label="Limpiar búsqueda"
             >
               <X className="w-3 h-3" />
@@ -89,7 +89,7 @@ export function PreciosView() {
             {filters.stock_status === 'bajo' ? 'Bajo' : filters.stock_status === 'disponible' ? 'Suficiente' : 'Agotado'}
             <button
               onClick={() => setFilters(old => ({ ...old, stock_status: '' }))}
-              className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+              className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors"
               aria-label="Limpiar estado de stock"
             >
               <X className="w-3 h-3" />
@@ -103,7 +103,7 @@ export function PreciosView() {
             {filters.id_categoria}
             <button
               onClick={() => setFilters(old => ({ ...old, id_categoria: '' }))}
-              className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+              className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors"
               aria-label="Limpiar categoría"
             >
               <X className="w-3 h-3" />
@@ -117,7 +117,7 @@ export function PreciosView() {
             {tipoCliente === 'tienda' ? 'Tienda' : 'Distribuidor'}
             <button
               onClick={() => setTipoCliente('distribuidor')}
-              className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+              className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors"
               aria-label="Limpiar tipo de cliente"
             >
               <X className="w-3 h-3" />
