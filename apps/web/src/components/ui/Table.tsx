@@ -18,22 +18,12 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
     { children, className, wrapperClassName, scrollLabel = 'Tabla', ...props },
     ref
   ) => (
-    <div
-      className={cn(
-        'w-full rounded-xl border border-border-default shadow-card overflow-x-auto select-text bg-surface',
-        wrapperClassName
-      )}
-      role="region"
-      aria-label={scrollLabel}
-      tabIndex={0}
-    >
-      <table
-        ref={ref}
-        className={cn('w-full text-left text-sm text-brand-subtitle tnum', className)}
-        {...props}
-      >
-        {children}
-      </table>
+    <div className={cn('w-full rounded-2xl border-2 border-[#F3F4F6] bg-white overflow-hidden', wrapperClassName)} role="region" aria-label={scrollLabel} tabIndex={0}>
+      <div className="w-full overflow-x-auto">
+        <table ref={ref} className={cn('w-full border-collapse text-left', className)} {...props}>
+          {children}
+        </table>
+      </div>
     </div>
   )
 );
@@ -43,20 +33,12 @@ Table.displayName = 'Table';
 export interface TableHeaderProps extends React.HTMLAttributes<HTMLTableSectionElement> {
   children?: React.ReactNode;
   className?: string;
-  sticky?: boolean;
+  _sticky?: boolean;
 }
 
 export const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
-  ({ children, className, sticky = false, ...props }, ref) => (
-    <thead
-      ref={ref}
-className={cn(
-        'bg-surface-muted/80 border-b border-border-default [&_tr]:hover:bg-transparent',
-        sticky && '[&>tr>th]:sticky [&>tr>th]:top-0 [&>tr>th]:bg-surface-muted',
-        className
-      )}
-      {...props}
-    >
+  ({ children, className, _sticky = false, ...props }, ref) => (
+    <thead ref={ref} className={cn('bg-[#E5E5EB]/60', className)} {...props}>
       {children}
     </thead>
   )
@@ -71,7 +53,7 @@ export interface TableBodyProps extends React.HTMLAttributes<HTMLTableSectionEle
 
 export const TableBody = React.forwardRef<HTMLTableSectionElement, TableBodyProps>(
   ({ children, className, ...props }, ref) => (
-    <tbody ref={ref} className={cn('divide-y divide-border-default', className)} {...props}>
+    <tbody ref={ref} className={cn('divide-y divide-[#F3F4F6] bg-white', className)} {...props}>
       {children}
     </tbody>
   )
@@ -86,28 +68,7 @@ export interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement>
 
 export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
   ({ children, className, onClick, ...props }, ref) => (
-    <tr
-      ref={ref}
-      onClick={onClick}
-      onKeyDown={
-        onClick
-          ? (e) => {
-              if (e.defaultPrevented || e.target !== e.currentTarget) return;
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                (onClick as unknown as React.KeyboardEventHandler<HTMLTableRowElement>)(e);
-              }
-            }
-          : undefined
-      }
-      tabIndex={onClick ? 0 : undefined}
-      className={cn(
-        'group transition-colors duration-100 ease-in-out hover:bg-zinc-50/80',
-        onClick && 'cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
-        className
-      )}
-      {...props}
-    >
+    <tr ref={ref} onClick={onClick} onKeyDown={onClick ? (e) => { if (e.defaultPrevented || e.target !== e.currentTarget) return; if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (onClick as unknown as React.KeyboardEventHandler<HTMLTableRowElement>)(e); } } : undefined} tabIndex={onClick ? 0 : undefined} className={cn('hover:bg-neutral-50/80 transition-colors', className)} {...props}>
       {children}
     </tr>
   )
@@ -122,18 +83,7 @@ export interface TableHeadProps extends React.ThHTMLAttributes<HTMLTableCellElem
 
 export const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
   ({ children, className, style, ...props }, ref) => (
-    <th
-      ref={ref}
-      className={cn('text-xs font-semibold text-brand-options align-middle', className)}
-      style={{
-        paddingTop: 'var(--table-head-py)',
-        paddingBottom: 'var(--table-head-py)',
-        paddingLeft: 'var(--table-head-px)',
-        paddingRight: 'var(--table-head-px)',
-        ...style,
-      }}
-      {...props}
-    >
+    <th ref={ref} className={cn('px-5 py-3 text-xs sm:text-sm font-extrabold text-[#414141] uppercase tracking-wide whitespace-nowrap', className)} style={{ paddingTop: 'var(--table-head-py)', paddingBottom: 'var(--table-head-py)', paddingLeft: 'var(--table-head-px)', paddingRight: 'var(--table-head-px)', ...style }} {...props}>
       {children}
     </th>
   )
@@ -148,18 +98,7 @@ export interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElem
 
 export const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
   ({ children, className, style, ...props }, ref) => (
-    <td
-      ref={ref}
-      className={cn('align-middle', className)}
-      style={{
-        paddingTop: 'var(--table-cell-py)',
-        paddingBottom: 'var(--table-cell-py)',
-        paddingLeft: 'var(--table-cell-px)',
-        paddingRight: 'var(--table-cell-px)',
-        ...style,
-      }}
-      {...props}
-    >
+    <td ref={ref} className={cn('px-5 py-3 text-sm sm:text-base font-light text-[#414141]', className)} style={{ paddingTop: 'var(--table-cell-py)', paddingBottom: 'var(--table-cell-py)', paddingLeft: 'var(--table-cell-px)', paddingRight: 'var(--table-cell-px)', ...style }} {...props}>
       {children}
     </td>
   )
