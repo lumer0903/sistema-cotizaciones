@@ -86,7 +86,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                     disabled={currentPage <= 1 || loading}
                     onClick={() => onPageChange(currentPage - 1)}
                     aria-label="Página anterior"
-                    className="min-h-11 min-w-11 flex items-center justify-center border border-border-default rounded-xl hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    className="min-h-11 min-w-11 flex items-center justify-center border border-[#E2E8F0] rounded-xl hover:bg-[#F8FAFC] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                     <ChevronLeft className="size-4 text-brand-subtitle" />
                 </button>
@@ -108,8 +108,8 @@ export const Pagination: React.FC<PaginationProps> = ({
                             aria-label={`Página ${item}`}
                             aria-current={currentPage === item ? 'page' : undefined}
                             className={`min-h-11 min-w-11 flex items-center justify-center rounded-xl text-sm font-bold transition-colors ${currentPage === item
-                                ? 'bg-accent-primary text-on-accent'
-                                : 'border border-border-default text-brand-subtitle hover:bg-surface-muted'
+                                ? 'bg-[#F8B602] text-white'
+                                : 'border border-[#E2E8F0] text-[#414141] hover:bg-[#F8FAFC]'
                             }`}
                         >
                             {item}
@@ -122,7 +122,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                     disabled={currentPage >= totalPages || totalItems === 0 || loading}
                     onClick={() => onPageChange(currentPage + 1)}
                     aria-label="Página siguiente"
-                    className="min-h-11 min-w-11 flex items-center justify-center border border-border-default rounded-xl hover:bg-surface-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    className="min-h-11 min-w-11 flex items-center justify-center border border-[#E2E8F0] rounded-xl hover:bg-[#F8FAFC] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                     <ChevronRight className="size-4 text-brand-subtitle" />
                 </button>

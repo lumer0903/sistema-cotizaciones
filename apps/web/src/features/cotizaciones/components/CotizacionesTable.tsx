@@ -126,31 +126,31 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
               <TableCell className={COLUMNS[6].cellClassName}>
                 <div className="flex items-center justify-end gap-1">
                   {/* Lápiz (Editar): Activo solo en BORRADOR, protegido con Can */}
-                  <Can modulo="cotizaciones" nivel="edicion">
-                    <button
-                      type="button"
-                      onClick={() => onEdit?.(item.id_cotizacion || item.id)}
-                      disabled={!isBorrador}
-                      title={isBorrador ? 'Editar cotización' : 'No editable'}
-                      aria-label={isBorrador ? 'Editar cotización' : 'No editable'}
-                      className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:bg-amber-50 hover:text-amber-600"
-                    >
-                      <Pencil className="size-4 text-slate-500" strokeWidth={1.75} />
-                    </button>
-                  </Can>
-                  {/* Ojo (Ver): Protegido con Can nivel lectura */}
-                  <Can modulo="cotizaciones" nivel="lectura">
-                    <button
-                      type="button"
-                      onClick={() => onView?.(item.id_cotizacion || item.id)}
-                      disabled={isBorrador}
-                      title={!isBorrador ? 'Ver documento' : 'No disponible en borrador'}
-                      aria-label={!isBorrador ? 'Ver documento' : 'No disponible en borrador'}
-                      className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-100 hover:text-slate-600"
-                    >
-                      <Eye className="size-4 text-slate-500" strokeWidth={1.75} />
-                    </button>
-                  </Can>
+<Can modulo="cotizaciones" nivel="edicion">
+                      <button
+                        type="button"
+                        onClick={() => onEdit?.(item.id_cotizacion || item.id)}
+                        disabled={!isBorrador}
+                        title={isBorrador ? 'Editar cotización' : 'No editable'}
+                        aria-label={isBorrador ? 'Editar cotización' : 'No editable'}
+                        className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#F8B602]/15 hover:text-[#F8B600] text-[#F8B600]"
+                      >
+                        <Pencil className="size-4 text-slate-500" strokeWidth={1.75} />
+                      </button>
+                    </Can>
+                    {/* Ojo (Ver): Protegido con Can nivel lectura */}
+                    <Can modulo="cotizaciones" nivel="lectura">
+                      <button
+                        type="button"
+                        onClick={() => onView?.(item.id_cotizacion || item.id)}
+                        disabled={isBorrador}
+                        title={!isBorrador ? 'Ver documento' : 'No disponible en borrador'}
+                        aria-label={!isBorrador ? 'Ver documento' : 'No disponible en borrador'}
+                        className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#F8B602]/15 hover:text-[#F8B600] text-[#F8B600]"
+                      >
+                        <Eye className="size-4 text-slate-500" strokeWidth={1.75} />
+                      </button>
+                    </Can>
                 </div>
               </TableCell>
             </TableRow>

@@ -167,7 +167,7 @@ export function InventarioTable({
                         onClick={() => onEditar(prod)}
                         title={`Editar ${formatCode(prod.codigo)}`}
                         aria-label={`Editar ${formatCode(prod.codigo)}`}
-                        className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer hover:bg-amber-50 hover:text-amber-600"
+                        className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer hover:bg-[#F8B602]/15 hover:text-[#F8B602] text-[#F8B600]"
                       >
                         <Pencil className="size-4 text-slate-500" strokeWidth={1.75} />
                       </button>
@@ -178,7 +178,7 @@ export function InventarioTable({
                         onClick={() => handleVerDetalle(prod)}
                         title={`Ver detalle de ${formatCode(prod.codigo)}`}
                         aria-label={`Ver detalle de ${formatCode(prod.codigo)}`}
-                        className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer hover:bg-slate-100 hover:text-slate-600"
+                        className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer hover:bg-[#F8B602]/15 hover:text-[#F8B602] text-[#F8B600]"
                       >
                         <Eye className="size-4 text-slate-500" strokeWidth={1.75} />
                       </button>

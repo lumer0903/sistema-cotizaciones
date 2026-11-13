@@ -71,16 +71,20 @@ return (
         >
           {formatCode(producto.codigo)}
         </span>
-        <div className="inline-flex items-center gap-1 shrink-0">
+        <div className="inline-flex items-center justify-center gap-1 shrink-0">
           <span
             className={`size-1.5 rounded-full ${
-              tieneStock ? 'bg-[#0CC200]' : 'bg-rose-500'
+              !tieneStock || (producto.stockMinimo && producto.stock < producto.stockMinimo)
+                ? 'bg-red-500 text-red-600 border border-red-200'
+                : 'bg-emerald-500 text-emerald-600 border border-emerald-200'
             }`}
           />
           <span
             className={`text-[10px] font-bold uppercase tabular-nums ${
-              tieneStock ? 'text-[#0CC200]' : 'text-rose-500'
-            }`}
+              !tieneStock || (producto.stockMinimo && producto.stock < producto.stockMinimo)
+                ? 'text-red-600 font-bold'
+                : 'text-emerald-600 font-bold'}
+            `}
           >
             STOCK: {producto.stock}
           </span>
