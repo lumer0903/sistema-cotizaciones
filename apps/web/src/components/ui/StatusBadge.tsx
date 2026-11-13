@@ -51,8 +51,8 @@ export interface StatusMeta {
 
 /** Estados de Cotización */
 export const COTIZACION_STATUS_MAP: Record<string, StatusMeta> = {
-  BORRADOR: { dotColor: '#8D8D8D', label: 'Borrador' },
-  borrador: { dotColor: '#8D8D8D', label: 'Borrador' },
+  BORRADOR: { dotColor: '#9CA3AF', label: 'Borrador' },
+  borrador: { dotColor: '#9CA3AF', label: 'Borrador' },
   ENVIADO: { dotColor: '#006EFF', label: 'Enviado' },
   enviado: { dotColor: '#006EFF', label: 'Enviado' },
   ENVIADA: { dotColor: '#006EFF', label: 'Enviado' },
@@ -67,15 +67,15 @@ export const COTIZACION_STATUS_MAP: Record<string, StatusMeta> = {
   aprobada: { dotColor: '#0CC200', label: 'Aprobado' },
   ACEPTADO: { dotColor: '#0CC200', label: 'Aprobado' },
   aceptado: { dotColor: '#0CC200', label: 'Aprobado' },
-  RECHAZADO: { dotColor: '#7B1C1C', label: 'Rechazado' },
-  rechazado: { dotColor: '#7B1C1C', label: 'Rechazado' },
-  RECHAZADA: { dotColor: '#7B1C1C', label: 'Rechazado' },
-  rechazada: { dotColor: '#7B1C1C', label: 'Rechazado' },
+  RECHAZADO: { dotColor: '#EF4444', label: 'Rechazado' },
+  rechazado: { dotColor: '#EF4444', label: 'Rechazado' },
+  RECHAZADA: { dotColor: '#EF4444', label: 'Rechazado' },
+  rechazada: { dotColor: '#EF4444', label: 'Rechazado' },
 };
 
 export function CotizacionStatusBadge({ estado, className }: { estado: string; className?: string }) {
   const meta = COTIZACION_STATUS_MAP[estado] ?? {
-    dotColor: '#8D8D8D',
+    dotColor: '#9CA3AF',
     label: estado || 'Borrador',
   };
   return <StatusBadge dotColor={meta.dotColor} label={meta.label} className={className} />;
@@ -83,30 +83,55 @@ export function CotizacionStatusBadge({ estado, className }: { estado: string; c
 
 /** Estados de Cobranza */
 export const COBRANZA_STATUS_MAP: Record<string, StatusMeta> = {
-  pendiente: { dotColor: '#8D8D8D', label: 'Pendiente' },
-  PENDIENTE: { dotColor: '#8D8D8D', label: 'Pendiente' },
-  parcial: { dotColor: '#F8B602', label: 'Parcial' },
-  PARCIAL: { dotColor: '#F8B602', label: 'Parcial' },
-  pagada: { dotColor: '#0CC200', label: 'Pagada' },
-  PAGADA: { dotColor: '#0CC200', label: 'Pagada' },
+  pendiente: { dotColor: '#EA580C', label: 'Pendiente' },
+  PENDIENTE: { dotColor: '#EA580C', label: 'Pendiente' },
+  parcial: { dotColor: '#7C3AED', label: 'Parcial' },
+  PARCIAL: { dotColor: '#7C3AED', label: 'Parcial' },
+  pagada: { dotColor: '#0D9488', label: 'Pagada' },
+  PAGADA: { dotColor: '#0D9488', label: 'Pagada' },
   vencida: { dotColor: '#7B1C1C', label: 'Vencida' },
   VENCIDA: { dotColor: '#7B1C1C', label: 'Vencida' },
 };
 
-export function CobranzaStatusBadge({ estado, className }: { estado: string; className?: string }) {
-  const meta = COBRANZA_STATUS_MAP[estado] ?? {
-    dotColor: '#8D8D8D',
+export function CobranzaStatusBadge({
+  estado,
+  diasAtraso,
+  className,
+}: {
+  estado: string;
+  diasAtraso?: number;
+  className?: string;
+}) {
+  const normalized = String(estado || '').toLowerCase();
+  const meta = COBRANZA_STATUS_MAP[normalized] ?? {
+    dotColor: '#EA580C',
     label: estado || 'Pendiente',
   };
-  return <StatusBadge dotColor={meta.dotColor} label={meta.label} className={className} />;
+
+  const isVencida = normalized === 'vencida';
+  const label = isVencida && diasAtraso && diasAtraso > 0
+    ? `Vencida · ${diasAtraso}d`
+    : meta.label;
+  const tooltip = isVencida && diasAtraso && diasAtraso > 0
+    ? `Vencida hace ${diasAtraso} días`
+    : undefined;
+
+  return (
+    <StatusBadge
+      dotColor={meta.dotColor}
+      label={label}
+      title={tooltip}
+      className={className}
+    />
+  );
 }
 
 /** Estado de Usuario (Activo / Inactivo) */
 export function UsuarioStatusBadge({ activo, className }: { activo: boolean; className?: string }) {
   return activo ? (
-    <StatusBadge dotColor="#0CC200" label="Activo" className={className} />
+    <StatusBadge dotColor="#059669" label="Activo" className={className} />
   ) : (
-    <StatusBadge dotColor="#7B1C1C" label="Inactivo" className={className} />
+    <StatusBadge dotColor="#475569" label="Inactivo" className={className} />
   );
 }
 
@@ -199,3 +224,4 @@ export function UsuarioRoleTag({ rol, className }: { rol: string; className?: st
     </CategoryTag>
   );
 }
+

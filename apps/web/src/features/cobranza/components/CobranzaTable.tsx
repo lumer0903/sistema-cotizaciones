@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Download, CreditCard, Clock, FileText, X } from 'lucide-react';
+import { Search, Download, CreditCard, FileText, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -243,68 +243,68 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
             </Button>
           </div>
         </FilterGrid>
-      
-      {/* FILTROS ACTIVOS */}
-      {tieneFiltrosActivos && (
-        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border-default mt-3">
-          {search && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
-              <span className="font-bold">Búsqueda:</span>
-              {search.substring(0, 20)}{search.length > 20 ? '...' : ''}
-              <button
-                onClick={() => setSearch('')}
-                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
-                aria-label="Limpiar búsqueda"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
 
-          {estadoFilter && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
-              <span className="font-bold">Estado:</span>
-              {ESTADO_CUENTA_OPTIONS.find(o => o.value === estadoFilter)?.label || estadoFilter}
-              <button
-                onClick={() => setEstadoFilter('')}
-                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
-                aria-label="Remover estado"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
+        {/* FILTROS ACTIVOS */}
+        {tieneFiltrosActivos && (
+          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border-default mt-3">
+            {search && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+                <span className="font-bold">Búsqueda:</span>
+                {search.substring(0, 20)}{search.length > 20 ? '...' : ''}
+                <button
+                  onClick={() => setSearch('')}
+                  className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
 
-          {tipoClienteFilter && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
-              <span className="font-bold">Tipo cliente:</span>
-              {TIPO_CLIENTE_OPTIONS.find(o => o.value === tipoClienteFilter)?.label || tipoClienteFilter}
-              <button
-                onClick={() => setTipoClienteFilter('')}
-                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
-                aria-label="Remover tipo de cliente"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
+            {estadoFilter && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+                <span className="font-bold">Estado:</span>
+                {ESTADO_CUENTA_OPTIONS.find(o => o.value === estadoFilter)?.label || estadoFilter}
+                <button
+                  onClick={() => setEstadoFilter('')}
+                  className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                  aria-label="Remover estado"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
 
-          {moraFilter && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
-              <span className="font-bold">Mora:</span>
-              {MORA_OPTIONS.find(o => o.value === moraFilter)?.label || moraFilter}
-              <button
-                onClick={() => setMoraFilter('')}
-                className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
-                aria-label="Remover mora"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
-        </div>
-      )}
-      
+            {tipoClienteFilter && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+                <span className="font-bold">Tipo cliente:</span>
+                {TIPO_CLIENTE_OPTIONS.find(o => o.value === tipoClienteFilter)?.label || tipoClienteFilter}
+                <button
+                  onClick={() => setTipoClienteFilter('')}
+                  className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                  aria-label="Remover tipo de cliente"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {moraFilter && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+                <span className="font-bold">Mora:</span>
+                {MORA_OPTIONS.find(o => o.value === moraFilter)?.label || moraFilter}
+                <button
+                  onClick={() => setMoraFilter('')}
+                  className="hover:bg-accent-primary/20 rounded-full p-0.5 transition-colors"
+                  aria-label="Remover mora"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+          </div>
+        )}
+
       </FilterCard>
 
       {loading ? (
@@ -354,13 +354,12 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
         >
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[15%] whitespace-nowrap">Documento</TableHead>
-              <TableHead className="w-[20%]">Cliente</TableHead>
-              <TableHead className="w-[15%] whitespace-nowrap">Fecha</TableHead>
-              <TableHead className="w-[15%] text-center whitespace-nowrap">Estado</TableHead>
-              <TableHead className="w-[15%] text-right whitespace-nowrap">Total</TableHead>
-              <TableHead className="w-[10%] whitespace-nowrap">Atraso</TableHead>
-              <TableHead className="w-[10%] text-right whitespace-nowrap">Acciones</TableHead>
+              <TableHead className="w-[16%] whitespace-nowrap">DOCUMENTO</TableHead>
+              <TableHead className="w-[28%]">CLIENTE</TableHead>
+              <TableHead className="w-[16%] whitespace-nowrap">FECHA</TableHead>
+              <TableHead className="w-[18%] text-center whitespace-nowrap">ESTADO</TableHead>
+              <TableHead className="w-[14%] text-right whitespace-nowrap">TOTAL</TableHead>
+              <TableHead className="w-[8%] text-right whitespace-nowrap">ACCIONES</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -376,21 +375,13 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
                   {formatDate(cuenta.created_at)}
                 </TableCell>
                 <TableCell className="text-center whitespace-nowrap">
-                  <CobranzaStatusBadge estado={cuenta.estado_cobranza} />
+                  <CobranzaStatusBadge
+                    estado={cuenta.estado_cobranza}
+                    diasAtraso={cuenta.dias_atraso}
+                  />
                 </TableCell>
                 <TableCell className="text-right tabular-nums whitespace-nowrap">
                   S/ {money(cuenta.total)}
-                </TableCell>
-
-                <TableCell className="whitespace-nowrap">
-                  {cuenta.dias_atraso > 0 ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                      <Clock className="h-3.5 w-3.5 mr-1" />
-                      {cuenta.dias_atraso} días
-                    </span>
-                  ) : (
-                    <span className="text-xs font-medium text-emerald-700">Al día</span>
-                  )}
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
                   <Button

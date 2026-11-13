@@ -59,18 +59,18 @@ const ESTADO_STYLES: Record<string, string> = {
 
 /** Texto plano (sin fondo ni bordes) — tabla del sistema. */
 const PLAIN_TEXT_STYLES: Record<string, string> = {
-borrador: 'text-brand-options font-bold',
-enviado: 'text-role-tienda font-bold',
-aprobado: 'text-status-aprobado-text font-bold',
-rechazado: 'text-status-rechazado font-bold',
-parcial: 'text-status-advertencia-text font-bold',
-tienda: 'text-role-tienda font-bold',
+  borrador: 'text-brand-options font-bold',
+  enviado: 'text-role-tienda font-bold',
+  aprobado: 'text-status-aprobado-text font-bold',
+  rechazado: 'text-status-rechazado font-bold',
+  parcial: 'text-status-advertencia-text font-bold',
+  tienda: 'text-role-tienda font-bold',
   distribuidor: 'text-role-distribuidor font-bold uppercase',
-vendedor: 'text-vendedor-ink font-semibold',
-gerente: 'text-brand-ink font-semibold',
-administrador: 'text-brand-ink font-semibold',
-activo: 'text-status-aprobado-text font-bold',
-inactivo: 'text-status-rechazado-text font-bold',
+  vendedor: 'text-vendedor-ink font-semibold',
+  gerente: 'text-brand-ink font-semibold',
+  administrador: 'text-brand-ink font-semibold',
+  activo: 'text-status-aprobado-text font-bold',
+  inactivo: 'text-status-rechazado-text font-bold',
 };
 
 /** Pills con fondo y borde (variantes genéricas). */
