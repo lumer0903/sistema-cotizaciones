@@ -124,18 +124,26 @@ export function Sidebar({ open = false, onClose, onToggleLogo, collapsed = false
         >
             <div className="flex flex-col w-full flex-1 min-h-0">
                 {/* LOGO SUPERIOR */}
-                <div className={`py-4 flex justify-center items-center ${collapsed && !mobile ? 'px-2' : 'px-4'}`}>
-                    {collapsed && !mobile ? (
+                {collapsed && !mobile ? (
+                    <div className="h-14 flex items-center justify-center border-b border-[#F3F4F6]">
                         <Link
                             href="/dashboard"
-                            className="size-9 rounded-xl bg-[#FFF8E6] border border-[#F8B602]/40 flex items-center justify-center font-black text-xs text-[#F8B602] hover:scale-105 transition-transform focus:outline-none"
-                            title="IMPORT & EXPORT GOLD CONTINENT"
-                            aria-label="IMPORT & EXPORT GOLD CONTINENT"
+                            className="flex items-center justify-center focus:outline-none"
                             onClick={onToggleLogo}
                         >
-                            GC
+                            <Image
+                                src="/brand-icon.svg"
+                                alt="Gold Continent"
+                                title="Import & Export Gold Continent"
+                                width={32}
+                                height={32}
+                                priority
+                                className="size-8 object-contain select-none hover:scale-105 transition-transform"
+                            />
                         </Link>
-                    ) : (
+                    </div>
+                ) : (
+                    <div className="py-4 px-4 flex justify-center items-center">
                         <Link
                             href="/dashboard"
                             className="flex-1 min-w-0 flex justify-center items-center group py-0.5 focus:outline-none rounded-lg"
@@ -150,8 +158,8 @@ export function Sidebar({ open = false, onClose, onToggleLogo, collapsed = false
                                 className="w-44 h-10 object-contain transition-transform duration-150 group-hover:scale-105"
                             />
                         </Link>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 {/* MENÚ DE NAVEGACIÓN */}
                 <nav className="w-full flex-1 flex flex-col overflow-y-auto pb-2 custom-scrollbar">
