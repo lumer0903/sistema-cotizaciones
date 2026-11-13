@@ -8,8 +8,8 @@ export type FieldVariant = 'filter' | 'modal';
 /** Etiquetas de filtro (FilterLabel): uppercase, 11px, font-black, dorado #F8B602. */
 export const FIELD_LABEL_FILTER = 'block mb-1.5 text-[11px] font-black uppercase tracking-wide text-[#F8B602]';
 
-/** Etiquetas de modal (neutro): uppercase, 11px, font-medium, color #414141. */
-export const FIELD_LABEL_MODAL = 'block mb-1 text-[11px] font-medium uppercase tracking-wide text-[#414141]';
+/** Etiquetas de modal (neutro): uppercase, 10px, font-bold, color #575757. */
+export const FIELD_LABEL_MODAL = 'block mb-1 text-[10px] font-bold uppercase tracking-wide text-[#575757]';
 
 /** Alias por defecto compatible hacia atrás. */
 export const FIELD_LABEL = FIELD_LABEL_FILTER;
@@ -17,21 +17,24 @@ export const FIELD_LABEL = FIELD_LABEL_FILTER;
 /** Altura estándar de campo (h-9 = 36px). */
 export const FIELD_HEIGHT = 'h-9';
 
+/** Altura de campo compacta para modal (h-8 = 32px). */
+export const FIELD_HEIGHT_MODAL = 'h-8';
+
 /** Texto del campo: font-light 13px, color #414141. */
 export const FIELD_TEXT = 'text-[13px] font-light text-[#414141]';
 
 /** Borde y contenedor base de filtros: redondeado rounded-lg con borde dorado #F8B602 y fondo blanco. */
 export const FIELD_BORDER_FILTER = 'rounded-lg border border-[#F8B602] bg-white';
 
-/** Control base de modales: rounded-lg border border-[#8D8D8D]/70 bg-[#FBFCFD]. */
-export const FIELD_BORDER_MODAL = 'rounded-lg border border-[#8D8D8D]/70 bg-[#FBFCFD]';
+/** Control base de modales: rounded-lg border border-[#D9D9D9] bg-[#FBFCFD]. */
+export const FIELD_BORDER_MODAL = 'rounded-lg border border-[#D9D9D9] bg-[#FBFCFD]';
 
 /** Alias compatible hacia atrás. */
 export const FIELD_BORDER = FIELD_BORDER_FILTER;
 
-/** Transición + placeholder text-[#787878]. */
+/** Transición + placeholder text-[#8D8D8D]. */
 export const FIELD_TRANSITION =
-  'transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-[#787878]';
+  'transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-[#8D8D8D]';
 
 /** Estado focus para filtros con halo dorado suave (#F8B602/25). */
 export const FIELD_FOCUS_FILTER =

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { X, Plus, FileText } from 'lucide-react';
-import { Modal, Button, Textarea } from '@/components/ui';
+import { X } from 'lucide-react';
+import { Modal, Textarea } from '@/components/ui';
 
 export interface ColorItem {
   hex: string;
@@ -156,50 +156,56 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
 
   return (
     <Modal open={open} onClose={onClose} title="Configuración de colores" maxWidth="md">
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <p className="text-xs font-bold text-brand-options tracking-wider mb-4">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[#575757] mb-3">
             COLORES EN CAJA SURTIDA:
           </p>
 
-          <div className="flex flex-wrap items-center gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             {colors.map((color) => (
               <div
                 key={`${color.name}-${color.hex}`}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-surface border border-brand-options/30 rounded-lg text-sm text-brand-subtitle shadow-sm"
+                className="inline-flex items-center gap-2 rounded-lg border border-[#D9D9D9] bg-white px-2.5 py-1 text-xs font-normal text-[#575757]"
               >
                 <span
-                  className="w-2.5 h-2.5 rounded-full border border-zinc-300"
+                  className="size-3 rounded-full border border-black/10 shrink-0"
                   style={{ backgroundColor: color.hex || resolveColorHex(color.name) }}
                 />
                 <span>{color.name}</span>
                 <button
+                  type="button"
                   onClick={() => removeColor(color.name)}
                   aria-label={`Quitar ${color.name}`}
-                  className="min-h-8 min-w-8 -my-1 -mr-1 inline-flex items-center justify-center text-brand-options hover:text-danger transition-colors"
+                  className="size-3.5 inline-flex items-center justify-center text-[#8D8D8D] hover:text-[#414141] transition-colors cursor-pointer"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="size-3.5" />
                 </button>
               </div>
             ))}
 
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => { setIsAdding(true); setIsImporting(false); }} size="sm">
-                  <Plus className="w-3.5 h-3.5" />
-                  Añade color
-                </Button>
-                <Button variant="outline" onClick={() => { setIsImporting(true); setIsAdding(false); }} size="sm">
-                  <FileText className="w-3.5 h-3.5" />
-                  Importa colores
-                </Button>
+            <div className="inline-flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => { setIsAdding(true); setIsImporting(false); }}
+                className="text-xs font-semibold text-[#F8B602] underline underline-offset-4 hover:opacity-80 cursor-pointer"
+              >
+                Añadir color
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIsImporting(true); setIsAdding(false); }}
+                className="text-xs font-semibold text-[#8D8D8D] hover:text-[#414141] cursor-pointer"
+              >
+                Importar colores
+              </button>
             </div>
           </div>
 
           {isAdding && (
-            <div className="flex items-center gap-2 bg-surface border border-border-default shadow-sm rounded-xl p-2">
-              {/* Selector circular: muestra el color actual y abre el picker nativo */}
+            <div className="flex items-center gap-2 bg-[#FBFCFD] border border-[#D9D9D9] rounded-xl p-2 mt-2">
               <label
-                className="relative w-7 h-7 shrink-0 rounded-full border border-border-default shadow-sm cursor-pointer overflow-hidden transition-shadow"
+                className="relative size-6 shrink-0 rounded-full border border-black/15 shadow-2xs cursor-pointer overflow-hidden transition-shadow"
                 style={{ backgroundColor: newHex }}
                 title="Elegir color"
               >
@@ -217,60 +223,76 @@ export function ColorConfigModal({ open, onClose, onSave, initialColors }: Color
                 value={newName}
                 onChange={(e) => handleNameChange(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addColor()}
-                placeholder="Color"
+                placeholder="Nombre del color"
                 aria-label="Nombre del color"
                 autoComplete="off"
                 autoFocus
-                className="w-28 min-h-9 px-3 text-xs rounded-lg border border-border-default bg-surface transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-brand-options focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring"
+                className="flex-1 h-8 px-2.5 text-xs rounded-lg border border-[#D9D9D9] bg-white text-[#414141] placeholder:text-[#8D8D8D] focus:border-[#414141] focus:outline-none"
               />
-              <Button type="button" variant="primary" size="sm" onClick={addColor}>
+              <button
+                type="button"
+                onClick={addColor}
+                className="h-8 px-3 rounded-lg bg-[#F8B602] hover:bg-[#e0a402] text-xs font-black text-white cursor-pointer transition-colors"
+              >
                 OK
-              </Button>
+              </button>
               <button
                 type="button"
                 onClick={() => setIsAdding(false)}
                 aria-label="Cancelar alta de color"
-                className="min-h-8 min-w-8 inline-flex items-center justify-center text-brand-options hover:text-brand-subtitle"
+                className="size-7 inline-flex items-center justify-center text-[#8D8D8D] hover:text-[#414141] cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="size-4" />
               </button>
             </div>
           )}
 
           {isImporting && (
-            <div className="space-y-2">
+            <div className="space-y-2 bg-[#FBFCFD] border border-[#D9D9D9] rounded-xl p-2.5 mt-2">
               <Textarea
                 label="Importar colores (uno por línea o separados por coma)"
-                placeholder="Morado, Rosado, Blanco&#10;Lila/Blanco, Melon&#10;Rosado BB, Medio Lila Oscuro Gris, Marron"
+                placeholder="Morado, Rosado, Blanco&#10;Lila/Blanco, Melon"
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
-                rows={4}
+                rows={3}
                 className="text-xs"
               />
-              <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => setIsImporting(false)} size="sm">
-                  Cancela
-                </Button>
-                <Button variant="outline" onClick={handleImport} size="sm">
-                  Importa colores
-                </Button>
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsImporting(false)}
+                  className="text-xs font-semibold text-[#8D8D8D] hover:text-[#414141] cursor-pointer px-2 py-1"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleImport}
+                  className="h-7 px-3 rounded-lg bg-[#F8B602] hover:bg-[#e0a402] text-xs font-black text-white cursor-pointer transition-colors"
+                >
+                  Importar
+                </button>
               </div>
             </div>
           )}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-border-default">
-          <Button variant="ghost" onClick={onClose}>
-            Cancela
-          </Button>
-<Button
-  variant={canSave ? 'primary' : 'secondary'}
-  onClick={handleSave}
-  disabled={!canSave}
-  loading={isSaving}
->
-  Guarda
-</Button>
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#F3F4F6]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-xs font-bold text-[#8D8D8D] hover:text-[#414141] transition-colors cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!canSave || isSaving}
+            className="h-8 px-5 rounded-lg bg-[#F8B602] hover:bg-[#e0a402] text-xs font-black text-white transition-colors cursor-pointer disabled:opacity-50"
+          >
+            Guardar
+          </button>
         </div>
       </div>
     </Modal>

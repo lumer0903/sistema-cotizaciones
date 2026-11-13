@@ -247,17 +247,17 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       }
     };
 
-    const selectedOption = parsedOptions.find(
-      (opt) => String(opt.value) === String(selectedValue)
-    );
-    const hasValue = selectedOption !== undefined;
-    const heightClass = cn(sizeVariant === 'sm' ? 'h-8' : FIELD_HEIGHT);
-
     const isFilter = variant === 'filter';
     const labelClass = isFilter ? FIELD_LABEL_FILTER : FIELD_LABEL_MODAL;
     const borderClass = isFilter ? FIELD_BORDER_FILTER : FIELD_BORDER_MODAL;
     const focusClass = isFilter ? FIELD_FOCUS_FILTER : FIELD_FOCUS_MODAL;
     const iconColor = isFilter ? 'text-[#F8B602]' : 'text-[#8D8D8D]';
+
+    const selectedOption = parsedOptions.find(
+      (opt) => String(opt.value) === String(selectedValue)
+    );
+    const hasValue = selectedOption !== undefined;
+    const heightClass = cn(sizeVariant === 'sm' ? 'h-8' : isFilter ? FIELD_HEIGHT : 'h-8');
 
     return (
       <div className="w-full" ref={containerRef}>

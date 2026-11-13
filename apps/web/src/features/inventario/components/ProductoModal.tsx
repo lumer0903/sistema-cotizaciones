@@ -469,32 +469,42 @@ export function ProductoModal({
         onClose={handleClose}
         closeDisabled={isSubmitting}
         title={title}
-        maxWidth="form"
+        maxWidth="lg"
         footer={
-          <div className="w-full flex items-center justify-end gap-3 pt-3 border-t border-[#F3F4F6]">
+          <div className="w-full flex items-center justify-between pt-3 border-t border-[#F3F4F6]">
             <button
               type="button"
-              onClick={handleClose}
+              onClick={() => reset(DEFAULT_FORM_VALUES)}
               disabled={isSubmitting}
-              className="h-9 px-4 rounded-lg text-xs font-bold text-[#8D8D8D] hover:text-[#414141] hover:bg-[#F3F4F6] transition-colors cursor-pointer disabled:opacity-50"
+              className="text-xs font-semibold text-[#8D8D8D] hover:text-[#414141] transition-colors cursor-pointer disabled:opacity-50"
             >
-              Cancelar
+              Restablece
             </button>
-            <button
-              type="submit"
-              form="producto-form"
-              disabled={isSubmitting}
-              className="h-9 px-5 rounded-lg bg-[#F8B602] hover:bg-[#e0a402] text-xs font-black text-white transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center justify-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <span className="size-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  <span>Guardando…</span>
-                </>
-              ) : (
-                <span>Guardar</span>
-              )}
-            </button>
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleClose}
+                disabled={isSubmitting}
+                className="h-8 px-3.5 rounded-lg text-xs font-bold text-[#787878] hover:bg-[#F3F4F6] transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                form="producto-form"
+                disabled={isSubmitting}
+                className="h-8 px-4 rounded-lg bg-[#F8B602] hover:bg-[#e0a402] text-xs font-black text-white transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <span className="size-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    <span>Guardando…</span>
+                  </>
+                ) : (
+                  <span>Guardar producto</span>
+                )}
+              </button>
+            </div>
           </div>
         }
       >
@@ -502,7 +512,7 @@ export function ProductoModal({
           id="producto-form"
           noValidate
           onSubmit={handleSubmit(handleFormSubmit)}
-          className="space-y-2.5 max-h-[calc(100vh-9rem)] overflow-y-auto pr-1"
+          className="space-y-3"
         >
           {isEditing && (
             <div className="w-full">
@@ -518,191 +528,232 @@ export function ProductoModal({
             </div>
           )}
 
-          {/* Fila 1 (1 columna): CÓDIGO */}
-          <div>
-            <Input
-              label="CÓDIGO"
-              placeholder="Ej: RYG18-NU02"
-              error={errors.codigo?.message}
-              {...register("codigo")}
-              disabled={isEditing}
-              onChange={(e) =>
-                setValue("codigo", e.target.value.toUpperCase(), { shouldValidate: true })
-              }
-            />
-          </div>
+          {/* Bloque 1: Imagen compacta + Identidad */}
+          <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+            {/* Izquierda — Dropzone compacta */}
+            <div className="w-full sm:w-28 shrink-0 flex flex-col">
+              <ImageUploader
+                previewUrl={imagePreview}
+                fileName={imageFile?.name || getFileNameFromUrl(productoInicial?.foto_url)}
+                onFileSelect={handleImageSelect}
+                onRemove={handleImageRemove}
+                disabled={isSubmitting}
+              />
+            </div>
 
-          {/* Fila 2 (grid-cols-1 sm:grid-cols-3 gap-2.5): CATEGORÍA, TIPO DE FLOR, MATERIAL */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <Select
-              label="CATEGORÍA"
-              error={errors.id_categoria?.message}
-              {...register("id_categoria", {
-                setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
-              })}
-              value={watch("id_categoria") ?? ""}
-              disabled={loadingFilters}
-            >
-              <option value="">Seleccionar</option>
-              {categorias.map((cat) => (
-                <option key={cat.id_categoria} value={cat.id_categoria}>
-                  {cat.nombre_categoria}
-                </option>
-              ))}
-            </Select>
-            <Input
-              label="TIPO DE FLOR"
-              placeholder="Rosa"
-              autoComplete="off"
-              error={errors.tipo_flor?.message}
-              {...register("tipo_flor")}
-            />
-            <Input
-              label="MATERIAL"
-              placeholder="Tela Premium"
-              error={errors.material?.message}
-              {...register("material")}
-            />
-          </div>
+            {/* Derecha — Datos principales */}
+            <div className="flex-1 space-y-2.5">
+              {/* Fila 1: CÓDIGO, CATEGORÍA, UBICACIÓN */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <Input
+                  label="CÓDIGO"
+                  placeholder="Ej: RYG18-NU02"
+                  error={errors.codigo?.message}
+                  {...register("codigo")}
+                  disabled={isEditing}
+                  onChange={(e) =>
+                    setValue("codigo", e.target.value.toUpperCase(), { shouldValidate: true })
+                  }
+                />
+                <Select
+                  label="CATEGORÍA"
+                  error={errors.id_categoria?.message}
+                  {...register("id_categoria", {
+                    setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
+                  })}
+                  value={watch("id_categoria") ?? ""}
+                  disabled={loadingFilters}
+                >
+                  <option value="">Seleccionar</option>
+                  {categorias.map((cat) => (
+                    <option key={cat.id_categoria} value={cat.id_categoria}>
+                      {cat.nombre_categoria}
+                    </option>
+                  ))}
+                </Select>
+                <Select
+                  label="UBICACIÓN"
+                  error={errors.id_almacen?.message}
+                  {...register("id_almacen", {
+                    setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
+                  })}
+                  value={watch("id_almacen") ?? ""}
+                  disabled={loadingFilters || isEditing}
+                >
+                  <option value="">Seleccionar</option>
+                  {almacenes.map((a) => (
+                    <option key={a.id_almacen} value={a.id_almacen}>
+                      {a.nombre}
+                    </option>
+                  ))}
+                </Select>
+              </div>
 
-          {/* Fila 3 (grid-cols-1 sm:grid-cols-3 gap-2.5): COMPOSICIÓN, PRESENTACIÓN, N° DE CABEZAS */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <Select
-              label="COMPOSICIÓN"
-              error={errors.composicion?.message}
-              {...register("composicion")}
-              value={watch("composicion") ?? ""}
-            >
-              <option value="">Seleccionar</option>
-              <option value="Ramo">Ramo</option>
-              <option value="Vara">Vara</option>
-              <option value="Guirnalda">Guirnalda</option>
-              <option value="Planta">Planta</option>
-              <option value="Bonsai">Bonsai</option>
-              <option value="Arreglo">Arreglo</option>
-            </Select>
-            <Select
-              label="PRESENTACIÓN"
-              error={errors.presentacion?.message}
-              {...register("presentacion")}
-              value={watch("presentacion") ?? ""}
-            >
-              <option value="">Seleccionar</option>
-              <option value="Ramo">Ramo</option>
-              <option value="Unidad">Unidad</option>
-              <option value="Atado">Atado</option>
-              <option value="Paquete">Paquete</option>
-              <option value="Caja">Caja</option>
-            </Select>
-            <Input
-              label="N° DE CABEZAS"
-              type="number"
-              min="1"
-              placeholder="18"
-              error={errors.numero_cabezas?.message}
-              {...cleanNumberInputProps("numero_cabezas")}
-            />
-          </div>
-
-          {/* Fila 4 (grid-cols-1 sm:grid-cols-3 gap-2.5): TAMAÑO, UBICACIÓN, UNID. POR CAJA */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <Input
-              label="TAMAÑO"
-              placeholder="35cm aprox"
-              error={errors.tamano?.message}
-              {...register("tamano")}
-            />
-            <Select
-              label="UBICACIÓN"
-              error={errors.id_almacen?.message}
-              {...register("id_almacen", {
-                setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
-              })}
-              value={watch("id_almacen") ?? ""}
-              disabled={loadingFilters || isEditing}
-            >
-              <option value="">Seleccionar</option>
-              {almacenes.map((a) => (
-                <option key={a.id_almacen} value={a.id_almacen}>
-                  {a.nombre}
-                </option>
-              ))}
-            </Select>
-            <Input
-              label="UNID. POR CAJA"
-              type="number"
-              min="1"
-              placeholder="12"
-              error={errors.unidades_por_caja?.message}
-              {...cleanNumberInputProps("unidades_por_caja")}
-            />
-          </div>
-
-          {/* Fila 5 (grid-cols-1 sm:grid-cols-3 gap-2.5): STOCK TOTAL, STOCK MÍNIMO, COLOR */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 items-end">
-            <Input
-              label="STOCK TOTAL"
-              type="number"
-              min="0"
-              placeholder="10"
-              error={errors.stock_principal?.message}
-              {...cleanNumberInputProps("stock_principal")}
-            />
-            <Input
-              label="STOCK MÍNIMO"
-              type="number"
-              min="0"
-              placeholder="10"
-              error={errors.stock_minimo?.message}
-              {...cleanNumberInputProps("stock_minimo")}
-            />
-            <div>
-              <span className="block mb-1 text-[11px] font-medium uppercase tracking-wide text-[#414141]">
-                COLOR
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsColorModalOpen(true)}
-                className="h-9 w-full rounded-lg bg-[#414141]/25 border border-[#414141] text-xs font-bold text-[#414141] hover:bg-[#414141]/35 transition-colors cursor-pointer"
-              >
-                Configurar{coloresSurtidos.length > 0 ? ` (${coloresSurtidos.length})` : ''}
-              </button>
-              {errors.colores_surtido?.message && (
-                <p className="mt-1 text-xs font-medium text-danger" role="alert">
-                  {errors.colores_surtido.message}
-                </p>
-              )}
+              {/* Fila 2: DESCRIPCIÓN (AUTOGENERADA) */}
+              <div>
+                <Input
+                  label="DESCRIPCIÓN (AUTOGENERADA)"
+                  placeholder="Se autogenera según los atributos físicos completados"
+                  error={errors.descripcion?.message}
+                  {...register("descripcion")}
+                  className="w-full"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Fila 6 (1 columna): DESCRIPCIÓN (AUTOGENERADA) */}
-          <div>
-            <Input
-              label="DESCRIPCIÓN (AUTOGENERADA)"
-              placeholder="Se autogenera según los atributos físicos completados"
-              error={errors.descripcion?.message}
-              {...register("descripcion")}
-              className="w-full"
-            />
+          {/* Bloque 2: Atributos Físicos */}
+          <div className="rounded-xl bg-[#FBFCFD] border border-[#F3F4F6] p-3 space-y-2.5">
+            <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8D8D8D]">
+              Atributos físicos
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {/* Fila 1 */}
+              <Input
+                label="TIPO DE FLOR"
+                placeholder="Rosa"
+                autoComplete="off"
+                error={errors.tipo_flor?.message}
+                {...register("tipo_flor")}
+              />
+              <Input
+                label="MATERIAL"
+                placeholder="Tela Premium"
+                error={errors.material?.message}
+                {...register("material")}
+              />
+              <Select
+                label="COMPOSICIÓN"
+                error={errors.composicion?.message}
+                {...register("composicion")}
+                value={watch("composicion") ?? ""}
+              >
+                <option value="">Seleccionar</option>
+                <option value="Ramo">Ramo</option>
+                <option value="Vara">Vara</option>
+                <option value="Guirnalda">Guirnalda</option>
+                <option value="Planta">Planta</option>
+                <option value="Bonsai">Bonsai</option>
+                <option value="Arreglo">Arreglo</option>
+              </Select>
+              <Select
+                label="PRESENTACIÓN"
+                error={errors.presentacion?.message}
+                {...register("presentacion")}
+                value={watch("presentacion") ?? ""}
+              >
+                <option value="">Seleccionar</option>
+                <option value="Ramo">Ramo</option>
+                <option value="Unidad">Unidad</option>
+                <option value="Atado">Atado</option>
+                <option value="Paquete">Paquete</option>
+                <option value="Caja">Caja</option>
+              </Select>
+
+              {/* Fila 2 */}
+              <Input
+                label="FOLLAJE"
+                placeholder="Verde"
+                error={errors.follaje?.message}
+                {...register("follaje")}
+              />
+              <Input
+                label="N° CABEZAS"
+                type="number"
+                min="1"
+                placeholder="18"
+                error={errors.numero_cabezas?.message}
+                {...cleanNumberInputProps("numero_cabezas")}
+              />
+              <Input
+                label="TAMAÑO"
+                placeholder="35cm aprox"
+                error={errors.tamano?.message}
+                {...register("tamano")}
+              />
+              <div>
+                <span className="block mb-1 text-[10px] font-bold uppercase tracking-wide text-[#575757]">
+                  COLORES SURTIDOS
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsColorModalOpen(true)}
+                  className="h-8 w-full rounded-lg border border-[#D9D9D9] bg-white hover:border-[#414141] px-2.5 text-xs font-bold text-[#414141] inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  {coloresSurtidos.length > 0 && (
+                    <div className="flex items-center gap-1 max-w-[50px] overflow-hidden shrink-0">
+                      {coloresSurtidos.slice(0, 3).map((col) => (
+                        <span
+                          key={col}
+                          className="size-2 rounded-full border border-black/10 shrink-0"
+                          style={{ backgroundColor: resolveColorHex(col) }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <span>Configurar</span>
+                  {coloresSurtidos.length > 0 && (
+                    <span className="text-[11px] text-[#8D8D8D]">({coloresSurtidos.length})</span>
+                  )}
+                </button>
+                {errors.colores_surtido?.message && (
+                  <p className="mt-1 text-xs font-medium text-danger" role="alert">
+                    {errors.colores_surtido.message}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Bloque de Precios: 2 Tarjetas Lado a Lado */}
-          <div className="pt-1">
+          {/* Bloque 3: Inventario y Costo */}
+          <div className="rounded-xl bg-[#FBFCFD] border border-[#F3F4F6] p-3 space-y-2">
+            <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#8D8D8D]">
+              Inventario y costo
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <Input
+                label="UNIDADES POR CAJA"
+                type="number"
+                min="1"
+                placeholder="12"
+                error={errors.unidades_por_caja?.message}
+                {...cleanNumberInputProps("unidades_por_caja")}
+              />
+              <Input
+                label={isEditing ? "STOCK TOTAL" : "STOCK INICIAL"}
+                type="number"
+                min="0"
+                placeholder="10"
+                error={errors.stock_principal?.message}
+                {...cleanNumberInputProps("stock_principal")}
+              />
+              <Input
+                label="STOCK MÍNIMO"
+                type="number"
+                min="0"
+                placeholder="10"
+                error={errors.stock_minimo?.message}
+                {...cleanNumberInputProps("stock_minimo")}
+              />
+              <Input
+                label="PRECIO DE COSTO"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                icon={<span className="text-xs font-bold text-[#8D8D8D]">S/</span>}
+                error={errors.costo_normal?.message}
+                {...cleanNumberInputProps("costo_normal")}
+              />
+            </div>
+          </div>
+
+          {/* Bloque 4: Tarifas por Canal */}
+          <div className="pt-0.5">
             <PriceMatrix
               tienda={priceProps.tienda}
               distribuidor={priceProps.distribuidor}
               errors={priceErrors}
-            />
-          </div>
-
-          {/* Dropzone de Imagen */}
-          <div className="pt-1">
-            <ImageUploader
-              previewUrl={imagePreview}
-              fileName={imageFile?.name || getFileNameFromUrl(productoInicial?.foto_url)}
-              onFileSelect={handleImageSelect}
-              onRemove={handleImageRemove}
-              disabled={isSubmitting}
             />
           </div>
         </form>

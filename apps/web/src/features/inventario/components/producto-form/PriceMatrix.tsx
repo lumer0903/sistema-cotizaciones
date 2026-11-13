@@ -50,7 +50,7 @@ function PriceRow({
   const errorId = `${inputId}-error`;
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       <div className="flex items-center justify-between gap-2">
         <label
           htmlFor={inputId}
@@ -69,7 +69,7 @@ function PriceRow({
           aria-describedby={error ? errorId : undefined}
           data-field={field}
           className={cn(
-            'h-8 w-24 rounded-lg border bg-white px-2.5 text-right text-xs font-medium text-[#414141] tabular-nums placeholder:text-[#8D8D8D] focus:outline-none transition-colors',
+            'h-7 w-24 rounded-lg border bg-white px-2 text-right text-xs font-medium text-[#414141] tabular-nums placeholder:text-[#8D8D8D] focus:outline-none transition-colors',
             '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
             error ? 'border-danger text-danger' : cn(borderClass, focusBorderClass)
           )}
@@ -95,14 +95,14 @@ export function PriceMatrix({ tienda, distribuidor, errors = {} }: PriceMatrixPr
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {/* Tarjeta izquierda — Cliente tienda */}
       <section
-        className="relative overflow-hidden rounded-xl bg-[#E8F2FE] border border-[#C4DEFE] p-3 space-y-2"
+        className="relative overflow-hidden rounded-xl bg-[#E8F2FE] border border-[#C4DEFE] p-3 space-y-1.5"
         aria-label="Cliente tienda"
       >
         <Store
           className="absolute -bottom-6 -right-6 size-36 text-[#1F41AF] opacity-10 pointer-events-none select-none"
           aria-hidden="true"
         />
-        <div className="relative z-10 space-y-2">
+        <div className="relative z-10 space-y-1.5">
           <div className="flex items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 shadow-xs text-xs font-bold text-[#1F41AF]">
               <Store className="size-3.5" aria-hidden="true" />
@@ -112,7 +112,7 @@ export function PriceMatrix({ tienda, distribuidor, errors = {} }: PriceMatrixPr
           <p className="text-[11px] font-medium text-[#1F41AF]">
             Por unidad: docena desde 12; mayor desde 13
           </p>
-          <div className="space-y-1.5 pt-0.5">
+          <div className="space-y-1 pt-0.5">
             {ROWS.map(({ unit, label }) => {
               const field = `precio_tienda_${unit}` as PriceField;
               return (
@@ -135,14 +135,14 @@ export function PriceMatrix({ tienda, distribuidor, errors = {} }: PriceMatrixPr
 
       {/* Tarjeta derecha — Cliente distribuidor */}
       <section
-        className="relative overflow-hidden rounded-xl bg-[#FFF3E4] border border-[#FEDEBA] p-3 space-y-2"
+        className="relative overflow-hidden rounded-xl bg-[#FFF3E4] border border-[#FEDEBA] p-3 space-y-1.5"
         aria-label="Cliente distribuidor"
       >
         <Truck
           className="absolute -bottom-6 -right-6 size-36 text-[#9D3A19] opacity-10 pointer-events-none select-none"
           aria-hidden="true"
         />
-        <div className="relative z-10 space-y-2">
+        <div className="relative z-10 space-y-1.5">
           <div className="flex items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 shadow-xs text-xs font-bold text-[#9D3A19]">
               <Truck className="size-3.5" aria-hidden="true" />
@@ -152,7 +152,7 @@ export function PriceMatrix({ tienda, distribuidor, errors = {} }: PriceMatrixPr
           <p className="text-[11px] font-medium text-[#9D3A19]">
             Por unidad: docena desde 12; mayor desde 13
           </p>
-          <div className="space-y-1.5 pt-0.5">
+          <div className="space-y-1 pt-0.5">
             {ROWS.map(({ unit, label }) => {
               const field = `precio_distribuidor_${unit}` as PriceField;
               return (

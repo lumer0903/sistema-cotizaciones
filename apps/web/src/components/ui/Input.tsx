@@ -60,8 +60,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-describedby={error ? errorId : undefined}
             className={cn(
               'w-full',
-              FIELD_HEIGHT,
-              'px-3',
+              isFilter ? FIELD_HEIGHT : 'h-8 px-2.5',
+              isFilter ? 'px-3' : undefined,
               baseFieldClass,
               icon ? 'pl-9' : undefined,
               error && FIELD_ERROR,

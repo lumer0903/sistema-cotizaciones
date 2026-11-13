@@ -40,7 +40,7 @@ export interface ImageUploaderProps {
  */
 export function ImageUploader({
   previewUrl,
-  fileName,
+  fileName: _fileName,
   onFileSelect,
   onRemove,
   disabled = false,
@@ -94,46 +94,36 @@ export function ImageUploader({
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           className={cn(
-            'flex w-full items-center gap-3 rounded-xl border border-border-default bg-[#FBFCFD] p-2.5 shadow-xs transition-colors hover:border-[#8D8D8D]',
+            'relative w-full h-full min-h-[104px] rounded-xl border border-border-default bg-[#FBFCFD] overflow-hidden group flex items-center justify-center',
             FOCUS_RING,
             disabled && 'pointer-events-none opacity-50'
           )}
         >
-          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border-default/50 bg-surface-muted shadow-xs">
-            <img
-              src={previewUrl}
-              alt="Vista previa"
-              className="h-full w-full object-cover"
-              onError={(e) => handleImageError(e, '150')}
-            />
-          </div>
-          
-          <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
-            <p className="truncate text-xs font-bold text-brand-subtitle" title={fileName || 'imagen.png'}>
-              {fileName || 'imagen.png'}
-            </p>
-
-            <div className="flex shrink-0 items-center gap-1.5">
-              <label
-                htmlFor={INPUT_ID}
-                title="Cambiar imagen"
-                className="flex cursor-pointer items-center justify-center rounded-lg bg-surface-muted p-2 text-brand-subtitle transition-colors hover:bg-neutral-200"
-                aria-label="Cambiar imagen"
-              >
-                <Pencil className="size-3.5 text-[#414141]" aria-hidden="true" />
-              </label>
-
-              <button
-                type="button"
-                onClick={onRemove}
-                disabled={disabled}
-                title="Quitar imagen"
-                aria-label="Quitar imagen del producto"
-                className="flex items-center justify-center rounded-lg bg-danger/10 p-2 text-danger transition-colors hover:bg-danger/20 disabled:opacity-40"
-              >
-                <Trash2 className="size-3.5" aria-hidden="true" />
-              </button>
-            </div>
+          <img
+            src={previewUrl}
+            alt="Vista previa"
+            className="w-full h-full object-cover"
+            onError={(e) => handleImageError(e, '150')}
+          />
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 p-1">
+            <label
+              htmlFor={INPUT_ID}
+              title="Cambiar imagen"
+              className="cursor-pointer p-1.5 rounded-lg bg-white/90 hover:bg-white text-[#414141] transition-colors"
+              aria-label="Cambiar imagen"
+            >
+              <Pencil className="size-3.5" aria-hidden="true" />
+            </label>
+            <button
+              type="button"
+              onClick={onRemove}
+              disabled={disabled}
+              title="Quitar imagen"
+              aria-label="Quitar imagen del producto"
+              className="p-1.5 rounded-lg bg-white/90 hover:bg-white text-danger transition-colors cursor-pointer disabled:opacity-40"
+            >
+              <Trash2 className="size-3.5" aria-hidden="true" />
+            </button>
           </div>
         </div>
       ) : (
@@ -142,16 +132,14 @@ export function ImageUploader({
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           className={cn(
-            'group rounded-xl border border-dashed border-[#D9D9D9] bg-[#FBFCFD] hover:border-[#8D8D8D] py-2.5 px-4 flex items-center justify-center gap-2 cursor-pointer transition-colors',
+            'group w-full h-full min-h-[104px] rounded-xl border border-dashed border-[#D9D9D9] bg-[#FBFCFD] hover:border-[#F8B602] p-2 flex flex-col items-center justify-center text-center gap-1 cursor-pointer transition-colors',
             FOCUS_RING,
             disabled && 'pointer-events-none opacity-50'
           )}
         >
-          <CloudUpload className="size-4 text-[#8D8D8D]" aria-hidden="true" />
-          <span className="text-xs">
-            <span className="font-bold text-[#787878]">Arrastra o selecciona</span>{' '}
-            <span className="text-[#8D8D8D]">la imagen</span>
-          </span>
+          <CloudUpload className="size-4 text-[#F8B602]" aria-hidden="true" />
+          <span className="text-[11px] font-bold text-[#414141] leading-tight">Subir imagen</span>
+          <span className="text-[9px] text-[#8D8D8D]">PNG, JPG · 5MB</span>
         </label>
       )}
 
