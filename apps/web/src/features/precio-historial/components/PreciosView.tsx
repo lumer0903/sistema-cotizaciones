@@ -130,8 +130,20 @@ export function PreciosView(){
       {loading?<div role="status" className="animate-pulse p-8 bg-surface-muted rounded-xl">Cargando precios…</div>:
  error?<div role="alert"><p>{apiErrorMessage(error)}</p><Button onClick={()=>refetch()}>Reintentar</Button></div>:
  !data?.data?.length?<p className="p-8 text-center">No se encontraron productos con estos filtros.</p>:
- <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,230px),1fr))] gap-4">{data.data.map(producto=><PriceCard key={producto.id} producto={producto} tipoPrecio={tipoCliente}
- onVerHistorial={isAdmin||isGerente?()=>setSelected({id:producto.id,codigo:producto.codigo}):undefined}/>)}</div>}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {data.data.map((producto) => (
+            <PriceCard
+              key={producto.id}
+              producto={producto}
+              tipoPrecio={tipoCliente}
+              onVerHistorial={
+                isAdmin || isGerente
+                  ? () => setSelected({ id: producto.id, codigo: producto.codigo })
+                  : undefined
+              }
+            />
+          ))}
+        </div>}
  <Pagination loading={loading} currentPage={page} totalPages={Math.max(1,Math.ceil((data?.total??0)/limit))} totalItems={data?.total??0} limit={limit} onPageChange={setPage}
  onLimitChange={v=>{setLimit(v);setPage(1);}} itemLabel="productos"/>
  {selected&&<HistorialPrecioModal key={selected.id} open onClose={()=>setSelected(null)} productoId={selected.id} codigoProducto={selected.codigo}/>}
