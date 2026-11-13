@@ -60,21 +60,21 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* ÁREA PRINCIPAL */}
-      <div className={`flex-1 min-w-0 flex flex-col min-h-screen transition-[padding] duration-300 ease-in-out ${sidebarOpen ? 'lg:pl-72' : 'lg:pl-0'}`}>
+      <div className={`flex-1 min-w-0 flex flex-col min-h-screen transition-[padding] duration-300 ease-in-out ${sidebarOpen ? 'lg:pl-60' : 'lg:pl-0'}`}>
         {/* NAVBAR DINÁMICO */}
-        <header className="w-full h-16 px-4 sm:px-6 lg:px-8 bg-surface border-b border-border-default flex items-center justify-between gap-3 sticky top-0 z-30">
+        <header className="w-full h-14 px-4 sm:px-5 lg:px-6 bg-surface border-b border-border-default flex items-center justify-between gap-3 sticky top-0 z-30">
 
           <div className="flex items-center gap-2 min-w-0 flex-1">
             {/* BOTÓN MENÚ MÓVIL Y ESCRITORIO */}
             <button
               type="button"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-xl text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted transition-colors shrink-0"
+              className="p-2 min-h-9 min-w-9 flex items-center justify-center rounded-lg text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted transition-colors shrink-0"
               aria-label="Alternar menú"
               aria-expanded={sidebarOpen}
               aria-controls="menu-lateral"
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-4.5 w-4.5" />
             </button>
 
             {/* BREADCRUMB / MIGA DE PAN */}
@@ -82,17 +82,17 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* ICONOS / AVATAR */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => setIsAlertasOpen(true)}
-              className="relative min-h-11 min-w-11 flex items-center justify-center text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted rounded-xl transition-colors"
+              className="relative min-h-9 min-w-9 flex items-center justify-center text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted rounded-lg transition-colors"
               title="Notificaciones"
               aria-label={`Notificaciones${alertasCount > 0 ? ` (${alertasCount} sin leer)` : ''}`}
             >
-              <Bell className="w-5 h-5 stroke-[2]" />
+              <Bell className="w-4.5 h-4.5 stroke-[2]" />
               {alertasCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-danger text-white text-xs font-bold min-w-5 h-5 px-1 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-danger text-white text-[10px] font-bold min-w-4.5 h-4.5 px-1 rounded-full flex items-center justify-center">
                   {alertasCount > 9 ? '9+' : alertasCount}
                 </span>
               )}
@@ -100,26 +100,24 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
             <Link
               href="/configuracion"
-              className="min-h-11 min-w-11 flex items-center justify-center text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted rounded-xl transition-colors"
+              className="min-h-9 min-w-9 flex items-center justify-center text-brand-subtitle hover:text-accent-ink hover:bg-surface-muted rounded-lg transition-colors"
               title="Configuración"
               aria-label="Configuración"
             >
-              <Settings className="w-5 h-5 stroke-[2]" />
+              <Settings className="w-4.5 h-4.5 stroke-[2]" />
             </Link>
             <Avatar
               src={usuario?.avatar_url}
               nombre={usuario?.nombre}
-              size="md"
+              size="sm"
               onClick={() => setIsPerfilOpen(true)}
               title="Mi perfil"
             />
-
-
           </div>
         </header>
 
         {/* CONTENIDO INTERNO */}
-          <main id="contenido-principal" className="flex-1 w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8">
+        <main id="contenido-principal" className="flex-1 w-full max-w-[1600px] mx-auto p-4 lg:p-5 space-y-4">
           {children}
         </main>
       </div>

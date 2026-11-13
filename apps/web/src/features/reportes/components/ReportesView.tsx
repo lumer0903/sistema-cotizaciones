@@ -231,31 +231,33 @@ export function ReportesView() {
       case 'ranking-productos':
         return (dataActual as RankingProducto[]).map((row) => (
           <TableRow key={row.idProducto}>
-            <TableCell>{row.codigo}</TableCell>
+            <TableCell className="font-mono whitespace-nowrap text-[#575757]">{row.codigo}</TableCell>
             <TableCell className="max-w-xs truncate">{row.descripcion}</TableCell>
-            <TableCell className="text-right">{row.cantidadVendida.toLocaleString()}</TableCell>
-            <TableCell className="text-right font-mono">{Number(row.ingresoTotal).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-            <TableCell className="text-right">{row.numeroCotizaciones}</TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap">{row.cantidadVendida.toLocaleString()}</TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap font-semibold">
+              {Number(row.ingresoTotal).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap">{row.numeroCotizaciones}</TableCell>
           </TableRow>
         ));
       case 'antiguedad-deuda':
         return (dataActual as AntiguedadDeuda[]).map((row) => (
           <TableRow key={row.idCliente}>
             <TableCell className="max-w-xs truncate">{row.cliente}</TableCell>
-            <TableCell>{row.rucDni ?? '-'}</TableCell>
-            <TableCell className="text-right font-semibold">{Number(row.totalPendiente).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-            <TableCell className="text-right">{Number(row.d0_30).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-            <TableCell className="text-right">{Number(row.d31_60).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-            <TableCell className="text-right">{Number(row.d61_90).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-            <TableCell className="text-right text-danger font-medium">{Number(row.d90mas).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="whitespace-nowrap">{row.rucDni ?? '-'}</TableCell>
+            <TableCell className="text-right font-semibold tabular-nums whitespace-nowrap">{Number(row.totalPendiente).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap">{Number(row.d0_30).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap">{Number(row.d31_60).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap">{Number(row.d61_90).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="text-right text-danger font-medium tabular-nums whitespace-nowrap">{Number(row.d90mas).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
           </TableRow>
         ));
       case 'auditoria-ia':
         return (dataActual as AuditoriaIa[]).map((row) => (
           <TableRow key={row.idInteraccion}>
-            <TableCell>{new Date(row.createdAt).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</TableCell>
-            <TableCell>{row.tipoSugerencia ?? '-'}</TableCell>
-            <TableCell className="text-center">
+            <TableCell className="whitespace-nowrap">{new Date(row.createdAt).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</TableCell>
+            <TableCell className="whitespace-nowrap">{row.tipoSugerencia ?? '-'}</TableCell>
+            <TableCell className="text-center whitespace-nowrap">
               {(() => {
                 const accion = (row.accionUsuario ?? '').toUpperCase();
                 const esAceptado = accion === 'ACEPTADO' || accion === 'ACEPTADA';
@@ -269,8 +271,8 @@ export function ReportesView() {
             </TableCell>
             <TableCell className="max-w-xs truncate">{row.productoOriginal ?? '-'}</TableCell>
             <TableCell className="max-w-xs truncate">{row.productoSugerido ?? '-'}</TableCell>
-            <TableCell className="text-right">{row.idCotizacion ?? '-'}</TableCell>
-            <TableCell>{row.vendedor ?? '-'}</TableCell>
+            <TableCell className="text-right whitespace-nowrap">{row.idCotizacion ?? '-'}</TableCell>
+            <TableCell className="whitespace-nowrap">{row.vendedor ?? '-'}</TableCell>
           </TableRow>
         ));
     }

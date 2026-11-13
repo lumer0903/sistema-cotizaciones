@@ -361,58 +361,58 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
         >
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[15%]">Documento</TableHead>
+              <TableHead className="w-[15%] whitespace-nowrap">Documento</TableHead>
               <TableHead className="w-[20%]">Cliente</TableHead>
-              <TableHead className="w-[15%]">Fecha</TableHead>
-              <TableHead className="w-[15%] text-center">Estado</TableHead>
-              <TableHead className="w-[15%] text-right">Total</TableHead>
-              <TableHead className="w-[10%]">Atraso</TableHead>
-              <TableHead className="w-[10%] text-right">Acciones</TableHead>
+              <TableHead className="w-[15%] whitespace-nowrap">Fecha</TableHead>
+              <TableHead className="w-[15%] text-center whitespace-nowrap">Estado</TableHead>
+              <TableHead className="w-[15%] text-right whitespace-nowrap">Total</TableHead>
+              <TableHead className="w-[10%] whitespace-nowrap">Atraso</TableHead>
+              <TableHead className="w-[10%] text-right whitespace-nowrap">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {cuentas.map((cuenta) => (
               <TableRow key={cuenta.id_cotizacion}>
-                <TableCell className="font-normal text-[#575757]">
+                <TableCell className="font-normal text-[#575757] whitespace-nowrap">
                   {cuenta.numero}
                 </TableCell>
-                <TableCell className="text-[#414141]">
+                <TableCell className="text-[#414141] truncate">
                   {cuenta.cliente?.nombre || 'Sin cliente'}
                 </TableCell>
-                <TableCell className="text-[#575757]">
+                <TableCell className="text-[#575757] whitespace-nowrap">
                   {formatDate(cuenta.created_at)}
                 </TableCell>
-                <TableCell className="text-center">
+                <TableCell className="text-center whitespace-nowrap">
                   <TableBadge
                     variant={ESTADO_BADGE_VARIANT[cuenta.estado_cobranza] ?? 'neutral'}
                   >
                     {ESTADO_LABELS[cuenta.estado_cobranza] || cuenta.estado_cotizacion?.toUpperCase()}
                   </TableBadge>
                 </TableCell>
-                <TableCell className="text-right tabular-nums">
+                <TableCell className="text-right tabular-nums whitespace-nowrap">
                   S/ {money(cuenta.total)}
                 </TableCell>
 
-                <TableCell>
+                <TableCell className="whitespace-nowrap">
                   {cuenta.dias_atraso > 0 ? (
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                      <Clock className="h-3 w-3 mr-1" />
+                      <Clock className="h-3.5 w-3.5 mr-1" />
                       {cuenta.dias_atraso} días
                     </span>
                   ) : (
-                    <span className="text-sm font-medium text-emerald-700">Al día</span>
+                    <span className="text-xs font-medium text-emerald-700">Al día</span>
                   )}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right whitespace-nowrap">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => router.push(`/cobranza/${cuenta.id_cotizacion}`)}
                     title="Gestionar"
                     aria-label={`Gestionar pago de ${cuenta.numero}`}
-                    className="p-2 text-zinc-600 hover:text-black"
+                    className="h-8 w-8 p-0 text-zinc-600 hover:text-black inline-flex items-center justify-center"
                   >
-                    <CreditCard className="h-4 w-4" />
+                    <CreditCard className="size-4" />
                   </Button>
                 </TableCell>
               </TableRow>

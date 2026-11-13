@@ -167,9 +167,9 @@ export function ConfiguracionView() {
         <TabsList aria-label="Secciones de configuración" className="max-w-full">
           {TABS.map(tab => <TabsTrigger key={tab.id} value={tab.id}><tab.icon className="h-4 w-4" aria-hidden="true" />{tab.label}</TabsTrigger>)}
         </TabsList>
-      <TabsContent value={activeTab}><Card className="p-4 sm:p-5">
+      <TabsContent value={activeTab}><Card className="p-5">
         {loading ? (
-          <div className="animate-pulse space-y-6">
+          <div className="animate-pulse space-y-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-8 bg-zinc-200 rounded w-3/4" />
             ))}
@@ -178,9 +178,9 @@ export function ConfiguracionView() {
           <div className="flex flex-col h-full">
             <div className="flex-1">
               {activeTab === 'empresa' && (
-                <div className="max-w-3xl space-y-6">
-                  <h2 className="text-lg font-semibold text-brand-subtitle">Datos de la Empresa</h2>
-                  <div className="grid gap-4 md:grid-cols-2">
+                <div className="max-w-3xl space-y-4">
+                  <h2 className="text-base font-bold text-brand-subtitle">Datos de la Empresa</h2>
+                  <div className="grid gap-3.5 md:grid-cols-2">
                     <Input
                       label="Nombre Comercial"
                       type="text"
@@ -245,9 +245,9 @@ export function ConfiguracionView() {
               )}
 
               {activeTab === 'documentos' && (
-                <div className="max-w-3xl space-y-6">
-                  <h2 className="text-lg font-semibold text-brand-subtitle">Configuración de Documentos</h2>
-                  <div className="grid gap-4 md:grid-cols-2">
+                <div className="max-w-3xl space-y-4">
+                  <h2 className="text-base font-bold text-brand-subtitle">Configuración de Documentos</h2>
+                  <div className="grid gap-3.5 md:grid-cols-2">
                     <div>
                       <Select label="Moneda"
                         value={config.moneda}
@@ -298,9 +298,9 @@ export function ConfiguracionView() {
               )}
 
               {activeTab === 'comercial' && (
-                <div className="max-w-3xl space-y-6">
-                  <h2 className="text-lg font-semibold text-brand-subtitle">Parámetros Comerciales</h2>
-                  <div className="grid gap-4 md:grid-cols-2">
+                <div className="max-w-3xl space-y-4">
+                  <h2 className="text-base font-bold text-brand-subtitle">Parámetros Comerciales</h2>
+                  <div className="grid gap-3.5 md:grid-cols-2">
                     <Input
                       label="Días Vencimiento Default"
                       type="number"

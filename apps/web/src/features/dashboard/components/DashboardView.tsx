@@ -271,7 +271,7 @@ export function DashboardView() {
             strategy={rectSortingStrategy}
           >
             <div
-              className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 auto-rows-[132px] grid-flow-dense gap-4"
+              className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 auto-rows-[minmax(125px,auto)] grid-flow-dense gap-3.5"
               aria-label="Widgets del dashboard"
             >
               {activeWidgets.map((widget) => (
@@ -291,7 +291,7 @@ export function DashboardView() {
         </DndContext>
       ) : activeWidgets.length > 0 ? (
         <div
-          className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 auto-rows-[132px] grid-flow-dense gap-4"
+          className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 auto-rows-[minmax(125px,auto)] grid-flow-dense gap-3.5"
           aria-label="Widgets del dashboard"
         >
           {activeWidgets.map((widget) => (

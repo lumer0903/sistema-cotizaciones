@@ -35,7 +35,7 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
         </table>
       </div>
       {footer && (
-        <div className="border-t border-[#E5E7EB] bg-white px-6 py-3.5">
+        <div className="border-t border-[#E5E7EB] bg-white px-4 py-2.5 text-xs">
           {footer}
         </div>
       )}
@@ -98,7 +98,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
           : undefined
       }
       tabIndex={onClick ? 0 : undefined}
-      className={cn('h-14 bg-white hover:bg-neutral-50/80 transition-colors', className)}
+      className={cn('h-11 bg-white hover:bg-neutral-50/80 transition-colors', className)}
       {...props}
     >
       {children}
@@ -118,7 +118,7 @@ export const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
     <th
       ref={ref}
       className={cn(
-        'h-14 px-6 text-xs sm:text-sm font-extrabold text-[#414141] uppercase tracking-wide whitespace-nowrap align-middle',
+        'h-10 px-3.5 text-[11px] font-bold uppercase tracking-wider text-[#414141] whitespace-nowrap align-middle',
         className
       )}
       {...props}
@@ -140,7 +140,7 @@ export const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
     <td
       ref={ref}
       className={cn(
-        'px-6 py-3 text-sm sm:text-base font-light text-[#414141] align-middle',
+        'px-3.5 py-2 text-[13px] font-normal text-[#414141] align-middle',
         className
       )}
       {...props}
@@ -161,7 +161,7 @@ export const TableFooter = React.forwardRef<HTMLTableSectionElement, TableFooter
   ({ children, className, ...props }, ref) => (
     <tfoot
       ref={ref}
-      className={cn('border-t border-[#E5E7EB] bg-white font-medium text-[#414141]', className)}
+      className={cn('border-t border-[#E5E7EB] bg-white px-4 py-2.5 text-xs font-medium text-[#414141]', className)}
       {...props}
     >
       {children}
@@ -197,7 +197,7 @@ export const TableBadge: React.FC<TableBadgeProps> = ({
   return (
     <span
       className={cn(
-        'inline-flex items-center justify-center min-w-[104px] px-3 py-1 rounded-lg border text-xs sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap',
+        'inline-flex items-center justify-center min-w-[82px] px-2 py-0.5 rounded-md border text-[11px] font-bold uppercase tracking-wide whitespace-nowrap',
         tableBadgeVariantStyles[variant],
         className
       )}

@@ -96,9 +96,7 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
         }
     };
 
-    // El menú NO se cierra al navegar en escritorio (sólo con burger/X/Escape).
-    // En móvil (<1024px) es un drawer sobre el contenido, así que sí se cierra
-    // para no tapar la vista.
+    // En móvil (<1024px) es un drawer sobre el contenido, así que sí se cierra para no tapar la vista.
     const navegar = () => {
         if (typeof window !== 'undefined' && window.innerWidth < 1024) {
             onClose?.();
@@ -114,23 +112,23 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
             aria-modal={open && mobile ? true : undefined}
             aria-label="Menú principal"
             id="menu-lateral"
-            className={`w-72 bg-white border-r-[1.5px] border-[#E5E7EB] flex flex-col justify-between min-h-screen fixed left-0 top-0 z-50 select-none transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'}`}
+            className={`w-60 bg-white border-r border-[#E5E7EB] flex flex-col justify-between min-h-screen fixed left-0 top-0 z-50 select-none transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'}`}
         >
             <div className="flex flex-col w-full flex-1 min-h-0">
-                {/* LOGO SUPERIOR */}
-                <div className="pt-8 pb-5 px-6 flex justify-center">
+                {/* LOGO SUPERIOR COMPACTO */}
+                <div className="py-4 px-4 flex justify-center">
                     <Link
                         href="/dashboard"
-                        className="flex-1 min-w-0 flex justify-center items-center group py-1 focus:outline-none rounded-xl"
+                        className="flex-1 min-w-0 flex justify-center items-center group py-0.5 focus:outline-none rounded-lg"
                         onClick={onToggleLogo}
                     >
                         <Image
                             src="/LOGO_GRANDE.svg"
                             alt="Import & Export Gold Continent"
-                            width={240}
-                            height={56}
+                            width={180}
+                            height={42}
                             priority
-                            className="w-60 h-14 object-contain transition-transform duration-150 group-hover:scale-105"
+                            className="w-44 h-10 object-contain transition-transform duration-150 group-hover:scale-105"
                         />
                     </Link>
                 </div>
@@ -151,21 +149,21 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
                                         type="button"
                                         onClick={() => handleItemClick(item)}
                                         aria-expanded={isSubmenuOpen}
-                                        className={`w-full h-12 px-7 py-2 border-l-[5px] flex items-center gap-3 text-base font-normal transition-colors focus:outline-none ${
+                                        className={`w-full h-10 px-4 py-2 border-l-4 flex items-center gap-2.5 text-[13px] font-normal transition-colors focus:outline-none ${
                                             isActive
                                                 ? 'bg-[#F8B602]/20 border-[#F8B602] text-[#414141]'
                                                 : 'border-transparent text-[#414141] hover:bg-neutral-50'
                                         }`}
                                     >
                                         <Icon
-                                            className={`size-6 transition-colors ${
+                                            className={`size-4 transition-colors shrink-0 ${
                                                 isActive ? 'text-[#F8B602]' : 'text-[#414141]'
                                             }`}
                                             strokeWidth={1.5}
                                         />
-                                        <span className="flex-1 text-left">{etiqueta}</span>
+                                        <span className="flex-1 text-left truncate">{etiqueta}</span>
                                         <ChevronDown
-                                            className={`size-4 ml-auto transition-transform duration-200 ${
+                                            className={`size-3.5 ml-auto transition-transform duration-200 shrink-0 ${
                                                 isSubmenuOpen ? 'rotate-180 text-[#F8B602]' : 'text-[#414141]'
                                             }`}
                                             strokeWidth={1.5}
@@ -189,7 +187,7 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
                                                             href={sub.href}
                                                             onClick={navegar}
                                                             aria-current={isSubActive ? 'page' : undefined}
-                                                            className={`pl-16 pr-7 h-11 flex items-center text-base font-medium transition-colors focus:outline-none ${
+                                                            className={`pl-11 pr-4 h-9 flex items-center text-[12px] font-medium transition-colors focus:outline-none ${
                                                                 isSubActive
                                                                     ? 'text-[#F8B602]'
                                                                     : 'text-[#8D8D8D] hover:text-[#414141]'
@@ -214,19 +212,19 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
                                     navegar();
                                 }}
                                 aria-current={isActive ? 'page' : undefined}
-                                className={`w-full h-12 px-7 py-2 border-l-[5px] flex items-center gap-3 text-base font-normal transition-colors focus:outline-none ${
+                                className={`w-full h-10 px-4 py-2 border-l-4 flex items-center gap-2.5 text-[13px] font-normal transition-colors focus:outline-none ${
                                     isActive
                                         ? 'bg-[#F8B602]/20 border-[#F8B602] text-[#414141]'
                                         : 'border-transparent text-[#414141] hover:bg-neutral-50'
                                 }`}
                             >
                                 <Icon
-                                    className={`size-6 transition-colors ${
+                                    className={`size-4 transition-colors shrink-0 ${
                                         isActive ? 'text-[#F8B602]' : 'text-[#414141]'
                                     }`}
                                     strokeWidth={1.5}
                                 />
-                                <span className="flex-1 text-left">{etiqueta}</span>
+                                <span className="flex-1 text-left truncate">{etiqueta}</span>
                             </Link>
                         );
                     })}
@@ -240,9 +238,9 @@ export function Sidebar({ open = false, onClose, onToggleLogo }: SidebarProps) {
                     await logout();
                     router.push('/login');
                 }}
-                className="w-full h-16 px-7 border-t border-[#E5E7EB] shadow-[0_-2px_6px_rgba(0,0,0,0.04)] flex items-center gap-3 text-base font-medium text-[#414141] hover:bg-neutral-50 transition-colors cursor-pointer text-left shrink-0 focus:outline-none"
+                className="w-full h-12 px-4 border-t border-[#E5E7EB] shadow-[0_-2px_6px_rgba(0,0,0,0.04)] flex items-center gap-2.5 text-[13px] font-medium text-[#414141] hover:bg-neutral-50 transition-colors cursor-pointer text-left shrink-0 focus:outline-none"
             >
-                <LogOut className="size-6 text-[#414141]" strokeWidth={1.5} />
+                <LogOut className="size-4 text-[#414141] shrink-0" strokeWidth={1.5} />
                 <span>Cerrar Sesión</span>
             </button>
         </aside>

@@ -130,7 +130,7 @@ export function PreciosView(){
       {loading?<div role="status" className="animate-pulse p-8 bg-surface-muted rounded-xl">Cargando precios…</div>:
  error?<div role="alert"><p>{apiErrorMessage(error)}</p><Button onClick={()=>refetch()}>Reintentar</Button></div>:
  !data?.data?.length?<p className="p-8 text-center">No se encontraron productos con estos filtros.</p>:
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5">
           {data.data.map((producto) => (
             <PriceCard
               key={producto.id}

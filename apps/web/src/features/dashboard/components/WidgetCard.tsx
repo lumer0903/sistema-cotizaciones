@@ -692,7 +692,7 @@ export function SortableWidgetCard({
 
       {/* Contenido del widget */}
       <div className={`
-        p-3 sm:p-4 flex-1 flex flex-col justify-center min-h-0 min-w-0 overflow-hidden ${isCompactWidth ? 'pb-8' : 'pb-3'}
+        p-3.5 flex-1 flex flex-col justify-center min-h-0 min-w-0 overflow-hidden ${isCompactWidth ? 'pb-8' : 'pb-3'}
       `}>
         {renderContent(isCompactWidth, isCompactHeight)}
 

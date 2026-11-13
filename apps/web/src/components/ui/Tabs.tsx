@@ -182,7 +182,7 @@ export function TabsTrigger({ value, children, className, disabled }: TabsTrigge
       type="button"
       tabIndex={isActive ? 0 : -1}
       className={cn(
-        'flex min-h-11 shrink-0 whitespace-nowrap items-center justify-center gap-2 border-b-2 border-transparent px-4 py-2.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-focus-ring disabled:opacity-50 disabled:cursor-not-allowed',
+        'flex shrink-0 whitespace-nowrap items-center justify-center gap-1.5 border-b-2 border-transparent px-3 py-2 text-xs font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-focus-ring disabled:opacity-50 disabled:cursor-not-allowed',
         orientation === 'vertical' && 'border-b-0 border-l-2 justify-start',
         isActive
           ? 'border-accent-primary text-accent-ink'

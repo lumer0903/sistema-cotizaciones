@@ -19,10 +19,10 @@ export const FilterCard: React.FC<FilterCardProps> = ({
             className={cn(
         'w-full min-w-0',
         'bg-surface',
-        'rounded-2xl',
+        'rounded-xl',
         'border border-border-default',
         accentBorder && 'border-l-4 border-l-accent-primary',
-        'p-4 sm:p-5',
+        'p-3.5',
         'shadow-card',
         'transition-[background-color,border-color,box-shadow] duration-150',
         className

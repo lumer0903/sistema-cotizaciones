@@ -505,11 +505,11 @@ export function KPICards({
 }: KPICardsProps) {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 auto-rows-[132px] grid-flow-dense gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 auto-rows-[minmax(125px,auto)] grid-flow-dense gap-3.5 mb-6">
         {Array.from({ length: 6 }).map((_, i) => (
           <div
             key={i}
-            className="col-span-1 md:col-span-3 xl:col-span-4 row-span-1 bg-white border border-stone-200 rounded-2xl p-4 animate-pulse min-h-[132px]"
+            className="col-span-1 md:col-span-3 xl:col-span-4 row-span-1 bg-white border border-stone-200 rounded-2xl p-3.5 animate-pulse min-h-[125px]"
           >
             <div className="h-4 w-28 bg-zinc-200 rounded mb-2" />
             <div className="h-7 w-20 bg-zinc-200 rounded" />
@@ -523,7 +523,7 @@ export function KPICards({
 
   return (
     <div
-      className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 auto-rows-[132px] grid-flow-dense gap-4 mb-6"
+      className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 auto-rows-[minmax(125px,auto)] grid-flow-dense gap-3.5 mb-6"
       aria-label="Tarjetas KPI del Dashboard"
     >
       {activeKpis.map((kpi) => (

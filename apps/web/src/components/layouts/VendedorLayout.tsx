@@ -33,25 +33,25 @@ export function VendedorLayout({ children }: { children: React.ReactNode }) {
 
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className={`flex-1 min-w-0 flex flex-col min-h-screen transition-[padding] duration-300 ease-in-out ${sidebarOpen ? 'lg:pl-72' : 'lg:pl-0'}`}>
-        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border-default bg-surface/80 backdrop-blur-md px-4 lg:px-6">
-          <div className="flex items-center gap-3 min-w-0">
+      <div className={`flex-1 min-w-0 flex flex-col min-h-screen transition-[padding] duration-300 ease-in-out ${sidebarOpen ? 'lg:pl-60' : 'lg:pl-0'}`}>
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border-default bg-surface/80 backdrop-blur-md px-4 lg:px-6">
+          <div className="flex items-center gap-2.5 min-w-0">
             <button
-              className="p-2.5 min-h-11 min-w-11 flex items-center justify-center rounded-xl text-brand-options hover:text-vendedor-primary hover:bg-vendedor-soft shrink-0"
+              className="p-2 min-h-9 min-w-9 flex items-center justify-center rounded-lg text-brand-options hover:text-vendedor-primary hover:bg-vendedor-soft shrink-0"
               onClick={() => setSidebarOpen(!sidebarOpen)}
               aria-label="Alternar menú"
               aria-expanded={sidebarOpen}
               aria-controls="menu-lateral"
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-4.5 w-4.5" />
             </button>
             <Breadcrumbs accent="vendedor" />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <div className="hidden sm:flex flex-col items-end">
               <span className="text-xs font-semibold text-brand-subtitle">{usuario?.nombre || 'Vendedor'}</span>
-              <span className="text-xs font-semibold tracking-wider text-vendedor-primary uppercase">
+              <span className="text-[10px] font-semibold tracking-wider text-vendedor-primary uppercase">
                 {usuario?.rol ? 'Vendedor' : 'Vendedor'}
               </span>
             </div>
@@ -66,7 +66,7 @@ export function VendedorLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main id="contenido-principal" className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
+        <main id="contenido-principal" className="flex-1 p-4 lg:p-5 max-w-[1600px] w-full mx-auto space-y-4">
           {children}
         </main>
       </div>

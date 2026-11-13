@@ -154,9 +154,9 @@ interface BreadcrumbsProps {
   accent?: 'amber' | 'brand' | 'vendedor';
 }
 
-// Tamaño decreciente por nivel: el módulo principal (índice 0) es el más grande
-const LEVEL_SIZES = ['text-xl', 'text-lg', 'text-base', 'text-sm'];
-const SEPARATOR_SIZES = ['w-4 h-4', 'w-3.5 h-3.5', 'w-3 h-3', 'w-3 h-3'];
+// Tamaño decreciente por nivel: el módulo principal (índice 0) es text-base font-bold
+const LEVEL_SIZES = ['text-base font-bold', 'text-sm font-semibold', 'text-xs font-semibold', 'text-xs font-medium'];
+const SEPARATOR_SIZES = ['w-3.5 h-3.5', 'w-3 h-3', 'w-3 h-3', 'w-3 h-3'];
 
 export function Breadcrumbs({ accent = 'amber' }: BreadcrumbsProps) {
   const pathname = usePathname();

@@ -109,7 +109,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
           return (
             <TableRow key={item.id_cotizacion || item.id || index}>
               {/* CODIGO */}
-              <TableCell className={cn('font-normal text-[#575757]', COLUMNS[0].cellClassName)}>
+              <TableCell className={cn('font-normal text-[#575757] whitespace-nowrap', COLUMNS[0].cellClassName)}>
                 {formatCode(item.codigo)}
               </TableCell>
 
@@ -135,12 +135,12 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
               </TableCell>
 
               {/* FECHA */}
-              <TableCell className={cn(COLUMNS[3].cellClassName)}>
+              <TableCell className={cn('whitespace-nowrap', COLUMNS[3].cellClassName)}>
                 {item.fecha}
               </TableCell>
 
               {/* TOTAL */}
-              <TableCell className={cn('tabular-nums', COLUMNS[4].cellClassName)}>
+              <TableCell className={cn('tabular-nums whitespace-nowrap', COLUMNS[4].cellClassName)}>
                 S/ {item.total}
               </TableCell>
 
@@ -161,6 +161,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                       label={isBorrador ? 'Editar cotización' : 'No editable'}
                       onClick={() => onEdit?.(item.id_cotizacion || item.id)}
                       disabled={!isBorrador}
+                      className="h-8 w-8"
                     />
                   </Can>
                   {/* Ojo (Ver): Protegido con Can nivel lectura */}
@@ -170,6 +171,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                       label={!isBorrador ? 'Ver documento' : 'No disponible en borrador'}
                       onClick={() => onView?.(item.id_cotizacion || item.id)}
                       disabled={isBorrador}
+                      className="h-8 w-8"
                     />
                   </Can>
                 </div>

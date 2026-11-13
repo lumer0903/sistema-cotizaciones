@@ -16,10 +16,10 @@ export const COL_SPAN_CLASSES: Record<ColSpan, string> = {
 };
 
 export const ROW_SPAN_CLASSES: Record<RowSpan, string> = {
-  1: 'row-span-1 min-h-[132px]',
-  2: 'row-span-2 min-h-[280px]',
-  3: 'row-span-3 min-h-[428px]',
-  4: 'row-span-4 min-h-[576px]',
+  1: 'row-span-1 min-h-[125px]',
+  2: 'row-span-2 min-h-[264px]',
+  3: 'row-span-3 min-h-[403px]',
+  4: 'row-span-4 min-h-[542px]',
 };
 
 export function useCardResize({
