@@ -191,8 +191,8 @@ export function Sidebar({ open = false, onClose, onToggleLogo, collapsed = false
                                             aria-expanded={cotizacionesPopoverOpen}
                                             className={`size-10 rounded-xl flex items-center justify-center transition-colors focus:outline-none cursor-pointer ${
                                                 isActive
-                                                    ? 'bg-[#FFF3E4] text-[#9D3A19] border border-[#F8B602]/50'
-                                                    : 'text-[#414141] hover:bg-neutral-100 hover:text-[#F8B602]'
+                                                    ? 'bg-[#F8B602]/20 border border-[#F8B602]/40 text-[#F8B602]'
+                                                    : 'text-[#575757] hover:bg-[#F3F4F6] hover:text-[#414141]'
                                             }`}
                                         >
                                             <Icon className="size-5 shrink-0" strokeWidth={isActive ? 2 : 1.75} />
@@ -245,8 +245,8 @@ export function Sidebar({ open = false, onClose, onToggleLogo, collapsed = false
                                         aria-current={isActive ? 'page' : undefined}
                                         className={`size-10 rounded-xl flex items-center justify-center transition-colors focus:outline-none ${
                                             isActive
-                                                ? 'bg-[#FFF3E4] text-[#9D3A19] border border-[#F8B602]/50'
-                                                : 'text-[#414141] hover:bg-neutral-100 hover:text-[#F8B602]'
+                                                ? 'bg-[#F8B602]/20 border border-[#F8B602]/40 text-[#F8B602]'
+                                                : 'text-[#575757] hover:bg-[#F3F4F6] hover:text-[#414141]'
                                         }`}
                                     >
                                         <Icon className="size-5 shrink-0" strokeWidth={isActive ? 2 : 1.75} />
