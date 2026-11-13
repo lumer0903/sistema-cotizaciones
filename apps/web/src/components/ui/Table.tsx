@@ -105,7 +105,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
           : undefined
       }
       tabIndex={onClick ? 0 : undefined}
-      className={cn('h-11 border-b border-slate-100 last:border-b-0 even:bg-slate-50/45 hover:bg-[#F8B602]/[0.06] transition-colors', className)}
+      className={cn('h-11 border-b border-slate-100 last:border-b-0 even:bg-slate-50/45 hover:bg-slate-100/80 transition-colors cursor-pointer', className)}
       {...props}
     >
       {children}

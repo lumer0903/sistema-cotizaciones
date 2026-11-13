@@ -45,6 +45,7 @@ const nextConfig = {
     // Imágenes de productos/avatares servidas por la API (hostname variable
     // según entorno) y placeholders externos (placehold.co).
     remotePatterns: imageRemotePatterns,
+    dangerouslyAllowLocalIP: true,
     // Logos del login son SVG locales: next/image exige habilitarlo.
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",

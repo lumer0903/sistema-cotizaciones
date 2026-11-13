@@ -14,9 +14,9 @@ export interface StockBadgeProps {
 /**
  * Indicador de stock semántico con pill de borde y contraste:
  *  - 0 unidades / crítico → rojo suave `bg-red-50 text-red-700 border border-red-200`
- *  - bajo el mínimo       → ámbar  `bg-amber-50 text-amber-700 border border-amber-200`
- *  - en el mínimo        → ámbar  `bg-amber-50 text-amber-700 border border-amber-200`
- *  - sobre el mínimo     → verde  `bg-emerald-50 text-emerald-700 border border-emerald-200`
+ *  - bajo el mínimo      → rojo `bg-red-50 text-red-700 border border-red-200`
+ *  - en el mínimo       → rojo `bg-red-50 text-red-700 border border-red-200`
+ *  - sobre el mínimo    → verde  `bg-emerald-50 text-emerald-700 border border-emerald-200`
  */
 export function StockBadge({ stock, minimo = 0, className }: StockBadgeProps) {
   const state =
@@ -24,8 +24,8 @@ export function StockBadge({ stock, minimo = 0, className }: StockBadgeProps) {
 
   const styles: Record<typeof state, string> = {
     critico: 'bg-red-50 text-red-700 border border-red-200',
-    bajo: 'bg-amber-50 text-amber-700 border border-amber-200',
-    minimo: 'bg-amber-50 text-amber-700 border border-amber-200',
+    bajo: 'bg-red-50 text-red-700 border border-red-200',
+    minimo: 'bg-red-50 text-red-700 border border-red-200',
     ok: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
   };
 
