@@ -8,6 +8,7 @@ export * from './Modal';
 export * from './ConfirmModal';
 export * from './Badge';
 export * from './Table';
+export * from './StatusBadge';
 export * from './FilterCard';
 export * from './Pagination';
 export * from './Tabs';

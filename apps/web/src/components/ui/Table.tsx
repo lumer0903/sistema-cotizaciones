@@ -207,3 +207,6 @@ export const TableBadge: React.FC<TableBadgeProps> = ({
     </span>
   );
 };
+
+// Re-exportar StatusBadge y CategoryTag para compatibilidad y uso directo desde Table
+export * from './StatusBadge';

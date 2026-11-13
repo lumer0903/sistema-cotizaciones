@@ -7,8 +7,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { showToast } from '@/lib/toast';
 import {
   Button,
-  TableBadge,
-  type TableBadgeVariant,
+  CobranzaStatusBadge,
   Input,
   Select,
   Table,
@@ -50,12 +49,6 @@ const ESTADO_LABELS: Record<string, string> = {
   vencida: 'VENCIDA',
 };
 
-const ESTADO_BADGE_VARIANT: Record<string, TableBadgeVariant> = {
-  pendiente: 'neutral',
-  parcial: 'neutral',
-  pagada: 'success',
-  vencida: 'danger',
-};
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return '—';
@@ -383,11 +376,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
                   {formatDate(cuenta.created_at)}
                 </TableCell>
                 <TableCell className="text-center whitespace-nowrap">
-                  <TableBadge
-                    variant={ESTADO_BADGE_VARIANT[cuenta.estado_cobranza] ?? 'neutral'}
-                  >
-                    {ESTADO_LABELS[cuenta.estado_cobranza] || cuenta.estado_cotizacion?.toUpperCase()}
-                  </TableBadge>
+                  <CobranzaStatusBadge estado={cuenta.estado_cobranza} />
                 </TableCell>
                 <TableCell className="text-right tabular-nums whitespace-nowrap">
                   S/ {money(cuenta.total)}

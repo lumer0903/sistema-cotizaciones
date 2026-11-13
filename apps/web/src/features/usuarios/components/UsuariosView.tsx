@@ -3,7 +3,26 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { showToast } from '@/lib/toast';
-import { Select, Button, IconButton, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableBadge, Input, FilterCard, FilterGrid, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
+import {
+  Select,
+  Button,
+  IconButton,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  UsuarioRoleTag,
+  UsuarioStatusBadge,
+  Input,
+  FilterCard,
+  FilterGrid,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from '@/components/ui';
 import { Plus, Pencil, Settings, ShieldCheck, Search, X } from 'lucide-react';
 import { RolesYPermisosView } from '@/features/usuarios/components/RolesYPermisosView';
 import { UsuarioModal } from '@/features/usuarios/components/UsuarioModal';
@@ -173,12 +192,10 @@ export function UsuariosView() {
                   <TableCell className="font-normal text-[#414141]">{u.nombre}</TableCell>
                   <TableCell className="font-light text-[#575757]">{u.email}</TableCell>
                   <TableCell>
-                    <TableBadge variant="neutral">{u.rol}</TableBadge>
+                    <UsuarioRoleTag rol={u.rol} />
                   </TableCell>
                   <TableCell>
-                    <TableBadge variant={u.activo ? 'success' : 'danger'}>
-                      {u.activo ? 'Activo' : 'Inactivo'}
-                    </TableBadge>
+                    <UsuarioStatusBadge activo={Boolean(u.activo)} />
                   </TableCell>
                   <TableCell className="text-center">
                     <IconButton

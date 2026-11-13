@@ -148,19 +148,3 @@ export const Badge: React.FC<BadgeProps> = ({
   );
 };
 
-export interface StatusBadgeProps {
-  children: React.ReactNode;
-  /** Estado semántico (borrador/enviado/aprobado/rechazado/parcial/tienda/...). */
-  variant?: BadgeVariant;
-  className?: string;
-}
-
-/**
- * Cápsula de estado estándar para tablas, listas y reportes.
- * Uso preferente frente a <Badge size="estado"> (semántica explícita).
- */
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ children, variant, className }) => (
-  <Badge variant={variant} size="estado" className={className}>
-    {children}
-  </Badge>
-);

@@ -12,8 +12,8 @@ import {
   TableRow,
   TableHead,
   TableCell,
-  TableBadge,
-  type TableBadgeVariant,
+  CotizacionStatusBadge,
+  ClienteTipoTag,
 } from '@/components/ui';
 import { Can } from '@/components/shared/Can';
 import { cn } from '@/lib/cn';
@@ -26,30 +26,11 @@ interface CotizacionesTableProps {
   footer?: React.ReactNode;
 }
 
-// Mapeos a TableBadgeVariant
-const TIPO_BADGE_VARIANT: Record<string, TableBadgeVariant> = {
-  distribuidor: 'terracota',
-  tienda: 'blue',
-};
-
-const ESTADO_BADGE_VARIANT: Record<string, TableBadgeVariant> = {
-  BORRADOR: 'neutral',
-  ENVIADO: 'info',
-  ENVIADA: 'info',
-  APROBADO: 'success',
-  APROBADA: 'success',
-  ACEPTADO: 'success',
-  ACEPTADA: 'success',
-  RECHAZADO: 'danger',
-  RECHAZADA: 'danger',
-  PARCIALMENTE_PAGADA: 'neutral',
-  PARCIAL: 'neutral',
-};
-
 // Definición de columnas con anchos fluidos y comportamiento responsive
+// REGLA CRÍTICA: Mantener exactamente las 7 columnas intactas
 const COLUMNS = [
-  { key: 'Código', headerClassName: '', cellClassName: 'min-w-[100px] max-w-[140px] whitespace-nowrap' },
-  { key: 'Cliente', headerClassName: '', cellClassName: 'min-w-[160px] max-w-[220px] truncate' },
+  { key: 'CÓDIGO', headerClassName: '', cellClassName: 'min-w-[100px] max-w-[140px] whitespace-nowrap' },
+  { key: 'CLIENTE', headerClassName: '', cellClassName: 'min-w-[160px] max-w-[220px] truncate' },
   { key: 'TIPO', headerClassName: 'text-center', cellClassName: 'min-w-[80px] max-w-[110px] text-center whitespace-nowrap' },
   { key: 'FECHA', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[120px] text-center whitespace-nowrap' },
   { key: 'TOTAL', headerClassName: 'text-right', cellClassName: 'min-w-[100px] max-w-[120px] text-right whitespace-nowrap tabular-nums' },
@@ -100,11 +81,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
       <TableBody>
         {data.map((item, index) => {
           const isBorrador = item.estado === 'BORRADOR';
-          const rawEstado = String(item.estado || 'BORRADOR').toUpperCase();
-          const estadoVariant = ESTADO_BADGE_VARIANT[rawEstado] ?? 'neutral';
-
-          const rawTipo = String(item.tipo || '').toLowerCase();
-          const tipoVariant = TIPO_BADGE_VARIANT[rawTipo] ?? 'neutral';
+          const rawEstado = String(item.estado || 'BORRADOR');
 
           return (
             <TableRow key={item.id_cotizacion || item.id || index}>
@@ -127,11 +104,9 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                   : (item.cliente as any)?.nombre || (item.cliente as any)?.nombre_cliente || '-'}
               </TableCell>
 
-              {/* TIPO BADGE */}
+              {/* TIPO (CategoryTag rectangular) */}
               <TableCell className={cn(COLUMNS[2].cellClassName)}>
-                <TableBadge variant={tipoVariant}>
-                  {item.tipo}
-                </TableBadge>
+                <ClienteTipoTag tipo={String(item.tipo || '')} />
               </TableCell>
 
               {/* FECHA */}
@@ -144,11 +119,9 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                 S/ {item.total}
               </TableCell>
 
-              {/* ESTADO BADGE SEGURO */}
+              {/* ESTADO (StatusBadge con píldora neutra y punto de color) */}
               <TableCell className={cn(COLUMNS[5].cellClassName)}>
-                <TableBadge variant={estadoVariant}>
-                  {rawEstado === 'PARCIALMENTE_PAGADA' ? 'PARCIAL' : rawEstado}
-                </TableBadge>
+                <CotizacionStatusBadge estado={rawEstado} />
               </TableCell>
 
               {/* ACCIONES */}

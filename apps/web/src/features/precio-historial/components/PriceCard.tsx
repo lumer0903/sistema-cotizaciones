@@ -15,7 +15,7 @@ const formatAmount = (valor: number | string | undefined | null) => {
   const num = typeof valor === 'string' ? parseFloat(valor) : valor;
   const isValid = num !== null && num !== undefined && Number.isFinite(num);
   return isValid
-    ? `S/${num.toFixed(2)}`
+    ? `S/ ${num.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : '—';
 };
 
