@@ -12,22 +12,21 @@ export interface StockBadgeProps {
 }
 
 /**
- * Indicador de stock semántico:
- *  - 0 unidades      → crítico (rojo)
- *  - bajo el mínimo  → rojo
- *  - en el mínimo    → rojo
- *  - sobre el mínimo → OK
- * El color comunica el estado real (nunca "verde" por defecto).
+ * Indicador de stock semántico con pill de borde y contraste:
+ *  - 0 unidades / crítico → rojo suave `bg-red-50 text-red-700 border border-red-200`
+ *  - bajo el mínimo       → ámbar  `bg-amber-50 text-amber-700 border border-amber-200`
+ *  - en el mínimo        → ámbar  `bg-amber-50 text-amber-700 border border-amber-200`
+ *  - sobre el mínimo     → verde  `bg-emerald-50 text-emerald-700 border border-emerald-200`
  */
 export function StockBadge({ stock, minimo = 0, className }: StockBadgeProps) {
   const state =
     stock <= 0 ? 'critico' : stock < minimo ? 'bajo' : stock === minimo ? 'minimo' : 'ok';
 
   const styles: Record<typeof state, string> = {
-    critico: 'bg-status-rechazado-soft text-status-rechazado-text border-status-rechazado/40',
-    bajo: 'bg-status-rechazado-soft text-status-rechazado-text border-status-rechazado/40',
-    minimo: 'bg-status-rechazado-soft text-status-rechazado-text border-status-rechazado/40',
-    ok: 'bg-status-aprobado-soft text-status-aprobado-text border-status-aprobado/40',
+    critico: 'bg-red-50 text-red-700 border border-red-200',
+    bajo: 'bg-amber-50 text-amber-700 border border-amber-200',
+    minimo: 'bg-amber-50 text-amber-700 border border-amber-200',
+    ok: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
   };
 
   const labels: Record<typeof state, string> = {
@@ -40,7 +39,7 @@ export function StockBadge({ stock, minimo = 0, className }: StockBadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center justify-center min-w-10 px-2 py-1 rounded-full border text-sm font-bold tnum',
+        'inline-flex items-center justify-center min-w-[2.25rem] h-6 px-2 rounded-full text-xs font-bold tabular-nums',
         styles[state],
         className
       )}

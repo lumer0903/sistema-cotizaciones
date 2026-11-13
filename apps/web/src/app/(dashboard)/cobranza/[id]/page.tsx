@@ -291,7 +291,7 @@ export default function CobranzaDetallePage() {
           <span className="text-sm text-zinc-500">{pagos.length} pago(s)</span>
         </div>
         {pagos.length === 0 ? (
-          <div className="p-6 sm:p-8 text-center text-zinc-500 text-sm border border-zinc-100 rounded-b-xl bg-white">Sin pagos registrados</div>
+          <div className="p-6 sm:p-8 text-center text-slate-500 text-sm border border-slate-100 rounded-b-xl bg-white">Sin pagos registrados</div>
         ) : (
           <Table wrapperClassName="rounded-t-none border-t-0">
             <TableHeader>
@@ -306,15 +306,15 @@ export default function CobranzaDetallePage() {
             <TableBody>
               {pagos.map((p) => (
                 <TableRow key={p.id_pago}>
-                  <TableCell className="text-sm text-zinc-600">{formatDateTime(p.created_at)}</TableCell>
-                  <TableCell className="text-sm text-right font-semibold text-estado-aprobado-text">
+                  <TableCell className="text-slate-600">{formatDateTime(p.created_at)}</TableCell>
+                  <TableCell className="text-right font-semibold text-emerald-700 tabular-nums">
                     S/ {money(p.monto)}
                   </TableCell>
-                  <TableCell className="text-sm text-zinc-700 capitalize">
+                  <TableCell className="text-slate-700 capitalize">
                     {(p.metodo_pago || '').replace(/_/g, ' ')}
                   </TableCell>
-                  <TableCell className="text-sm text-zinc-500">{p.referencia || '—'}</TableCell>
-                  <TableCell className="text-sm text-zinc-700">{p.usuario?.nombre || '—'}</TableCell>
+                  <TableCell className="text-slate-500">{p.referencia || '—'}</TableCell>
+                  <TableCell className="text-slate-700">{p.usuario?.nombre || '—'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

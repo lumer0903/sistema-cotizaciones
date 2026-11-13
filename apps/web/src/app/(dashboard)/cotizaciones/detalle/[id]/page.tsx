@@ -312,28 +312,28 @@ export default function CotizacionDetallePage() {
             <Table className="text-xs">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Descripción</TableHead>
-                  <TableHead className="text-right">Precio</TableHead>
-                  <TableHead className="text-center">Cant</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="font-semibold text-slate-900 tabular-nums">Código</TableHead>
+                  <TableHead className="font-medium text-slate-700">Descripción</TableHead>
+                  <TableHead className="text-right tabular-nums text-slate-600">Precio</TableHead>
+                  <TableHead className="text-center text-slate-600">Cant</TableHead>
+                  <TableHead className="text-right font-medium text-slate-900 tabular-nums">Total</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody className="font-medium text-zinc-700">
+              <TableBody className="text-slate-600">
                 {items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-6 text-center text-zinc-500">
+                    <TableCell colSpan={5} className="py-6 text-center text-slate-500">
                       Sin items en el detalle
                     </TableCell>
                   </TableRow>
                 ) : (
                   items.map((it, idx) => (
                     <TableRow key={idx}>
-                      <TableCell className="font-bold">{it.codigo}</TableCell>
-                      <TableCell className="uppercase text-xs">{it.descripcion}</TableCell>
-                      <TableCell className="text-right">S/ {money(it.precio)}</TableCell>
-                      <TableCell className="text-center">{it.cantidad}</TableCell>
-                      <TableCell className="text-right font-bold">S/ {money(it.total)}</TableCell>
+                      <TableCell className="font-bold text-slate-900">{it.codigo}</TableCell>
+                      <TableCell className="uppercase text-xs text-slate-700">{it.descripcion}</TableCell>
+                      <TableCell className="text-right tabular-nums text-slate-600">S/ {money(it.precio)}</TableCell>
+                      <TableCell className="text-center text-slate-600">{it.cantidad}</TableCell>
+                      <TableCell className="text-right font-medium tabular-nums text-slate-900">S/ {money(it.total)}</TableCell>
                     </TableRow>
                   ))
                 )}

@@ -6,7 +6,6 @@ import { showToast } from '@/lib/toast';
 import {
   Select,
   Button,
-  IconButton,
   Table,
   TableHeader,
   TableBody,
@@ -163,27 +162,21 @@ export function UsuariosView() {
       </TabsList>
 
       <TabsContent value="usuarios">
-        {/* Único contenedor visual: el Table aporta borde, redondeo y scroll.
-           wrapperClassName reemplaza el rounded-xl/border-border-default por defecto. */}
-        <Table
-          className="text-sm"
-
-          scrollLabel="Usuarios"
-        >
+        <Table scrollLabel="Usuarios">
           <TableHeader>
             <TableRow>
               <TableHead>Nombre</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Rol</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="text-center">Acciones</TableHead>
+              <TableHead className="text-center">Rol</TableHead>
+              <TableHead className="text-center">Estado</TableHead>
+              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {usuariosFiltrados.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5}>
-                  <div className="py-10 text-center text-brand-options">
+                  <div className="py-10 text-center text-slate-500">
                     No se encontraron usuarios
                   </div>
                 </TableCell>
@@ -191,20 +184,24 @@ export function UsuariosView() {
             ) : (
               usuariosFiltrados.map((u) => (
                 <TableRow key={u.id_usuario}>
-                  <TableCell className="font-normal text-[#414141]">{u.nombre}</TableCell>
-                  <TableCell className="font-light text-[#575757]">{u.email}</TableCell>
-                  <TableCell>
+                  <TableCell className="font-semibold text-slate-900">{u.nombre}</TableCell>
+                  <TableCell className="text-slate-600">{u.email}</TableCell>
+                  <TableCell className="text-center">
                     <UsuarioRoleTag rol={u.rol} />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">
                     <UsuarioStatusBadge activo={Boolean(u.activo)} />
                   </TableCell>
-                  <TableCell className="text-center">
-                    <IconButton
-                      icon={Pencil}
-                      label={`Editar usuario ${u.nombre}`}
+                  <TableCell className="text-right">
+                    <button
+                      type="button"
                       onClick={() => setUsuarioModalOpen({ usuario: u, isEditing: true })}
-                    />
+                      title={`Editar usuario ${u.nombre}`}
+                      aria-label={`Editar usuario ${u.nombre}`}
+                      className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer hover:bg-amber-50 hover:text-amber-600"
+                    >
+                      <Pencil className="size-4 text-slate-500" strokeWidth={1.75} />
+                    </button>
                   </TableCell>
                 </TableRow>
               ))

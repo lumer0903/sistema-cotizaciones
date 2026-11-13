@@ -231,32 +231,32 @@ export function ReportesView() {
       case 'ranking-productos':
         return (dataActual as RankingProducto[]).map((row) => (
           <TableRow key={row.idProducto}>
-            <TableCell className="font-mono whitespace-nowrap text-[#575757]">{row.codigo}</TableCell>
-            <TableCell className="max-w-xs truncate">{row.descripcion}</TableCell>
-            <TableCell className="text-right tabular-nums whitespace-nowrap">{row.cantidadVendida.toLocaleString()}</TableCell>
-            <TableCell className="text-right tabular-nums whitespace-nowrap font-semibold">
+            <TableCell className="font-semibold text-slate-900 tabular-nums whitespace-nowrap">{row.codigo}</TableCell>
+            <TableCell className="max-w-xs truncate text-slate-700">{row.descripcion}</TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">{row.cantidadVendida.toLocaleString()}</TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap font-medium text-slate-900">
               {Number(row.ingresoTotal).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </TableCell>
-            <TableCell className="text-right tabular-nums whitespace-nowrap">{row.numeroCotizaciones}</TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">{row.numeroCotizaciones}</TableCell>
           </TableRow>
         ));
       case 'antiguedad-deuda':
         return (dataActual as AntiguedadDeuda[]).map((row) => (
           <TableRow key={row.idCliente}>
-            <TableCell className="max-w-xs truncate">{row.cliente}</TableCell>
-            <TableCell className="whitespace-nowrap">{row.rucDni ?? '-'}</TableCell>
-            <TableCell className="text-right font-semibold tabular-nums whitespace-nowrap">{Number(row.totalPendiente).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-            <TableCell className="text-right tabular-nums whitespace-nowrap">{Number(row.d0_30).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-            <TableCell className="text-right tabular-nums whitespace-nowrap">{Number(row.d31_60).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-            <TableCell className="text-right tabular-nums whitespace-nowrap">{Number(row.d61_90).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-            <TableCell className="text-right text-danger font-medium tabular-nums whitespace-nowrap">{Number(row.d90mas).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="max-w-xs truncate font-medium text-slate-900">{row.cliente}</TableCell>
+            <TableCell className="whitespace-nowrap text-slate-600">{row.rucDni ?? '-'}</TableCell>
+            <TableCell className="text-right font-semibold tabular-nums whitespace-nowrap text-slate-900">{Number(row.totalPendiente).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">{Number(row.d0_30).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">{Number(row.d31_60).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">{Number(row.d61_90).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="text-right font-medium tabular-nums whitespace-nowrap text-red-700">{Number(row.d90mas).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
           </TableRow>
         ));
       case 'auditoria-ia':
         return (dataActual as AuditoriaIa[]).map((row) => (
           <TableRow key={row.idInteraccion}>
-            <TableCell className="whitespace-nowrap">{new Date(row.createdAt).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</TableCell>
-            <TableCell className="whitespace-nowrap">{row.tipoSugerencia ?? '-'}</TableCell>
+            <TableCell className="whitespace-nowrap text-slate-600">{new Date(row.createdAt).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</TableCell>
+            <TableCell className="whitespace-nowrap text-slate-700">{row.tipoSugerencia ?? '-'}</TableCell>
             <TableCell className="text-center whitespace-nowrap">
               {(() => {
                 const accion = (row.accionUsuario ?? '').toUpperCase();
@@ -269,10 +269,10 @@ export function ReportesView() {
                 );
               })()}
             </TableCell>
-            <TableCell className="max-w-xs truncate">{row.productoOriginal ?? '-'}</TableCell>
-            <TableCell className="max-w-xs truncate">{row.productoSugerido ?? '-'}</TableCell>
-            <TableCell className="text-right whitespace-nowrap">{row.idCotizacion ?? '-'}</TableCell>
-            <TableCell className="whitespace-nowrap">{row.vendedor ?? '-'}</TableCell>
+            <TableCell className="max-w-xs truncate text-slate-700">{row.productoOriginal ?? '-'}</TableCell>
+            <TableCell className="max-w-xs truncate text-slate-700">{row.productoSugerido ?? '-'}</TableCell>
+            <TableCell className="text-right whitespace-nowrap text-slate-600 tabular-nums">{row.idCotizacion ?? '-'}</TableCell>
+            <TableCell className="whitespace-nowrap text-slate-600">{row.vendedor ?? '-'}</TableCell>
           </TableRow>
         ));
     }
@@ -302,7 +302,7 @@ export function ReportesView() {
               <TableHead className="text-right">0-30 días</TableHead>
               <TableHead className="text-right">31-60 días</TableHead>
               <TableHead className="text-right">61-90 días</TableHead>
-              <TableHead className="text-right text-danger">90+ días</TableHead>
+              <TableHead className="text-right text-red-700">90+ días</TableHead>
             </TableRow>
           </TableHeader>
         );
@@ -312,7 +312,7 @@ export function ReportesView() {
             <TableRow>
               <TableHead>Fecha</TableHead>
               <TableHead>Tipo Sugerencia</TableHead>
-              <TableHead>Acción</TableHead>
+              <TableHead className="text-center">Acción</TableHead>
               <TableHead>Producto Original</TableHead>
               <TableHead>Producto Sugerido</TableHead>
               <TableHead className="text-right">Nº Cotización</TableHead>

@@ -1,8 +1,8 @@
 'use client';
-import { IconButton } from '@/components/ui/IconButton';
+import { CategoryTag } from '@/components/ui/StatusBadge';
 
 import React, { useState } from 'react';
-import { Eye, Pencil, Trash2, PackageSearch, Loader2 } from 'lucide-react';
+import { Eye, Pencil, Trash2, PackageSearch, Loader2, MapPin } from 'lucide-react';
 import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
 import { DetalleProductoModal } from './DetalleProductoModal';
@@ -11,6 +11,8 @@ import { formatCode, formatText } from '@/lib/formatters';
 import { inventarioApi } from '@/features/inventario/api/inventario.api';
 import { Can } from '@/components/shared/Can';
 import { cn } from '@/lib/cn';
+import Image from 'next/image';
+import { handleImageError } from '@/lib/imageUtils';
 
 interface InventarioTableProps {
   productos: ProductoInventario[];
@@ -23,11 +25,11 @@ interface InventarioTableProps {
 
 // Definición de columnas con anchos fluidos y comportamiento responsive
 const COLUMNS = [
-  { key: 'Código', headerClassName: '', cellClassName: 'min-w-[120px] max-w-[150px] whitespace-nowrap' },
-  { key: 'Categoría', headerClassName: '', cellClassName: 'min-w-[150px] max-w-[220px] truncate' },
+  { key: 'Código', headerClassName: '', cellClassName: 'min-w-[140px] max-w-[180px] whitespace-nowrap' },
+  { key: 'Categoría', headerClassName: 'text-center', cellClassName: 'text-center min-w-[120px] max-w-[160px] whitespace-nowrap' },
   { key: 'Ubicación', headerClassName: '', cellClassName: 'min-w-[150px] max-w-[220px] truncate' },
-  { key: 'Stock', headerClassName: 'text-center', cellClassName: 'text-center' },
-  { key: 'Acciones', headerClassName: 'text-right', cellClassName: 'text-right whitespace-nowrap' },
+  { key: 'Stock', headerClassName: 'text-center', cellClassName: 'text-center min-w-[90px] max-w-[110px] whitespace-nowrap' },
+  { key: 'Acciones', headerClassName: 'text-right', cellClassName: 'text-right whitespace-nowrap min-w-[120px]' },
 ] as const;
 
 function TableSkeleton() {
@@ -119,50 +121,82 @@ export function InventarioTable({
                 ? prod.stock_actual?.find((s) => s.id_almacen === almacenId)?.almacen.nombre
                 : prod.stock_actual?.map((s) => s.almacen.nombre).join(', ')) || '—';
             const categoria = prod.categoria?.nombre_categoria || '—';
+            const fotoUrl = (prod as any).foto_url;
 
             return (
               <TableRow key={id ?? prod.codigo}>
-                <TableCell className={cn('font-normal text-[#575757]', COLUMNS[0].cellClassName)}>
-                  {formatCode(prod.codigo)}
+                {/* CÓDIGO — identificador principal con peso visual y miniatura opcional */}
+                <TableCell className={cn('font-semibold text-slate-900 tracking-tight tabular-nums', COLUMNS[0].cellClassName)}>
+                  {fotoUrl ? (
+                    <div className="flex items-center gap-2">
+                      <Image
+                        src={fotoUrl}
+                        alt={prod.codigo}
+                        width={28}
+                        height={28}
+                        className="size-7 rounded-md object-contain bg-slate-50 border border-slate-200"
+                        onError={(e) => handleImageError(e, '28')}
+                      />
+                      {formatCode(prod.codigo)}
+                    </div>
+                  ) : (
+                    formatCode(prod.codigo)
+                  )}
                 </TableCell>
-                <TableCell
-                  className={cn(COLUMNS[1].cellClassName)}
-                  title={formatText(categoria)}
-                >
-                  {formatText(categoria)}
+
+                {/* CATEGORÍA — CategoryTag rectangular */}
+                <TableCell className={cn(COLUMNS[1].cellClassName)} title={formatText(categoria)}>
+                  <CategoryTag variant="custom" customClass="bg-slate-100 border-slate-200 text-slate-700">
+                    {formatText(categoria)}
+                  </CategoryTag>
                 </TableCell>
-                <TableCell
-                  className={cn(COLUMNS[2].cellClassName)}
-                  title={formatText(ubicacion)}
-                >
+
+                {/* UBICACIÓN — con icono MapPin sutil */}
+                <TableCell className={cn('text-slate-600 font-medium', COLUMNS[2].cellClassName)} title={formatText(ubicacion)}>
+                  {ubicacion !== '—' && <MapPin className="size-3.5 text-slate-400 inline mr-1.5" aria-hidden="true" />}
                   {formatText(ubicacion)}
                 </TableCell>
+
+                {/* STOCK — pill semántica con borde y contraste */}
                 <TableCell className={cn(COLUMNS[3].cellClassName)}>
                   <StockBadge stock={stockVal} minimo={stockMinimo} />
                 </TableCell>
+
+                {/* ACCIONES — botones táctiles compactos size-7 con hover específico */}
                 <TableCell className={cn(COLUMNS[4].cellClassName)}>
-                  <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center justify-end gap-1">
                     <Can modulo="productos" nivel="edicion">
-                      <IconButton
-                        icon={Pencil}
-                        label={`Editar ${formatCode(prod.codigo)}`}
+                      <button
+                        type="button"
                         onClick={() => onEditar(prod)}
-                      />
+                        title={`Editar ${formatCode(prod.codigo)}`}
+                        aria-label={`Editar ${formatCode(prod.codigo)}`}
+                        className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer hover:bg-amber-50 hover:text-amber-600"
+                      >
+                        <Pencil className="size-4 text-slate-500" strokeWidth={1.75} />
+                      </button>
                     </Can>
                     <Can modulo="productos" nivel="lectura">
-                      <IconButton
-                        icon={Eye}
-                        label={`Ver detalle de ${formatCode(prod.codigo)}`}
+                      <button
+                        type="button"
                         onClick={() => handleVerDetalle(prod)}
-                      />
+                        title={`Ver detalle de ${formatCode(prod.codigo)}`}
+                        aria-label={`Ver detalle de ${formatCode(prod.codigo)}`}
+                        className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer hover:bg-slate-100 hover:text-slate-600"
+                      >
+                        <Eye className="size-4 text-slate-500" strokeWidth={1.75} />
+                      </button>
                     </Can>
                     <Can modulo="productos" nivel="edicion">
-                      <IconButton
-                        icon={Trash2}
-                        label={`Eliminar ${formatCode(prod.codigo)}`}
+                      <button
+                        type="button"
                         onClick={() => id !== undefined && onEliminar(id)}
-                        destructive
-                      />
+                        title={`Eliminar ${formatCode(prod.codigo)}`}
+                        aria-label={`Eliminar ${formatCode(prod.codigo)}`}
+                        className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 className="size-4 text-slate-500" strokeWidth={1.75} />
+                      </button>
                     </Can>
                   </div>
                 </TableCell>

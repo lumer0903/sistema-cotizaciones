@@ -360,7 +360,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
             <TableRow>
               <TableHead className="w-[16%] whitespace-nowrap">DOCUMENTO</TableHead>
               <TableHead className="w-[28%]">CLIENTE</TableHead>
-              <TableHead className="w-[16%] whitespace-nowrap">FECHA</TableHead>
+              <TableHead className="w-[16%] whitespace-nowrap text-center">FECHA</TableHead>
               <TableHead className="w-[18%] text-center whitespace-nowrap">ESTADO</TableHead>
               <TableHead className="w-[14%] text-right whitespace-nowrap">TOTAL</TableHead>
               <TableHead className="w-[8%] text-right whitespace-nowrap">ACCIONES</TableHead>
@@ -369,13 +369,13 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
           <TableBody>
             {cuentas.map((cuenta) => (
               <TableRow key={cuenta.id_cotizacion}>
-                <TableCell className="font-normal text-[#575757] whitespace-nowrap">
+                <TableCell className="font-semibold text-slate-900 tabular-nums whitespace-nowrap">
                   {cuenta.numero}
                 </TableCell>
-                <TableCell className="text-[#414141] truncate">
+                <TableCell className="text-slate-700 truncate">
                   {cuenta.cliente?.nombre || 'Sin cliente'}
                 </TableCell>
-                <TableCell className="text-[#575757] whitespace-nowrap">
+                <TableCell className="text-slate-600 whitespace-nowrap text-center">
                   {formatDate(cuenta.created_at)}
                 </TableCell>
                 <TableCell className="text-center whitespace-nowrap">
@@ -384,20 +384,19 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
                     diasAtraso={cuenta.dias_atraso}
                   />
                 </TableCell>
-                <TableCell className="text-right tabular-nums whitespace-nowrap">
+                <TableCell className="text-right tabular-nums font-medium text-slate-900 whitespace-nowrap">
                   S/ {money(cuenta.total)}
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                  <button
+                    type="button"
                     onClick={() => router.push(`/cobranza/${cuenta.id_cotizacion}`)}
                     title="Gestionar"
                     aria-label={`Gestionar pago de ${cuenta.numero}`}
-                    className="h-8 w-8 p-0 text-zinc-600 hover:text-black inline-flex items-center justify-center"
+                    className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer hover:bg-slate-100 hover:text-slate-600"
                   >
-                    <CreditCard className="size-4" />
-                  </Button>
+                    <CreditCard className="size-4 text-slate-500" strokeWidth={1.75} />
+                  </button>
                 </TableCell>
               </TableRow>
             ))}

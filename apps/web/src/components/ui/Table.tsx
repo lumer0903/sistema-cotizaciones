@@ -22,7 +22,7 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
   ) => (
     <div
       className={cn(
-        'w-full rounded-xl border border-[#E2E8F0] bg-white overflow-hidden outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0',
+        'w-full bg-white rounded-xl border border-slate-200 shadow-[0_2px_6px_rgba(15,23,42,0.05)] overflow-hidden outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0',
         wrapperClassName
       )}
       role="region"
@@ -42,7 +42,7 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
         </table>
       </div>
       {footer && (
-        <div className="border-t border-[#E5E7EB] bg-white px-4 py-2.5 text-xs">
+        <div className="border-t border-slate-200 bg-white px-4 py-2.5 text-xs">
           {footer}
         </div>
       )}
@@ -60,7 +60,7 @@ export interface TableHeaderProps extends React.HTMLAttributes<HTMLTableSectionE
 
 export const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
   ({ children, className, _sticky = false, ...props }, ref) => (
-    <thead ref={ref} className={cn('bg-[#F8FAFC] border-b border-[#E2E8F0]', className)} {...props}>
+    <thead ref={ref} className={cn('bg-slate-50 border-b border-slate-200', className)} {...props}>
       {children}
     </thead>
   )
@@ -105,7 +105,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
           : undefined
       }
       tabIndex={onClick ? 0 : undefined}
-      className={cn('h-11 bg-white border-b border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors', className)}
+      className={cn('h-11 border-b border-slate-100 last:border-b-0 even:bg-slate-50/45 hover:bg-[#F8B602]/[0.06] transition-colors', className)}
       {...props}
     >
       {children}
@@ -125,7 +125,7 @@ export const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
     <th
       ref={ref}
       className={cn(
-        'h-10 px-3.5 text-[11px] font-bold uppercase tracking-wider text-[#414141] whitespace-nowrap align-middle',
+        'h-10 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-600 select-none whitespace-nowrap align-middle',
         className
       )}
       {...props}
@@ -147,7 +147,7 @@ export const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
     <td
       ref={ref}
       className={cn(
-        'px-3.5 py-2 text-[13px] font-normal text-[#414141] align-middle',
+        'px-4 py-2 text-[13px] text-slate-700 align-middle',
         className
       )}
       {...props}
@@ -168,7 +168,7 @@ export const TableFooter = React.forwardRef<HTMLTableSectionElement, TableFooter
   ({ children, className, ...props }, ref) => (
     <tfoot
       ref={ref}
-      className={cn('border-t border-[#E5E7EB] bg-white px-4 py-2.5 text-xs font-medium text-[#414141]', className)}
+      className={cn('border-t border-slate-200 bg-white px-4 py-2.5 text-xs font-medium text-slate-700', className)}
       {...props}
     >
       {children}

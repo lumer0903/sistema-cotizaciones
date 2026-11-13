@@ -1,5 +1,4 @@
 'use client';
-import { IconButton } from '@/components/ui/IconButton';
 
 import React from 'react';
 import { Pencil, Eye } from 'lucide-react';
@@ -17,7 +16,6 @@ import {
 } from '@/components/ui';
 import { Can } from '@/components/shared/Can';
 import { cn } from '@/lib/cn';
-
 interface CotizacionesTableProps {
   data: CotizacionItem[];
   loading?: boolean;
@@ -29,11 +27,11 @@ interface CotizacionesTableProps {
 // Definición de columnas con anchos fluidos y comportamiento responsive
 // REGLA CRÍTICA: Mantener exactamente las 7 columnas intactas
 const COLUMNS = [
-  { key: 'CÓDIGO', headerClassName: '', cellClassName: 'min-w-[100px] max-w-[140px] whitespace-nowrap' },
-  { key: 'CLIENTE', headerClassName: '', cellClassName: 'min-w-[160px] max-w-[220px] truncate' },
+  { key: 'CÓDIGO', headerClassName: '', cellClassName: 'min-w-[120px] max-w-[160px] whitespace-nowrap font-semibold text-slate-900 tabular-nums' },
+  { key: 'CLIENTE', headerClassName: '', cellClassName: 'min-w-[160px] max-w-[220px] truncate text-slate-700' },
   { key: 'TIPO', headerClassName: 'text-center', cellClassName: 'min-w-[80px] max-w-[110px] text-center whitespace-nowrap' },
-  { key: 'FECHA', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[120px] text-center whitespace-nowrap' },
-  { key: 'TOTAL', headerClassName: 'text-right', cellClassName: 'min-w-[100px] max-w-[120px] text-right whitespace-nowrap tabular-nums' },
+  { key: 'FECHA', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[120px] text-center whitespace-nowrap text-slate-600' },
+  { key: 'TOTAL', headerClassName: 'text-right', cellClassName: 'min-w-[100px] max-w-[120px] text-right whitespace-nowrap tabular-nums font-medium text-slate-900' },
   { key: 'ESTADO', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[130px] text-center whitespace-nowrap' },
   { key: 'ACCIONES', headerClassName: 'text-right', cellClassName: 'min-w-[100px] max-w-[120px] text-right' },
 ] as const;
@@ -85,8 +83,8 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
 
           return (
             <TableRow key={item.id_cotizacion || item.id || index}>
-              {/* CODIGO */}
-              <TableCell className={cn('font-normal text-[#575757] whitespace-nowrap', COLUMNS[0].cellClassName)}>
+              {/* CÓDIGO — identificador principal */}
+              <TableCell className={cn(COLUMNS[0].cellClassName)}>
                 {formatCode(item.codigo)}
               </TableCell>
 
@@ -124,28 +122,34 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                 <CotizacionStatusBadge estado={rawEstado} />
               </TableCell>
 
-              {/* ACCIONES */}
+              {/* ACCIONES — botones táctiles compactos size-7 con hover específico */}
               <TableCell className={COLUMNS[6].cellClassName}>
-                <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center justify-end gap-1">
                   {/* Lápiz (Editar): Activo solo en BORRADOR, protegido con Can */}
                   <Can modulo="cotizaciones" nivel="edicion">
-                    <IconButton
-                      icon={Pencil}
-                      label={isBorrador ? 'Editar cotización' : 'No editable'}
+                    <button
+                      type="button"
                       onClick={() => onEdit?.(item.id_cotizacion || item.id)}
                       disabled={!isBorrador}
-                      className="h-8 w-8"
-                    />
+                      title={isBorrador ? 'Editar cotización' : 'No editable'}
+                      aria-label={isBorrador ? 'Editar cotización' : 'No editable'}
+                      className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:bg-amber-50 hover:text-amber-600"
+                    >
+                      <Pencil className="size-4 text-slate-500" strokeWidth={1.75} />
+                    </button>
                   </Can>
                   {/* Ojo (Ver): Protegido con Can nivel lectura */}
                   <Can modulo="cotizaciones" nivel="lectura">
-                    <IconButton
-                      icon={Eye}
-                      label={!isBorrador ? 'Ver documento' : 'No disponible en borrador'}
+                    <button
+                      type="button"
                       onClick={() => onView?.(item.id_cotizacion || item.id)}
                       disabled={isBorrador}
-                      className="h-8 w-8"
-                    />
+                      title={!isBorrador ? 'Ver documento' : 'No disponible en borrador'}
+                      aria-label={!isBorrador ? 'Ver documento' : 'No disponible en borrador'}
+                      className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-100 hover:text-slate-600"
+                    >
+                      <Eye className="size-4 text-slate-500" strokeWidth={1.75} />
+                    </button>
                   </Can>
                 </div>
               </TableCell>
