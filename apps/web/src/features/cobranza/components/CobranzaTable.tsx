@@ -395,7 +395,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
                     aria-label={`Gestionar pago de ${cuenta.numero}`}
                     className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer hover:bg-[#F8B602]/15 hover:text-[#F8B600] text-[#F8B600]"
                   >
-                    <CreditCard className="size-4 text-slate-500" strokeWidth={1.75} />
+                    <CreditCard className="size-4 text-[#F8B600]" strokeWidth={1.75} />
                   </button>
                 </TableCell>
               </TableRow>

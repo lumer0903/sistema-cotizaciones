@@ -135,7 +135,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                         aria-label={isBorrador ? 'Editar cotización' : 'No editable'}
                         className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#F8B602]/15 hover:text-[#F8B600] text-[#F8B600]"
                       >
-                        <Pencil className="size-4 text-slate-500" strokeWidth={1.75} />
+                        <Pencil className="size-4 text-[#F8B600]" strokeWidth={1.75} />
                       </button>
                     </Can>
                     {/* Ojo (Ver): Protegido con Can nivel lectura */}
@@ -148,7 +148,7 @@ export const CotizacionesTable: React.FC<CotizacionesTableProps> = ({
                         aria-label={!isBorrador ? 'Ver documento' : 'No disponible en borrador'}
                         className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#F8B602]/15 hover:text-[#F8B600] text-[#F8B600]"
                       >
-                        <Eye className="size-4 text-slate-500" strokeWidth={1.75} />
+                        <Eye className="size-4 text-[#F8B600]" strokeWidth={1.75} />
                       </button>
                     </Can>
                 </div>

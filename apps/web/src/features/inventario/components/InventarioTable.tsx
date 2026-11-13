@@ -169,7 +169,7 @@ export function InventarioTable({
                         aria-label={`Editar ${formatCode(prod.codigo)}`}
                         className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer hover:bg-[#F8B602]/15 hover:text-[#F8B602] text-[#F8B600]"
                       >
-                        <Pencil className="size-4 text-slate-500" strokeWidth={1.75} />
+                        <Pencil className="size-4 text-[#F8B600]" strokeWidth={1.75} />
                       </button>
                     </Can>
                     <Can modulo="productos" nivel="lectura">
@@ -180,7 +180,7 @@ export function InventarioTable({
                         aria-label={`Ver detalle de ${formatCode(prod.codigo)}`}
                         className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer hover:bg-[#F8B602]/15 hover:text-[#F8B602] text-[#F8B600]"
                       >
-                        <Eye className="size-4 text-slate-500" strokeWidth={1.75} />
+                        <Eye className="size-4 text-[#F8B600]" strokeWidth={1.75} />
                       </button>
                     </Can>
                     <Can modulo="productos" nivel="edicion">
@@ -191,7 +191,7 @@ export function InventarioTable({
                         aria-label={`Eliminar ${formatCode(prod.codigo)}`}
                         className="size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer hover:bg-red-50 hover:text-red-600"
                       >
-                        <Trash2 className="size-4 text-slate-500" strokeWidth={1.75} />
+                        <Trash2 className="size-4 text-red-500" strokeWidth={1.75} />
                       </button>
                     </Can>
                   </div>
