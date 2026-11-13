@@ -39,7 +39,7 @@ export function DashboardCustomizer({
             type="button"
             className="text-xs font-medium text-neutral-600 hover:text-neutral-900 inline-flex items-center gap-1.5"
           >
-            <RotateCcw className="size-3.5 strokeWidth={1.5}" />
+            <RotateCcw className="size-3.5" strokeWidth={1.5} />
             Restaurar diseño
           </Button>
           <Button variant="primary" onClick={onClose} type="button" className="text-xs">

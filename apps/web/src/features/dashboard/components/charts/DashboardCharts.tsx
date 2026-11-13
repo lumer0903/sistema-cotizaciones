@@ -211,10 +211,12 @@ export function CotizadoVsVendidoChart({
   data = MOCK_PUNTOS_MENSUALES,
   rowSpan = 2,
   onItemClick,
+  compact = false,
 }: {
   data?: PuntoMensual[];
   rowSpan?: RowSpan;
   onItemClick?: (item: { label: string; value: string; extra?: string }) => void;
+  compact?: boolean;
 }) {
   const [hiddenSeries, setHiddenSeries] = useState<Record<string, boolean>>({});
 
@@ -224,11 +226,13 @@ export function CotizadoVsVendidoChart({
     setHiddenSeries((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const showLegend = !compact && rowSpan > 1;
+
   return (
     <ResponsiveContainer width="100%" height={getChartHeight(rowSpan)}>
       <BarChart
         data={data}
-        margin={{ top: rowSpan === 1 ? 4 : 12, right: 12, bottom: 0, left: 0 }}
+        margin={{ top: compact ? 4 : rowSpan === 1 ? 4 : 12, right: 8, bottom: 0, left: 0 }}
         onClick={(state: unknown) => {
           const s = state as { activePayload?: Array<{ payload?: PuntoMensual }> } | null;
           if (s?.activePayload?.[0]?.payload && onItemClick) {
@@ -241,13 +245,33 @@ export function CotizadoVsVendidoChart({
           }
         }}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-        <XAxis dataKey="mes" tick={AXIS_TICK} axisLine={false} tickLine={false} tickMargin={4} />
-        <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={formatSoles} tickMargin={4} />
-        <Tooltip contentStyle={TOOLTIP_STYLE} formatter={formatSoles} labelFormatter={(l: unknown) => `Mes: ${String(l ?? '')}`} />
-        {rowSpan > 1 && (
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke={compact ? 'transparent' : '#F3F4F6'}
+          vertical={false}
+        />
+        <XAxis
+          dataKey="mes"
+          tick={AXIS_TICK}
+          axisLine={false}
+          tickLine={false}
+          tickMargin={4}
+        />
+        <YAxis
+          tick={AXIS_TICK}
+          axisLine={false}
+          tickLine={false}
+          tickFormatter={formatSoles}
+          tickMargin={4}
+        />
+        <Tooltip
+          contentStyle={TOOLTIP_STYLE}
+          formatter={formatSoles}
+          labelFormatter={(l: unknown) => `Mes: ${String(l ?? '')}`}
+        />
+        {showLegend && (
           <Legend
-            wrapperStyle={{ fontSize: 12, paddingTop: 6, cursor: 'pointer' }}
+            wrapperStyle={{ fontSize: compact ? 10 : 12, paddingTop: compact ? 2 : 6, cursor: 'pointer' }}
             onClick={(e) => handleLegendClick(e as unknown as { dataKey?: string | number })}
           />
         )}
@@ -278,10 +302,12 @@ export function CotizadoVsVendidoArea({
   data = MOCK_PUNTOS_MENSUALES,
   rowSpan = 2,
   onItemClick,
+  compact = false,
 }: {
   data?: PuntoMensual[];
   rowSpan?: RowSpan;
   onItemClick?: (item: { label: string; value: string; extra?: string }) => void;
+  compact?: boolean;
 }) {
   const [hiddenSeries, setHiddenSeries] = useState<Record<string, boolean>>({});
 
@@ -310,7 +336,7 @@ export function CotizadoVsVendidoArea({
       >
         <defs>
           <linearGradient id="gradCotizado" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={COLOR_COTIZADO} stopOpacity={0.4} />
+            <stop offset="5%" stopColor={COLOR_COTIZADO} stopOpacity={compact ? 0.2 : 0.4} />
             <stop offset="95%" stopColor={COLOR_COTIZADO} stopOpacity={0.0} />
           </linearGradient>
           <linearGradient id="gradVendido" x1="0" y1="0" x2="0" y2="1">
@@ -318,13 +344,13 @@ export function CotizadoVsVendidoArea({
             <stop offset="95%" stopColor={COLOR_VENDIDO} stopOpacity={0.0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-        <XAxis dataKey="mes" tick={AXIS_TICK} axisLine={false} tickLine={false} tickMargin={4} />
-        <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={formatSoles} tickMargin={4} />
+        <CartesianGrid strokeDasharray="3 3" stroke={compact ? "transparent" : "#F3F4F6"} vertical={false} />
+        <XAxis dataKey="mes" tick={AXIS_TICK} axisLine={false} tickLine={false} tickMargin={compact ? 4 : 8} />
+        <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={formatSoles} tickMargin={compact ? 4 : 8} />
         <Tooltip contentStyle={TOOLTIP_STYLE} formatter={formatSoles} labelFormatter={(l: unknown) => `Mes: ${String(l ?? '')}`} />
         {rowSpan > 1 && (
           <Legend
-            wrapperStyle={{ fontSize: 12, paddingTop: 6, cursor: 'pointer' }}
+            wrapperStyle={{ fontSize: compact ? 10 : 12, paddingTop: compact ? 2 : 6, cursor: 'pointer' }}
             onClick={(e) => handleLegendClick(e as unknown as { dataKey?: string | number })}
           />
         )}
@@ -333,7 +359,7 @@ export function CotizadoVsVendidoArea({
           dataKey="cotizado"
           name="Cotizado"
           stroke={COLOR_COTIZADO}
-          strokeWidth={2}
+          strokeWidth={compact ? 2 : 2.5}
           fill="url(#gradCotizado)"
           hide={hiddenSeries['cotizado']}
           cursor="pointer"
@@ -343,7 +369,7 @@ export function CotizadoVsVendidoArea({
           dataKey="vendido"
           name="Vendido"
           stroke={COLOR_VENDIDO}
-          strokeWidth={2}
+          strokeWidth={compact ? 2 : 2.5}
           fill="url(#gradVendido)"
           hide={hiddenSeries['vendido']}
           cursor="pointer"
@@ -358,10 +384,12 @@ export function VentasCanalDonut({
   data = MOCK_VENTAS_CANAL,
   rowSpan = 2,
   onItemClick,
+  compact: _compact = false,
 }: {
   data?: VentaCanalItem[];
   rowSpan?: RowSpan;
   onItemClick?: (item: { label: string; value: string; extra?: string }) => void;
+  compact?: boolean;
 }) {
   const colors: Record<string, string> = {
     Distribuidor: COLOR_DISTRIBUIDOR,
@@ -421,16 +449,19 @@ export function VentasCanalBar({
   data = MOCK_VENTAS_CANAL,
   rowSpan = 2,
   onItemClick,
+  compact = false,
 }: {
   data?: VentaCanalItem[];
   rowSpan?: RowSpan;
   onItemClick?: (item: { label: string; value: string; extra?: string }) => void;
+  compact?: boolean;
 }) {
+  const isCompact = compact || rowSpan === 1;
   return (
     <ResponsiveContainer width="100%" height={getChartHeight(rowSpan)}>
       <BarChart
         data={data}
-        margin={{ top: rowSpan === 1 ? 4 : 12, right: 12, bottom: 0, left: 0 }}
+        margin={{ top: isCompact ? 4 : 12, right: 12, bottom: 0, left: 0 }}
         onClick={(state: unknown) => {
           const s = state as { activePayload?: Array<{ payload?: VentaCanalItem }> } | null;
           if (s?.activePayload?.[0]?.payload && onItemClick) {
@@ -443,9 +474,9 @@ export function VentasCanalBar({
           }
         }}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-        <XAxis dataKey="canal" tick={AXIS_TICK} axisLine={false} tickLine={false} tickMargin={4} />
-        <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={formatSoles} tickMargin={4} />
+        <CartesianGrid strokeDasharray="3 3" stroke={isCompact ? "transparent" : "#F3F4F6"} vertical={false} />
+        <XAxis dataKey="canal" tick={AXIS_TICK} axisLine={false} tickLine={false} tickMargin={isCompact ? 4 : 8} />
+        <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={formatSoles} tickMargin={isCompact ? 4 : 8} />
         <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: unknown) => [formatSoles(v), 'Total']} />
         <Bar dataKey="monto" radius={[4, 4, 0, 0]} maxBarSize={48} cursor="pointer">
           {data.map((entry) => (
@@ -465,10 +496,12 @@ export function TopProductosBar({
   data = MOCK_TOP_PRODUCTOS,
   rowSpan = 2,
   onItemClick,
+  compact: _compact = false,
 }: {
   data?: TopProductoItem[];
   rowSpan?: RowSpan;
   onItemClick?: (item: { label: string; value: string; extra?: string }) => void;
+  compact?: boolean;
 }) {
   const displayData = rowSpan === 1 ? data.slice(0, 2) : data;
 
@@ -518,9 +551,11 @@ export function TopProductosBar({
 export function TopProductosTable({
   data = MOCK_TOP_PRODUCTOS,
   rowSpan = 2,
+  compact: _compact = false,
 }: {
   data?: TopProductoItem[];
   rowSpan?: RowSpan;
+  compact?: boolean;
 }) {
   const limit = rowSpan === 1 ? 2 : rowSpan === 2 ? 5 : 9;
   const displayData = data.slice(0, limit);
@@ -571,10 +606,12 @@ export function CotizacionesEstadoDonut({
   data = MOCK_ESTADOS,
   rowSpan = 2,
   onItemClick,
+  compact: _compact = false,
 }: {
   data?: ConteoPorEstado[];
   rowSpan?: RowSpan;
   onItemClick?: (item: { label: string; value: string; extra?: string }) => void;
+  compact?: boolean;
 }) {
   const total = data.reduce((acc, curr) => acc + curr.cantidad, 0);
   const innerRadius = rowSpan === 1 ? 25 : rowSpan === 2 ? 65 : 85;
@@ -637,10 +674,12 @@ export function CotizacionesEstadoBar({
   data = MOCK_ESTADOS,
   rowSpan = 2,
   onItemClick,
+  compact: _compact = false,
 }: {
   data?: ConteoPorEstado[];
   rowSpan?: RowSpan;
   onItemClick?: (item: { label: string; value: string; extra?: string }) => void;
+  compact?: boolean;
 }) {
   return (
     <ResponsiveContainer width="100%" height={getChartHeight(rowSpan)}>
@@ -690,9 +729,11 @@ export function CotizacionesEstadoBar({
 export function CotizacionesEstadoTable({
   data = MOCK_ESTADOS,
   rowSpan = 2,
+  compact: _compact = false,
 }: {
   data?: ConteoPorEstado[];
   rowSpan?: RowSpan;
+  compact?: boolean;
 }) {
   const total = data.reduce((acc, curr) => acc + curr.cantidad, 0);
   const limit = rowSpan === 1 ? 2 : rowSpan === 2 ? 5 : 9;
@@ -744,10 +785,12 @@ export function StockBajoTable({
   data = MOCK_STOCK_BAJO,
   totalCount,
   rowSpan = 2,
+  compact: _compact = false,
 }: {
   data?: AlertaStockBajo[];
   totalCount?: number;
   rowSpan?: RowSpan;
+  compact?: boolean;
 }) {
   const limit = rowSpan === 1 ? 2 : rowSpan === 2 ? 5 : 9;
   const displayItems = data.slice(0, limit);
@@ -834,10 +877,12 @@ export function StockBajoBar({
   data = MOCK_STOCK_BAJO,
   rowSpan = 2,
   onItemClick,
+  compact: _compact = false,
 }: {
   data?: AlertaStockBajo[];
   rowSpan?: RowSpan;
   onItemClick?: (item: { label: string; value: string; extra?: string }) => void;
+  compact?: boolean;
 }) {
   const displayData = rowSpan === 1 ? data.slice(0, 3) : data;
 

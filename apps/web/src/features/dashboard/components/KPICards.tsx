@@ -68,7 +68,7 @@ export function SortableKpiItem({
     opacity: isDragging ? 0.7 : 1,
   };
 
-  const isCompact = activeColSpan <= 3 || activeRowSpan === 1;
+  const isCompactWidth = activeColSpan <= 3;
   const hideIcon = activeColSpan <= 2;
 
   const renderKpiContent = () => {
@@ -82,17 +82,17 @@ export function SortableKpiItem({
             <div className="flex items-start justify-between gap-2 min-w-0">
               <div className="min-w-0 flex-1">
                 <span className="text-xs font-semibold text-neutral-500 truncate block">Total Ventas</span>
-                <p className={`${isCompact ? 'text-xl' : 'text-2xl'} font-bold text-neutral-900 tnum mt-0.5 truncate`}>
+                <p className={`${isCompactWidth ? 'text-xl' : 'text-2xl'} font-bold text-neutral-900 tnum mt-0.5 truncate`}>
                   {val}
                 </p>
               </div>
-              {!hideIcon && (
+              {!isCompactWidth && (
                 <div className="p-2 rounded-xl bg-orange-50 text-orange-700 shrink-0" aria-hidden="true">
-                  <DollarSign className="size-4.5 strokeWidth={1.5}" />
+                  <DollarSign className="size-4.5" strokeWidth={1.5} />
                 </div>
               )}
             </div>
-            <div className="mt-2 flex items-center gap-1.5 truncate">
+            <div className={`flex items-center gap-1.5 truncate ${isCompactWidth ? 'mt-1' : 'mt-2'}`}>
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 shrink-0">
                 +12.4%
               </span>
@@ -115,11 +115,15 @@ export function SortableKpiItem({
                   Tienda: S/ 23,887 <span className="font-normal text-neutral-500">(33%)</span>
                 </p>
               </div>
-              {!hideIcon && (
+              {isCompactWidth ? (
                 <div className="p-2 rounded-xl bg-amber-50 text-amber-700 shrink-0" aria-hidden="true">
-                  <Store className="size-4.5 strokeWidth={1.5}" />
+                  <Store className="size-4.5" strokeWidth={1.5} />
                 </div>
-              )}
+              ) : !hideIcon ? (
+                <div className="p-2 rounded-xl bg-amber-50 text-amber-700 shrink-0" aria-hidden="true">
+                  <Store className="size-4.5" strokeWidth={1.5} />
+                </div>
+              ) : null}
             </div>
             <div className="mt-1.5">
               <div className="h-1.5 w-full rounded-full bg-stone-200 overflow-hidden flex">
@@ -137,15 +141,25 @@ export function SortableKpiItem({
             <div className="flex items-start justify-between gap-2 min-w-0">
               <div className="min-w-0 flex-1">
                 <span className="text-xs font-semibold text-neutral-500 truncate block">Top Producto</span>
-                <p className="text-xs font-bold text-neutral-900 mt-0.5 truncate" title="FUG-10 · Plato Porcelana 33cm">
-                  FUG-10 · Plato Porcelana 33cm
-                </p>
+                {isCompactWidth ? (
+                  <p className="text-xs font-bold text-neutral-900 mt-0.5 truncate" title="FUG-10 · Plato Porcelana 33cm">
+                    FUG-10 · Plato Porcelana 33cm
+                  </p>
+                ) : (
+                  <p className="text-xs font-bold text-neutral-900 mt-0.5 truncate" title="FUG-10 · Plato Porcelana 33cm">
+                    FUG-10 · Plato Porcelana 33cm
+                  </p>
+                )}
               </div>
-              {!hideIcon && (
+              {isCompactWidth ? (
                 <div className="p-2 rounded-xl bg-amber-50 text-[#F8B602] shrink-0" aria-hidden="true">
-                  <Award className="size-4.5 strokeWidth={1.5}" />
+                  <Award className="size-4.5" strokeWidth={1.5} />
                 </div>
-              )}
+              ) : !hideIcon ? (
+                <div className="p-2 rounded-xl bg-amber-50 text-[#F8B602] shrink-0" aria-hidden="true">
+                  <Award className="size-4.5" strokeWidth={1.5} />
+                </div>
+              ) : null}
             </div>
             <div className="mt-2 flex items-center gap-1.5 text-xs text-neutral-600 truncate">
               <span className="font-semibold text-neutral-900 tnum">340 unid.</span>
@@ -162,20 +176,26 @@ export function SortableKpiItem({
             <div className="flex items-start justify-between gap-2 min-w-0">
               <div className="min-w-0 flex-1">
                 <span className="text-xs font-semibold text-neutral-500 truncate block">Total por Cobrar</span>
-                <p className={`${isCompact ? 'text-xl' : 'text-2xl'} font-bold text-neutral-900 tnum mt-0.5 truncate`}>
+                <p className={`${isCompactWidth ? 'text-xl' : 'text-2xl'} font-bold text-neutral-900 tnum mt-0.5 truncate`}>
                   S/ 38,286
                 </p>
               </div>
-              {!hideIcon && (
+              {!isCompactWidth && (
                 <div className="p-2 rounded-xl bg-blue-50 text-blue-700 shrink-0" aria-hidden="true">
-                  <Wallet className="size-4.5 strokeWidth={1.5}" />
+                  <Wallet className="size-4.5" strokeWidth={1.5} />
                 </div>
               )}
             </div>
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-neutral-600 truncate">
-              <span className="text-rose-700 font-semibold tnum truncate">S/ 11,400 vencido</span>
-              <span>·</span>
-              <span className="text-neutral-700 font-medium tnum truncate">S/ 26,886 vigente</span>
+            <div className={`flex items-center gap-1.5 text-xs text-neutral-600 truncate ${isCompactWidth ? 'mt-1' : 'mt-2'}`}>
+              {isCompactWidth ? (
+                <span className="text-rose-700 font-semibold tnum truncate">S/ 11,400 vencido</span>
+              ) : (
+                <>
+                  <span className="text-rose-700 font-semibold tnum truncate">S/ 11,400 vencido</span>
+                  <span>·</span>
+                  <span className="text-neutral-700 font-medium tnum truncate">S/ 26,886 vigente</span>
+                </>
+              )}
             </div>
           </div>
         );
@@ -189,13 +209,13 @@ export function SortableKpiItem({
             <div className="flex items-start justify-between gap-2 min-w-0">
               <div className="min-w-0 flex-1">
                 <span className="text-xs font-semibold text-neutral-500 truncate block">Cotizaciones</span>
-                <p className={`${isCompact ? 'text-xl' : 'text-2xl'} font-bold text-neutral-900 tnum mt-0.5 truncate`}>
+                <p className={`${isCompactWidth ? 'text-xl' : 'text-2xl'} font-bold text-neutral-900 tnum mt-0.5 truncate`}>
                   {total} docs
                 </p>
               </div>
-              {!hideIcon && (
+              {!isCompactWidth && (
                 <div className="p-2 rounded-xl bg-purple-50 text-purple-700 shrink-0" aria-hidden="true">
-                  <FileText className="size-4.5 strokeWidth={1.5}" />
+                  <FileText className="size-4.5" strokeWidth={1.5} />
                 </div>
               )}
             </div>
@@ -213,13 +233,13 @@ export function SortableKpiItem({
             <div className="flex items-start justify-between gap-2 min-w-0">
               <div className="min-w-0 flex-1">
                 <span className="text-xs font-semibold text-neutral-500 truncate block">Stock Bajo</span>
-                <p className={`${isCompact ? 'text-xl' : 'text-2xl'} font-bold text-red-700 tnum mt-0.5 truncate`}>
+                <p className={`${isCompactWidth ? 'text-xl' : 'text-2xl'} font-bold text-red-700 tnum mt-0.5 truncate`}>
                   {count} prods
                 </p>
               </div>
-              {!hideIcon && (
+              {!isCompactWidth && (
                 <div className="p-2 rounded-xl bg-red-50 text-red-700 shrink-0" aria-hidden="true">
-                  <Package className="size-4.5 strokeWidth={1.5}" />
+                  <Package className="size-4.5" strokeWidth={1.5} />
                 </div>
               )}
             </div>
@@ -240,8 +260,7 @@ export function SortableKpiItem({
       ref={setNodeRef}
       style={style}
       data-bento-card="true"
-      className={`${COL_SPAN_CLASSES[activeColSpan]} ${ROW_SPAN_CLASSES[activeRowSpan]} bg-white border border-stone-200 rounded-2xl ${isCompact ? 'p-3.5' : 'p-4'
-        } shadow-sm hover:shadow transition-shadow flex flex-col justify-between relative group select-none overflow-hidden`}
+      className={`${COL_SPAN_CLASSES[activeColSpan]} ${ROW_SPAN_CLASSES[activeRowSpan]} bg-white border border-stone-200 rounded-2xl shadow-sm hover:shadow transition-shadow flex flex-col justify-between relative group select-none overflow-hidden`}
     >
       {/* Indicador flotante durante el redimensionado */}
       {isResizing && (
@@ -259,7 +278,7 @@ export function SortableKpiItem({
           {...attributes}
           {...listeners}
         >
-          <GripVertical className="size-3.5 strokeWidth={1.5} text-stone-400" />
+          <GripVertical className="size-3.5 text-stone-400" strokeWidth={1.5} />
         </button>
 
         {/* Botones rápidos de tamaño - y + */}
@@ -270,7 +289,7 @@ export function SortableKpiItem({
             className="p-0.5 text-stone-500 hover:text-neutral-900 rounded hover:bg-white focus:outline-none"
             title="Reducir tamaño"
           >
-            <Minus className="size-3 strokeWidth={1.5}" />
+            <Minus className="size-3" strokeWidth={1.5} />
           </button>
           <button
             type="button"
@@ -278,7 +297,7 @@ export function SortableKpiItem({
             className="p-0.5 text-stone-500 hover:text-neutral-900 rounded hover:bg-white focus:outline-none"
             title="Ampliar tamaño"
           >
-            <Plus className="size-3 strokeWidth={1.5}" />
+            <Plus className="size-3" strokeWidth={1.5} />
           </button>
         </div>
       </div>

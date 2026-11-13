@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, X, Minus, Plus } from 'lucide-react';
+import { GripVertical, X, Minus, Plus, MoreHorizontal } from 'lucide-react';
 import type {
   WidgetConfig,
   ChartType,
@@ -99,6 +99,9 @@ export function SortableWidgetCard({
     onResize: (c, r) => onResizeWidget?.(widget.id, c, r),
   });
 
+  const isCompactWidth = activeColSpan <= 3;
+  const isCompactHeight = activeRowSpan === 1;
+
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -112,6 +115,11 @@ export function SortableWidgetCard({
     extra?: string;
   } | null>(null);
 
+  const moreOptionsRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
+  const toggleMoreOptions = () => setMoreOptionsOpen((prev) => !prev);
+
   const allowedTypes = WIDGET_ALLOWED_TYPES[widget.id] ?? [
     { type: 'bar', label: 'Barras' },
     { type: 'table', label: 'Tabla' },
@@ -121,14 +129,23 @@ export function SortableWidgetCard({
     setSelectedDetail(item);
   };
 
-  const renderContent = () => {
+  const renderContent = (isCompact: boolean, isCompactHeight: boolean) => {
     switch (widget.id) {
       case 'cotizadoVsVendido': {
         const data = graficos?.cotizadoVsVendido?.length
           ? graficos.cotizadoVsVendido
           : MOCK_PUNTOS_MENSUALES;
         if (widget.chartType === 'line') {
-          return <CotizadoVsVendidoArea data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} />;
+          return isCompact || isCompactHeight ? (
+            <CotizadoVsVendidoArea
+              data={data}
+              rowSpan={activeRowSpan}
+              onItemClick={handleSelect}
+              compact={isCompact || isCompactHeight}
+            />
+          ) : (
+            <CotizadoVsVendidoArea data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} />
+          );
         }
         if (widget.chartType === 'donut') {
           const totalCotizado = data.reduce((s, p) => s + p.cotizado, 0);
@@ -149,13 +166,50 @@ export function SortableWidgetCard({
               ]}
               rowSpan={activeRowSpan}
               onItemClick={handleSelect}
+              compact={isCompact || isCompactHeight}
             />
           );
         }
         if (widget.chartType === 'table') {
           const limit = activeRowSpan === 1 ? 2 : activeRowSpan === 2 ? 5 : 9;
           const displayData = data.slice(0, limit);
-          return (
+          return isCompact || isCompactHeight ? (
+            <div className="w-full">
+              <Table
+                scrollLabel="Cotizado vs. Vendido"
+                className="w-full"
+              >
+                <TableHeader>
+                  <TableRow className="bg-neutral-50 border-b border-stone-200">
+                    <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-left">
+                      Mes
+                    </TableHead>
+                    <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-right">
+                      Cotizado
+                    </TableHead>
+                    <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-right">
+                      Vendido
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-zinc-100">
+                  {displayData.map((p) => (
+                    <TableRow key={p.mes} className="hover:bg-stone-50/80 transition-colors">
+                      <TableCell className="py-2.5 px-3 text-xs font-medium text-neutral-900 whitespace-nowrap">
+                        {p.mes}
+                      </TableCell>
+                      <TableCell className="py-2.5 px-3 text-xs text-neutral-700 text-right tabular-nums whitespace-nowrap">
+                        {formatSoles(p.cotizado)}
+                      </TableCell>
+                      <TableCell className="py-2.5 px-3 text-xs font-semibold text-neutral-900 text-right tabular-nums whitespace-nowrap">
+                        {formatSoles(p.vendido)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
             <div className="w-full">
               <Table scrollLabel="Cotizado vs. Vendido" className="w-full">
                 <TableHeader>
@@ -190,7 +244,7 @@ export function SortableWidgetCard({
             </div>
           );
         }
-        return <CotizadoVsVendidoChart data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} />;
+        return <CotizadoVsVendidoChart data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} compact={isCompact || isCompactHeight} />;
       }
 
       case 'ventasCanal': {
@@ -198,15 +252,66 @@ export function SortableWidgetCard({
           ? graficos.ventasPorCanal
           : MOCK_VENTAS_CANAL;
         if (widget.chartType === 'bar') {
-          return <VentasCanalBar data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} />;
+          return isCompact || isCompactHeight ? (
+            <VentasCanalBar data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} compact={isCompact || isCompactHeight} />
+          ) : (
+            <VentasCanalBar data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} />
+          );
         }
         if (widget.chartType === 'line') {
-          return <CotizadoVsVendidoArea rowSpan={activeRowSpan} onItemClick={handleSelect} />;
+          return isCompact || isCompactHeight ? (
+            <CotizadoVsVendidoArea rowSpan={activeRowSpan} onItemClick={handleSelect} compact={isCompact || isCompactHeight} />
+          ) : (
+            <CotizadoVsVendidoArea rowSpan={activeRowSpan} onItemClick={handleSelect} />
+          );
         }
         if (widget.chartType === 'table') {
           const limit = activeRowSpan === 1 ? 2 : activeRowSpan === 2 ? 5 : 9;
           const displayData = data.slice(0, limit);
-          return (
+          return isCompact || isCompactHeight ? (
+            <div className="w-full">
+              <Table
+                scrollLabel="Ventas por Canal"
+                className="w-full"
+              >
+                <TableHeader>
+                  <TableRow className="bg-neutral-50 border-b border-stone-200">
+                    <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-left">
+                      Canal
+                    </TableHead>
+                    <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-right">
+                      Monto S/
+                    </TableHead>
+                    <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-right">
+                      Participación
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-zinc-100">
+                  {displayData.map((c) => (
+                    <TableRow key={c.canal} className="hover:bg-stone-50/80 transition-colors">
+                      <TableCell className="py-2.5 px-3 text-xs font-medium text-neutral-900 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span
+                            className={`h-2 w-2 rounded-full ${
+                              c.canal === 'Distribuidor' ? 'bg-orange-700' : 'bg-[#F8B602]'
+                            }`}
+                          />
+                          <span>{c.canal}</span>
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-2.5 px-3 text-xs text-neutral-900 font-semibold text-right tabular-nums whitespace-nowrap">
+                        {formatSoles(c.monto)}
+                      </TableCell>
+                      <TableCell className="py-2.5 px-3 text-xs text-neutral-600 text-right tabular-nums whitespace-nowrap">
+                        {c.porcentaje}%
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
             <div className="w-full">
               <Table scrollLabel="Ventas por Canal" className="w-full">
                 <TableHeader>
@@ -248,7 +353,7 @@ export function SortableWidgetCard({
             </div>
           );
         }
-        return <VentasCanalDonut data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} />;
+        return <VentasCanalDonut data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} compact={isCompact || isCompactHeight} />;
       }
 
       case 'topProductos': {
@@ -256,7 +361,15 @@ export function SortableWidgetCard({
           ? graficos.topProductos
           : MOCK_TOP_PRODUCTOS;
         if (widget.chartType === 'table') {
-          return <TopProductosTable data={data} rowSpan={activeRowSpan} />;
+          return isCompact || isCompactHeight ? (
+            <TopProductosTable
+              data={data}
+              rowSpan={activeRowSpan}
+              compact={isCompact || isCompactHeight}
+            />
+          ) : (
+            <TopProductosTable data={data} rowSpan={activeRowSpan} />
+          );
         }
         if (widget.chartType === 'donut') {
           return (
@@ -268,10 +381,11 @@ export function SortableWidgetCard({
               }))}
               rowSpan={activeRowSpan}
               onItemClick={handleSelect}
+              compact={isCompact || isCompactHeight}
             />
           );
         }
-        return <TopProductosBar data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} />;
+        return <TopProductosBar data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} compact={isCompact || isCompactHeight} />;
       }
 
       case 'cotizacionesPorEstado': {
@@ -279,24 +393,41 @@ export function SortableWidgetCard({
           ? graficos.cotizacionesPorEstado
           : MOCK_ESTADOS;
         if (widget.chartType === 'bar') {
-          return <CotizacionesEstadoBar data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} />;
+          return isCompact || isCompactHeight ? (
+            <CotizacionesEstadoBar data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} compact={isCompact || isCompactHeight} />
+          ) : (
+            <CotizacionesEstadoBar data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} />
+          );
         }
         if (widget.chartType === 'table') {
-          return <CotizacionesEstadoTable data={data} rowSpan={activeRowSpan} />;
+          return isCompact || isCompactHeight ? (
+            <CotizacionesEstadoTable
+              data={data}
+              rowSpan={activeRowSpan}
+              compact={isCompact || isCompactHeight}
+            />
+          ) : (
+            <CotizacionesEstadoTable data={data} rowSpan={activeRowSpan} />
+          );
         }
-        return <CotizacionesEstadoDonut data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} />;
+        return <CotizacionesEstadoDonut data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} compact={isCompact || isCompactHeight} />;
       }
 
       case 'stockBajo': {
         const data = stockBajo?.length ? stockBajo : MOCK_STOCK_BAJO;
         if (widget.chartType === 'bar') {
-          return <StockBajoBar data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} />;
+          return isCompact || isCompactHeight ? (
+            <StockBajoBar data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} compact={isCompact || isCompactHeight} />
+          ) : (
+            <StockBajoBar data={data} rowSpan={activeRowSpan} onItemClick={handleSelect} />
+          );
         }
         return (
           <StockBajoTable
             data={data}
             totalCount={stockBajo?.length ?? 30}
             rowSpan={activeRowSpan}
+            compact={isCompact || isCompactHeight}
           />
         );
       }
@@ -330,14 +461,18 @@ export function SortableWidgetCard({
             {...attributes}
             {...listeners}
           >
-            <GripVertical className="size-4 strokeWidth={1.5} text-stone-400" />
+            <GripVertical className="size-4 text-stone-400" strokeWidth={1.5} />
           </button>
-          <h3 className="text-xs sm:text-sm font-semibold text-neutral-900 truncate" title={widget.title}>
-            {widget.title}
+          <h3 className={isCompactWidth ? 'text-xs sm:text-sm font-semibold text-neutral-900 truncate' : 'text-xs sm:text-sm font-semibold text-neutral-900 truncate'} title={widget.title}>
+            {isCompactWidth ? (
+              <span className="truncate">{widget.title}</span>
+            ) : (
+              widget.title
+            )}
           </h3>
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className={isCompactWidth ? 'hidden' : 'flex items-center gap-1.5 shrink-0'}>
           {/* Selector segmentado */}
           <div
             className="inline-flex items-center p-0.5 rounded-lg bg-zinc-100 border border-stone-200 gap-0.5 shrink-0"
@@ -364,14 +499,14 @@ export function SortableWidgetCard({
           </div>
 
           {/* Botones rápidos de tamaño - y + */}
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 bg-stone-100 border border-stone-200 rounded px-0.5 py-0.5">
+          <div className={isCompactWidth ? 'hidden' : 'opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 bg-stone-100 border border-stone-200 rounded px-0.5 py-0.5'}>
             <button
               type="button"
               onClick={() => stepSize('smaller')}
               className="p-0.5 text-stone-500 hover:text-neutral-900 rounded hover:bg-white focus:outline-none"
               title="Reducir tamaño"
             >
-              <Minus className="size-3 strokeWidth={1.5}" />
+              <Minus className="size-3" strokeWidth={1.5} />
             </button>
             <button
               type="button"
@@ -379,15 +514,109 @@ export function SortableWidgetCard({
               className="p-0.5 text-stone-500 hover:text-neutral-900 rounded hover:bg-white focus:outline-none"
               title="Ampliar tamaño"
             >
-              <Plus className="size-3 strokeWidth={1.5}" />
+              <Plus className="size-3" strokeWidth={1.5} />
             </button>
           </div>
         </div>
+
+        {/* Botón More opciones modo compacto */}
+        {isCompactWidth && (
+          <button
+            ref={moreOptionsRef}
+            type="button"
+            className="inline-flex items-center justify-center size-7 rounded-md border border-stone-200 bg-white text-neutral-700 hover:bg-neutral-100 focus:outline-none p-0 shrink-0"
+            aria-label="Más opciones"
+            onClick={toggleMoreOptions}
+          >
+            <MoreHorizontal className="size-4" strokeWidth={1.5} />
+          </button>
+        )}
       </header>
 
+      {/* Popover de opciones More */}
+      {moreOptionsOpen && (
+        <div
+          ref={popoverRef}
+          className="z-30 w-56 rounded-md bg-white border border-stone-200 p-3 shadow-md space-y-3"
+          style={{
+            top: 'calc(100% + 4px)',
+            right: 0,
+          }}
+        >
+          {/* Cambiar visualización */}
+          <div className="space-y-2 text-sm">
+            <button
+              type="button"
+              onClick={() => onChartTypeChange(widget.id, 'bar')}
+              className={widget.chartType === 'bar' ? 'font-medium text-neutral-900' : 'text-neutral-600 hover:text-neutral-900 rounded px-2 py-1.5 transition-colors'}
+            >
+              Barras
+            </button>
+            <button
+              type="button"
+              onClick={() => onChartTypeChange(widget.id, 'line')}
+              className={widget.chartType === 'line' ? 'font-medium text-neutral-900' : 'text-neutral-600 hover:text-neutral-900 rounded px-2 py-1.5 transition-colors'}
+            >
+              Línea
+            </button>
+            <button
+              type="button"
+              onClick={() => onChartTypeChange(widget.id, 'donut')}
+              className={widget.chartType === 'donut' ? 'font-medium text-neutral-900' : 'text-neutral-600 hover:text-neutral-900 rounded px-2 py-1.5 transition-colors'}
+            >
+              Dona
+            </button>
+            <button
+              type="button"
+              onClick={() => onChartTypeChange(widget.id, 'table')}
+              className={widget.chartType === 'table' ? 'font-medium text-neutral-900' : 'text-neutral-600 hover:text-neutral-900 rounded px-2 py-1.5 transition-colors'}
+            >
+              Tabla
+            </button>
+          </div>
+
+          {/* Ajustar tamaño */}
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between text-xs text-neutral-600">
+              <span>-</span>
+              <span>+</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => stepSize('smaller')}
+                className="rounded-md px-2 py-0.5 bg-stone-100 border border-stone-200 text-stone-500 hover:text-neutral-900 focus:outline-none"
+                title="Reducir tamaño"
+              >
+                -
+              </button>
+              <span className="w-8 text-center font-medium text-neutral-900">{activeColSpan}</span>
+              <button
+                type="button"
+                onClick={() => stepSize('larger')}
+                className="rounded-md px-2 py-0.5 bg-stone-100 border border-stone-200 text-stone-500 hover:text-neutral-900 focus:outline-none"
+                title="Ampliar tamaño"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          {/* Detalle completo */}
+          <div className="pt-3 border-t border-stone-200">
+            <h4 className="text-xs font-medium text-neutral-900 mb-2">Detalle</h4>
+            <p className="text-xs text-neutral-600 line-clamp-3">
+              {widget.title} – información detallada que se oculta en modo compacto. Los datos completos están disponibles en el dashboard completo.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Contenido del widget */}
-      <div className="p-3 sm:p-4 flex-1 flex flex-col justify-center min-h-0 min-w-0 overflow-hidden">
-        {renderContent()}
+      <div className={`
+        p-3 sm:p-4 flex-1 flex flex-col justify-center min-h-0 min-w-0 overflow-hidden ${isCompactWidth ? 'pb-8' : 'pb-3'}
+      `}>
+        {renderContent(isCompactWidth, isCompactHeight)}
 
         {/* Mini detalle interactivo al hacer clic */}
         {selectedDetail && (
@@ -405,7 +634,7 @@ export function SortableWidgetCard({
               className="p-0.5 text-orange-700 hover:text-orange-950 rounded focus:outline-none shrink-0"
               aria-label="Cerrar detalle"
             >
-              <X className="size-3.5 strokeWidth={1.5}" />
+              <X className="size-3.5" strokeWidth={1.5} />
             </button>
           </div>
         )}

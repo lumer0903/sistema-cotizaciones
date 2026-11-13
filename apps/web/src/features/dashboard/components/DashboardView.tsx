@@ -200,7 +200,7 @@ export function DashboardView() {
           onClick={() => setCustomizing(true)}
           className="h-10 px-3 rounded-md bg-white border border-stone-200 text-xs font-medium text-neutral-900 hover:bg-neutral-100 inline-flex items-center gap-2 transition-colors cursor-pointer focus:outline-none"
         >
-          <SlidersHorizontal className="size-4 strokeWidth={1.5} text-neutral-700" />
+          <SlidersHorizontal className="size-4 text-neutral-700" strokeWidth={1.5} />
           <span>Personalizar</span>
         </button>
 
@@ -209,7 +209,7 @@ export function DashboardView() {
           onClick={handleDownloadExcel}
           className="h-10 px-3.5 rounded-md bg-orange-700 hover:bg-red-500 active:bg-orange-800 text-white text-xs font-medium inline-flex items-center gap-2 transition-colors cursor-pointer focus:outline-none shadow-xs"
         >
-          <Download className="size-4 strokeWidth={1.5} text-white" />
+          <Download className="size-4 text-white" strokeWidth={1.5} />
           <span>Descargar reporte</span>
         </button>
       </div>
