@@ -116,7 +116,7 @@ export function Sidebar({ open = false, onClose, onToggleLogo, collapsed = false
             aria-modal={open && mobile ? true : undefined}
             aria-label="Menú principal"
             id="menu-lateral"
-            className={`bg-white border-r border-[#E5E7EB] flex flex-col justify-between min-h-screen fixed left-0 top-0 z-50 select-none transition-all duration-200 ease-in-out ${
+            className={`bg-white border-r border-slate-200 flex flex-col justify-between min-h-screen fixed left-0 top-0 z-50 select-none transition-all duration-200 ease-in-out ${
                 mobile
                     ? `w-60 ${open ? 'translate-x-0' : '-translate-x-full'}`
                     : `${collapsed ? 'w-16' : 'w-60'} translate-x-0`
@@ -125,7 +125,7 @@ export function Sidebar({ open = false, onClose, onToggleLogo, collapsed = false
             <div className="flex flex-col w-full flex-1 min-h-0">
                 {/* LOGO SUPERIOR */}
                 {collapsed && !mobile ? (
-                    <div className="h-14 flex items-center justify-center border-b border-[#F3F4F6]">
+                    <div className="h-14 flex items-center justify-center border-b border-slate-200">
                         <Link
                             href="/dashboard"
                             className="flex items-center justify-center focus:outline-none"
@@ -347,7 +347,7 @@ export function Sidebar({ open = false, onClose, onToggleLogo, collapsed = false
 
             {/* PIE DEL SIDEBAR: Cerrar Sesión */}
             {collapsed && !mobile ? (
-                <div className="w-full py-3 border-t border-[#E5E7EB] flex justify-center shrink-0">
+                <div className="w-full py-3 border-t border-slate-200 flex justify-center shrink-0">
                     <button
                         type="button"
                         onClick={async () => {
@@ -368,7 +368,7 @@ export function Sidebar({ open = false, onClose, onToggleLogo, collapsed = false
                         await logout();
                         router.push('/login');
                     }}
-                    className="w-full h-12 px-4 border-t border-[#E5E7EB] shadow-[0_-2px_6px_rgba(0,0,0,0.04)] flex items-center gap-2.5 text-[13px] font-medium text-[#414141] hover:bg-neutral-50 transition-colors cursor-pointer text-left shrink-0 focus:outline-none"
+                    className="w-full h-12 px-4 border-t border-slate-200 shadow-[0_-2px_6px_rgba(0,0,0,0.04)] flex items-center gap-2.5 text-[13px] font-medium text-[#414141] hover:bg-neutral-50 transition-colors cursor-pointer text-left shrink-0 focus:outline-none"
                 >
                     <LogOut className="size-4 text-[#414141] shrink-0" strokeWidth={1.5} />
                     <span>Cerrar Sesión</span>

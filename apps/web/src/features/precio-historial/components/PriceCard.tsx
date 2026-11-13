@@ -31,7 +31,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({
 return (
      <div className="w-full bg-white rounded-xl shadow-2xs p-3 flex flex-col gap-2 overflow-hidden transition-transform hover:-translate-y-0.5">
       {/* 1. Bloque superior: Imagen / Placeholder + Acción rápida de Historial */}
-      <div className="relative h-24 w-full rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] overflow-hidden flex items-center justify-center">
+      <div className="relative h-24 w-full rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden">
         {producto.imagenUrl ? (
           <Image
             fill
@@ -44,9 +44,9 @@ return (
             onError={(e) => handleImageError(e, '200')}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center gap-1">
-            <ImageOff className="size-4 text-[#94A3B8]" />
-            <span className="text-[11px] font-medium text-[#94A3B8]">Sin imagen</span>
+          <div className="flex flex-col items-center justify-center gap-1 text-slate-400 select-none">
+            <ImageOff className="size-4 stroke-[1.75]" />
+            <span className="text-[11px] font-medium">Sin imagen</span>
           </div>
         )}
 
