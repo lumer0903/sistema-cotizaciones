@@ -229,7 +229,7 @@ export function ReportesView() {
   const renderRows = () => {
     switch (tipoReporte) {
       case 'ranking-productos':
-        return (dataActual as RankingProducto[]).map((row) => (
+        return rankingData.data.slice((currentPage - 1) * TAKE, currentPage * TAKE).map((row: RankingProducto) => (
           <TableRow key={row.idProducto}>
             <TableCell className="font-semibold text-slate-900 tabular-nums whitespace-nowrap">{row.codigo}</TableCell>
             <TableCell className="max-w-xs truncate text-slate-600">{row.descripcion}</TableCell>
@@ -241,7 +241,7 @@ export function ReportesView() {
           </TableRow>
         ));
       case 'antiguedad-deuda':
-        return (dataActual as AntiguedadDeuda[]).map((row) => (
+        return deudaData.data.slice((currentPage - 1) * TAKE, currentPage * TAKE).map((row: AntiguedadDeuda) => (
           <TableRow key={row.idCliente}>
             <TableCell className="font-semibold text-slate-900 max-w-xs truncate">{row.cliente}</TableCell>
             <TableCell className="whitespace-nowrap text-slate-600">{row.rucDni ?? '-'}</TableCell>
@@ -253,7 +253,7 @@ export function ReportesView() {
           </TableRow>
         ));
       case 'auditoria-ia':
-        return (dataActual as AuditoriaIa[]).map((row) => (
+        return iaData.data.slice((currentPage - 1) * TAKE, currentPage * TAKE).map((row: AuditoriaIa) => (
           <TableRow key={row.idInteraccion}>
             <TableCell className="font-semibold text-slate-900 whitespace-nowrap">{new Date(row.createdAt).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</TableCell>
             <TableCell className="text-slate-600 whitespace-nowrap">{row.tipoSugerencia ?? '-'}</TableCell>
@@ -463,11 +463,13 @@ export function ReportesView() {
 
       {/* Tabs de reportes */}
       <Tabs value={tipoReporte} onValueChange={(v: string) => setTipoReporte(v as TipoReporte)} className="w-full">
-        <TabsList className="flex w-full max-w-full overflow-x-auto" aria-label="Tipo de reporte">
+        <TabsList className="flex w-full max-w-full overflow-x-auto border-b border-slate-200 items-end">
           {(Object.keys(REPORTE_CONFIG) as TipoReporte[]).map((tipo) => (
-            <TabsTrigger key={tipo} value={tipo} className="gap-2">
-              {REPORTE_CONFIG[tipo].icon}
-              {REPORTE_CONFIG[tipo].label}
+            <TabsTrigger key={tipo} value={tipo} className="gap-2 flex flex-col select-none justify-end">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#F8B602] font-bold border-b-2 border-[#F8B602] hover:border-transparent hover:text-slate-900 transition-colors">
+                {REPORTE_CONFIG[tipo].icon}
+                {REPORTE_CONFIG[tipo].label}
+              </span>
             </TabsTrigger>
           ))}
         </TabsList>
