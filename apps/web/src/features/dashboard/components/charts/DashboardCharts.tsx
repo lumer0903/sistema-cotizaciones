@@ -258,6 +258,7 @@ export function CotizadoVsVendidoChart({
           tickMargin={4}
         />
         <YAxis
+          hide={compact || rowSpan === 1}
           tick={AXIS_TICK}
           axisLine={false}
           tickLine={false}
@@ -346,9 +347,9 @@ export function CotizadoVsVendidoArea({
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke={compact ? "transparent" : "#F3F4F6"} vertical={false} />
         <XAxis dataKey="mes" tick={AXIS_TICK} axisLine={false} tickLine={false} tickMargin={compact ? 4 : 8} />
-        <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={formatSoles} tickMargin={compact ? 4 : 8} />
+        <YAxis hide={compact || rowSpan === 1} tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={formatSoles} tickMargin={compact ? 4 : 8} />
         <Tooltip contentStyle={TOOLTIP_STYLE} formatter={formatSoles} labelFormatter={(l: unknown) => `Mes: ${String(l ?? '')}`} />
-        {rowSpan > 1 && (
+        {rowSpan > 1 && !compact && (
           <Legend
             wrapperStyle={{ fontSize: compact ? 10 : 12, paddingTop: compact ? 2 : 6, cursor: 'pointer' }}
             onClick={(e) => handleLegendClick(e as unknown as { dataKey?: string | number })}
@@ -384,20 +385,21 @@ export function VentasCanalDonut({
   data = MOCK_VENTAS_CANAL,
   rowSpan = 2,
   onItemClick,
-  compact: _compact = false,
+  compact = false,
 }: {
   data?: VentaCanalItem[];
   rowSpan?: RowSpan;
   onItemClick?: (item: { label: string; value: string; extra?: string }) => void;
   compact?: boolean;
 }) {
+  const isCompact = compact || rowSpan === 1;
   const colors: Record<string, string> = {
     Distribuidor: COLOR_DISTRIBUIDOR,
     Tienda: COLOR_TIENDA,
   };
 
-  const innerRadius = rowSpan === 1 ? 25 : rowSpan === 2 ? 65 : 85;
-  const outerRadius = rowSpan === 1 ? 35 : rowSpan === 2 ? 95 : 120;
+  const innerRadius = isCompact ? 25 : rowSpan === 2 ? 65 : 85;
+  const outerRadius = isCompact ? 38 : rowSpan === 2 ? 95 : 120;
 
   return (
     <ResponsiveContainer width="100%" height={getChartHeight(rowSpan)}>
@@ -431,7 +433,7 @@ export function VentasCanalDonut({
           contentStyle={TOOLTIP_STYLE}
           formatter={(v: unknown) => [formatSoles(v), 'Venta']}
         />
-        {rowSpan > 1 && (
+        {rowSpan > 1 && !isCompact && (
           <Legend
             wrapperStyle={{ fontSize: 12, paddingTop: 6 }}
             formatter={(value: string) => {
@@ -476,7 +478,7 @@ export function VentasCanalBar({
       >
         <CartesianGrid strokeDasharray="3 3" stroke={isCompact ? "transparent" : "#F3F4F6"} vertical={false} />
         <XAxis dataKey="canal" tick={AXIS_TICK} axisLine={false} tickLine={false} tickMargin={isCompact ? 4 : 8} />
-        <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={formatSoles} tickMargin={isCompact ? 4 : 8} />
+        <YAxis hide={isCompact} tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={formatSoles} tickMargin={isCompact ? 4 : 8} />
         <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: unknown) => [formatSoles(v), 'Total']} />
         <Bar dataKey="monto" radius={[4, 4, 0, 0]} maxBarSize={48} cursor="pointer">
           {data.map((entry) => (
@@ -496,13 +498,14 @@ export function TopProductosBar({
   data = MOCK_TOP_PRODUCTOS,
   rowSpan = 2,
   onItemClick,
-  compact: _compact = false,
+  compact = false,
 }: {
   data?: TopProductoItem[];
   rowSpan?: RowSpan;
   onItemClick?: (item: { label: string; value: string; extra?: string }) => void;
   compact?: boolean;
 }) {
+  const isCompact = compact || rowSpan === 1;
   const displayData = rowSpan === 1 ? data.slice(0, 2) : data;
 
   return (
@@ -510,7 +513,7 @@ export function TopProductosBar({
       <BarChart
         data={displayData}
         layout="vertical"
-        margin={{ top: 4, right: 16, bottom: 0, left: 12 }}
+        margin={{ top: 4, right: isCompact ? 8 : 16, bottom: 0, left: isCompact ? 4 : 12 }}
         onClick={(state: unknown) => {
           const s = state as { activePayload?: Array<{ payload?: TopProductoItem }> } | null;
           if (s?.activePayload?.[0]?.payload && onItemClick) {
@@ -524,14 +527,14 @@ export function TopProductosBar({
         }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" horizontal={false} />
-        <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} tickMargin={4} />
+        <XAxis hide={isCompact} type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} tickMargin={4} />
         <YAxis
           type="category"
           dataKey="codigo"
           tick={AXIS_TICK}
           axisLine={false}
           tickLine={false}
-          width={65}
+          width={isCompact ? 48 : 65}
           tickMargin={4}
         />
         <Tooltip
@@ -551,12 +554,13 @@ export function TopProductosBar({
 export function TopProductosTable({
   data = MOCK_TOP_PRODUCTOS,
   rowSpan = 2,
-  compact: _compact = false,
+  compact = false,
 }: {
   data?: TopProductoItem[];
   rowSpan?: RowSpan;
   compact?: boolean;
 }) {
+  const isCompact = compact || rowSpan === 1;
   const limit = rowSpan === 1 ? 2 : rowSpan === 2 ? 5 : 9;
   const displayData = data.slice(0, limit);
 
@@ -568,9 +572,11 @@ export function TopProductosTable({
             <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-left">
               Producto
             </TableHead>
-            <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-right">
-              Unidades
-            </TableHead>
+            {!isCompact && (
+              <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-right">
+                Unidades
+              </TableHead>
+            )}
             <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-right">
               Total S/
             </TableHead>
@@ -587,9 +593,11 @@ export function TopProductosTable({
                   {formatCode(item.codigo)}
                 </p>
               </TableCell>
-              <TableCell className="py-2.5 px-3 text-xs font-semibold text-neutral-900 text-right tabular-nums whitespace-nowrap">
-                {item.unidades}
-              </TableCell>
+              {!isCompact && (
+                <TableCell className="py-2.5 px-3 text-xs font-semibold text-neutral-900 text-right tabular-nums whitespace-nowrap">
+                  {item.unidades}
+                </TableCell>
+              )}
               <TableCell className="py-2.5 px-3 text-xs font-semibold text-neutral-900 text-right tabular-nums whitespace-nowrap">
                 {formatSoles(item.total)}
               </TableCell>
@@ -606,16 +614,17 @@ export function CotizacionesEstadoDonut({
   data = MOCK_ESTADOS,
   rowSpan = 2,
   onItemClick,
-  compact: _compact = false,
+  compact = false,
 }: {
   data?: ConteoPorEstado[];
   rowSpan?: RowSpan;
   onItemClick?: (item: { label: string; value: string; extra?: string }) => void;
   compact?: boolean;
 }) {
+  const isCompact = compact || rowSpan === 1;
   const total = data.reduce((acc, curr) => acc + curr.cantidad, 0);
-  const innerRadius = rowSpan === 1 ? 25 : rowSpan === 2 ? 65 : 85;
-  const outerRadius = rowSpan === 1 ? 35 : rowSpan === 2 ? 95 : 120;
+  const innerRadius = isCompact ? 25 : rowSpan === 2 ? 65 : 85;
+  const outerRadius = isCompact ? 38 : rowSpan === 2 ? 95 : 120;
 
   return (
     <ResponsiveContainer width="100%" height={getChartHeight(rowSpan)}>
@@ -655,7 +664,7 @@ export function CotizacionesEstadoDonut({
           formatter={(v: unknown) => [`${v} cotizaciones`, 'Cantidad']}
           labelFormatter={(e: unknown) => ESTADO_LABELS[String(e ?? '')] ?? String(e ?? '')}
         />
-        {rowSpan > 1 && (
+        {rowSpan > 1 && !isCompact && (
           <Legend
             wrapperStyle={{ fontSize: 12, paddingTop: 6 }}
             formatter={(estado: string) => {
@@ -674,18 +683,19 @@ export function CotizacionesEstadoBar({
   data = MOCK_ESTADOS,
   rowSpan = 2,
   onItemClick,
-  compact: _compact = false,
+  compact = false,
 }: {
   data?: ConteoPorEstado[];
   rowSpan?: RowSpan;
   onItemClick?: (item: { label: string; value: string; extra?: string }) => void;
   compact?: boolean;
 }) {
+  const isCompact = compact || rowSpan === 1;
   return (
     <ResponsiveContainer width="100%" height={getChartHeight(rowSpan)}>
       <BarChart
         data={data}
-        margin={{ top: rowSpan === 1 ? 4 : 12, right: 12, bottom: 0, left: 0 }}
+        margin={{ top: isCompact ? 4 : 12, right: 12, bottom: 0, left: 0 }}
         onClick={(state: unknown) => {
           const s = state as { activePayload?: Array<{ payload?: ConteoPorEstado }> } | null;
           if (s?.activePayload?.[0]?.payload && onItemClick) {
@@ -707,7 +717,7 @@ export function CotizacionesEstadoBar({
           tickMargin={4}
           tickFormatter={(e: string) => ESTADO_LABELS[e] ?? e}
         />
-        <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickMargin={4} />
+        <YAxis hide={isCompact} tick={AXIS_TICK} axisLine={false} tickLine={false} tickMargin={4} />
         <Tooltip
           contentStyle={TOOLTIP_STYLE}
           formatter={(v: unknown) => [`${v} cotizaciones`, 'Cantidad']}
@@ -729,12 +739,13 @@ export function CotizacionesEstadoBar({
 export function CotizacionesEstadoTable({
   data = MOCK_ESTADOS,
   rowSpan = 2,
-  compact: _compact = false,
+  compact = false,
 }: {
   data?: ConteoPorEstado[];
   rowSpan?: RowSpan;
   compact?: boolean;
 }) {
+  const isCompact = compact || rowSpan === 1;
   const total = data.reduce((acc, curr) => acc + curr.cantidad, 0);
   const limit = rowSpan === 1 ? 2 : rowSpan === 2 ? 5 : 9;
   const displayData = data.slice(0, limit);
@@ -750,9 +761,11 @@ export function CotizacionesEstadoTable({
             <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-right">
               Cantidad
             </TableHead>
-            <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-right">
-              Porcentaje
-            </TableHead>
+            {!isCompact && (
+              <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-right">
+                Porcentaje
+              </TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody className="divide-y divide-zinc-100">
@@ -768,9 +781,11 @@ export function CotizacionesEstadoTable({
                 <TableCell className="py-2.5 px-3 text-xs font-semibold text-neutral-900 text-right tabular-nums whitespace-nowrap">
                   {item.cantidad}
                 </TableCell>
-                <TableCell className="py-2.5 px-3 text-xs text-neutral-600 text-right tabular-nums whitespace-nowrap">
-                  {pct}%
-                </TableCell>
+                {!isCompact && (
+                  <TableCell className="py-2.5 px-3 text-xs text-neutral-600 text-right tabular-nums whitespace-nowrap">
+                    {pct}%
+                  </TableCell>
+                )}
               </TableRow>
             );
           })}
@@ -785,13 +800,14 @@ export function StockBajoTable({
   data = MOCK_STOCK_BAJO,
   totalCount,
   rowSpan = 2,
-  compact: _compact = false,
+  compact = false,
 }: {
   data?: AlertaStockBajo[];
   totalCount?: number;
   rowSpan?: RowSpan;
   compact?: boolean;
 }) {
+  const isCompact = compact || rowSpan === 1;
   const limit = rowSpan === 1 ? 2 : rowSpan === 2 ? 5 : 9;
   const displayItems = data.slice(0, limit);
   const total = totalCount ?? (data.length >= 6 ? 30 : data.length);
@@ -807,9 +823,11 @@ export function StockBajoTable({
             <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-right">
               Stock / Mín.
             </TableHead>
-            <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-right">
-              Estado
-            </TableHead>
+            {!isCompact && (
+              <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-right">
+                Estado
+              </TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody className="divide-y divide-zinc-100">
@@ -850,9 +868,11 @@ export function StockBajoTable({
                     />
                   </div>
                 </TableCell>
-                <TableCell className="py-2.5 px-3 text-right whitespace-nowrap">
-                  <SemanticBadge label={estadoLabel} dotColor={dotColor} />
-                </TableCell>
+                {!isCompact && (
+                  <TableCell className="py-2.5 px-3 text-right whitespace-nowrap">
+                    <SemanticBadge label={estadoLabel} dotColor={dotColor} />
+                  </TableCell>
+                )}
               </TableRow>
             );
           })}
@@ -860,15 +880,17 @@ export function StockBajoTable({
       </Table>
 
       {/* Pie de tarjeta */}
-      <div className="pt-3 px-1 flex items-center justify-between text-xs text-neutral-500 mt-2 border-t border-stone-100">
-        <span>Mostrando {displayItems.length} de {total} productos</span>
-        <Link
-          href="/inventario"
-          className="text-xs font-medium text-orange-700 hover:underline inline-flex items-center gap-0.5"
-        >
-          Ver inventario →
-        </Link>
-      </div>
+      {!isCompact && (
+        <div className="pt-3 px-1 flex items-center justify-between text-xs text-neutral-500 mt-2 border-t border-stone-100">
+          <span>Mostrando {displayItems.length} de {total} productos</span>
+          <Link
+            href="/inventario"
+            className="text-xs font-medium text-orange-700 hover:underline inline-flex items-center gap-0.5"
+          >
+            Ver inventario →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
@@ -877,20 +899,21 @@ export function StockBajoBar({
   data = MOCK_STOCK_BAJO,
   rowSpan = 2,
   onItemClick,
-  compact: _compact = false,
+  compact = false,
 }: {
   data?: AlertaStockBajo[];
   rowSpan?: RowSpan;
   onItemClick?: (item: { label: string; value: string; extra?: string }) => void;
   compact?: boolean;
 }) {
+  const isCompact = compact || rowSpan === 1;
   const displayData = rowSpan === 1 ? data.slice(0, 3) : data;
 
   return (
     <ResponsiveContainer width="100%" height={getChartHeight(rowSpan)}>
       <BarChart
         data={displayData}
-        margin={{ top: rowSpan === 1 ? 4 : 12, right: 12, bottom: 0, left: 0 }}
+        margin={{ top: isCompact ? 4 : 12, right: 12, bottom: 0, left: 0 }}
         onClick={(state: unknown) => {
           const s = state as { activePayload?: Array<{ payload?: AlertaStockBajo }> } | null;
           if (s?.activePayload?.[0]?.payload && onItemClick) {
@@ -905,7 +928,7 @@ export function StockBajoBar({
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
         <XAxis dataKey="codigo" tick={AXIS_TICK} axisLine={false} tickLine={false} tickMargin={4} />
-        <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickMargin={4} />
+        <YAxis hide={isCompact} tick={AXIS_TICK} axisLine={false} tickLine={false} tickMargin={4} />
         <Tooltip
           contentStyle={TOOLTIP_STYLE}
           formatter={(v: unknown) => [`${v} unidades`, 'Stock Actual']}

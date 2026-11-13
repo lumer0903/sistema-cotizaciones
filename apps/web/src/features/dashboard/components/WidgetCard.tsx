@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, X, Minus, Plus, MoreHorizontal } from 'lucide-react';
@@ -93,19 +94,26 @@ export function SortableWidgetCard({
     activeRowSpan,
     handlePointerDown,
     stepSize,
+    stepWidth,
+    stepHeight,
   } = useCardResize({
     colSpan: widget.colSpan ?? 6,
     rowSpan: widget.rowSpan ?? 2,
     onResize: (c, r) => onResizeWidget?.(widget.id, c, r),
   });
 
-  const isCompactWidth = activeColSpan <= 3;
+  const isCompactWidth = activeColSpan <= 4;
   const isCompactHeight = activeRowSpan === 1;
+
+  const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
+  const toggleMoreOptions = () => setMoreOptionsOpen((prev) => !prev);
+  const moreOptionsRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 30 : isResizing ? 25 : 1,
+    zIndex: isDragging ? 30 : isResizing ? 25 : moreOptionsOpen ? 20 : 1,
     opacity: isDragging ? 0.7 : 1,
   };
 
@@ -115,10 +123,21 @@ export function SortableWidgetCard({
     extra?: string;
   } | null>(null);
 
-  const moreOptionsRef = useRef<HTMLButtonElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
-  const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
-  const toggleMoreOptions = () => setMoreOptionsOpen((prev) => !prev);
+  useEffect(() => {
+    if (!moreOptionsOpen) return;
+    const handleClickOutside = (e: MouseEvent | PointerEvent) => {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target as Node) &&
+        moreOptionsRef.current &&
+        !moreOptionsRef.current.contains(e.target as Node)
+      ) {
+        setMoreOptionsOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', handleClickOutside);
+    return () => document.removeEventListener('pointerdown', handleClickOutside);
+  }, [moreOptionsOpen]);
 
   const allowedTypes = WIDGET_ALLOWED_TYPES[widget.id] ?? [
     { type: 'bar', label: 'Barras' },
@@ -127,6 +146,55 @@ export function SortableWidgetCard({
 
   const handleSelect = (item: { label: string; value: string; extra?: string }) => {
     setSelectedDetail(item);
+  };
+
+  const renderWidgetPopoverDetail = () => {
+    switch (widget.id) {
+      case 'cotizadoVsVendido':
+        return (
+          <div className="space-y-1 text-xs text-neutral-600">
+            <p className="font-semibold text-neutral-900">Cotizado: S/ 258,000</p>
+            <p className="font-semibold text-neutral-900">Vendido: S/ 194,500</p>
+            <p className="text-emerald-700 font-medium">Meta trimestral: 75.4% completado</p>
+          </div>
+        );
+      case 'ventasCanal':
+        return (
+          <div className="space-y-1 text-xs text-neutral-600">
+            <p className="font-semibold text-neutral-900">Distribuidor: S/ 48,500 (67%)</p>
+            <p className="font-semibold text-neutral-900">Tienda: S/ 23,887 (33%)</p>
+            <p className="text-[11px] text-neutral-500">Total facturado: S/ 72,387</p>
+          </div>
+        );
+      case 'topProductos':
+        return (
+          <div className="space-y-1 text-xs text-neutral-600">
+            <p className="font-semibold text-neutral-900">Top 5 productos del mes</p>
+            <p className="text-[11px] text-neutral-500">Concentran el 78% de la rotación en inventario.</p>
+          </div>
+        );
+      case 'cotizacionesPorEstado':
+        return (
+          <div className="space-y-1 text-xs text-neutral-600">
+            <p className="font-semibold text-neutral-900">Aprobadas: 24 · Pendientes: 12 · Rechazadas: 8</p>
+            <p className="text-emerald-700 font-medium">Tasa de conversión: 68% de cierre</p>
+          </div>
+        );
+      case 'stockBajo':
+        return (
+          <div className="space-y-1.5 text-xs text-neutral-600">
+            <p className="font-bold text-red-700">30 productos con stock mínimo o crítico</p>
+            <Link
+              href="/inventario"
+              className="text-xs font-semibold text-orange-700 hover:underline inline-flex items-center gap-1"
+            >
+              Ver inventario completo →
+            </Link>
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
   const renderContent = (isCompact: boolean, isCompactHeight: boolean) => {
@@ -185,9 +253,6 @@ export function SortableWidgetCard({
                       Mes
                     </TableHead>
                     <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-right">
-                      Cotizado
-                    </TableHead>
-                    <TableHead className="py-2 px-3 text-[11px] font-medium uppercase tracking-wider text-stone-500 text-right">
                       Vendido
                     </TableHead>
                   </TableRow>
@@ -197,9 +262,6 @@ export function SortableWidgetCard({
                     <TableRow key={p.mes} className="hover:bg-stone-50/80 transition-colors">
                       <TableCell className="py-2.5 px-3 text-xs font-medium text-neutral-900 whitespace-nowrap">
                         {p.mes}
-                      </TableCell>
-                      <TableCell className="py-2.5 px-3 text-xs text-neutral-700 text-right tabular-nums whitespace-nowrap">
-                        {formatSoles(p.cotizado)}
                       </TableCell>
                       <TableCell className="py-2.5 px-3 text-xs font-semibold text-neutral-900 text-right tabular-nums whitespace-nowrap">
                         {formatSoles(p.vendido)}
@@ -537,77 +599,93 @@ export function SortableWidgetCard({
       {moreOptionsOpen && (
         <div
           ref={popoverRef}
-          className="z-30 w-56 rounded-md bg-white border border-stone-200 p-3 shadow-md space-y-3"
-          style={{
-            top: 'calc(100% + 4px)',
-            right: 0,
-          }}
+          className="absolute top-10 right-3 z-30 w-56 rounded-md bg-white border border-stone-200 p-3 shadow-md space-y-3"
         >
           {/* Cambiar visualización */}
-          <div className="space-y-2 text-sm">
-            <button
-              type="button"
-              onClick={() => onChartTypeChange(widget.id, 'bar')}
-              className={widget.chartType === 'bar' ? 'font-medium text-neutral-900' : 'text-neutral-600 hover:text-neutral-900 rounded px-2 py-1.5 transition-colors'}
-            >
-              Barras
-            </button>
-            <button
-              type="button"
-              onClick={() => onChartTypeChange(widget.id, 'line')}
-              className={widget.chartType === 'line' ? 'font-medium text-neutral-900' : 'text-neutral-600 hover:text-neutral-900 rounded px-2 py-1.5 transition-colors'}
-            >
-              Línea
-            </button>
-            <button
-              type="button"
-              onClick={() => onChartTypeChange(widget.id, 'donut')}
-              className={widget.chartType === 'donut' ? 'font-medium text-neutral-900' : 'text-neutral-600 hover:text-neutral-900 rounded px-2 py-1.5 transition-colors'}
-            >
-              Dona
-            </button>
-            <button
-              type="button"
-              onClick={() => onChartTypeChange(widget.id, 'table')}
-              className={widget.chartType === 'table' ? 'font-medium text-neutral-900' : 'text-neutral-600 hover:text-neutral-900 rounded px-2 py-1.5 transition-colors'}
-            >
-              Tabla
-            </button>
+          <div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 block mb-1.5">
+              Visualización
+            </span>
+            <div className="grid grid-cols-2 gap-1">
+              {allowedTypes.map(({ type, label }) => {
+                const isActive = widget.chartType === type;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => {
+                      onChartTypeChange(widget.id, type);
+                    }}
+                    className={`rounded-md px-2 py-1 text-xs font-medium transition-colors text-left focus:outline-none ${
+                      isActive
+                        ? 'bg-orange-700 text-white font-semibold shadow-xs'
+                        : 'text-neutral-700 hover:bg-neutral-100'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Ajustar tamaño */}
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between text-xs text-neutral-600">
-              <span>-</span>
-              <span>+</span>
+          <div className="pt-2 border-t border-stone-100 space-y-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 block">
+              Ajustar tamaño
+            </span>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-neutral-600 font-medium">Ancho (cols)</span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => stepWidth('smaller')}
+                  className="size-6 inline-flex items-center justify-center rounded border border-stone-200 bg-stone-50 hover:bg-white text-stone-600 focus:outline-none"
+                  title="Reducir ancho"
+                >
+                  <Minus className="size-3" strokeWidth={1.5} />
+                </button>
+                <span className="w-5 text-center font-bold text-neutral-900 tnum">{activeColSpan}</span>
+                <button
+                  type="button"
+                  onClick={() => stepWidth('larger')}
+                  className="size-6 inline-flex items-center justify-center rounded border border-stone-200 bg-stone-50 hover:bg-white text-stone-600 focus:outline-none"
+                  title="Ampliar ancho"
+                >
+                  <Plus className="size-3" strokeWidth={1.5} />
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => stepSize('smaller')}
-                className="rounded-md px-2 py-0.5 bg-stone-100 border border-stone-200 text-stone-500 hover:text-neutral-900 focus:outline-none"
-                title="Reducir tamaño"
-              >
-                -
-              </button>
-              <span className="w-8 text-center font-medium text-neutral-900">{activeColSpan}</span>
-              <button
-                type="button"
-                onClick={() => stepSize('larger')}
-                className="rounded-md px-2 py-0.5 bg-stone-100 border border-stone-200 text-stone-500 hover:text-neutral-900 focus:outline-none"
-                title="Ampliar tamaño"
-              >
-                +
-              </button>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-neutral-600 font-medium">Alto (filas)</span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => stepHeight('smaller')}
+                  className="size-6 inline-flex items-center justify-center rounded border border-stone-200 bg-stone-50 hover:bg-white text-stone-600 focus:outline-none"
+                  title="Reducir alto"
+                >
+                  <Minus className="size-3" strokeWidth={1.5} />
+                </button>
+                <span className="w-5 text-center font-bold text-neutral-900 tnum">{activeRowSpan}</span>
+                <button
+                  type="button"
+                  onClick={() => stepHeight('larger')}
+                  className="size-6 inline-flex items-center justify-center rounded border border-stone-200 bg-stone-50 hover:bg-white text-stone-600 focus:outline-none"
+                  title="Ampliar alto"
+                >
+                  <Plus className="size-3" strokeWidth={1.5} />
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Detalle completo */}
-          <div className="pt-3 border-t border-stone-200">
-            <h4 className="text-xs font-medium text-neutral-900 mb-2">Detalle</h4>
-            <p className="text-xs text-neutral-600 line-clamp-3">
-              {widget.title} – información detallada que se oculta en modo compacto. Los datos completos están disponibles en el dashboard completo.
-            </p>
+          <div className="pt-2 border-t border-stone-100">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 block mb-1">
+              Detalle
+            </span>
+            {renderWidgetPopoverDetail()}
           </div>
         </div>
       )}

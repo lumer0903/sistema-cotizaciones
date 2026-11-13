@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
@@ -13,6 +13,7 @@ import {
   Package,
   Minus,
   Plus,
+  MoreHorizontal,
 } from 'lucide-react';
 import type { DashboardKpis, AlertaStockBajo, KpiConfig, ColSpan, RowSpan } from '../types/dashboard';
 import { SemanticBadge } from './charts/DashboardCharts';
@@ -55,21 +56,104 @@ export function SortableKpiItem({
     activeRowSpan,
     handlePointerDown,
     stepSize,
+    stepWidth,
+    stepHeight,
   } = useCardResize({
     colSpan: kpi.colSpan ?? 4,
     rowSpan: kpi.rowSpan ?? 1,
     onResize: (c, r) => onResize?.(c, r),
   });
 
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreBtnRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const handleClickOutside = (e: MouseEvent | PointerEvent) => {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target as Node) &&
+        moreBtnRef.current &&
+        !moreBtnRef.current.contains(e.target as Node)
+      ) {
+        setMoreOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', handleClickOutside);
+    return () => document.removeEventListener('pointerdown', handleClickOutside);
+  }, [moreOpen]);
+
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 30 : isResizing ? 25 : 1,
+    zIndex: isDragging ? 30 : isResizing ? 25 : moreOpen ? 20 : 1,
     opacity: isDragging ? 0.7 : 1,
   };
 
   const isCompactWidth = activeColSpan <= 3;
-  const hideIcon = activeColSpan <= 2;
+
+  const renderKpiPopoverDetail = () => {
+    switch (kpi.id) {
+      case 'totalVentas': {
+        const val = kpis?.ventasTotales
+          ? `S/ ${kpis.ventasTotales.toLocaleString('es-PE', { maximumFractionDigits: 0 })}`
+          : 'S/ 72,387';
+        return (
+          <div className="space-y-1 text-xs text-neutral-600">
+            <p className="font-semibold text-neutral-900">Total facturado: {val}</p>
+            <p className="text-emerald-700 font-medium">+12.4% vs. mes anterior</p>
+            <p className="text-[11px] text-neutral-500">Monto consolidado del periodo actual.</p>
+          </div>
+        );
+      }
+      case 'ventasCanal':
+        return (
+          <div className="space-y-1 text-xs text-neutral-600">
+            <p className="font-semibold text-neutral-900">Distribuidor: S/ 48,500 (67%)</p>
+            <p className="font-semibold text-neutral-900">Tienda: S/ 23,887 (33%)</p>
+            <p className="text-[11px] text-neutral-500">Total ventas por canal: S/ 72,387</p>
+          </div>
+        );
+      case 'topProducto':
+        return (
+          <div className="space-y-1 text-xs text-neutral-600">
+            <p className="font-semibold text-neutral-900">FUG-10 · Plato Porcelana 33cm</p>
+            <p className="text-neutral-700 font-medium">340 unidades vendidas</p>
+            <p className="font-bold text-neutral-900">Total: S/ 16,524</p>
+          </div>
+        );
+      case 'porCobrar':
+        return (
+          <div className="space-y-1 text-xs text-neutral-600">
+            <p className="font-bold text-neutral-900">Total: S/ 38,286</p>
+            <p className="text-rose-700 font-semibold">Vencido: S/ 11,400 (30%)</p>
+            <p className="text-neutral-700 font-medium">Vigente: S/ 26,886 (70%)</p>
+          </div>
+        );
+      case 'cotizacionesConversion': {
+        const total = cotizacionesPorEstadoTotal ?? 44;
+        const tasa = kpis?.tasaConversion ?? 68;
+        return (
+          <div className="space-y-1 text-xs text-neutral-600">
+            <p className="font-bold text-neutral-900">{total} cotizaciones emitidas</p>
+            <p className="text-emerald-700 font-semibold">{tasa}% de tasa de cierre</p>
+          </div>
+        );
+      }
+      case 'stockBajo': {
+        const count = stockBajo?.length ?? 30;
+        return (
+          <div className="space-y-1 text-xs text-neutral-600">
+            <p className="font-bold text-red-700">{count} productos en stock bajo</p>
+            <p className="text-[11px] text-neutral-500">Requieren reposición inmediata.</p>
+          </div>
+        );
+      }
+      default:
+        return null;
+    }
+  };
 
   const renderKpiContent = () => {
     switch (kpi.id) {
@@ -96,7 +180,9 @@ export function SortableKpiItem({
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 shrink-0">
                 +12.4%
               </span>
-              <span className="text-[11px] text-neutral-500 truncate">vs. mes anterior</span>
+              {!isCompactWidth && (
+                <span className="text-[11px] text-neutral-500 truncate">vs. mes anterior</span>
+              )}
             </div>
           </div>
         );
@@ -108,22 +194,26 @@ export function SortableKpiItem({
             <div className="flex items-start justify-between gap-2 min-w-0">
               <div className="min-w-0 flex-1">
                 <span className="text-xs font-semibold text-neutral-500 truncate block">Ventas por Canal</span>
-                <p className="text-xs font-bold text-neutral-900 tnum mt-0.5 truncate">
-                  Dist: S/ 48,500 <span className="font-normal text-neutral-500">(67%)</span>
-                </p>
-                <p className="text-[11px] font-medium text-neutral-700 tnum truncate">
-                  Tienda: S/ 23,887 <span className="font-normal text-neutral-500">(33%)</span>
-                </p>
+                {isCompactWidth ? (
+                  <p className="text-xl font-bold text-neutral-900 tnum mt-0.5 truncate">
+                    S/ 72,387
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-xs font-bold text-neutral-900 tnum mt-0.5 truncate">
+                      Dist: S/ 48,500 <span className="font-normal text-neutral-500">(67%)</span>
+                    </p>
+                    <p className="text-[11px] font-medium text-neutral-700 tnum truncate">
+                      Tienda: S/ 23,887 <span className="font-normal text-neutral-500">(33%)</span>
+                    </p>
+                  </>
+                )}
               </div>
-              {isCompactWidth ? (
+              {!isCompactWidth && (
                 <div className="p-2 rounded-xl bg-amber-50 text-amber-700 shrink-0" aria-hidden="true">
                   <Store className="size-4.5" strokeWidth={1.5} />
                 </div>
-              ) : !hideIcon ? (
-                <div className="p-2 rounded-xl bg-amber-50 text-amber-700 shrink-0" aria-hidden="true">
-                  <Store className="size-4.5" strokeWidth={1.5} />
-                </div>
-              ) : null}
+              )}
             </div>
             <div className="mt-1.5">
               <div className="h-1.5 w-full rounded-full bg-stone-200 overflow-hidden flex">
@@ -142,8 +232,8 @@ export function SortableKpiItem({
               <div className="min-w-0 flex-1">
                 <span className="text-xs font-semibold text-neutral-500 truncate block">Top Producto</span>
                 {isCompactWidth ? (
-                  <p className="text-xs font-bold text-neutral-900 mt-0.5 truncate" title="FUG-10 · Plato Porcelana 33cm">
-                    FUG-10 · Plato Porcelana 33cm
+                  <p className="text-lg font-bold text-neutral-900 mt-0.5 truncate" title="FUG-10">
+                    FUG-10
                   </p>
                 ) : (
                   <p className="text-xs font-bold text-neutral-900 mt-0.5 truncate" title="FUG-10 · Plato Porcelana 33cm">
@@ -151,20 +241,22 @@ export function SortableKpiItem({
                   </p>
                 )}
               </div>
-              {isCompactWidth ? (
+              {!isCompactWidth && (
                 <div className="p-2 rounded-xl bg-amber-50 text-[#F8B602] shrink-0" aria-hidden="true">
                   <Award className="size-4.5" strokeWidth={1.5} />
                 </div>
-              ) : !hideIcon ? (
-                <div className="p-2 rounded-xl bg-amber-50 text-[#F8B602] shrink-0" aria-hidden="true">
-                  <Award className="size-4.5" strokeWidth={1.5} />
-                </div>
-              ) : null}
+              )}
             </div>
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-neutral-600 truncate">
-              <span className="font-semibold text-neutral-900 tnum">340 unid.</span>
-              <span>·</span>
-              <span className="font-semibold text-neutral-900 tnum">S/ 16,524</span>
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-neutral-600 truncate">
+              {isCompactWidth ? (
+                <span className="font-semibold text-neutral-900 tnum">S/ 16,524</span>
+              ) : (
+                <>
+                  <span className="font-semibold text-neutral-900 tnum">340 unid.</span>
+                  <span>·</span>
+                  <span className="font-semibold text-neutral-900 tnum">S/ 16,524</span>
+                </>
+              )}
             </div>
           </div>
         );
@@ -186,17 +278,13 @@ export function SortableKpiItem({
                 </div>
               )}
             </div>
-            <div className={`flex items-center gap-1.5 text-xs text-neutral-600 truncate ${isCompactWidth ? 'mt-1' : 'mt-2'}`}>
-              {isCompactWidth ? (
+            {!isCompactWidth && (
+              <div className="mt-2 flex items-center gap-1.5 text-xs text-neutral-600 truncate">
                 <span className="text-rose-700 font-semibold tnum truncate">S/ 11,400 vencido</span>
-              ) : (
-                <>
-                  <span className="text-rose-700 font-semibold tnum truncate">S/ 11,400 vencido</span>
-                  <span>·</span>
-                  <span className="text-neutral-700 font-medium tnum truncate">S/ 26,886 vigente</span>
-                </>
-              )}
-            </div>
+                <span>·</span>
+                <span className="text-neutral-700 font-medium tnum truncate">S/ 26,886 vigente</span>
+              </div>
+            )}
           </div>
         );
       }
@@ -260,7 +348,7 @@ export function SortableKpiItem({
       ref={setNodeRef}
       style={style}
       data-bento-card="true"
-      className={`${COL_SPAN_CLASSES[activeColSpan]} ${ROW_SPAN_CLASSES[activeRowSpan]} bg-white border border-stone-200 rounded-2xl shadow-sm hover:shadow transition-shadow flex flex-col justify-between relative group select-none overflow-hidden`}
+      className={`${COL_SPAN_CLASSES[activeColSpan]} ${ROW_SPAN_CLASSES[activeRowSpan]} bg-white border border-stone-200 rounded-2xl shadow-sm hover:shadow transition-shadow flex flex-col justify-between p-3.5 relative group select-none`}
     >
       {/* Indicador flotante durante el redimensionado */}
       {isResizing && (
@@ -269,7 +357,7 @@ export function SortableKpiItem({
         </div>
       )}
 
-      {/* Controles de cabecera: Asa y botones de tamaño rápido */}
+      {/* Controles de cabecera: Asa y botón rápido / More */}
       <div className="flex items-center justify-between mb-1 -mt-1 -mx-1">
         <button
           type="button"
@@ -281,26 +369,104 @@ export function SortableKpiItem({
           <GripVertical className="size-3.5 text-stone-400" strokeWidth={1.5} />
         </button>
 
-        {/* Botones rápidos de tamaño - y + */}
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 bg-stone-100 border border-stone-200 rounded px-0.5 py-0.5">
+        {isCompactWidth ? (
           <button
+            ref={moreBtnRef}
             type="button"
-            onClick={() => stepSize('smaller')}
-            className="p-0.5 text-stone-500 hover:text-neutral-900 rounded hover:bg-white focus:outline-none"
-            title="Reducir tamaño"
+            onClick={() => setMoreOpen((v) => !v)}
+            className="inline-flex items-center justify-center size-7 rounded-md border border-stone-200 bg-white text-neutral-700 hover:bg-neutral-100 focus:outline-none p-0 shrink-0 shadow-xs"
+            aria-label="Más opciones"
           >
-            <Minus className="size-3" strokeWidth={1.5} />
+            <MoreHorizontal className="size-4" strokeWidth={1.5} />
           </button>
-          <button
-            type="button"
-            onClick={() => stepSize('larger')}
-            className="p-0.5 text-stone-500 hover:text-neutral-900 rounded hover:bg-white focus:outline-none"
-            title="Ampliar tamaño"
-          >
-            <Plus className="size-3" strokeWidth={1.5} />
-          </button>
-        </div>
+        ) : (
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 bg-stone-100 border border-stone-200 rounded px-0.5 py-0.5">
+            <button
+              type="button"
+              onClick={() => stepSize('smaller')}
+              className="p-0.5 text-stone-500 hover:text-neutral-900 rounded hover:bg-white focus:outline-none"
+              title="Reducir tamaño"
+            >
+              <Minus className="size-3" strokeWidth={1.5} />
+            </button>
+            <button
+              type="button"
+              onClick={() => stepSize('larger')}
+              className="p-0.5 text-stone-500 hover:text-neutral-900 rounded hover:bg-white focus:outline-none"
+              title="Ampliar tamaño"
+            >
+              <Plus className="size-3" strokeWidth={1.5} />
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Popover flotante en modo compacto */}
+      {moreOpen && (
+        <div
+          ref={popoverRef}
+          className="absolute top-10 right-2 z-30 w-56 rounded-md bg-white border border-stone-200 p-3 shadow-md space-y-3"
+        >
+          {/* Ajustar tamaño */}
+          <div className="space-y-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 block">
+              Ajustar tamaño
+            </span>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-neutral-600 font-medium">Ancho (cols)</span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => stepWidth('smaller')}
+                  className="size-6 inline-flex items-center justify-center rounded border border-stone-200 bg-stone-50 hover:bg-white text-stone-600 focus:outline-none"
+                  title="Reducir ancho"
+                >
+                  <Minus className="size-3" strokeWidth={1.5} />
+                </button>
+                <span className="w-5 text-center font-bold text-neutral-900 tnum">{activeColSpan}</span>
+                <button
+                  type="button"
+                  onClick={() => stepWidth('larger')}
+                  className="size-6 inline-flex items-center justify-center rounded border border-stone-200 bg-stone-50 hover:bg-white text-stone-600 focus:outline-none"
+                  title="Ampliar ancho"
+                >
+                  <Plus className="size-3" strokeWidth={1.5} />
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-neutral-600 font-medium">Alto (filas)</span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => stepHeight('smaller')}
+                  className="size-6 inline-flex items-center justify-center rounded border border-stone-200 bg-stone-50 hover:bg-white text-stone-600 focus:outline-none"
+                  title="Reducir alto"
+                >
+                  <Minus className="size-3" strokeWidth={1.5} />
+                </button>
+                <span className="w-5 text-center font-bold text-neutral-900 tnum">{activeRowSpan}</span>
+                <button
+                  type="button"
+                  onClick={() => stepHeight('larger')}
+                  className="size-6 inline-flex items-center justify-center rounded border border-stone-200 bg-stone-50 hover:bg-white text-stone-600 focus:outline-none"
+                  title="Ampliar alto"
+                >
+                  <Plus className="size-3" strokeWidth={1.5} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Detalle completo */}
+          <div className="pt-2 border-t border-stone-100">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 block mb-1">
+              Detalle
+            </span>
+            {renderKpiPopoverDetail()}
+          </div>
+        </div>
+      )}
 
       {/* Contenido adaptable */}
       {renderKpiContent()}

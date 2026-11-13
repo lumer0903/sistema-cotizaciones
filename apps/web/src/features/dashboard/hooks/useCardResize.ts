@@ -131,12 +131,42 @@ export function useCardResize({
     [colSpan, rowSpan, onResize]
   );
 
+  const stepWidth = useCallback(
+    (direction: 'smaller' | 'larger') => {
+      const colIdx = ALLOWED_COLS.indexOf(colSpan);
+      if (direction === 'smaller') {
+        const nextCol = colIdx > 0 ? ALLOWED_COLS[colIdx - 1] : colSpan;
+        onResize(nextCol, rowSpan);
+      } else {
+        const nextCol = colIdx < ALLOWED_COLS.length - 1 ? ALLOWED_COLS[colIdx + 1] : colSpan;
+        onResize(nextCol, rowSpan);
+      }
+    },
+    [colSpan, rowSpan, onResize]
+  );
+
+  const stepHeight = useCallback(
+    (direction: 'smaller' | 'larger') => {
+      const rowIdx = ALLOWED_ROWS.indexOf(rowSpan);
+      if (direction === 'smaller') {
+        const nextRow = rowIdx > 0 ? ALLOWED_ROWS[rowIdx - 1] : rowSpan;
+        onResize(colSpan, nextRow);
+      } else {
+        const nextRow = rowIdx < ALLOWED_ROWS.length - 1 ? ALLOWED_ROWS[rowIdx + 1] : rowSpan;
+        onResize(colSpan, nextRow);
+      }
+    },
+    [colSpan, rowSpan, onResize]
+  );
+
   return {
     isResizing,
     activeColSpan: isResizing ? previewCol : colSpan,
     activeRowSpan: isResizing ? previewRow : rowSpan,
     handlePointerDown,
     stepSize,
+    stepWidth,
+    stepHeight,
   };
 }
 
