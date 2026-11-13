@@ -60,7 +60,7 @@ export interface TableHeaderProps extends React.HTMLAttributes<HTMLTableSectionE
 
 export const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
   ({ children, className, _sticky = false, ...props }, ref) => (
-    <thead ref={ref} className={cn('bg-slate-50 border-b border-slate-200', className)} {...props}>
+    <thead ref={ref} className={cn('bg-slate-50 border-b border-slate-200 [&_tr]:hover:bg-transparent', className)} {...props}>
       {children}
     </thead>
   )

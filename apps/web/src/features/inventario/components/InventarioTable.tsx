@@ -1,6 +1,4 @@
 'use client';
-import { CategoryTag } from '@/components/ui/StatusBadge';
-
 import React, { useState } from 'react';
 import { Eye, Pencil, Trash2, PackageSearch, Loader2, MapPin } from 'lucide-react';
 import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
@@ -144,11 +142,9 @@ export function InventarioTable({
                   )}
                 </TableCell>
 
-                {/* CATEGORÍA — CategoryTag rectangular */}
-                <TableCell className={cn(COLUMNS[1].cellClassName)} title={formatText(categoria)}>
-                  <CategoryTag variant="custom" customClass="bg-slate-100 border-slate-200 text-slate-700">
-                    {formatText(categoria)}
-                  </CategoryTag>
+                {/* CATEGORÍA — texto limpio, sin badges */}
+                <TableCell className={cn('text-[13px] font-normal text-slate-600', COLUMNS[1].cellClassName)} title={formatText(categoria)}>
+                  {formatText(categoria)}
                 </TableCell>
 
                 {/* UBICACIÓN — con icono MapPin sutil */}

@@ -375,7 +375,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
                 <TableCell className="text-slate-700 truncate">
                   {cuenta.cliente?.nombre || 'Sin cliente'}
                 </TableCell>
-                <TableCell className="text-slate-600 whitespace-nowrap text-center">
+                <TableCell className="text-slate-500 tabular-nums whitespace-nowrap text-center">
                   {formatDate(cuenta.created_at)}
                 </TableCell>
                 <TableCell className="text-center whitespace-nowrap">

@@ -30,7 +30,7 @@ const COLUMNS = [
   { key: 'CÓDIGO', headerClassName: '', cellClassName: 'min-w-[120px] max-w-[160px] whitespace-nowrap font-semibold text-slate-900 tabular-nums' },
   { key: 'CLIENTE', headerClassName: '', cellClassName: 'min-w-[160px] max-w-[220px] truncate text-slate-700' },
   { key: 'TIPO', headerClassName: 'text-center', cellClassName: 'min-w-[80px] max-w-[110px] text-center whitespace-nowrap' },
-  { key: 'FECHA', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[120px] text-center whitespace-nowrap text-slate-600' },
+  { key: 'FECHA', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[120px] text-center whitespace-nowrap text-slate-500 tabular-nums' },
   { key: 'TOTAL', headerClassName: 'text-right', cellClassName: 'min-w-[100px] max-w-[120px] text-right whitespace-nowrap tabular-nums font-medium text-slate-900' },
   { key: 'ESTADO', headerClassName: 'text-center', cellClassName: 'min-w-[100px] max-w-[130px] text-center whitespace-nowrap' },
   { key: 'ACCIONES', headerClassName: 'text-right', cellClassName: 'min-w-[100px] max-w-[120px] text-right' },

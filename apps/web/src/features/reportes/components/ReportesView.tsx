@@ -232,9 +232,9 @@ export function ReportesView() {
         return (dataActual as RankingProducto[]).map((row) => (
           <TableRow key={row.idProducto}>
             <TableCell className="font-semibold text-slate-900 tabular-nums whitespace-nowrap">{row.codigo}</TableCell>
-            <TableCell className="max-w-xs truncate text-slate-700">{row.descripcion}</TableCell>
+            <TableCell className="max-w-xs truncate text-slate-600">{row.descripcion}</TableCell>
             <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">{row.cantidadVendida.toLocaleString()}</TableCell>
-            <TableCell className="text-right tabular-nums whitespace-nowrap font-medium text-slate-900">
+            <TableCell className="text-right tabular-nums whitespace-nowrap font-semibold text-slate-900">
               {Number(row.ingresoTotal).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </TableCell>
             <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">{row.numeroCotizaciones}</TableCell>
@@ -243,20 +243,20 @@ export function ReportesView() {
       case 'antiguedad-deuda':
         return (dataActual as AntiguedadDeuda[]).map((row) => (
           <TableRow key={row.idCliente}>
-            <TableCell className="max-w-xs truncate font-medium text-slate-900">{row.cliente}</TableCell>
+            <TableCell className="font-semibold text-slate-900 max-w-xs truncate">{row.cliente}</TableCell>
             <TableCell className="whitespace-nowrap text-slate-600">{row.rucDni ?? '-'}</TableCell>
             <TableCell className="text-right font-semibold tabular-nums whitespace-nowrap text-slate-900">{Number(row.totalPendiente).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
             <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">{Number(row.d0_30).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
             <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">{Number(row.d31_60).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
             <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">{Number(row.d61_90).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-            <TableCell className="text-right font-medium tabular-nums whitespace-nowrap text-red-700">{Number(row.d90mas).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="text-right font-semibold tabular-nums whitespace-nowrap text-slate-900">{Number(row.d90mas).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
           </TableRow>
         ));
       case 'auditoria-ia':
         return (dataActual as AuditoriaIa[]).map((row) => (
           <TableRow key={row.idInteraccion}>
-            <TableCell className="whitespace-nowrap text-slate-600">{new Date(row.createdAt).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</TableCell>
-            <TableCell className="whitespace-nowrap text-slate-700">{row.tipoSugerencia ?? '-'}</TableCell>
+            <TableCell className="font-semibold text-slate-900 whitespace-nowrap">{new Date(row.createdAt).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</TableCell>
+            <TableCell className="text-slate-600 whitespace-nowrap">{row.tipoSugerencia ?? '-'}</TableCell>
             <TableCell className="text-center whitespace-nowrap">
               {(() => {
                 const accion = (row.accionUsuario ?? '').toUpperCase();
@@ -269,8 +269,8 @@ export function ReportesView() {
                 );
               })()}
             </TableCell>
-            <TableCell className="max-w-xs truncate text-slate-700">{row.productoOriginal ?? '-'}</TableCell>
-            <TableCell className="max-w-xs truncate text-slate-700">{row.productoSugerido ?? '-'}</TableCell>
+            <TableCell className="max-w-xs truncate text-slate-600">{row.productoOriginal ?? '-'}</TableCell>
+            <TableCell className="max-w-xs truncate text-slate-600">{row.productoSugerido ?? '-'}</TableCell>
             <TableCell className="text-right whitespace-nowrap text-slate-600 tabular-nums">{row.idCotizacion ?? '-'}</TableCell>
             <TableCell className="whitespace-nowrap text-slate-600">{row.vendedor ?? '-'}</TableCell>
           </TableRow>
