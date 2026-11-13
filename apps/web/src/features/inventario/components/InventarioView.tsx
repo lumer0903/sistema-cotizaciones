@@ -200,31 +200,36 @@ function InventarioViewInner() {
       )}
 
       {/* Contenedor principal de la Tabla */}
-      <div className="bg-surface rounded-2xl shadow-sm border border-border-default overflow-hidden">
-        {!errorConexion && <>
+      {!errorConexion && (
         <InventarioTable
           productos={productos}
           almacenId={selectedUbicacion ? Number(selectedUbicacion) : undefined}
           loading={loading}
-          onEditar={(producto) => { setModoModal('editar'); setProductoSeleccionado(producto); setIsModalOpen(true); }}
-          onEliminar={handleEliminar}
-        />
-
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          limit={limit}
-          onPageChange={setCurrentPage}
-          onLimitChange={(newLimit) => {
-            setLimit(newLimit);
-            setCurrentPage(1);
+          onEditar={(producto) => {
+            setModoModal('editar');
+            setProductoSeleccionado(producto);
+            setIsModalOpen(true);
           }}
-          loading={loading}
-          itemLabel="productos"
+          onEliminar={handleEliminar}
+          footer={
+            totalItems > 0 ? (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                limit={limit}
+                onPageChange={setCurrentPage}
+                onLimitChange={(newLimit) => {
+                  setLimit(newLimit);
+                  setCurrentPage(1);
+                }}
+                loading={loading}
+                itemLabel="productos"
+              />
+            ) : undefined
+          }
         />
-        </>}
-      </div>
+      )}
 
       <ProductoModal
         open={isModalOpen}

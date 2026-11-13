@@ -6,7 +6,7 @@ import { ArrowUpRight, ArrowDownLeft, RefreshCw, Calendar, Download, ChevronLeft
 import { showToast } from '@/lib/toast';
 import {
     Modal,
-    Badge,
+    TableBadge,
     Button,
     Select,
     Input,
@@ -157,22 +157,22 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
         switch (tipo) {
             case 'entrada':
                 return (
-                    <Badge variant="success">
+                    <TableBadge variant="success">
                         <ArrowDownLeft className="w-3 h-3 mr-1 inline" /> ENTRADA
-                    </Badge>
+                    </TableBadge>
                 );
             case 'salida':
                 return (
-                    <Badge variant="danger">
+                    <TableBadge variant="danger">
                         <ArrowUpRight className="w-3 h-3 mr-1 inline" /> SALIDA
-                    </Badge>
+                    </TableBadge>
                 );
             case 'ajuste':
-                return <Badge variant="warning">AJUSTE</Badge>;
+                return <TableBadge variant="neutral">AJUSTE</TableBadge>;
             case 'transferencia':
-                return <Badge variant="brand">TRANSFERENCIA</Badge>;
+                return <TableBadge variant="info">TRANSFERENCIA</TableBadge>;
             default:
-                return <Badge variant="neutral">{tipo.toUpperCase()}</Badge>;
+                return <TableBadge variant="neutral">{tipo.toUpperCase()}</TableBadge>;
         }
     };
 
@@ -362,11 +362,70 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                     </div>
                 ) : (
                     <>
-                        <Table className="min-w-[48rem]" scrollLabel="Movimientos de kárdex">
+                        <Table
+                            className="min-w-[48rem]"
+                            scrollLabel="Movimientos de kárdex"
+                            footer={
+                                totalPages > 1 ? (
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <div className="text-sm text-[#575757]">
+                                            Mostrando {(page - 1) * limit + 1} - {Math.min(page * limit, total)} de {total} movimientos
+                                        </div>
+                                        <div className="flex items-center gap-1 flex-wrap">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setPage(page - 1)}
+                                                disabled={page <= 1 || loading}
+                                                aria-label="Página anterior"
+                                                className="min-h-11 min-w-11"
+                                            >
+                                                <ChevronLeft className="w-4 h-4" />
+                                            </Button>
+                                            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                                                let pageNum: number;
+                                                if (totalPages <= 5) {
+                                                    pageNum = i + 1;
+                                                } else if (page <= 3) {
+                                                    pageNum = i + 1;
+                                                } else if (page >= totalPages - 2) {
+                                                    pageNum = totalPages - 4 + i;
+                                                } else {
+                                                    pageNum = page - 2 + i;
+                                                }
+                                                return (
+                                                    <Button
+                                                        key={pageNum}
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => setPage(pageNum)}
+                                                        aria-label={`Página ${pageNum}`}
+                                                        aria-current={page === pageNum ? 'page' : undefined}
+                                                        className="min-h-11 min-w-11 px-0"
+                                                    >
+                                                        {pageNum}
+                                                    </Button>
+                                                );
+                                            })}
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setPage(page + 1)}
+                                                disabled={page >= totalPages || loading}
+                                                aria-label="Página siguiente"
+                                                className="min-h-11 min-w-11"
+                                            >
+                                                <ChevronRight className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : undefined
+                            }
+                        >
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="whitespace-nowrap">FECHA</TableHead>
-                                    <TableHead className="whitespace-nowrap">TIPO</TableHead>
+                                    <TableHead className="whitespace-nowrap text-center">TIPO</TableHead>
                                     <TableHead className="whitespace-nowrap">ALMACÉN</TableHead>
                                     <TableHead className="whitespace-nowrap">MOTIVO</TableHead>
                                     <TableHead className="text-right whitespace-nowrap">CANTIDAD</TableHead>
@@ -378,80 +437,20 @@ export function KardexModal({ open, onClose, producto, almacenes: almacenesProp 
                                 {movimientos.map((mov) => (
                                     <TableRow key={mov.id_movimiento}>
                                         <TableCell className="font-mono text-sm">{new Date(mov.fecha).toLocaleString('es-PE')}</TableCell>
-                                        <TableCell>{renderBadgeTipo(mov.tipo)}</TableCell>
-                                        <TableCell className="text-sm text-brand-options">{mov.almacen || '—'}</TableCell>
+                                        <TableCell className="text-center">{renderBadgeTipo(mov.tipo)}</TableCell>
+                                        <TableCell className="text-sm">{mov.almacen || '—'}</TableCell>
                                         <TableCell className="font-medium text-sm">{renderOrigen(mov.origen, mov.tipo, mov.referencia)}</TableCell>
-                                        <TableCell className={`text-right font-bold ${mov.tipo === 'entrada' ? 'text-estado-aprobado-text' :
-                                                mov.tipo === 'salida' ? 'text-danger' :
-                                                    mov.tipo === 'ajuste' ? 'text-accent-ink' :
-                                                        'text-estado-enviado'
-                                            }`}>
+                                        <TableCell className="text-right font-bold tabular-nums">
                                             {mov.tipo === 'entrada' ? `+${mov.cantidad}` : mov.tipo === 'salida' ? `-${mov.cantidad}` : mov.cantidad > 0 ? `+${mov.cantidad}` : mov.cantidad}
                                         </TableCell>
-                                        <TableCell className="text-right font-bold text-brand-subtitle">
+                                        <TableCell className="text-right font-bold tabular-nums">
                                             {mov.stock_posterior} u.
                                         </TableCell>
-                                        <TableCell className="text-sm text-brand-options">{mov.usuario || 'Sistema'}</TableCell>
+                                        <TableCell className="text-sm text-[#575757]">{mov.usuario || 'Sistema'}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
                         </Table>
-
-                        {/* PAGINACIÓN */}
-                        {totalPages > 1 && (
-                            <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-3 border-t border-border-default">
-                                <div className="text-sm text-brand-options">
-                                    Mostrando {((page - 1) * limit) + 1} - {Math.min(page * limit, total)} de {total} movimientos
-                                </div>
-                                <div className="flex items-center gap-1 flex-wrap">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setPage(page - 1)}
-                                        disabled={page <= 1 || loading}
-                                        aria-label="Página anterior"
-                                        className="min-h-11 min-w-11"
-                                    >
-                                        <ChevronLeft className="w-4 h-4" />
-                                    </Button>
-                                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                                        let pageNum: number;
-                                        if (totalPages <= 5) {
-                                            pageNum = i + 1;
-                                        } else if (page <= 3) {
-                                            pageNum = i + 1;
-                                        } else if (page >= totalPages - 2) {
-                                            pageNum = totalPages - 4 + i;
-                                        } else {
-                                            pageNum = page - 2 + i;
-                                        }
-                                        return (
-                                            <Button
-                                                key={pageNum}
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => setPage(pageNum)}
-                                                aria-label={`Página ${pageNum}`}
-                                                aria-current={page === pageNum ? 'page' : undefined}
-                                                className="min-h-11 min-w-11 px-0"
-                                            >
-                                                {pageNum}
-                                            </Button>
-                                        );
-                                    })}
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setPage(page + 1)}
-                                        disabled={page >= totalPages || loading}
-                                        aria-label="Página siguiente"
-                                        className="min-h-11 min-w-11"
-                                    >
-                                        <ChevronRight className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
                     </>
                 )}
             </div>

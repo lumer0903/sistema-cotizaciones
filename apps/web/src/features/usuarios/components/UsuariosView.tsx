@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { showToast } from '@/lib/toast';
-import { Select, Button, IconButton, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Input, Badge, FilterCard, FilterGrid, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
+import { Select, Button, IconButton, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableBadge, Input, FilterCard, FilterGrid, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
 import { Plus, Pencil, Settings, ShieldCheck, Search, X } from 'lucide-react';
 import { RolesYPermisosView } from '@/features/usuarios/components/RolesYPermisosView';
 import { UsuarioModal } from '@/features/usuarios/components/UsuarioModal';
@@ -170,15 +170,15 @@ export function UsuariosView() {
             ) : (
               usuariosFiltrados.map((u) => (
                 <TableRow key={u.id_usuario}>
-                  <TableCell className="font-medium text-brand-subtitle">{u.nombre}</TableCell>
-                  <TableCell className="text-brand-options">{u.email}</TableCell>
+                  <TableCell className="font-normal text-[#414141]">{u.nombre}</TableCell>
+                  <TableCell className="font-light text-[#575757]">{u.email}</TableCell>
                   <TableCell>
-                    <Badge variant="neutral" size="estado">{u.rol}</Badge>
+                    <TableBadge variant="neutral">{u.rol}</TableBadge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={u.activo ? 'aprobado' : 'rechazado'} size="estado">
+                    <TableBadge variant={u.activo ? 'success' : 'danger'}>
                       {u.activo ? 'Activo' : 'Inactivo'}
-                    </Badge>
+                    </TableBadge>
                   </TableCell>
                   <TableCell className="text-center">
                     <IconButton

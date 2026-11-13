@@ -417,25 +417,25 @@ export function RolesYPermisosView() {
                  (antes cada fila repetía las 3 etiquetas como píldoras) */
               <Table scrollLabel="Matriz de permisos">
                   <TableHeader>
-                    <TableRow className="bg-zinc-50/70 border-b border-border-default">
-                      <TableHead scope="col" className="text-left text-xs font-bold uppercase tracking-wider text-brand-options px-4 py-3">
+                    <TableRow>
+                      <TableHead scope="col" className="text-left">
                         Módulo
                       </TableHead>
                       {NIVELES.map((nivel) => (
-                        <TableHead key={nivel.value} scope="col" className="text-center text-xs font-bold uppercase tracking-wider text-brand-options px-4 py-3">
+                        <TableHead key={nivel.value} scope="col" className="text-center">
                           {nivel.label}
                         </TableHead>
                       ))}
                     </TableRow>
                   </TableHeader>
-                  <TableBody className="divide-y divide-zinc-100">
+                  <TableBody>
                     {modulos.map((modulo) => {
                       const nivelActual = permisos[modulo] ?? 'sin_acceso';
                       return (
-                        <TableRow key={modulo} className="transition-colors hover:bg-zinc-50/60">
-                          <TableHead scope="row" className="px-4 py-2 text-left font-medium text-zinc-800 whitespace-nowrap">
+                        <TableRow key={modulo}>
+                          <TableCell scope="row" className="font-normal text-[#414141] whitespace-nowrap">
                             {MODULO_LABELS[modulo]}
-                          </TableHead>
+                          </TableCell>
                           {NIVELES.map((nivel) => {
                             const checked = nivelActual === nivel.value;
                             return (

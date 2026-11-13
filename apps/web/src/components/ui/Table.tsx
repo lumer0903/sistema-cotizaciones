@@ -11,19 +11,34 @@ export interface TableProps extends React.TableHTMLAttributes<HTMLTableElement> 
   wrapperClassName?: string;
   /** Label accesible para la región de scroll horizontal. */
   scrollLabel?: string;
+  /** Slot para paginación o acciones inferiores dentro del mismo contenedor con borde */
+  footer?: React.ReactNode;
 }
 
 export const Table = React.forwardRef<HTMLTableElement, TableProps>(
   (
-    { children, className, wrapperClassName, scrollLabel = 'Tabla', ...props },
+    { children, className, wrapperClassName, scrollLabel = 'Tabla', footer, ...props },
     ref
   ) => (
-    <div className={cn('w-full rounded-2xl border-2 border-[#F3F4F6] bg-white overflow-hidden', wrapperClassName)} role="region" aria-label={scrollLabel} tabIndex={0}>
+    <div
+      className={cn(
+        'w-full rounded-2xl border-2 border-[#E5E7EB] bg-white overflow-hidden',
+        wrapperClassName
+      )}
+      role="region"
+      aria-label={scrollLabel}
+      tabIndex={0}
+    >
       <div className="w-full overflow-x-auto">
         <table ref={ref} className={cn('w-full border-collapse text-left', className)} {...props}>
           {children}
         </table>
       </div>
+      {footer && (
+        <div className="border-t border-[#E5E7EB] bg-white px-6 py-3.5">
+          {footer}
+        </div>
+      )}
     </div>
   )
 );
@@ -38,7 +53,7 @@ export interface TableHeaderProps extends React.HTMLAttributes<HTMLTableSectionE
 
 export const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
   ({ children, className, _sticky = false, ...props }, ref) => (
-    <thead ref={ref} className={cn('bg-[#E5E5EB]/60', className)} {...props}>
+    <thead ref={ref} className={cn('bg-[#E5E7EB]/60 border-b border-[#E5E7EB]', className)} {...props}>
       {children}
     </thead>
   )
@@ -68,7 +83,24 @@ export interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement>
 
 export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
   ({ children, className, onClick, ...props }, ref) => (
-    <tr ref={ref} onClick={onClick} onKeyDown={onClick ? (e) => { if (e.defaultPrevented || e.target !== e.currentTarget) return; if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (onClick as unknown as React.KeyboardEventHandler<HTMLTableRowElement>)(e); } } : undefined} tabIndex={onClick ? 0 : undefined} className={cn('hover:bg-neutral-50/80 transition-colors', className)} {...props}>
+    <tr
+      ref={ref}
+      onClick={onClick}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.defaultPrevented || e.target !== e.currentTarget) return;
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                (onClick as unknown as React.KeyboardEventHandler<HTMLTableRowElement>)(e);
+              }
+            }
+          : undefined
+      }
+      tabIndex={onClick ? 0 : undefined}
+      className={cn('h-14 bg-white hover:bg-neutral-50/80 transition-colors', className)}
+      {...props}
+    >
       {children}
     </tr>
   )
@@ -82,8 +114,15 @@ export interface TableHeadProps extends React.ThHTMLAttributes<HTMLTableCellElem
 }
 
 export const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
-  ({ children, className, style, ...props }, ref) => (
-    <th ref={ref} className={cn('px-5 py-3 text-xs sm:text-sm font-extrabold text-[#414141] uppercase tracking-wide whitespace-nowrap', className)} style={{ paddingTop: 'var(--table-head-py)', paddingBottom: 'var(--table-head-py)', paddingLeft: 'var(--table-head-px)', paddingRight: 'var(--table-head-px)', ...style }} {...props}>
+  ({ children, className, ...props }, ref) => (
+    <th
+      ref={ref}
+      className={cn(
+        'h-14 px-6 text-xs sm:text-sm font-extrabold text-[#414141] uppercase tracking-wide whitespace-nowrap align-middle',
+        className
+      )}
+      {...props}
+    >
       {children}
     </th>
   )
@@ -97,10 +136,74 @@ export interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElem
 }
 
 export const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
-  ({ children, className, style, ...props }, ref) => (
-    <td ref={ref} className={cn('px-5 py-3 text-sm sm:text-base font-light text-[#414141]', className)} style={{ paddingTop: 'var(--table-cell-py)', paddingBottom: 'var(--table-cell-py)', paddingLeft: 'var(--table-cell-px)', paddingRight: 'var(--table-cell-px)', ...style }} {...props}>
+  ({ children, className, ...props }, ref) => (
+    <td
+      ref={ref}
+      className={cn(
+        'px-6 py-3 text-sm sm:text-base font-light text-[#414141] align-middle',
+        className
+      )}
+      {...props}
+    >
       {children}
     </td>
   )
 );
 TableCell.displayName = 'TableCell';
+
+// Footer opcional de tabla para totales o sumarios en tfoot
+export interface TableFooterProps extends React.HTMLAttributes<HTMLTableSectionElement> {
+  children?: React.ReactNode;
+  className?: string;
+}
+
+export const TableFooter = React.forwardRef<HTMLTableSectionElement, TableFooterProps>(
+  ({ children, className, ...props }, ref) => (
+    <tfoot
+      ref={ref}
+      className={cn('border-t border-[#E5E7EB] bg-white font-medium text-[#414141]', className)}
+      {...props}
+    >
+      {children}
+    </tfoot>
+  )
+);
+TableFooter.displayName = 'TableFooter';
+
+// Badge de estado y tipo unificado para tablas Figma
+export type TableBadgeVariant = 'terracota' | 'blue' | 'info' | 'success' | 'danger' | 'neutral';
+
+export interface TableBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+  variant?: TableBadgeVariant;
+  children: React.ReactNode;
+  className?: string;
+}
+
+const tableBadgeVariantStyles: Record<TableBadgeVariant, string> = {
+  terracota: 'border-[#9D3A19] text-[#9D3A19] bg-transparent',
+  blue: 'border-[#1F41AF] text-[#1F41AF] bg-transparent',
+  info: 'border-[#006EFF] text-[#006EFF] bg-transparent',
+  success: 'border-[#0CC200] text-[#0CC200] bg-transparent',
+  danger: 'border-[#7B1C1C] text-[#7B1C1C] bg-transparent',
+  neutral: 'border-[#E4E4E4] bg-[#F3F4F6]/50 text-[#575757]',
+};
+
+export const TableBadge: React.FC<TableBadgeProps> = ({
+  variant = 'neutral',
+  children,
+  className,
+  ...props
+}) => {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center justify-center min-w-[104px] px-3 py-1 rounded-lg border text-xs sm:text-sm font-bold uppercase tracking-wide whitespace-nowrap',
+        tableBadgeVariantStyles[variant],
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </span>
+  );
+};

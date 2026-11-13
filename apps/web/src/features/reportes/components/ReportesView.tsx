@@ -23,7 +23,7 @@ import { FilterCard, FilterGrid } from '@/components/ui/FilterCard';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableBadge } from '@/components/ui';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import { Pagination } from '@/components/ui/Pagination';
 import { showToast } from '@/lib/toast';
@@ -255,19 +255,15 @@ export function ReportesView() {
           <TableRow key={row.idInteraccion}>
             <TableCell>{new Date(row.createdAt).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</TableCell>
             <TableCell>{row.tipoSugerencia ?? '-'}</TableCell>
-            <TableCell>
+            <TableCell className="text-center">
               {(() => {
                 const accion = (row.accionUsuario ?? '').toUpperCase();
                 const esAceptado = accion === 'ACEPTADO' || accion === 'ACEPTADA';
                 const esRechazado = accion === 'RECHAZADO' || accion === 'RECHAZADA';
                 return (
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                    esAceptado ? 'bg-green-100 text-green-800' :
-                    esRechazado ? 'bg-red-100 text-red-800' :
-                    'bg-zinc-100 text-zinc-700'
-                  }`}>
+                  <TableBadge variant={esAceptado ? 'success' : esRechazado ? 'danger' : 'neutral'}>
                     {row.accionUsuario ?? '-'}
-                  </span>
+                  </TableBadge>
                 );
               })()}
             </TableCell>
@@ -470,87 +466,90 @@ export function ReportesView() {
         </TabsList>
 
         <TabsContent value="ranking-productos" className="mt-4">
-          <div className="space-y-3">
-            <Table>
-              {renderHeaders()}
-              <TableBody>
-                {dataActual.length > 0 ? renderRows() : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-brand-options">
-                      No hay datos para los filtros seleccionados
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-            {totalPages > 1 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalActual}
-                limit={TAKE}
-                onPageChange={handlePageChange}
-                onLimitChange={() => {}}
-                itemLabel="registros"
-              />
-            )}
-          </div>
+          <Table
+            footer={
+              totalPages > 1 ? (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalActual}
+                  limit={TAKE}
+                  onPageChange={handlePageChange}
+                  onLimitChange={() => {}}
+                  itemLabel="registros"
+                />
+              ) : undefined
+            }
+          >
+            {renderHeaders()}
+            <TableBody>
+              {dataActual.length > 0 ? renderRows() : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-[#575757]">
+                    No hay datos para los filtros seleccionados
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </TabsContent>
 
         <TabsContent value="antiguedad-deuda" className="mt-4">
-          <div className="space-y-3">
-            <Table>
-              {renderHeaders()}
-              <TableBody>
-                {dataActual.length > 0 ? renderRows() : (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-brand-options">
-                      No hay datos para los filtros seleccionados
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-            {totalPages > 1 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalActual}
-                limit={TAKE}
-                onPageChange={handlePageChange}
-                onLimitChange={() => {}}
-                itemLabel="clientes"
-              />
-            )}
-          </div>
+          <Table
+            footer={
+              totalPages > 1 ? (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalActual}
+                  limit={TAKE}
+                  onPageChange={handlePageChange}
+                  onLimitChange={() => {}}
+                  itemLabel="clientes"
+                />
+              ) : undefined
+            }
+          >
+            {renderHeaders()}
+            <TableBody>
+              {dataActual.length > 0 ? renderRows() : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-[#575757]">
+                    No hay datos para los filtros seleccionados
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </TabsContent>
 
         <TabsContent value="auditoria-ia" className="mt-4">
-          <div className="space-y-3">
-            <Table>
-              {renderHeaders()}
-              <TableBody>
-                {dataActual.length > 0 ? renderRows() : (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-brand-options">
-                      No hay datos para los filtros seleccionados
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-            {totalPages > 1 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalActual}
-                limit={TAKE}
-                onPageChange={handlePageChange}
-                onLimitChange={() => {}}
-                itemLabel="registros"
-              />
-            )}
-          </div>
+          <Table
+            footer={
+              totalPages > 1 ? (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalActual}
+                  limit={TAKE}
+                  onPageChange={handlePageChange}
+                  onLimitChange={() => {}}
+                  itemLabel="registros"
+                />
+              ) : undefined
+            }
+          >
+            {renderHeaders()}
+            <TableBody>
+              {dataActual.length > 0 ? renderRows() : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-[#575757]">
+                    No hay datos para los filtros seleccionados
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </TabsContent>
       </Tabs>
 

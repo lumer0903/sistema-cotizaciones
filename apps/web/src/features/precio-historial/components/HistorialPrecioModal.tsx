@@ -63,7 +63,21 @@ export function HistorialPrecioModal({
         <p>No hay cambios registrados en este rango.</p>
       ) : (
         <>
-          <Table scrollLabel="Historial de precios">
+          <Table
+            scrollLabel="Historial de precios"
+            footer={
+              <Pagination
+                loading={state.loading}
+                currentPage={page}
+                totalPages={Math.max(1, Math.ceil((data?.total ?? 0) / limit))}
+                totalItems={data?.total ?? 0}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={v => { setLimit(v); setPage(1); }}
+                itemLabel="cambios"
+              />
+            }
+          >
             <TableHeader>
               <TableRow>
                 {['TIPO DE PRECIO', 'FECHA Y HORA', 'USUARIO / MOTIVO', 'COSTO UNITARIO', 'ANTERIOR', 'NUEVO'].map(x => (
@@ -94,16 +108,6 @@ export function HistorialPrecioModal({
               ))}
             </TableBody>
           </Table>
-          <Pagination
-            loading={state.loading}
-            currentPage={page}
-            totalPages={Math.max(1, Math.ceil((data?.total ?? 0) / limit))}
-            totalItems={data?.total ?? 0}
-            limit={limit}
-            onPageChange={setPage}
-            onLimitChange={v => { setLimit(v); setPage(1); }}
-            itemLabel="cambios"
-          />
         </>
       )}
     </Modal>

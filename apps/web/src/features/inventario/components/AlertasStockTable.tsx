@@ -3,7 +3,7 @@ import { useState,useEffect,useCallback,useRef } from 'react';
 import { inventarioApi,AlertaStockResponse } from '../api/inventario.api';
 import { apiErrorMessage } from '@/lib/apiClient';
 import { showToast } from '@/lib/toast';
-import { Modal,Button,Badge,Select,ConfirmModal,Pagination,Table,TableHeader,TableBody,TableRow,TableHead,TableCell } from '@/components/ui';
+import { Modal,Button,TableBadge,Select,ConfirmModal,Pagination,Table,TableHeader,TableBody,TableRow,TableHead,TableCell } from '@/components/ui';
 import { formatCode,formatText } from '@/lib/formatters';
 type Estado='abiertas'|'activa'|'reconocida'|'resuelta'|'todas';
 export function AlertasStockTable({open,onClose,onSuccess}:{open:boolean;onClose:()=>void;onSuccess?:()=>void}) {
@@ -45,18 +45,59 @@ export function AlertasStockTable({open,onClose,onSuccess}:{open:boolean;onClose
         {loading?<p role="status">Cargando alertas...</p>:error?
           <div role="alert">{error}<Button onClick={fetchAlertas}>Reintenta</Button></div>:
           alertas.length===0?<p>No hay alertas con estos filtros.</p>:
-          <Table scrollLabel="Alertas de stock"><TableHeader><TableRow>
-            <TableHead>Producto</TableHead><TableHead>Almacén</TableHead><TableHead>Stock</TableHead>
-            <TableHead>Mínimo</TableHead><TableHead>Estado</TableHead><TableHead>Acción</TableHead>
-          </TableRow></TableHeader><TableBody>{alertas.map(a=><TableRow key={a.id_alerta}>
-            <TableCell>{formatCode(a.producto?.codigo||'')} — {formatText(a.producto?.descripcion||'')}</TableCell>
-            <TableCell>{a.almacen?.codigo} — {a.almacen?.nombre}</TableCell>
-            <TableCell>{a.stock_actual}</TableCell><TableCell>{a.stock_minimo}</TableCell>
-            <TableCell><Badge variant={a.estado==='activa'?'danger':a.estado==='reconocida'?'warning':'success'}>{a.estado}</Badge></TableCell>
-            <TableCell>{a.estado==='activa' && <Button onClick={()=>setConfirmId(a.id_alerta)} variant="ghost">Reconoce</Button>}</TableCell>
-          </TableRow>)}</TableBody></Table>}
-        <Pagination currentPage={page} totalPages={Math.max(1,Math.ceil(total/limit))} totalItems={total}
-          limit={limit} onPageChange={setPage} onLimitChange={n=>{setLimit(n);setPage(1);}} loading={loading} itemLabel="alertas" />
+          <Table
+            scrollLabel="Alertas de stock"
+            footer={
+              <Pagination
+                currentPage={page}
+                totalPages={Math.max(1, Math.ceil(total / limit))}
+                totalItems={total}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={(n) => {
+                  setLimit(n);
+                  setPage(1);
+                }}
+                loading={loading}
+                itemLabel="alertas"
+              />
+            }
+          >
+            <TableHeader>
+              <TableRow>
+                <TableHead>Producto</TableHead>
+                <TableHead>Almacén</TableHead>
+                <TableHead>Stock</TableHead>
+                <TableHead>Mínimo</TableHead>
+                <TableHead className="text-center">Estado</TableHead>
+                <TableHead className="text-right">Acción</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {alertas.map((a) => (
+                <TableRow key={a.id_alerta}>
+                  <TableCell>
+                    <span className="font-normal text-[#575757]">{formatCode(a.producto?.codigo || '')}</span> — {formatText(a.producto?.descripcion || '')}
+                  </TableCell>
+                  <TableCell>{a.almacen?.codigo} — {a.almacen?.nombre}</TableCell>
+                  <TableCell className="tabular-nums">{a.stock_actual}</TableCell>
+                  <TableCell className="tabular-nums">{a.stock_minimo}</TableCell>
+                  <TableCell className="text-center">
+                    <TableBadge variant={a.estado === 'activa' ? 'danger' : a.estado === 'reconocida' ? 'neutral' : 'success'}>
+                      {a.estado}
+                    </TableBadge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {a.estado === 'activa' && (
+                      <Button onClick={() => setConfirmId(a.id_alerta)} variant="ghost" size="sm">
+                        Reconoce
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>}
       </div>
     </Modal>
     <ConfirmModal open={confirmId!=null} onClose={()=>{if(!saving)setConfirmId(null);}} onConfirm={reconocer}

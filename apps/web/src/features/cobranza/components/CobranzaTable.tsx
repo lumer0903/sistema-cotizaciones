@@ -7,7 +7,8 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { showToast } from '@/lib/toast';
 import {
   Button,
-  Badge,
+  TableBadge,
+  type TableBadgeVariant,
   Input,
   Select,
   Table,
@@ -19,7 +20,6 @@ import {
   Pagination,
 } from '@/components/ui';
 import { FilterCard, FilterGrid } from '@/components/ui/FilterCard';
-import type { BadgeVariant } from '@/components/ui/Badge';
 import type { CuentaPorCobrar } from '@/features/cobranza/types';
 import { fetchCobranza, fetchCobranzaForExport, type CobranzaFilters } from '@/features/cobranza/api/cobranza';
 
@@ -50,11 +50,11 @@ const ESTADO_LABELS: Record<string, string> = {
   vencida: 'VENCIDA',
 };
 
-const ESTADO_BADGE: Record<string, { variant: BadgeVariant; className?: string }> = {
-  pendiente: { variant: 'borrador' },
-  parcial: { variant: 'parcial' },
-  pagada: { variant: 'aprobado' },
-  vencida: { variant: 'rechazado' },
+const ESTADO_BADGE_VARIANT: Record<string, TableBadgeVariant> = {
+  pendiente: 'neutral',
+  parcial: 'neutral',
+  pagada: 'success',
+  vencida: 'danger',
 };
 
 function formatDate(value: string | null | undefined): string {
@@ -314,108 +314,111 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
       
       </FilterCard>
 
-      <div className="bg-surface rounded-xl border border-border-default shadow-sm overflow-hidden w-full">
-        {loading ? (
-          <div className="p-4 sm:p-6">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="animate-pulse flex items-center gap-4 py-4 border-b border-border-default">
-                <div className="h-12 w-12 bg-zinc-200 rounded-lg" />
-                <div className="flex-1">
-                  <div className="h-4 w-3/4 bg-zinc-200 rounded mb-2" />
-                  <div className="h-3 w-1/2 bg-zinc-200 rounded" />
-                </div>
+      {loading ? (
+        <div className="w-full bg-white rounded-2xl border-2 border-[#E5E7EB] p-12 text-left text-sm text-[#414141]">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="animate-pulse flex items-center gap-4 py-4 border-b border-[#F3F4F6] last:border-b-0">
+              <div className="h-10 w-10 bg-zinc-200 rounded-lg" />
+              <div className="flex-1">
+                <div className="h-4 w-3/4 bg-zinc-200 rounded mb-2" />
+                <div className="h-3 w-1/2 bg-zinc-200 rounded" />
               </div>
+            </div>
+          ))}
+        </div>
+      ) : loadError ? (
+        <div role="alert" className="w-full bg-white rounded-2xl border-2 border-[#E5E7EB] p-8 text-center space-y-3">
+          <p className="text-sm text-[#414141]">No se pudieron cargar las cuentas de cobranza.</p>
+          <Button variant="outline" onClick={() => setRetry((value) => value + 1)}>
+            Reintentar
+          </Button>
+        </div>
+      ) : cuentas.length === 0 ? (
+        <div className="w-full bg-white rounded-2xl border-2 border-[#E5E7EB] p-12 text-center text-[#575757]">
+          <FileText className="h-12 w-12 mx-auto text-zinc-300 mb-4" />
+          <p className="text-lg font-medium text-[#414141]">No se encontraron cuentas de cobranza</p>
+          <p className="text-sm mt-1">Ajusta los filtros o la búsqueda.</p>
+        </div>
+      ) : (
+        <Table
+          footer={
+            total > 0 ? (
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                totalItems={total}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={(n) => {
+                  setLimit(n);
+                  setPage(1);
+                }}
+                loading={loading}
+                itemLabel="cuentas"
+              />
+            ) : undefined
+          }
+        >
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[15%]">Documento</TableHead>
+              <TableHead className="w-[20%]">Cliente</TableHead>
+              <TableHead className="w-[15%]">Fecha</TableHead>
+              <TableHead className="w-[15%] text-center">Estado</TableHead>
+              <TableHead className="w-[15%] text-right">Total</TableHead>
+              <TableHead className="w-[10%]">Atraso</TableHead>
+              <TableHead className="w-[10%] text-right">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {cuentas.map((cuenta) => (
+              <TableRow key={cuenta.id_cotizacion}>
+                <TableCell className="font-normal text-[#575757]">
+                  {cuenta.numero}
+                </TableCell>
+                <TableCell className="text-[#414141]">
+                  {cuenta.cliente?.nombre || 'Sin cliente'}
+                </TableCell>
+                <TableCell className="text-[#575757]">
+                  {formatDate(cuenta.created_at)}
+                </TableCell>
+                <TableCell className="text-center">
+                  <TableBadge
+                    variant={ESTADO_BADGE_VARIANT[cuenta.estado_cobranza] ?? 'neutral'}
+                  >
+                    {ESTADO_LABELS[cuenta.estado_cobranza] || cuenta.estado_cotizacion?.toUpperCase()}
+                  </TableBadge>
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  S/ {money(cuenta.total)}
+                </TableCell>
+
+                <TableCell>
+                  {cuenta.dias_atraso > 0 ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {cuenta.dias_atraso} días
+                    </span>
+                  ) : (
+                    <span className="text-sm font-medium text-emerald-700">Al día</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push(`/cobranza/${cuenta.id_cotizacion}`)}
+                    title="Gestionar"
+                    aria-label={`Gestionar pago de ${cuenta.numero}`}
+                    className="p-2 text-zinc-600 hover:text-black"
+                  >
+                    <CreditCard className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
             ))}
-          </div>
-        ) : loadError ? (<div role="alert" className="p-6 text-center space-y-3"><p>No se pudieron cargar las cuentas de cobranza.</p><Button variant="outline" onClick={() => setRetry(value => value + 1)}>Reintentar</Button></div>) : cuentas.length === 0 ? (
-          <div className="p-12 text-center text-brand-options">
-            <FileText className="h-12 w-12 mx-auto text-zinc-300 mb-4" />
-            <p className="text-lg">No se encontraron cuentas de cobranza</p>
-            <p className="text-sm mt-1">Ajusta los filtros o la búsqueda.</p>
-          </div>
-        ) : (
-          <div className="w-full">
-            <Table className="w-full" wrapperClassName="w-full border-0 shadow-none rounded-none">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[15%]">Documento</TableHead>
-                  <TableHead className="w-[20%]">Cliente</TableHead>
-                  <TableHead className="w-[15%]">Fecha</TableHead>
-                  <TableHead className="w-[15%]">Estado</TableHead>
-                  <TableHead className="w-[15%] text-right">Total</TableHead>
-                  <TableHead className="w-[10%]">Atraso</TableHead>
-                  <TableHead className="w-[10%] text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {cuentas.map((cuenta) => (
-                  <TableRow key={cuenta.id_cotizacion}>
-                    <TableCell className="font-medium text-brand-subtitle">
-                      {cuenta.numero}
-                    </TableCell>
-                    <TableCell className="text-brand-subtitle">
-                      {cuenta.cliente?.nombre || 'Sin cliente'}
-                    </TableCell>
-                    <TableCell className="text-brand-options">
-                      {formatDate(cuenta.created_at)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={ESTADO_BADGE[cuenta.estado_cobranza]?.variant ?? 'neutral'}
-                        size="estado"
-                        className={ESTADO_BADGE[cuenta.estado_cobranza]?.className}
-                      >
-                        {ESTADO_LABELS[cuenta.estado_cobranza] || cuenta.estado_cotizacion?.toUpperCase()}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-medium text-brand-subtitle tnum">
-                      S/ {money(cuenta.total)}
-                    </TableCell>
-
-                    <TableCell>
-                      {cuenta.dias_atraso > 0 ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {cuenta.dias_atraso} días
-                        </span>
-                      ) : (
-                        <span className="text-sm text-emerald-700">Al día</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => router.push(`/cobranza/${cuenta.id_cotizacion}`)}
-                        title="Gestionar"
-                        aria-label={`Gestionar pago de ${cuenta.numero}`}
-                        className="p-2 text-accent-ink hover:text-accent-primary"
-                      >
-                        <CreditCard className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </div>
-
-      {!loading && cuentas.length > 0 && (
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          totalItems={total}
-          limit={limit}
-          onPageChange={setPage}
-          onLimitChange={(n) => {
-            setLimit(n);
-            setPage(1);
-          }}
-          loading={loading}
-          itemLabel="cuentas"
-        />
+          </TableBody>
+        </Table>
       )}
     </div>
   );

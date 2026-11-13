@@ -146,26 +146,26 @@ export default function MisCotizacionesPage() {
         </FilterGrid>
       </FilterCard>
 
-      {/* Tabla */}
+      {/* Tabla con paginación integrada en footer */}
       <CotizacionesTable
         data={pageData}
         loading={loading}
         onEdit={(id) => router.push(`/cotizaciones/editar/${id}`)}
         onView={(id) => router.push(`/cotizaciones/pdf/${id}`)}
+        footer={
+          !loading && totalItems > 0 ? (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              limit={limit}
+              onPageChange={setCurrentPage}
+              onLimitChange={setLimit}
+              itemLabel="cotizaciones"
+            />
+          ) : undefined
+        }
       />
-
-      {/* Paginación */}
-      {!loading && totalItems > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          limit={limit}
-          onPageChange={setCurrentPage}
-          onLimitChange={setLimit}
-          itemLabel="cotizaciones"
-        />
-      )}
     </div>
   );
 }
