@@ -28,10 +28,10 @@ export const PriceCard: React.FC<PriceCardProps> = ({
   const distribuidor = producto.precioDistribuidor;
   const tienda = producto.precioTienda;
 
-  return (
-    <div className="w-full bg-white rounded-lg shadow-[3px_3px_10px_0px_rgba(0,0,0,0.25)] p-2.5 flex flex-col gap-2 overflow-hidden transition-transform hover:-translate-y-0.5">
+return (
+     <div className="w-full bg-white rounded-xl shadow-2xs p-3 flex flex-col gap-2 overflow-hidden transition-transform hover:-translate-y-0.5">
       {/* 1. Bloque superior: Imagen / Placeholder + Acción rápida de Historial */}
-      <div className="relative w-full h-24 bg-[#F8B602]/20 rounded-lg flex items-center justify-center overflow-hidden">
+      <div className="relative h-24 w-full rounded-lg bg-[#F8FAFC] border border-[#F3F4F6] overflow-hidden flex items-center justify-center">
         {producto.imagenUrl ? (
           <Image
             fill
@@ -40,13 +40,13 @@ export const PriceCard: React.FC<PriceCardProps> = ({
             loading="lazy"
             src={producto.imagenUrl}
             alt={producto.codigo}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain p-1.5"
             onError={(e) => handleImageError(e, '200')}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center gap-1 text-[#F8B602]/70">
-            <Package className="size-6" strokeWidth={1.5} />
-            <span className="text-[10px] font-semibold tracking-wide uppercase">Sin Imagen</span>
+          <div className="flex flex-col items-center justify-center gap-1 text-[#9CA3AF] select-none">
+            <Package className="size-4 stroke-[1.75]" />
+            <span className="text-[11px] font-medium">Sin imagen</span>
           </div>
         )}
 
@@ -56,7 +56,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({
             onClick={() => onVerHistorial(producto.id)}
             title="Ver historial de precios"
             aria-label={`Ver historial de precios de ${producto.codigo}`}
-            className="absolute top-1.5 right-1.5 size-6 rounded-md bg-white/90 hover:bg-white text-[#F8B602] shadow-xs flex items-center justify-center transition-transform hover:scale-105 active:scale-95 focus:outline-none z-10 cursor-pointer"
+            className="absolute top-1.5 right-1.5 size-7 rounded-lg bg-white/95 border border-[#E5E7EB] shadow-2xs flex items-center justify-center text-[#F8B602] hover:bg-[#FFF8E6] transition-colors cursor-pointer"
           >
             <History className="size-3.5" strokeWidth={1.5} />
           </button>
