@@ -149,6 +149,7 @@ export function InventarioFilters({
         {/* BUSCAR */}
         <div className="flex-[2] min-w-[240px] lg:min-w-[300px]">
           <Input
+            variant="filter"
             label="BUSCAR"
             icon={<Search className="w-4 h-4 text-[#F8B602]" strokeWidth={2} />}
             placeholder="Buscar por código o descripción…"
@@ -161,6 +162,7 @@ export function InventarioFilters({
         {/* CATEGORÍA */}
         <div className="flex-1 min-w-[140px] max-w-[195px]">
           <Select
+            variant="filter"
             label="CATEGORÍA"
             value={selectedCategoria}
             onChange={(e) => onCategoriaChange(String(e.target.value))}
@@ -172,6 +174,7 @@ export function InventarioFilters({
         {/* UBICACIÓN */}
         <div className="flex-1 min-w-[140px] max-w-[195px]">
           <Select
+            variant="filter"
             label="UBICACIÓN"
             value={selectedUbicacion}
             onChange={(e) => onUbicacionChange(String(e.target.value))}
@@ -183,6 +186,7 @@ export function InventarioFilters({
         {/* ESTADO STOCK */}
         <div className="flex-1 min-w-[140px] max-w-[195px]">
           <Select
+            variant="filter"
             label="ESTADO STOCK"
             value={selectedStockEstado}
             onChange={(e) => onStockEstadoChange(String(e.target.value))}

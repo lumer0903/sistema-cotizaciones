@@ -177,6 +177,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
         <FilterGrid>
           <div className="flex-[2] min-w-[240px] lg:min-w-[300px]">
             <Input
+              variant="filter"
               type="text"
               label="Buscar"
               icon={<Search className="w-4 h-4 text-[#F8B602]" strokeWidth={2} />}
@@ -192,6 +193,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
 
           <div className="flex-1 min-w-[140px] max-w-[195px]">
             <Select
+              variant="filter"
               label="Estado"
               value={estadoFilter}
               onChange={(e) => {
@@ -205,6 +207,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
 
           <div className="flex-1 min-w-[140px] max-w-[195px]">
             <Select
+              variant="filter"
               label="Tipo de cliente"
               value={tipoClienteFilter}
               onChange={(e) => {
@@ -218,6 +221,7 @@ export function CobranzaTable({ initialFilters = {} }: CobranzaTableProps) {
 
           <div className="flex-1 min-w-[140px] max-w-[195px]">
             <Select
+              variant="filter"
               label="Mora"
               value={moraFilter}
               onChange={(e) => {

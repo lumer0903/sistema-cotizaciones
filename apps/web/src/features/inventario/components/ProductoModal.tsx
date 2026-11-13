@@ -17,14 +17,9 @@ import {
   Modal,
   Input,
   Select,
-  Button,
-  Textarea,
-  ConfirmModal,
 } from "@/components/ui";
 import { PriceMatrix, PriceUnit, PriceField } from "./producto-form/PriceMatrix";
 import { ImageUploader } from "./producto-form/ImageUploader";
-import { SurtidoColorsField } from "./producto-form/SurtidoColorsField";
-import { FIELD_LABEL } from "@/components/ui/fieldStyles";
 import { ProductoInventario } from "@goldcontinent/shared/types/inventario";
 import { showToast } from "@/lib/toast";
 import { obtenerPreciosEstandarizados } from "@/lib/formatters";
@@ -127,7 +122,6 @@ export function ProductoModal({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
-  const [confirmResetOpen, setConfirmResetOpen] = useState(false);
 
   const objectUrlRef = useRef<string | null>(null);
   const isEditing = modo === "editar" && !!productoInicial;
@@ -145,7 +139,7 @@ export function ProductoModal({
     watch,
     setValue,
     reset,
-    formState: { errors, isSubmitting, isDirty },
+    formState: { errors, isSubmitting },
   } = useForm<ProductoFormData>({
     resolver,
     defaultValues: DEFAULT_FORM_VALUES,
@@ -347,14 +341,6 @@ export function ProductoModal({
     onClose();
   };
 
-  const handleRequestReset = () => {
-    if (isDirty) {
-      setConfirmResetOpen(true);
-    } else {
-      resetForm();
-    }
-  };
-
   const handleImageSelect = (file: File) => {
     revokeObjectUrl();
     const url = URL.createObjectURL(file);
@@ -483,192 +469,225 @@ export function ProductoModal({
         onClose={handleClose}
         closeDisabled={isSubmitting}
         title={title}
-        maxWidth="lg"
+        maxWidth="form"
         footer={
-          <>
-            <Button
+          <div className="w-full flex items-center justify-end gap-3 pt-3 border-t border-[#F3F4F6]">
+            <button
               type="button"
-              variant="ghost"
-              onClick={handleRequestReset}
+              onClick={handleClose}
               disabled={isSubmitting}
+              className="h-9 px-4 rounded-lg text-xs font-bold text-[#8D8D8D] hover:text-[#414141] hover:bg-[#F3F4F6] transition-colors cursor-pointer disabled:opacity-50"
             >
-Restablece
-            </Button>
-            <div className="flex gap-2 sm:gap-3">
-              <Button type="button" variant="ghost" onClick={handleClose} disabled={isSubmitting}>
-                Cancela
-              </Button>
-              <Button
-                type="submit"
-                form="producto-form"
-                variant="primary"
-                loading={isSubmitting}
-                disabled={isSubmitting}
-              >
-                Guarda producto
-              </Button>
-            </div>
-          </>
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              form="producto-form"
+              disabled={isSubmitting}
+              className="h-9 px-5 rounded-lg bg-[#F8B602] hover:bg-[#e0a402] text-xs font-black text-white transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="size-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  <span>Guardando…</span>
+                </>
+              ) : (
+                <span>Guardar</span>
+              )}
+            </button>
+          </div>
         }
       >
         <form
           id="producto-form"
           noValidate
           onSubmit={handleSubmit(handleFormSubmit)}
-          className="space-y-6"
+          className="space-y-2.5 max-h-[calc(100vh-9rem)] overflow-y-auto pr-1"
         >
-          {isEditing && <Select label="Estado del producto" value={String(activo)}
-            onChange={e=>setActivo(String(e.target.value)==='true')}
-            options={[{label:'Activo',value:'true'},{label:'Inactivo',value:'false'}]} />}
-          {/* Información básica */}
-          <div className="space-y-3.5">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <Input
-                label="Código"
-                placeholder="Ej: RYG18-NU02"
-                error={errors.codigo?.message}
-                {...register("codigo")}
-                disabled={isEditing}
-                onChange={(e) =>
-                  setValue("codigo", e.target.value.toUpperCase(), { shouldValidate: true })
-                }
-              />
+          {isEditing && (
+            <div className="w-full">
               <Select
-                label="Categoría"
-                error={errors.id_categoria?.message}
-                {...register("id_categoria", {
-                  setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
-                })}
-                value={watch("id_categoria") ?? ""}
-                disabled={loadingFilters}
-              >
-                <option value="">Seleccionar</option>
-                {categorias.map((cat) => (
-                  <option key={cat.id_categoria} value={cat.id_categoria}>
-                    {cat.nombre_categoria}
-                  </option>
-                ))}
-              </Select>
-              <Select
-                label="Ubicación"
-                error={errors.id_almacen?.message}
-                {...register("id_almacen", {
-                  setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
-                })}
-                value={watch("id_almacen") ?? ""}
-                disabled={loadingFilters || isEditing}
-              >
-                <option value="">Seleccionar</option>
-                {almacenes.map((a) => (
-                  <option key={a.id_almacen} value={a.id_almacen}>
-                    {a.nombre}
-                  </option>
-                ))}
-              </Select>
-              <Input
-                label="Tipo de flor"
-                placeholder="Rosa"
-                autoComplete="off"
-                error={errors.tipo_flor?.message}
-                {...register("tipo_flor")}
+                label="Estado del producto"
+                value={String(activo)}
+                onChange={(e) => setActivo(String(e.target.value) === 'true')}
+                options={[
+                  { label: 'Activo', value: 'true' },
+                  { label: 'Inactivo', value: 'false' },
+                ]}
               />
-              <Input
-                label="Material"
-                placeholder="Tela Premium"
-                error={errors.material?.message}
-                {...register("material")}
-              />
-              <Input
-                label="Composición"
-                placeholder="Ramo"
-                error={errors.composicion?.message}
-                {...register("composicion")}
-              />
-              <Input
-                label="Presentación"
-                placeholder="Ramo"
-                error={errors.presentacion?.message}
-                {...register("presentacion")}
-              />
-              <Input
-                label="Follaje"
-                placeholder="Verde"
-                error={errors.follaje?.message}
-                {...register("follaje")}
-              />
-              <Input
-                label="Nº cabezas"
-                type="number"
-                min="1"
-                placeholder="18"
-                error={errors.numero_cabezas?.message}
-                {...cleanNumberInputProps("numero_cabezas")}
-              />
-              <Input
-                label="Tamaño"
-                placeholder="35cm aprox"
-                error={errors.tamano?.message}
-                {...register("tamano")}
-              />
-              <Input
-                label="Unidades por caja"
-                type="number"
-                min="1"
-                placeholder="12"
-                error={errors.unidades_por_caja?.message}
-                {...cleanNumberInputProps("unidades_por_caja")}
-              />
-              <Input
-                label={isEditing ? "Stock del almacén principal" : "Stock inicial en almacén elegido"}
-                type="number"
-                min="0"
-                placeholder="10"
-                error={errors.stock_principal?.message}
-                {...cleanNumberInputProps("stock_principal")}
-              />
-              <Input
-                label="Stock mínimo"
-                type="number"
-                min="0"
-                placeholder="10"
-                error={errors.stock_minimo?.message}
-                {...cleanNumberInputProps("stock_minimo")}
-              />
-              <Input
-                label="Precio de costo"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                icon={<span className="text-xs font-bold">S/</span>}
-                error={errors.costo_normal?.message}
-                {...cleanNumberInputProps("costo_normal")}
-              />
-              <div className="space-y-1.5">
-                <SurtidoColorsField
-                  colors={coloresSurtidos}
-                  onConfigure={() => setIsColorModalOpen(true)}
-                />
-                {errors.colores_surtido?.message && (
-                  <p className="text-xs font-medium text-danger" role="alert">
-                    {errors.colores_surtido.message}
-                  </p>
-                )}
-              </div>
             </div>
+          )}
 
-            {/* Descripción autogenerada */}
-            <Textarea
-              label="Descripción"
-              placeholder="Se autogenera según los atributos físicos completados"
-              error={errors.descripcion?.message}
-              rows={3}
-              {...register("descripcion")}
+          {/* Fila 1 (1 columna): CÓDIGO */}
+          <div>
+            <Input
+              label="CÓDIGO"
+              placeholder="Ej: RYG18-NU02"
+              error={errors.codigo?.message}
+              {...register("codigo")}
+              disabled={isEditing}
+              onChange={(e) =>
+                setValue("codigo", e.target.value.toUpperCase(), { shouldValidate: true })
+              }
             />
           </div>
 
-          {/* Precios por tipo de cliente */}
-          <div className="border-t border-border-default pt-6">
+          {/* Fila 2 (grid-cols-1 sm:grid-cols-3 gap-2.5): CATEGORÍA, TIPO DE FLOR, MATERIAL */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <Select
+              label="CATEGORÍA"
+              error={errors.id_categoria?.message}
+              {...register("id_categoria", {
+                setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
+              })}
+              value={watch("id_categoria") ?? ""}
+              disabled={loadingFilters}
+            >
+              <option value="">Seleccionar</option>
+              {categorias.map((cat) => (
+                <option key={cat.id_categoria} value={cat.id_categoria}>
+                  {cat.nombre_categoria}
+                </option>
+              ))}
+            </Select>
+            <Input
+              label="TIPO DE FLOR"
+              placeholder="Rosa"
+              autoComplete="off"
+              error={errors.tipo_flor?.message}
+              {...register("tipo_flor")}
+            />
+            <Input
+              label="MATERIAL"
+              placeholder="Tela Premium"
+              error={errors.material?.message}
+              {...register("material")}
+            />
+          </div>
+
+          {/* Fila 3 (grid-cols-1 sm:grid-cols-3 gap-2.5): COMPOSICIÓN, PRESENTACIÓN, N° DE CABEZAS */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <Select
+              label="COMPOSICIÓN"
+              error={errors.composicion?.message}
+              {...register("composicion")}
+              value={watch("composicion") ?? ""}
+            >
+              <option value="">Seleccionar</option>
+              <option value="Ramo">Ramo</option>
+              <option value="Vara">Vara</option>
+              <option value="Guirnalda">Guirnalda</option>
+              <option value="Planta">Planta</option>
+              <option value="Bonsai">Bonsai</option>
+              <option value="Arreglo">Arreglo</option>
+            </Select>
+            <Select
+              label="PRESENTACIÓN"
+              error={errors.presentacion?.message}
+              {...register("presentacion")}
+              value={watch("presentacion") ?? ""}
+            >
+              <option value="">Seleccionar</option>
+              <option value="Ramo">Ramo</option>
+              <option value="Unidad">Unidad</option>
+              <option value="Atado">Atado</option>
+              <option value="Paquete">Paquete</option>
+              <option value="Caja">Caja</option>
+            </Select>
+            <Input
+              label="N° DE CABEZAS"
+              type="number"
+              min="1"
+              placeholder="18"
+              error={errors.numero_cabezas?.message}
+              {...cleanNumberInputProps("numero_cabezas")}
+            />
+          </div>
+
+          {/* Fila 4 (grid-cols-1 sm:grid-cols-3 gap-2.5): TAMAÑO, UBICACIÓN, UNID. POR CAJA */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <Input
+              label="TAMAÑO"
+              placeholder="35cm aprox"
+              error={errors.tamano?.message}
+              {...register("tamano")}
+            />
+            <Select
+              label="UBICACIÓN"
+              error={errors.id_almacen?.message}
+              {...register("id_almacen", {
+                setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
+              })}
+              value={watch("id_almacen") ?? ""}
+              disabled={loadingFilters || isEditing}
+            >
+              <option value="">Seleccionar</option>
+              {almacenes.map((a) => (
+                <option key={a.id_almacen} value={a.id_almacen}>
+                  {a.nombre}
+                </option>
+              ))}
+            </Select>
+            <Input
+              label="UNID. POR CAJA"
+              type="number"
+              min="1"
+              placeholder="12"
+              error={errors.unidades_por_caja?.message}
+              {...cleanNumberInputProps("unidades_por_caja")}
+            />
+          </div>
+
+          {/* Fila 5 (grid-cols-1 sm:grid-cols-3 gap-2.5): STOCK TOTAL, STOCK MÍNIMO, COLOR */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 items-end">
+            <Input
+              label="STOCK TOTAL"
+              type="number"
+              min="0"
+              placeholder="10"
+              error={errors.stock_principal?.message}
+              {...cleanNumberInputProps("stock_principal")}
+            />
+            <Input
+              label="STOCK MÍNIMO"
+              type="number"
+              min="0"
+              placeholder="10"
+              error={errors.stock_minimo?.message}
+              {...cleanNumberInputProps("stock_minimo")}
+            />
+            <div>
+              <span className="block mb-1 text-[11px] font-medium uppercase tracking-wide text-[#414141]">
+                COLOR
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsColorModalOpen(true)}
+                className="h-9 w-full rounded-lg bg-[#414141]/25 border border-[#414141] text-xs font-bold text-[#414141] hover:bg-[#414141]/35 transition-colors cursor-pointer"
+              >
+                Configurar{coloresSurtidos.length > 0 ? ` (${coloresSurtidos.length})` : ''}
+              </button>
+              {errors.colores_surtido?.message && (
+                <p className="mt-1 text-xs font-medium text-danger" role="alert">
+                  {errors.colores_surtido.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Fila 6 (1 columna): DESCRIPCIÓN (AUTOGENERADA) */}
+          <div>
+            <Input
+              label="DESCRIPCIÓN (AUTOGENERADA)"
+              placeholder="Se autogenera según los atributos físicos completados"
+              error={errors.descripcion?.message}
+              {...register("descripcion")}
+              className="w-full"
+            />
+          </div>
+
+          {/* Bloque de Precios: 2 Tarjetas Lado a Lado */}
+          <div className="pt-1">
             <PriceMatrix
               tienda={priceProps.tienda}
               distribuidor={priceProps.distribuidor}
@@ -676,34 +695,18 @@ Restablece
             />
           </div>
 
-          {/* Imagen del producto (al final, luego de precios) */}
-          <div className="border-t border-border-default pt-6">
-            <span className={FIELD_LABEL}>Imagen del producto</span>
-            <div className="mt-2">
-              <ImageUploader
-                previewUrl={imagePreview}
-                fileName={imageFile?.name || getFileNameFromUrl(productoInicial?.foto_url)}
-                onFileSelect={handleImageSelect}
-                onRemove={handleImageRemove}
-                disabled={isSubmitting}
-              />
-            </div>
+          {/* Dropzone de Imagen */}
+          <div className="pt-1">
+            <ImageUploader
+              previewUrl={imagePreview}
+              fileName={imageFile?.name || getFileNameFromUrl(productoInicial?.foto_url)}
+              onFileSelect={handleImageSelect}
+              onRemove={handleImageRemove}
+              disabled={isSubmitting}
+            />
           </div>
         </form>
       </Modal>
-
-      <ConfirmModal
-        open={confirmResetOpen}
-        onClose={() => setConfirmResetOpen(false)}
-        onConfirm={() => {
-          resetForm();
-          setConfirmResetOpen(false);
-        }}
-        title="Restablece formulario"
-        message="Se descartarán todos los datos ingresados en el formulario actual."
-        confirmLabel="Restableces"
-        variant="outline"
-      />
 
       <ColorConfigModal
         open={isColorModalOpen}

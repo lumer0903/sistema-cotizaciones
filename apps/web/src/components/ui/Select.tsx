@@ -15,15 +15,19 @@ import { createPortal } from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import {
-  FIELD_BORDER,
+  FIELD_BORDER_FILTER,
+  FIELD_BORDER_MODAL,
   FIELD_DISABLED,
   FIELD_ERROR,
   FIELD_ERROR_TEXT,
-  FIELD_FOCUS,
+  FIELD_FOCUS_FILTER,
+  FIELD_FOCUS_MODAL,
   FIELD_HEIGHT,
-  FIELD_LABEL,
+  FIELD_LABEL_FILTER,
+  FIELD_LABEL_MODAL,
   FIELD_TEXT,
   FIELD_TRANSITION,
+  FieldVariant,
 } from './fieldStyles';
 
 export interface SelectOption {
@@ -38,8 +42,8 @@ export interface SelectProps
   error?: string;
   icon?: ReactNode;
   options?: SelectOption[];
-  /** Legacy: estilo variante (afecta focus visual en modales). */
-  variant?: 'default' | 'modal';
+  /** Variante visual: 'modal' (neutro) o 'filter' (dorado). Por defecto 'modal'. */
+  variant?: FieldVariant;
   sizeVariant?: 'sm' | 'md';
   placeholder?: string;
   value?: string | number;
@@ -84,7 +88,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       options = [],
       className,
       disabled,
-      variant: _variant = 'default',
+      variant = 'modal',
       sizeVariant = 'md',
       placeholder = 'Seleccionar',
       value: propValue,
@@ -249,6 +253,12 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const hasValue = selectedOption !== undefined;
     const heightClass = cn(sizeVariant === 'sm' ? 'h-8' : FIELD_HEIGHT);
 
+    const isFilter = variant === 'filter';
+    const labelClass = isFilter ? FIELD_LABEL_FILTER : FIELD_LABEL_MODAL;
+    const borderClass = isFilter ? FIELD_BORDER_FILTER : FIELD_BORDER_MODAL;
+    const focusClass = isFilter ? FIELD_FOCUS_FILTER : FIELD_FOCUS_MODAL;
+    const iconColor = isFilter ? 'text-[#F8B602]' : 'text-[#8D8D8D]';
+
     return (
       <div className="w-full" ref={containerRef}>
         {/* select nativo real: mantiene RHF/submit y valor accesible */}
@@ -264,7 +274,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           className="sr-only"
           tabIndex={-1}
           aria-hidden="true"
-          onChange={() => {}}
+          onChange={() => { }}
           required={required}
           {...props}
           onInvalid={(event) => {
@@ -283,7 +293,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         </select>
 
         {label && (
-          <label htmlFor={triggerId} className={FIELD_LABEL}>
+          <label htmlFor={triggerId} className={labelClass}>
             {label}
             {required && <span className="text-danger ml-1" aria-hidden="true">*</span>}
           </label>
@@ -314,21 +324,21 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             className={cn(
               'relative w-full flex items-center justify-between text-left pr-8',
               heightClass,
-              FIELD_BORDER,
+              borderClass,
               FIELD_TEXT,
               FIELD_TRANSITION,
               FIELD_DISABLED,
               icon ? 'pl-9' : 'px-3.5',
               isOpen
                 ? 'border-brand-options focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring'
-                : FIELD_FOCUS,
+                : focusClass,
               error && FIELD_ERROR,
               className
             )}
           >
             {icon && (
               <div
-                className="absolute left-3 pointer-events-none flex items-center justify-center text-[#F8B602]"
+                className={cn("absolute left-3 pointer-events-none flex items-center justify-center", iconColor)}
                 aria-hidden="true"
               >
                 {icon}
@@ -341,7 +351,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
 
             <ChevronDown
               className={cn(
-                'absolute right-2.5 size-4 text-[#F8B602] transition-transform duration-200 pointer-events-none',
+                'absolute right-2.5 size-4 transition-transform duration-200 pointer-events-none',
+                iconColor,
                 isOpen && 'rotate-180'
               )}
               strokeWidth={1.75}

@@ -332,6 +332,7 @@ export function ReportesView() {
         <FilterGrid>
             <div className="flex-1 min-w-[140px] max-w-[195px]">
               <Input
+                variant="filter"
                 label="Fecha inicio"
                 type="date"
                 value={filtros.fechaInicio ?? ''}
@@ -341,6 +342,7 @@ export function ReportesView() {
             </div>
             <div className="flex-1 min-w-[140px] max-w-[195px]">
               <Input
+                variant="filter"
                 label="Fecha fin"
                 type="date"
                 value={filtros.fechaFin ?? ''}
@@ -351,6 +353,7 @@ export function ReportesView() {
             {isAdmin && (
               <div className="flex-1 min-w-[140px] max-w-[195px]">
                 <Select
+                  variant="filter"
                   label="Vendedor"
                   value={filtros.idVendedor ? String(filtros.idVendedor) : ''}
                   onChange={(e) => handleFiltroChange('idVendedor', e.target.value ? Number(e.target.value) : undefined)}
@@ -362,6 +365,7 @@ export function ReportesView() {
             )}
             <div className="flex-1 min-w-[140px] max-w-[195px]">
               <Select
+                variant="filter"
                 label="Almacén"
                 value={filtros.idAlmacen ? String(filtros.idAlmacen) : ''}
                 onChange={(e) => handleFiltroChange('idAlmacen', e.target.value ? Number(e.target.value) : undefined)}
@@ -372,6 +376,7 @@ export function ReportesView() {
             </div>
             <div className="flex-1 min-w-[140px] max-w-[195px]">
               <Select
+                variant="filter"
                 label="Cliente"
                 value={filtros.idCliente ? String(filtros.idCliente) : ''}
                 onChange={(e) => handleFiltroChange('idCliente', e.target.value ? Number(e.target.value) : undefined)}

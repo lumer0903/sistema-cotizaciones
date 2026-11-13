@@ -3,28 +3,36 @@
 import { forwardRef, TextareaHTMLAttributes, ReactNode, useId } from 'react';
 import { cn } from '@/lib/cn';
 import {
-  FIELD_BASE,
+  FIELD_BASE_FILTER,
+  FIELD_BASE_MODAL,
   FIELD_ERROR,
   FIELD_ERROR_TEXT,
-  FIELD_LABEL,
+  FIELD_LABEL_FILTER,
+  FIELD_LABEL_MODAL,
+  FieldVariant,
 } from './fieldStyles';
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
   icon?: ReactNode;
+  variant?: FieldVariant;
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ label, error, icon, className, disabled, required, id, ...props }, ref) => {
+  ({ label, error, icon, className, disabled, required, id, variant = 'modal', ...props }, ref) => {
     const autoId = useId();
     const textareaId = id ?? autoId;
     const errorId = `${textareaId}-error`;
 
+    const isFilter = variant === 'filter';
+    const labelClass = isFilter ? FIELD_LABEL_FILTER : FIELD_LABEL_MODAL;
+    const baseFieldClass = isFilter ? FIELD_BASE_FILTER : FIELD_BASE_MODAL;
+
     return (
-      <div className="w-full space-y-1.5">
+      <div className="w-full">
         {label && (
-          <label htmlFor={textareaId} className={FIELD_LABEL}>
+          <label htmlFor={textareaId} className={labelClass}>
             {label}
             {required && <span className="text-danger ml-1" aria-hidden="true">*</span>}
           </label>
@@ -46,9 +54,9 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? errorId : undefined}
             className={cn(
-              'w-full min-h-24 py-2 resize-y',
+              'w-full min-h-20 py-2 resize-y',
               icon ? 'pl-11 pr-3' : 'px-3',
-              FIELD_BASE,
+              baseFieldClass,
               error && FIELD_ERROR,
               className
             )}

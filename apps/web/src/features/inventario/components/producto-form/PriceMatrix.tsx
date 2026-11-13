@@ -1,5 +1,4 @@
 'use client';
-import { Input } from '@/components/ui';
 
 import React from 'react';
 import { Store, Truck } from 'lucide-react';
@@ -26,74 +25,59 @@ const ROWS: Array<{ unit: PriceUnit; label: string }> = [
 ];
 
 interface PriceRowProps {
-  /** Nombre técnico del campo (data-field para testing/inspección). */
   field: PriceField;
-  /** Etiqueta visible. */
   label: string;
-  /** Nombre accesible completo ("Precio tienda, por unidad en soles"). */
   accessibleLabel: string;
   registerProps: React.InputHTMLAttributes<HTMLInputElement>;
   error?: string;
-  /** Tinta del rol (texto de etiqueta, prefijo y cifra). */
-  accentClass: string;
-  /** Borde del rol para el input. */
+  labelClass: string;
   borderClass: string;
+  focusBorderClass: string;
 }
 
-/** Fila "etiqueta + S/ + importe" dentro de la tarjeta de cliente. */
+/** Fila con etiqueta a la izquierda e input numérico a la derecha. */
 function PriceRow({
   field,
   label,
   accessibleLabel,
   registerProps,
   error,
-  accentClass,
+  labelClass,
   borderClass,
+  focusBorderClass,
 }: PriceRowProps) {
   const inputId = `price-${field}`;
   const errorId = `${inputId}-error`;
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-2">
         <label
           htmlFor={inputId}
-          className={cn('text-xs font-bold tracking-wider shrink-0', accentClass)}
+          className={cn('text-xs font-bold shrink-0', labelClass)}
         >
           {label}
         </label>
-        <div className="relative w-32">
-          <span
-            aria-hidden="true"
-            className={cn(
-              'pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-black',
-              accentClass
-            )}
-          >
-            S/
-          </span>
-          <Input
-            id={inputId}
-            type="number"
-            step="0.01"
-            min="0"
-            placeholder="0.00"
-            aria-label={accessibleLabel}
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? errorId : undefined}
-            data-field={field}
-            className={cn(
-              'w-full h-9 rounded-lg border bg-surface pl-7 pr-2.5 text-right text-base font-semibold tnum',
-              'transition-colors placeholder:text-brand-options focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring',
-              '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
-              error ? 'border-danger text-danger' : cn(borderClass, accentClass)
-            )}
-            {...registerProps}
-          />
-        </div>
+        <input
+          id={inputId}
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="0.00"
+          aria-label={accessibleLabel}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          data-field={field}
+          className={cn(
+            'h-8 w-24 rounded-lg border bg-white px-2.5 text-right text-xs font-medium text-[#414141] tabular-nums placeholder:text-[#8D8D8D] focus:outline-none transition-colors',
+            '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
+            error ? 'border-danger text-danger' : cn(borderClass, focusBorderClass)
+          )}
+          {...registerProps}
+        />
       </div>
       {error && (
-        <p id={errorId} className="text-xs font-medium text-danger text-right" role="alert">
+        <p id={errorId} className="text-[11px] font-medium text-danger text-right" role="alert">
           {error}
         </p>
       )}
@@ -101,119 +85,93 @@ function PriceRow({
   );
 }
 
-interface ClientCardProps {
-  /** Chip del tipo de cliente ("Cliente tienda"). */
-  chip: string;
-  /** Texto secundario del encabezado. */
-  hint: string;
-  icon: React.ElementType;
-  accentClass: string;
-  borderClass: string;
-  softClass: string;
-  watermarkClass: string;
-  children: React.ReactNode;
-}
-
-/** Mini-card de un tipo de cliente: chip + campos de precio. */
-function ClientCard({ chip, hint, icon: Icon, accentClass, borderClass, softClass, watermarkClass, children }: ClientCardProps) {
-  return (
-    <section
-      className={cn('group relative overflow-hidden flex flex-col rounded-2xl border p-5 transition-[box-shadow,transform] duration-150 hover:shadow-md', borderClass, softClass)}
-      aria-label={chip}
-    >
-      {/* Ícono de fondo (Marca de Agua) con animación premium al hover */}
-      <Icon 
-        className={cn(
-          "absolute bottom-0 left-0 h-48 w-48 -rotate-12 pointer-events-none select-none z-0 opacity-50 transition-[transform] duration-200 group-hover:scale-110", 
-          watermarkClass
-        )} 
-        aria-hidden="true" 
-      />
-
-      {/* Contenido interactivo */}
-      <div className="relative z-10 flex flex-col gap-4">
-        <header className="flex flex-wrap items-center justify-between gap-2">
-          <span
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-full border bg-surface px-2.5 py-1 text-xs font-black tracking-wider shadow-sm',
-              borderClass,
-              accentClass
-            )}
-          >
-            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-            {chip}
-          </span>
-          <span className={cn('text-xs font-semibold tracking-wider', accentClass)}>
-            {hint}
-          </span>
-        </header>
-        <div className="flex flex-col gap-2.5">{children}</div>
-      </div>
-    </section>
-  );
-}
-
 /**
- * Matriz de precios en dos tarjetas por tipo de cliente
- * (Tienda vs Distribuidor × Unidad/Docena/Caja).
- * Accesible: etiqueta + nombre accesible por campo, errores visibles,
- * cifras tabulares y chip con icono (el color nunca comunica solo).
+ * Matriz de precios con 2 tarjetas compactas lado a lado.
+ * - Tarjeta izquierda: Cliente tienda (fondo azul #E8F2FE, borde #C4DEFE)
+ * - Tarjeta derecha: Cliente distribuidor (fondo naranja/ámbar #FFF3E4, borde #FEDEBA)
  */
 export function PriceMatrix({ tienda, distribuidor, errors = {} }: PriceMatrixProps) {
-  const buildRows = (
-    prefix: 'precio_tienda' | 'precio_distribuidor',
-    accesor: Record<PriceUnit, React.InputHTMLAttributes<HTMLInputElement>>,
-    origin: 'tienda' | 'distribuidor',
-    accentClass: string,
-    borderClass: string
-  ) =>
-    ROWS.map(({ unit, label }) => {
-      const field = `${prefix}_${unit}` as PriceField;
-      return (
-        <PriceRow
-          key={field}
-          field={field}
-          label={label}
-          accessibleLabel={`Precio ${origin}, por ${label.toLowerCase()} en soles`}
-          registerProps={accesor[unit]}
-          error={errors[field]}
-          accentClass={accentClass}
-          borderClass={borderClass}
-        />
-      );
-    });
-
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <ClientCard
-        chip="Cliente tienda"
-        hint="Por unidad: docena desde 12; mayor desde 13"
-        icon={Store}
-        accentClass="text-role-tienda"
-        borderClass="border-role-tienda/40"
-        softClass="bg-role-tienda-soft"
-        watermarkClass="text-role-tienda/10"
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* Tarjeta izquierda — Cliente tienda */}
+      <section
+        className="relative overflow-hidden rounded-xl bg-[#E8F2FE] border border-[#C4DEFE] p-3 space-y-2"
+        aria-label="Cliente tienda"
       >
-        {buildRows('precio_tienda', tienda, 'tienda', 'text-role-tienda', 'border-role-tienda/40')}
-      </ClientCard>
+        <Store
+          className="absolute -bottom-6 -right-6 size-36 text-[#1F41AF] opacity-10 pointer-events-none select-none"
+          aria-hidden="true"
+        />
+        <div className="relative z-10 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 shadow-xs text-xs font-bold text-[#1F41AF]">
+              <Store className="size-3.5" aria-hidden="true" />
+              Cliente tienda
+            </span>
+          </div>
+          <p className="text-[11px] font-medium text-[#1F41AF]">
+            Por unidad: docena desde 12; mayor desde 13
+          </p>
+          <div className="space-y-1.5 pt-0.5">
+            {ROWS.map(({ unit, label }) => {
+              const field = `precio_tienda_${unit}` as PriceField;
+              return (
+                <PriceRow
+                  key={field}
+                  field={field}
+                  label={label}
+                  accessibleLabel={`Precio tienda, por ${label.toLowerCase()} en soles`}
+                  registerProps={tienda[unit]}
+                  error={errors[field]}
+                  labelClass="text-[#1F41AF]"
+                  borderClass="border-[#C4DEFE]"
+                  focusBorderClass="focus:border-[#1F41AF]"
+                />
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
-      <ClientCard
-        chip="Cliente distribuidor"
-        hint="Por unidad: docena desde 12; mayor desde 13"
-        icon={Truck}
-        accentClass="text-role-distribuidor"
-        borderClass="border-role-distribuidor/40"
-        softClass="bg-role-distribuidor-soft"
-        watermarkClass="text-role-distribuidor/10"
+      {/* Tarjeta derecha — Cliente distribuidor */}
+      <section
+        className="relative overflow-hidden rounded-xl bg-[#FFF3E4] border border-[#FEDEBA] p-3 space-y-2"
+        aria-label="Cliente distribuidor"
       >
-        {buildRows(
-          'precio_distribuidor',
-          distribuidor,
-          'distribuidor',
-          'text-role-distribuidor',
-          'border-role-distribuidor/40'
-        )}
-      </ClientCard>
+        <Truck
+          className="absolute -bottom-6 -right-6 size-36 text-[#9D3A19] opacity-10 pointer-events-none select-none"
+          aria-hidden="true"
+        />
+        <div className="relative z-10 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 shadow-xs text-xs font-bold text-[#9D3A19]">
+              <Truck className="size-3.5" aria-hidden="true" />
+              Cliente distribuidor
+            </span>
+          </div>
+          <p className="text-[11px] font-medium text-[#9D3A19]">
+            Por unidad: docena desde 12; mayor desde 13
+          </p>
+          <div className="space-y-1.5 pt-0.5">
+            {ROWS.map(({ unit, label }) => {
+              const field = `precio_distribuidor_${unit}` as PriceField;
+              return (
+                <PriceRow
+                  key={field}
+                  field={field}
+                  label={label}
+                  accessibleLabel={`Precio distribuidor, por ${label.toLowerCase()} en soles`}
+                  registerProps={distribuidor[unit]}
+                  error={errors[field]}
+                  labelClass="text-[#9D3A19]"
+                  borderClass="border-[#FEDEBA]"
+                  focusBorderClass="focus:border-[#9D3A19]"
+                />
+              );
+            })}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

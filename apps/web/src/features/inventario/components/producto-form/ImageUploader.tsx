@@ -94,12 +94,12 @@ export function ImageUploader({
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           className={cn(
-            'flex w-full items-center gap-4 rounded-2xl border border-border-default bg-surface p-3 shadow-sm transition-colors hover:border-accent-primary/40',
+            'flex w-full items-center gap-3 rounded-xl border border-border-default bg-[#FBFCFD] p-2.5 shadow-xs transition-colors hover:border-[#8D8D8D]',
             FOCUS_RING,
             disabled && 'pointer-events-none opacity-50'
           )}
         >
-          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-border-default/50 bg-surface-muted shadow-xs">
+          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border-default/50 bg-surface-muted shadow-xs">
             <img
               src={previewUrl}
               alt="Vista previa"
@@ -108,19 +108,19 @@ export function ImageUploader({
             />
           </div>
           
-          <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
-            <p className="truncate text-sm font-bold text-brand-subtitle" title={fileName || 'imagen.png'}>
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+            <p className="truncate text-xs font-bold text-brand-subtitle" title={fileName || 'imagen.png'}>
               {fileName || 'imagen.png'}
             </p>
 
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5">
               <label
                 htmlFor={INPUT_ID}
                 title="Cambiar imagen"
-                className="flex cursor-pointer items-center justify-center rounded-lg bg-accent-selection p-2.5 text-brand-subtitle transition-colors hover:bg-accent-primary/20 hover:text-accent-ink"
+                className="flex cursor-pointer items-center justify-center rounded-lg bg-surface-muted p-2 text-brand-subtitle transition-colors hover:bg-neutral-200"
                 aria-label="Cambiar imagen"
               >
-                <Pencil className="size-4" aria-hidden="true" />
+                <Pencil className="size-3.5 text-[#414141]" aria-hidden="true" />
               </label>
 
               <button
@@ -129,32 +129,28 @@ export function ImageUploader({
                 disabled={disabled}
                 title="Quitar imagen"
                 aria-label="Quitar imagen del producto"
-                className="flex items-center justify-center rounded-lg bg-danger/10 p-2.5 text-danger transition-colors hover:bg-danger/20 disabled:opacity-40"
+                className="flex items-center justify-center rounded-lg bg-danger/10 p-2 text-danger transition-colors hover:bg-danger/20 disabled:opacity-40"
               >
-                <Trash2 className="size-4" aria-hidden="true" />
+                <Trash2 className="size-3.5" aria-hidden="true" />
               </button>
             </div>
           </div>
         </div>
       ) : (
-<label
-            htmlFor={INPUT_ID}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            className={cn(
-              'group flex min-h-36 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border-default bg-surface-muted/30 px-4 py-6 text-center transition-[border-color,background-color] hover:border-accent-primary/50 hover:bg-accent-selection/50',
-              FOCUS_RING,
-              disabled && 'pointer-events-none opacity-50'
-            )}
-          >
-          <span className="flex size-12 items-center justify-center rounded-full bg-accent-selection text-brand-subtitle transition-transform duration-150 group-hover:scale-110">
-            <CloudUpload className="size-6" aria-hidden="true" />
-          </span>
-          <span className="mt-3 text-sm font-bold text-brand-subtitle">
-            Arrastra tu imagen o haz clic para seleccionar
-          </span>
-          <span className="mt-1 text-xs text-brand-options">
-            PNG, JPG o WEBP · máximo 5 MB
+        <label
+          htmlFor={INPUT_ID}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          className={cn(
+            'group rounded-xl border border-dashed border-[#D9D9D9] bg-[#FBFCFD] hover:border-[#8D8D8D] py-2.5 px-4 flex items-center justify-center gap-2 cursor-pointer transition-colors',
+            FOCUS_RING,
+            disabled && 'pointer-events-none opacity-50'
+          )}
+        >
+          <CloudUpload className="size-4 text-[#8D8D8D]" aria-hidden="true" />
+          <span className="text-xs">
+            <span className="font-bold text-[#787878]">Arrastra o selecciona</span>{' '}
+            <span className="text-[#8D8D8D]">la imagen</span>
           </span>
         </label>
       )}

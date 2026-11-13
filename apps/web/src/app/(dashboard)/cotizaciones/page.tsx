@@ -95,6 +95,7 @@ export default function MisCotizacionesPage() {
           {/* BUSCAR */}
           <div className="flex-[2] min-w-[240px] lg:min-w-[300px]">
             <Input
+              variant="filter"
               label="Buscar"
               type="text"
               icon={<Search className="w-4 h-4 text-[#F8B602]" strokeWidth={2} />}
@@ -109,6 +110,7 @@ export default function MisCotizacionesPage() {
           {/* FECHA */}
           <div className="flex-1 min-w-[140px] max-w-[195px]">
             <Input
+              variant="filter"
               label="Fecha"
               type="date"
               value={fecha}
@@ -121,6 +123,7 @@ export default function MisCotizacionesPage() {
           {/* ESTADO */}
           <div className="flex-1 min-w-[140px] max-w-[195px]">
             <Select
+              variant="filter"
               label="Estado"
               value={estadoFilter}
               onChange={(e) => {
@@ -134,6 +137,7 @@ export default function MisCotizacionesPage() {
           {/* TIPO DE CLIENTE */}
           <div className="flex-1 min-w-[140px] max-w-[195px]">
             <Select
+              variant="filter"
               label="Tipo de cliente"
               value={tipoFilter}
               onChange={(e) => {

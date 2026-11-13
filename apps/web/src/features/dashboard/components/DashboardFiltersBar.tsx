@@ -93,6 +93,7 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
           {/* FECHA INICIO */}
           <div className="flex-1 min-w-[140px]">
             <Input
+              variant="filter"
               label="Fecha inicio"
               type="date"
               value={filters.fechaInicio ?? ''}
@@ -107,6 +108,7 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
           {/* FECHA FIN */}
           <div className="flex-1 min-w-[140px]">
             <Input
+              variant="filter"
               label="Fecha fin"
               type="date"
               value={filters.fechaFin ?? ''}
@@ -122,6 +124,7 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
           {isAdmin && (
             <div className="flex-1 min-w-[150px]">
               <Select
+                variant="filter"
                 label="Vendedor"
                 value={filters.idVendedor ? String(filters.idVendedor) : ''}
                 onChange={(e) => handleChange('idVendedor', e.target.value ? Number(e.target.value) : undefined)}
@@ -139,6 +142,7 @@ export function DashboardFiltersBar({ filters, onChange, isAdmin }: DashboardFil
           {/* ALMACÉN */}
           <div className="flex-1 min-w-[150px]">
             <Select
+              variant="filter"
               label="Almacén"
               value={filters.idAlmacen ? String(filters.idAlmacen) : ''}
               onChange={(e) => handleChange('idAlmacen', e.target.value ? Number(e.target.value) : undefined)}
