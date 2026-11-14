@@ -1,239 +1,320 @@
-/**
- * Script multiplataforma para iniciar MinIO nativo en Windows
- * Compatible con cmd.exe y PowerShell
- * Ejecuta: pnpm minio (desde package.json raíz)
- * 
- * Funciones:
-   - Verifica/descarga minio.exe
-   - Carga variables .env con fallback a minioadmin
-   - Crea carpeta .minio-data
-   - Inicia minio.exe con los parámetros indicados
-   - Espera a que el puerto 9000 esté listo
-   - Crea buckets públicos requeridos usando el SDK de Minio
- */
-
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
-import http from 'http';
-import dotenv from 'dotenv';
-import * as Minio from 'minio';
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
 
-// Rutas y configuración
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const ROOT_DIR = resolve(__dirname, '..');
-const MINIO_BIN = path.join(REPO_ROOT, '.bin', 'minio.exe');
-const MINIO_DATA_DIR = path.join(REPO_ROOT, '.minio-data');
-const MINIO_URL = 'http://localhost:9000';
-const MINIO_HEALTH_URL = 'http://localhost:9000/minio/health/live';
+const __dirname = path.dirname(__filename);
+const REPO_ROOT = path.resolve(__dirname, '..');
+const DATA_DIR = path.join(REPO_ROOT, '.minio-data');
 
-// Cargar variables .env
-const envPath = path.join(REPO_ROOT, '.env');
-dotenv.config({ path: envPath });
-
-// Leer variables de MinIO con fallback
-const MINIO_ACCESS_KEY = process.env.MINIO_ACCESS_KEY || process.env.MINIO_ROOT_USER || 'minioadmin';
-const MINIO_SECRET_KEY = process.env.MINIO_SECRET_KEY || process.env.MINIO_ROOT_PASSWORD || 'minioadmin';
-const MINIO_BUCKET = process.env.STORAGE_BUCKET || 'goldcontinent-media';
-
-// Paso 1: Verificar si minio.exe existe, si no, descargarlo
-async function ensureMinioBinary() {
-  if (fs.existsSync(MINIO_BIN)) {
-    console.log('✅ minio.exe encontrado en .bin/minio.exe');
-    return;
+function loadEnv() {
+  const envPath = path.join(REPO_ROOT, '.env');
+  if (!fs.existsSync(envPath)) return;
+  for (const line of fs.readFileSync(envPath, 'utf8').split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = trimmed.slice(0, eqIdx).trim();
+    let val = trimmed.slice(eqIdx + 1).trim();
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      val = val.slice(1, -1);
+    }
+    if (!(key in process.env)) process.env[key] = val;
   }
+}
 
-  console.log('⚡ minio.exe no encontrado, descargando...');
-  
-  const binDir = path.join(REPO_ROOT, '.bin');
-  if (!fs.existsSync(binDir)) {
-    fs.mkdirSync(binDir, { recursive: true });
+const MIME_TYPES = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.pdf': 'application/pdf',
+  '.csv': 'text/csv; charset=utf-8',
+  '.json': 'application/json',
+  '.txt': 'text/plain; charset=utf-8',
+};
+
+function getMimeType(filePath) {
+  return MIME_TYPES[path.extname(filePath).toLowerCase()] || 'application/octet-stream';
+}
+
+function escapeXml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function decodeAwsChunked(buf) {
+  const out = [];
+  let offset = 0;
+  while (offset < buf.length) {
+    const lineEnd = buf.indexOf('\r\n', offset);
+    if (lineEnd === -1) break;
+    const header = buf.slice(offset, lineEnd).toString('utf8');
+    const semi = header.indexOf(';');
+    const sizeHex = (semi === -1 ? header : header.slice(0, semi)).trim();
+    const chunkSize = parseInt(sizeHex, 16);
+    if (Number.isNaN(chunkSize)) break;
+    offset = lineEnd + 2;
+    if (chunkSize === 0) break;
+    out.push(buf.slice(offset, offset + chunkSize));
+    offset += chunkSize + 2;
   }
+  return Buffer.concat(out);
+}
 
-  const minioUrl = 'https://dl.min.io/server/minio/release/windows-amd64/minio.exe';
-  
+function readBody(req) {
   return new Promise((resolve, reject) => {
-    const http = require('http');
-    const file = fs.createWriteStream(MINIO_BIN);
-    const request = http.get(minioUrl, (response) => {
-      response.pipe(file);
-      file.on('finish', () => {
-        console.log('✅ minio.exe descargado exitosamente');
-        resolve();
-      });
+    const chunks = [];
+    req.on('data', (c) => chunks.push(c));
+    req.on('end', () => {
+      const raw = Buffer.concat(chunks);
+      const isChunked =
+        req.headers['x-amz-content-sha256'] === 'STREAMING-AWS4-HMAC-SHA256-PAYLOAD' ||
+        (req.headers['content-encoding'] || '').includes('aws-chunked');
+      resolve(isChunked ? decodeAwsChunked(raw) : raw);
     });
-    request.on('error', (err) => {
-      fs.unlink(MINIO_BIN);
-      reject(err);
-    });
-    request.on('timeout', () => {
-      request.destroy();
-      reject(new Error('Tiempo de espera agotado descargando minio.exe'));
-    });
-    request.setTimeout(60000);
+    req.on('error', reject);
   });
 }
 
-// Paso 2: Crear carpeta .minio-data si no existe
-function ensureDataDirectory() {
-  if (!fs.existsSync(MINIO_DATA_DIR)) {
-    fs.mkdirSync(MINIO_DATA_DIR, { recursive: true });
-    console.log(`📁 Carpeta creada: .minio-data`);
-  }
-}
-
-// Paso 3: Iniciar minio.exe
-function startMinioProcess() {
-  const { spawn } = require('child_process');
-  
-  const env = {
-    ...process.env,
-    MINIO_ROOT_USER: MINIO_ACCESS_KEY,
-    MINIO_ROOT_PASSWORD: MINIO_SECRET_KEY,
-  };
-  
-  console.log(`🚀 Iniciando MinIO...`);
-  console.log(`   Servidor: ${MINIO_URL}`);
-  console.log(`   Consola: ${MINIO_URL.replace('9000', '9001')}`);
-  console.log(`   Datos: ${MINIO_DATA_DIR}`);
-  console.log(`   Usuario: ${MINIO_ACCESS_KEY}`);
-  
-  const child = spawn('minio.exe', [
-    'server',
-    `.${MINIO_DATA_DIR.replace(REPO_ROOT, '.')}`,
-    '--address',
-    ':9000',
-    '--console-address',
-    ':9001'
-  ], {
-    env: env,
-    stdio: 'inherit',
-    shell: true
-  });
-  
-  return child;
-}
-
-// Paso 4: Esperar a que el puerto 9000 esté listo
-async function waitForMinioReady(maxRetries = 30, interval = 2000) {
-  console.log('⏳ Esperando a que MinIO esté listo...');
-  
-  for (let i = 0; i < maxRetries; i++) {
-    await new Promise(resolve => setTimeout(resolve, interval));
-    
-    return new Promise((resolve, reject) => {
-      http.get(MINIO_HEALTH_URL, (res) => {
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => {
-          if (res.statusCode === 200) {
-            console.log('✅ MinIO listo!');
-            resolve(true);
-          } else {
-            console.log(`   Intento ${i + 1}/${maxRetries}: status ${res.statusCode}`);
-            resolve(false);
-          }
-        });
-      }).on('error', () => {
-        console.log(`   Intento ${i + 1}/${maxRetries}: sin conexión aún`);
-        resolve(false);
+function listFilesRecursive(dir, baseDir = dir) {
+  if (!fs.existsSync(dir)) return [];
+  const results = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...listFilesRecursive(full, baseDir));
+    } else if (entry.isFile()) {
+      const stat = fs.statSync(full);
+      results.push({
+        key: path.relative(baseDir, full).split(path.sep).join('/'),
+        size: stat.size,
+        mtime: stat.mtime.toISOString(),
       });
-    });
+    }
   }
-  
-  console.log('❌ MinIO no respondió después de los intentos');
-  return false;
+  return results;
 }
 
-// Paso 5: Crear buckets públicos
-async function createBuckets() {
-  console.log('🪣 Creando buckets públicos...');
-  
-  try {
-    const minio = new Minio.Client({
-      endPoint: 'localhost',
-      port: 9000,
-      useSSL: false,
-      accessKey: MINIO_ACCESS_KEY,
-      secretKey: MINIO_SECRET_KEY,
-    });
-    
-    const buckets = ['goldcontinent-media', 'product-images'];
-    
-    for (const bucket of buckets) {
-      try {
-        const exists = await minio.bucketExists(bucket);
-        if (!exists) {
-          await minio.makeBucket(bucket);
-          console.log(`   ✅ Bucket creado: ${bucket}`);
-          
-          const policy = {
-            Version: '2012-10-17',
-            Statement: [
-              {
-                Sid: 'PublicReadGetObject',
-                Effect: 'Allow',
-                Principal: '*',
-                Action: ['s3:GetObject'],
-                Resource: `arn:aws:s3:::${bucket}/*`
-              }
-            ]
-          };
-          
-          try {
-            await minio.setBucketPolicy(bucket, JSON.stringify(policy));
-            console.log(`   🔓 Política pública aplicada: ${bucket}`);
-          } catch (policyError) {
-            console.log(`   ⚠️ No se pudo aplicar política pública a ${bucket}: ${policyError.message}`);
-          }
-        } else {
-          console.log(`   ℹ️ Bucket ya existe: ${bucket}`);
+function resolveSafePath(bucket, key = '') {
+  const bucketRoot = path.resolve(DATA_DIR, bucket);
+  const target = key ? path.resolve(bucketRoot, ...key.split('/')) : bucketRoot;
+  if (target !== bucketRoot && !target.startsWith(bucketRoot + path.sep)) {
+    return null;
+  }
+  return target;
+}
+
+function setCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, PUT, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', '*');
+  res.setHeader('Access-Control-Expose-Headers', 'ETag');
+}
+
+function startS3Server(port) {
+  const server = http.createServer(async (req, res) => {
+    setCors(res);
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    const url = new URL(req.url || '/', `http://localhost:${port}`);
+    if (url.pathname === '/minio/health/live' || url.pathname === '/minio/health/ready') {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('OK');
+      return;
+    }
+
+    const parts = url.pathname.replace(/^\/+/, '').split('/').filter(Boolean);
+
+    // GET / -> listar buckets
+    if (parts.length === 0 && req.method === 'GET') {
+      const buckets = fs
+        .readdirSync(DATA_DIR, { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .map(
+          (d) =>
+            `<Bucket><Name>${escapeXml(d.name)}</Name><CreationDate>${new Date().toISOString()}</CreationDate></Bucket>`
+        )
+        .join('');
+      const xml = `<?xml version="1.0" encoding="UTF-8"?><ListAllMyBucketsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Buckets>${buckets}</Buckets></ListAllMyBucketsResult>`;
+      res.writeHead(200, { 'Content-Type': 'application/xml' });
+      res.end(xml);
+      return;
+    }
+
+    const bucket = decodeURIComponent(parts[0]);
+    const key = parts.slice(1).map(decodeURIComponent).join('/');
+    const targetPath = resolveSafePath(bucket, key);
+    if (!targetPath) {
+      res.writeHead(400);
+      res.end('Invalid path');
+      return;
+    }
+
+    // Operaciones a nivel de bucket
+    if (!key) {
+      if (req.method === 'HEAD') {
+        res.writeHead(fs.existsSync(targetPath) ? 200 : 404);
+        res.end();
+        return;
+      }
+      if (req.method === 'PUT') {
+        fs.mkdirSync(targetPath, { recursive: true });
+        res.writeHead(url.searchParams.has('policy') ? 204 : 200);
+        res.end();
+        return;
+      }
+      if (req.method === 'GET') {
+        if (url.searchParams.has('location')) {
+          res.writeHead(200, { 'Content-Type': 'application/xml' });
+          res.end(
+            '<?xml version="1.0" encoding="UTF-8"?><LocationConstraint xmlns="http://s3.amazonaws.com/doc/2006-03-01/">us-east-1</LocationConstraint>'
+          );
+          return;
         }
-      } catch (bucketError) {
-        console.log(`   ❌ Error con bucket ${bucket}: ${bucketError.message}`);
+        const prefix = url.searchParams.get('prefix') || '';
+        const files = listFilesRecursive(targetPath).filter((f) => f.key.startsWith(prefix));
+        const contents = files
+          .map(
+            (f) =>
+              `<Contents><Key>${escapeXml(f.key)}</Key><LastModified>${f.mtime}</LastModified><Size>${f.size}</Size></Contents>`
+          )
+          .join('');
+        const xml = `<?xml version="1.0" encoding="UTF-8"?><ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Name>${escapeXml(bucket)}</Name><Prefix>${escapeXml(prefix)}</Prefix><IsTruncated>false</IsTruncated>${contents}</ListBucketResult>`;
+        res.writeHead(200, { 'Content-Type': 'application/xml' });
+        res.end(xml);
+        return;
+      }
+      if (req.method === 'POST' && url.searchParams.has('delete')) {
+        const body = (await readBody(req)).toString('utf8');
+        for (const match of body.matchAll(/<Key>(.*?)<\/Key>/g)) {
+          const delPath = resolveSafePath(bucket, match[1]);
+          if (delPath && fs.existsSync(delPath)) fs.rmSync(delPath, { force: true });
+        }
+        res.writeHead(200, { 'Content-Type': 'application/xml' });
+        res.end('<?xml version="1.0" encoding="UTF-8"?><DeleteResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"></DeleteResult>');
+        return;
       }
     }
-  } catch (error) {
-    console.log('⚠️ Nota: No se pudieron crear los buckets automáticamente');
-    console.log('   Asegúrate de tener el SDK de Minio instalado');
-    console.log(`   Error: ${error.message}`);
-  }
-}
 
-// Ejecución principal
-async function main() {
-  console.log('========================================');
-  console.log('   Iniciando MinIO nativo sin Docker');
-  console.log('========================================');
-  
-  try {
-    await ensureMinioBinary();
-    ensureDataDirectory();
-    const child = startMinioProcess();
-    const isReady = await waitForMinioReady();
-    
-    if (isReady) {
-      await createBuckets();
+    // Operaciones a nivel de objeto (archivo)
+    if (req.method === 'PUT') {
+      const data = await readBody(req);
+      fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+      fs.writeFileSync(targetPath, data);
+      const etag = crypto.createHash('md5').update(data).digest('hex');
+      res.writeHead(200, { ETag: `"${etag}"` });
+      res.end();
+      return;
     }
-    
-    console.log(`\n🌐 MinIO disponible en:`);
-    console.log(`   Servidor: http://localhost:9000`);
-    console.log(`   Consola:  http://localhost:9001`);
-    console.log(`   Bucket:   ${MINIO_BUCKET}`);
-    console.log('\n💡 Presiona Ctrl+C para detener MinIO');
-    
-    process.stdin.resume();
-    
-  } catch (error) {
-    console.error('❌ Error crítico al iniciar MinIO:', error);
-    process.exit(1);
-  }
+
+    if (req.method === 'HEAD' || req.method === 'GET') {
+      if (!fs.existsSync(targetPath) || !fs.statSync(targetPath).isFile()) {
+        res.writeHead(404, { 'Content-Type': 'application/xml' });
+        res.end('<Error><Code>NoSuchKey</Code></Error>');
+        return;
+      }
+      const stat = fs.statSync(targetPath);
+      res.writeHead(200, {
+        'Content-Type': getMimeType(targetPath),
+        'Content-Length': stat.size,
+        'Last-Modified': stat.mtime.toUTCString(),
+        'Cache-Control': 'no-cache',
+      });
+      if (req.method === 'HEAD') {
+        res.end();
+      } else {
+        fs.createReadStream(targetPath).pipe(res);
+      }
+      return;
+    }
+
+    if (req.method === 'DELETE') {
+      if (fs.existsSync(targetPath)) fs.rmSync(targetPath, { force: true });
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    res.writeHead(200);
+    res.end();
+  });
+
+  server.listen(port, () => {
+    console.log(`Almacenamiento S3 local listo en http://localhost:${port}`);
+  });
 }
 
-main().catch(err => {
-  console.error('❌ Error fatal:', err);
-  process.exit(1);
-});
+function startConsoleServer(consolePort, s3Port, buckets) {
+  const server = http.createServer(async (req, res) => {
+    const url = new URL(req.url || '/', `http://localhost:${consolePort}`);
+    if (req.method === 'POST' && url.pathname === '/upload') {
+      const bucket = url.searchParams.get('bucket') || 'product-images';
+      const filename = path.basename(url.searchParams.get('filename') || '');
+      const dest = resolveSafePath(bucket, filename);
+      if (!dest || !filename) {
+        res.writeHead(400);
+        res.end('Archivo invalido');
+        return;
+      }
+      const data = await readBody(req);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, data);
+      res.writeHead(200);
+      res.end('OK');
+      return;
+    }
+
+    const html = `<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Storage Local - Gold Continent</title>
+<style>body{font-family:system-ui,sans-serif;max-width:720px;margin:40px auto;padding:0 16px;color:#0f172a}
+.card{border:1px solid #e2e8f0;border-radius:12px;padding:20px;background:#fff}
+button{background:#f8b602;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer}
+select,input{padding:8px;border:1px solid #cbd5e1;border-radius:8px;margin-right:8px}</style></head>
+<body><div class="card"><h2>Subir imágenes de productos (Sin Docker)</h2>
+<p>Carpeta local en disco: <code>.minio-data\\product-images\\</code></p>
+<select id="bucket">${buckets.map((b) => `<option value="${b}">${b}</option>`).join('')}</select>
+<input type="file" id="files" multiple accept="image/*,.pdf" />
+<button onclick="upload()">Subir archivos</button>
+<p id="status"></p></div>
+<script>
+async function upload(){
+  const bucket=document.getElementById('bucket').value;
+  const files=document.getElementById('files').files;
+  const status=document.getElementById('status');
+  for(let i=0;i<files.length;i++){
+    status.textContent='Subiendo '+(i+1)+' de '+files.length+': '+files[i].name;
+    await fetch('/upload?bucket='+encodeURIComponent(bucket)+'&filename='+encodeURIComponent(files[i].name),{method:'POST',body:files[i]});
+  }
+  status.textContent='Listo: '+files.length+' archivo(s) subidos a '+bucket+'. Recarga el ERP.';
+}
+</script></body></html>`;
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(html);
+  });
+
+  server.listen(consolePort, () => {
+    console.log(`Consola de carga de imagenes en http://localhost:${consolePort}`);
+  });
+}
+
+loadEnv();
+const s3Port = Number(process.env.STORAGE_PORT || process.env.MINIO_PORT || 9000);
+const consolePort = Number(process.env.MINIO_CONSOLE_PORT || 9001);
+const mainBucket = process.env.STORAGE_BUCKET || process.env.MINIO_BUCKET || 'goldcontinent-media';
+const buckets = Array.from(new Set(['product-images', mainBucket]));
+
+for (const b of buckets) {
+  fs.mkdirSync(path.join(DATA_DIR, b), { recursive: true });
+}
+
+startS3Server(s3Port);
+startConsoleServer(consolePort, s3Port, buckets);
