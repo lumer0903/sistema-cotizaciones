@@ -36,15 +36,19 @@ export const FIELD_BORDER = FIELD_BORDER_FILTER;
 export const FIELD_TRANSITION =
   'transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-[#8D8D8D]';
 
+/** Estado focus unificado: halo dorado limpio idéntico en todos los controles.
+ * Igual que el input BUSCAR: outline-none + anillo dorado sutil + data-[state=open].
+ */
+export const FIELD_FOCUS =
+  'outline-none focus:outline-none focus-visible:outline-none focus:border-[#F8B602] focus:ring-2 focus:ring-[#F8B602]/20 focus-visible:border-[#F8B602] focus-visible:ring-2 focus-visible:ring-[#F8B602]/20 data-[state=open]:border-[#F8B602] data-[state=open]:ring-2 data-[state=open]:ring-[#F8B602]/20 transition-colors';
+
 /** Estado focus para filtros con halo dorado suave (#F8B602/25). */
 export const FIELD_FOCUS_FILTER =
-  'focus:outline-none focus:ring-2 focus:ring-[#F8B602]/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F8B602]/25';
+  'outline-none focus:outline-none focus-visible:outline-none focus:border-[#F8B602] focus:ring-2 focus:ring-[#F8B602]/20 focus-visible:border-[#F8B602] focus-visible:ring-2 focus-visible:ring-[#F8B602]/20 data-[state=open]:border-[#F8B602] data-[state=open]:ring-2 data-[state=open]:ring-[#F8B602]/20 transition-colors';
 
 /** Estado focus para modales: focus:border-[#414141] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#414141]/10. */
 export const FIELD_FOCUS_MODAL =
-  'focus:border-[#414141] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#414141]/10 focus-visible:border-[#414141] focus-visible:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#414141]/10';
-
-export const FIELD_FOCUS = FIELD_FOCUS_FILTER;
+  'outline-none focus:outline-none focus-visible:outline-none focus:border-[#414141] focus:ring-2 focus:ring-[#414141]/15 focus-visible:border-[#414141] focus-visible:ring-2 focus-visible:ring-[#414141]/15 data-[state=open]:border-[#414141] data-[state=open]:ring-2 data-[state=open]:ring-[#414141]/15 transition-colors';
 
 /** Estado deshabilitado. */
 export const FIELD_DISABLED =
@@ -62,7 +66,7 @@ export const FIELD_BASE_FILTER = [
   FIELD_BORDER_FILTER,
   FIELD_TEXT,
   FIELD_TRANSITION,
-  FIELD_FOCUS_FILTER,
+  FIELD_FOCUS,
   FIELD_DISABLED,
 ].join(' ');
 
@@ -71,7 +75,7 @@ export const FIELD_BASE_MODAL = [
   FIELD_BORDER_MODAL,
   FIELD_TEXT,
   FIELD_TRANSITION,
-  FIELD_FOCUS_MODAL,
+  FIELD_FOCUS,
   FIELD_DISABLED,
 ].join(' ');
 

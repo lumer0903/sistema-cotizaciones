@@ -65,7 +65,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               baseFieldClass,
               icon ? 'pl-9' : undefined,
               error && FIELD_ERROR,
-              className
+              className,
+              // Estado focus/opening unificado idéntico al buscador y Select
+              'outline-none focus:outline-none focus-visible:outline-none focus:border-[#F8B602] focus:ring-2 focus:ring-[#F8B602]/20 focus-visible:border-[#F8B602] focus-visible:ring-2 focus-visible:ring-[#F8B602]/20 data-[state=open]:border-[#F8B602] data-[state=open]:ring-2 data-[state=open]:ring-[#F8B602]/20 transition-colors'
             )}
             {...props}
           />

@@ -20,8 +20,7 @@ import {
   FIELD_DISABLED,
   FIELD_ERROR,
   FIELD_ERROR_TEXT,
-  FIELD_FOCUS_FILTER,
-  FIELD_FOCUS_MODAL,
+  FIELD_FOCUS,
   FIELD_HEIGHT,
   FIELD_LABEL_FILTER,
   FIELD_LABEL_MODAL,
@@ -250,7 +249,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const isFilter = variant === 'filter';
     const labelClass = isFilter ? FIELD_LABEL_FILTER : FIELD_LABEL_MODAL;
     const borderClass = isFilter ? FIELD_BORDER_FILTER : FIELD_BORDER_MODAL;
-    const focusClass = isFilter ? FIELD_FOCUS_FILTER : FIELD_FOCUS_MODAL;
+    const focusClass = isFilter ? FIELD_FOCUS : FIELD_FOCUS; // unified focus style
     const iconColor = isFilter ? 'text-[#F8B602]' : 'text-[#8D8D8D]';
 
     const selectedOption = parsedOptions.find(
@@ -329,9 +328,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
               FIELD_TRANSITION,
               FIELD_DISABLED,
               icon ? 'pl-9' : 'px-3.5',
-              isOpen
-                ? 'border-brand-options focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus-ring'
-                : focusClass,
+              focusClass,
+              isOpen && 'data-[state=open]:border-[#F8B602] data-[state=open]:ring-2 data-[state=open]:ring-[#F8B602]/20',
               error && FIELD_ERROR,
               className
             )}
