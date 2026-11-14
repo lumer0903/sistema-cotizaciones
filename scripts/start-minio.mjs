@@ -18,9 +18,13 @@ import os from 'os';
 import http from 'http';
 import dotenv from 'dotenv';
 import * as Minio from 'minio';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
 // Rutas y configuración
-const REPO_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const ROOT_DIR = resolve(__dirname, '..');
 const MINIO_BIN = path.join(REPO_ROOT, '.bin', 'minio.exe');
 const MINIO_DATA_DIR = path.join(REPO_ROOT, '.minio-data');
 const MINIO_URL = 'http://localhost:9000';
