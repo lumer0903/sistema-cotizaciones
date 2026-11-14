@@ -9,29 +9,26 @@
    - Crea carpeta .minio-data
    - Inicia minio.exe con los parámetros indicados
    - Espera a que el puerto 9000 esté listo
-   - Crea buckets públicos requeridos
+   - Crea buckets públicos requeridos usando el SDK de Minio
  */
 
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const http = require('http');
-const { MinioClient } = require('minio');
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import http from 'http';
+import dotenv from 'dotenv';
+import * as Minio from 'minio';
 
 // Rutas y configuración
-const REPO_ROOT = path.resolve(__dirname, '..');
+const REPO_ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const MINIO_BIN = path.join(REPO_ROOT, '.bin', 'minio.exe');
 const MINIO_DATA_DIR = path.join(REPO_ROOT, '.minio-data');
 const MINIO_URL = 'http://localhost:9000';
 const MINIO_HEALTH_URL = 'http://localhost:9000/minio/health/live';
 
-// Cargar variables .env manualmente (solo las de MinIO)
-const dotenv = require('dotenv');
+// Cargar variables .env
 const envPath = path.join(REPO_ROOT, '.env');
-const envResult = dotenv.config({ path: envPath });
-if (envResult.error) {
-  console.log('No se encontró .env en la raíz, usando variables de entorno del sistema');
-}
+dotenv.config({ path: envPath });
 
 // Leer variables de MinIO con fallback
 const MINIO_ACCESS_KEY = process.env.MINIO_ACCESS_KEY || process.env.MINIO_ROOT_USER || 'minioadmin';
@@ -47,16 +44,15 @@ async function ensureMinioBinary() {
 
   console.log('⚡ minio.exe no encontrado, descargando...');
   
-  // Crear carpeta .bin si no existe
   const binDir = path.join(REPO_ROOT, '.bin');
   if (!fs.existsSync(binDir)) {
     fs.mkdirSync(binDir, { recursive: true });
   }
 
   const minioUrl = 'https://dl.min.io/server/minio/release/windows-amd64/minio.exe';
-  const http = require('http');
   
   return new Promise((resolve, reject) => {
+    const http = require('http');
     const file = fs.createWriteStream(MINIO_BIN);
     const request = http.get(minioUrl, (response) => {
       response.pipe(file);
@@ -66,14 +62,14 @@ async function ensureMinioBinary() {
       });
     });
     request.on('error', (err) => {
-      fs.unlink(MINIO_BIN); // Borrar archivo incompleto
+      fs.unlink(MINIO_BIN);
       reject(err);
     });
     request.on('timeout', () => {
       request.destroy();
       reject(new Error('Tiempo de espera agotado descargando minio.exe'));
     });
-    request.setTimeout(60000); // 60 segundos
+    request.setTimeout(60000);
   });
 }
 
@@ -153,7 +149,7 @@ async function createBuckets() {
   console.log('🪣 Creando buckets públicos...');
   
   try {
-    const minio = new MinioClient({
+    const minio = new Minio.Client({
       endPoint: 'localhost',
       port: 9000,
       useSSL: false,
@@ -170,7 +166,6 @@ async function createBuckets() {
           await minio.makeBucket(bucket);
           console.log(`   ✅ Bucket creado: ${bucket}`);
           
-          // Configurar política de lectura pública
           const policy = {
             Version: '2012-10-17',
             Statement: [
@@ -199,7 +194,7 @@ async function createBuckets() {
     }
   } catch (error) {
     console.log('⚠️ Nota: No se pudieron crear los buckets automáticamente');
-    console.log('   Asegúrate de tener el SDK de MinIO instalado y configurado');
+    console.log('   Asegúrate de tener el SDK de Minio instalado');
     console.log(`   Error: ${error.message}`);
   }
 }
@@ -211,32 +206,22 @@ async function main() {
   console.log('========================================');
   
   try {
-    // 1. Asegurar binary
     await ensureMinioBinary();
-    
-    // 2. Crear directorio de datos
     ensureDataDirectory();
-    
-    // 3. Iniciar proceso MinIO
     const child = startMinioProcess();
-    
-    // 4. Esperar a que esté listo
     const isReady = await waitForMinioReady();
     
-    // 5. Crear buckets (solo si MinIO está listo)
     if (isReady) {
       await createBuckets();
     }
     
-    console.log('\\n🌐 MinIO disponible en:');
+    console.log(`\n🌐 MinIO disponible en:`);
     console.log(`   Servidor: http://localhost:9000`);
     console.log(`   Consola:  http://localhost:9001`);
     console.log(`   Bucket:   ${MINIO_BUCKET}`);
-    console.log('\\n💡 Presiona Ctrl+C para detener MinIO');
+    console.log('\n💡 Presiona Ctrl+C para detener MinIO');
     
-    // Mantener el script vivo mientras el proceso hijo corre
-    // No cerramos el proceso hijo, dejamos que siga corriendo
-    process.stdin.resume(); // Pausar este script
+    process.stdin.resume();
     
   } catch (error) {
     console.error('❌ Error crítico al iniciar MinIO:', error);
@@ -244,7 +229,6 @@ async function main() {
   }
 }
 
-// Ejecutar
 main().catch(err => {
   console.error('❌ Error fatal:', err);
   process.exit(1);

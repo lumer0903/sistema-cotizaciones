@@ -28,9 +28,9 @@
     "minio": "node scripts/start-minio.mjs"
   },
   "devDependencies": {
+    "concurrently": "^9.0.0",
     "turbo": "^2.11.4",
     "typescript": "^5.6.0",
-    "concurrently": "^9.0.0",
     "xlsx": "^0.18.5"
   },
   "packageManager": "pnpm@9.15.0",
@@ -46,6 +46,8 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "dotenv": "^16.4.5",
+    "minio": "^8.0.7",
     "tailwind-merge": "^3.7.0"
   }
 }

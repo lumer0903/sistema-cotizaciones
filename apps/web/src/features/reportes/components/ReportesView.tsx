@@ -29,22 +29,20 @@ import { Pagination } from '@/components/ui/Pagination';
 import { showToast } from '@/lib/toast';
 import { usePermissions } from '@/hooks/usePermissions';
 
-const TAKE = 20;
-
 const REPORTE_CONFIG: Record<TipoReporte, { label: string; icon: React.ReactNode; description: string }> = {
   'ranking-productos': {
     label: 'Ranking Productos',
-    icon: <BarChart2 className="w-4 h-4" />,
+    icon: <BarChart2 className="w-4 h-4 shrink-0" />,
     description: 'Productos más vendidos por cantidad e ingreso',
   },
   'antiguedad-deuda': {
     label: 'Antigüedad Deuda',
-    icon: <Users className="w-4 h-4" />,
+    icon: <Users className="w-4 h-4 shrink-0" />,
     description: 'Cuentas por cobrar agrupadas por rango de días',
   },
   'auditoria-ia': {
     label: 'Auditoría IA',
-    icon: <FileText className="w-4 h-4" />,
+    icon: <FileText className="w-4 h-4 shrink-0" />,
     description: 'Historial de sugerencias IA y acciones del usuario',
   },
 };
@@ -88,11 +86,14 @@ export function ReportesView() {
   // Estado global
   const [tipoReporte, setTipoReporte] = useState<TipoReporte>('ranking-productos');
   const [filtros, setFiltros] = useState<FiltrosReporte>({});
+  const [take, setTake] = useState(20);
   const [skip, setSkip] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingMetas, setLoadingMetas] = useState(true);
 
-  const tieneFiltrosActivos = Boolean(filtros.fechaInicio || filtros.fechaFin || filtros.idVendedor || filtros.idAlmacen || filtros.idCliente);
+  const tieneFiltrosActivos = Boolean(
+    filtros.fechaInicio || filtros.fechaFin || filtros.idVendedor || filtros.idAlmacen || filtros.idCliente
+  );
 
   // Metadatos para selects
   const [almacenes, setAlmacenes] = useState<Almacen[]>([]);
@@ -124,28 +125,26 @@ export function ReportesView() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial fetch on mount is standard data fetching pattern
     cargarMetadatos();
   }, [cargarMetadatos]);
 
-  // Fetch actual según reporte activo
-  const fetchActual = useCallback(async (resetPagination = false) => {
-    if (resetPagination) setSkip(0);
+  // Fetch actual según reporte activo, filtros y paginación
+  const fetchActual = useCallback(async () => {
     setLoading(true);
     try {
       switch (tipoReporte) {
         case 'ranking-productos': {
-          const res = await fetchRankingProductos(filtros, TAKE, skip);
+          const res = await fetchRankingProductos(filtros, take, skip);
           setRankingData(res);
           break;
         }
         case 'antiguedad-deuda': {
-          const res = await fetchAntiguedadDeuda(filtros, TAKE, skip);
+          const res = await fetchAntiguedadDeuda(filtros, take, skip);
           setDeudaData(res);
           break;
         }
         case 'auditoria-ia': {
-          const res = await fetchAuditoriaIa(filtros, TAKE, skip);
+          const res = await fetchAuditoriaIa(filtros, take, skip);
           setIaData(res);
           break;
         }
@@ -155,41 +154,54 @@ export function ReportesView() {
     } finally {
       setLoading(false);
     }
-  }, [tipoReporte, filtros, skip]);
+  }, [tipoReporte, filtros, take, skip]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch on mount/dependency change
-    fetchActual(true);
+    fetchActual();
   }, [fetchActual]);
 
   // Helpers de paginación
   const totalActual = useMemo((): number => {
     switch (tipoReporte) {
-      case 'ranking-productos': return rankingData.total;
-      case 'antiguedad-deuda': return deudaData.total;
-      case 'auditoria-ia': return iaData.total;
-      default: return 0;
+      case 'ranking-productos':
+        return rankingData.total;
+      case 'antiguedad-deuda':
+        return deudaData.total;
+      case 'auditoria-ia':
+        return iaData.total;
+      default:
+        return 0;
     }
   }, [tipoReporte, rankingData.total, deudaData.total, iaData.total]);
 
   const dataActual = useMemo((): (RankingProducto | AntiguedadDeuda | AuditoriaIa)[] => {
     switch (tipoReporte) {
-      case 'ranking-productos': return rankingData.data;
-      case 'antiguedad-deuda': return deudaData.data;
-      case 'auditoria-ia': return iaData.data;
-      default: return [];
+      case 'ranking-productos':
+        return rankingData.data;
+      case 'antiguedad-deuda':
+        return deudaData.data;
+      case 'auditoria-ia':
+        return iaData.data;
+      default:
+        return [];
     }
   }, [tipoReporte, rankingData.data, deudaData.data, iaData.data]);
 
-  const totalPages = Math.ceil(totalActual / TAKE) || 1;
-  const currentPage = Math.floor(skip / TAKE) + 1;
+  const totalPages = Math.ceil(totalActual / take) || 1;
+  const currentPage = Math.floor(skip / take) + 1;
 
   const handlePageChange = (page: number) => {
-    setSkip((page - 1) * TAKE);
+    setSkip((page - 1) * take);
   };
 
-  const handleFiltroChange = (key: string, value: string | number | undefined) => {
-    setFiltros((prev: FiltrosReporte) => ({ ...prev, [key]: value as any }));
+  const handleLimitChange = (newLimit: number) => {
+    setTake(newLimit);
+    setSkip(0);
+  };
+
+  const handleFiltroChange = <K extends keyof FiltrosReporte>(key: K, value: FiltrosReporte[K]) => {
+    setSkip(0);
+    setFiltros((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleExport = async () => {
@@ -225,37 +237,59 @@ export function ReportesView() {
   const vendedorOptions = vendedores.map((v) => ({ label: v.nombre, value: v.id_usuario }));
   const clienteOptions = clientes.map((c) => ({ label: c.nombre, value: c.id_cliente }));
 
-  // Render filas según tipo
+  // Render filas según tipo (ya vienen paginadas desde la API)
   const renderRows = () => {
     switch (tipoReporte) {
       case 'ranking-productos':
-        return rankingData.data.slice((currentPage - 1) * TAKE, currentPage * TAKE).map((row: RankingProducto) => (
+        return rankingData.data.map((row: RankingProducto) => (
           <TableRow key={row.idProducto}>
             <TableCell className="font-semibold text-slate-900 tabular-nums whitespace-nowrap">{row.codigo}</TableCell>
             <TableCell className="max-w-xs truncate text-slate-600">{row.descripcion}</TableCell>
-            <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">{row.cantidadVendida.toLocaleString()}</TableCell>
-            <TableCell className="text-right tabular-nums whitespace-nowrap font-semibold text-slate-900">
-              {Number(row.ingresoTotal).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">
+              {row.cantidadVendida.toLocaleString()}
             </TableCell>
-            <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">{row.numeroCotizaciones}</TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap font-semibold text-slate-900">
+              {Number(row.ingresoTotal).toLocaleString('es-PE', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">
+              {row.numeroCotizaciones}
+            </TableCell>
           </TableRow>
         ));
       case 'antiguedad-deuda':
-        return deudaData.data.slice((currentPage - 1) * TAKE, currentPage * TAKE).map((row: AntiguedadDeuda) => (
+        return deudaData.data.map((row: AntiguedadDeuda) => (
           <TableRow key={row.idCliente}>
             <TableCell className="font-semibold text-slate-900 max-w-xs truncate">{row.cliente}</TableCell>
             <TableCell className="whitespace-nowrap text-slate-600">{row.rucDni ?? '-'}</TableCell>
-            <TableCell className="text-right font-semibold tabular-nums whitespace-nowrap text-slate-900">{Number(row.totalPendiente).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-            <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">{Number(row.d0_30).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-            <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">{Number(row.d31_60).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-            <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">{Number(row.d61_90).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-            <TableCell className="text-right font-semibold tabular-nums whitespace-nowrap text-slate-900">{Number(row.d90mas).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+            <TableCell className="text-right font-semibold tabular-nums whitespace-nowrap text-slate-900">
+              {Number(row.totalPendiente).toLocaleString('es-PE', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">
+              {Number(row.d0_30).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">
+              {Number(row.d31_60).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </TableCell>
+            <TableCell className="text-right tabular-nums whitespace-nowrap text-slate-600">
+              {Number(row.d61_90).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </TableCell>
+            <TableCell className="text-right font-semibold tabular-nums whitespace-nowrap text-slate-900">
+              {Number(row.d90mas).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </TableCell>
           </TableRow>
         ));
       case 'auditoria-ia':
-        return iaData.data.slice((currentPage - 1) * TAKE, currentPage * TAKE).map((row: AuditoriaIa) => (
+        return iaData.data.map((row: AuditoriaIa) => (
           <TableRow key={row.idInteraccion}>
-            <TableCell className="font-semibold text-slate-900 whitespace-nowrap">{new Date(row.createdAt).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</TableCell>
+            <TableCell className="font-semibold text-slate-900 whitespace-nowrap">
+              {new Date(row.createdAt).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}
+            </TableCell>
             <TableCell className="text-slate-600 whitespace-nowrap">{row.tipoSugerencia ?? '-'}</TableCell>
             <TableCell className="text-center whitespace-nowrap">
               {(() => {
@@ -271,7 +305,9 @@ export function ReportesView() {
             </TableCell>
             <TableCell className="max-w-xs truncate text-slate-600">{row.productoOriginal ?? '-'}</TableCell>
             <TableCell className="max-w-xs truncate text-slate-600">{row.productoSugerido ?? '-'}</TableCell>
-            <TableCell className="text-right whitespace-nowrap text-slate-600 tabular-nums">{row.idCotizacion ?? '-'}</TableCell>
+            <TableCell className="text-right whitespace-nowrap text-slate-600 tabular-nums">
+              {row.idCotizacion ?? '-'}
+            </TableCell>
             <TableCell className="whitespace-nowrap text-slate-600">{row.vendedor ?? '-'}</TableCell>
           </TableRow>
         ));
@@ -323,6 +359,19 @@ export function ReportesView() {
     }
   };
 
+  const renderPaginationFooter = (label: string) =>
+    totalActual > 0 ? (
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalActual}
+        limit={take}
+        onPageChange={handlePageChange}
+        onLimitChange={handleLimitChange}
+        itemLabel={label}
+      />
+    ) : undefined;
+
   return (
     <div className="space-y-6">
       <h1 className="sr-only">Reportes</h1>
@@ -330,61 +379,61 @@ export function ReportesView() {
       {/* Filtros */}
       <FilterCard className="w-full">
         <FilterGrid>
-            <div className="flex-1 min-w-[140px] max-w-[195px]">
-              <Input
-                variant="filter"
-                label="Fecha inicio"
-                type="date"
-                value={filtros.fechaInicio ?? ''}
-                onChange={(e) => handleFiltroChange('fechaInicio', e.target.value || undefined)}
-                disabled={loadingMetas}
-              />
-            </div>
-            <div className="flex-1 min-w-[140px] max-w-[195px]">
-              <Input
-                variant="filter"
-                label="Fecha fin"
-                type="date"
-                value={filtros.fechaFin ?? ''}
-                onChange={(e) => handleFiltroChange('fechaFin', e.target.value || undefined)}
-                disabled={loadingMetas}
-              />
-            </div>
-            {isAdmin && (
-              <div className="flex-1 min-w-[140px] max-w-[195px]">
-                <Select
-                  variant="filter"
-                  label="Vendedor"
-                  value={filtros.idVendedor ? String(filtros.idVendedor) : ''}
-                  onChange={(e) => handleFiltroChange('idVendedor', e.target.value ? Number(e.target.value) : undefined)}
-                  options={[{ label: 'Todos', value: '' }, ...vendedorOptions]}
-                  disabled={loadingMetas}
-                  placeholder="Todos"
-                />
-              </div>
-            )}
+          <div className="flex-1 min-w-[140px] max-w-[195px]">
+            <Input
+              variant="filter"
+              label="Fecha inicio"
+              type="date"
+              value={filtros.fechaInicio ?? ''}
+              onChange={(e) => handleFiltroChange('fechaInicio', e.target.value || undefined)}
+              disabled={loadingMetas}
+            />
+          </div>
+          <div className="flex-1 min-w-[140px] max-w-[195px]">
+            <Input
+              variant="filter"
+              label="Fecha fin"
+              type="date"
+              value={filtros.fechaFin ?? ''}
+              onChange={(e) => handleFiltroChange('fechaFin', e.target.value || undefined)}
+              disabled={loadingMetas}
+            />
+          </div>
+          {isAdmin && (
             <div className="flex-1 min-w-[140px] max-w-[195px]">
               <Select
                 variant="filter"
-                label="Almacén"
-                value={filtros.idAlmacen ? String(filtros.idAlmacen) : ''}
-                onChange={(e) => handleFiltroChange('idAlmacen', e.target.value ? Number(e.target.value) : undefined)}
-                options={[{ label: 'Todos', value: '' }, ...almacenOptions]}
+                label="Vendedor"
+                value={filtros.idVendedor ? String(filtros.idVendedor) : ''}
+                onChange={(e) => handleFiltroChange('idVendedor', e.target.value ? Number(e.target.value) : undefined)}
+                options={[{ label: 'Todos', value: '' }, ...vendedorOptions]}
                 disabled={loadingMetas}
                 placeholder="Todos"
               />
             </div>
-            <div className="flex-1 min-w-[140px] max-w-[195px]">
-              <Select
-                variant="filter"
-                label="Cliente"
-                value={filtros.idCliente ? String(filtros.idCliente) : ''}
-                onChange={(e) => handleFiltroChange('idCliente', e.target.value ? Number(e.target.value) : undefined)}
-                options={[{ label: 'Todos', value: '' }, ...clienteOptions]}
-                disabled={loadingMetas}
-                placeholder="Todos"
-              />
-            </div>
+          )}
+          <div className="flex-1 min-w-[140px] max-w-[195px]">
+            <Select
+              variant="filter"
+              label="Almacén"
+              value={filtros.idAlmacen ? String(filtros.idAlmacen) : ''}
+              onChange={(e) => handleFiltroChange('idAlmacen', e.target.value ? Number(e.target.value) : undefined)}
+              options={[{ label: 'Todos', value: '' }, ...almacenOptions]}
+              disabled={loadingMetas}
+              placeholder="Todos"
+            />
+          </div>
+          <div className="flex-1 min-w-[140px] max-w-[195px]">
+            <Select
+              variant="filter"
+              label="Cliente"
+              value={filtros.idCliente ? String(filtros.idCliente) : ''}
+              onChange={(e) => handleFiltroChange('idCliente', e.target.value ? Number(e.target.value) : undefined)}
+              options={[{ label: 'Todos', value: '' }, ...clienteOptions]}
+              disabled={loadingMetas}
+              placeholder="Todos"
+            />
+          </div>
           <div className="shrink-0 flex items-end">
             <Button
               variant="primary"
@@ -397,110 +446,110 @@ export function ReportesView() {
             </Button>
           </div>
         </FilterGrid>
-      
-      {/* FILTROS ACTIVOS */}
-      {tieneFiltrosActivos && (
-        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border-default mt-3">
-          {filtros.fechaInicio && filtros.fechaFin && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
-              <span className="font-bold">Rango:</span>
-              {filtros.fechaInicio.split('-').reverse().join('/')} - {filtros.fechaFin.split('-').reverse().join('/')}
-              <button
-                onClick={() => setFiltros((prev) => ({ ...prev, fechaInicio: undefined, fechaFin: undefined }))}
-                className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors"
-                aria-label="Remover rango de fechas"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
 
-          {filtros.idVendedor && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
-              <span className="font-bold">Vendedor:</span>
-              {(vendedores.find(v => v.id_usuario === filtros.idVendedor)?.nombre || filtros.idVendedor)}
-              <button
-                onClick={() => setFiltros((prev) => ({ ...prev, idVendedor: undefined }))}
-                className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors"
-                aria-label="Remover vendedor"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
+        {/* FILTROS ACTIVOS */}
+        {tieneFiltrosActivos && (
+          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border-default mt-3">
+            {filtros.fechaInicio && filtros.fechaFin && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+                <span className="font-bold">Rango:</span>
+                {filtros.fechaInicio.split('-').reverse().join('/')} - {filtros.fechaFin.split('-').reverse().join('/')}
+                <button
+                  onClick={() => {
+                    setSkip(0);
+                    setFiltros((prev) => ({ ...prev, fechaInicio: undefined, fechaFin: undefined }));
+                  }}
+                  className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors cursor-pointer"
+                  aria-label="Remover rango de fechas"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
 
-          {filtros.idAlmacen && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
-              <span className="font-bold">Almacén:</span>
-              {(almacenes.find(a => a.id_almacen === filtros.idAlmacen)?.nombre || filtros.idAlmacen)}
-              <button
-                onClick={() => setFiltros((prev) => ({ ...prev, idAlmacen: undefined }))}
-                className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors"
-                aria-label="Remover almacén"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
+            {filtros.idVendedor && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+                <span className="font-bold">Vendedor:</span>
+                {vendedores.find((v) => v.id_usuario === filtros.idVendedor)?.nombre || filtros.idVendedor}
+                <button
+                  onClick={() => {
+                    setSkip(0);
+                    setFiltros((prev) => ({ ...prev, idVendedor: undefined }));
+                  }}
+                  className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors cursor-pointer"
+                  aria-label="Remover vendedor"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
 
-          {filtros.idCliente && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
-              <span className="font-bold">Cliente:</span>
-              {(clientes.find(c => c.id_cliente === filtros.idCliente)?.nombre || filtros.idCliente)}
-              <button
-                onClick={() => setFiltros((prev) => ({ ...prev, idCliente: undefined }))}
-                className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors"
-                aria-label="Remover cliente"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
-        </div>
-      )}
-      
+            {filtros.idAlmacen && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+                <span className="font-bold">Almacén:</span>
+                {almacenes.find((a) => a.id_almacen === filtros.idAlmacen)?.nombre || filtros.idAlmacen}
+                <button
+                  onClick={() => {
+                    setSkip(0);
+                    setFiltros((prev) => ({ ...prev, idAlmacen: undefined }));
+                  }}
+                  className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors cursor-pointer"
+                  aria-label="Remover almacén"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {filtros.idCliente && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
+                <span className="font-bold">Cliente:</span>
+                {clientes.find((c) => c.id_cliente === filtros.idCliente)?.nombre || filtros.idCliente}
+                <button
+                  onClick={() => {
+                    setSkip(0);
+                    setFiltros((prev) => ({ ...prev, idCliente: undefined }));
+                  }}
+                  className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors cursor-pointer"
+                  aria-label="Remover cliente"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+          </div>
+        )}
       </FilterCard>
 
       {/* Tabs de reportes */}
-<Tabs value={tipoReporte} onValueChange={(v: string) => setTipoReporte(v as TipoReporte)} className="w-full">
-        <TabsList className="flex w-full max-w-full overflow-x-auto border-b border-slate-200 items-end">
+      <Tabs
+        value={tipoReporte}
+        onValueChange={(v: string) => {
+          setSkip(0);
+          setTipoReporte(v as TipoReporte);
+        }}
+        className="w-full"
+      >
+        <TabsList className="flex w-full items-center gap-6 border-b border-slate-200 bg-transparent p-0 h-auto rounded-none overflow-x-auto">
           {(Object.keys(REPORTE_CONFIG) as TipoReporte[]).map((tipo) => (
             <TabsTrigger
               key={tipo}
               value={tipo}
-              className="flex flex-row items-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer no-underline"
+              className="inline-flex flex-row items-center gap-2 px-1 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 bg-transparent rounded-none border-b-2 border-transparent -mb-px shadow-none outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0 after:hidden data-[state=active]:bg-transparent data-[state=active]:text-[#F8B602] data-[state=active]:font-semibold data-[state=active]:border-[#F8B602] data-[state=active]:shadow-none transition-colors cursor-pointer no-underline"
             >
-              <span
-                className={tipoReporte === (tipo as string)
-                  ? 'text-[11px] font-semibold text-[#F8B602] bg-white rounded-t-lg border-b-2 border-[#F8B602] -mb-px outline-none focus:outline-none cursor-pointer'
-                  : 'text-[11px] font-medium text-slate-600 hover:text-slate-900 bg-white rounded-t-lg border-b-2 border-transparent -mb-px outline-none focus:outline-none transition-colors cursor-pointer'}
-                >
-                {REPORTE_CONFIG[tipo].icon}
-                {REPORTE_CONFIG[tipo].label}
-              </span>
+              {REPORTE_CONFIG[tipo].icon}
+              <span>{REPORTE_CONFIG[tipo].label}</span>
             </TabsTrigger>
           ))}
         </TabsList>
 
         <TabsContent value="ranking-productos" className="mt-4">
-          <Table
-            footer={
-              totalPages > 1 ? (
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={totalActual}
-                  limit={TAKE}
-                  onPageChange={handlePageChange}
-                  onLimitChange={() => {}}
-                  itemLabel="registros"
-                />
-              ) : undefined
-            }
-          >
+          <Table footer={renderPaginationFooter('registros')}>
             {renderHeaders()}
             <TableBody>
-              {dataActual.length > 0 ? renderRows() : (
+              {dataActual.length > 0 ? (
+                renderRows()
+              ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-[#575757]">
                     No hay datos para los filtros seleccionados
@@ -512,24 +561,12 @@ export function ReportesView() {
         </TabsContent>
 
         <TabsContent value="antiguedad-deuda" className="mt-4">
-          <Table
-            footer={
-              totalPages > 1 ? (
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={totalActual}
-                  limit={TAKE}
-                  onPageChange={handlePageChange}
-                  onLimitChange={() => {}}
-                  itemLabel="clientes"
-                />
-              ) : undefined
-            }
-          >
+          <Table footer={renderPaginationFooter('clientes')}>
             {renderHeaders()}
             <TableBody>
-              {dataActual.length > 0 ? renderRows() : (
+              {dataActual.length > 0 ? (
+                renderRows()
+              ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-[#575757]">
                     No hay datos para los filtros seleccionados
@@ -541,24 +578,12 @@ export function ReportesView() {
         </TabsContent>
 
         <TabsContent value="auditoria-ia" className="mt-4">
-          <Table
-            footer={
-              totalPages > 1 ? (
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={totalActual}
-                  limit={TAKE}
-                  onPageChange={handlePageChange}
-                  onLimitChange={() => {}}
-                  itemLabel="registros"
-                />
-              ) : undefined
-            }
-          >
+          <Table footer={renderPaginationFooter('registros')}>
             {renderHeaders()}
             <TableBody>
-              {dataActual.length > 0 ? renderRows() : (
+              {dataActual.length > 0 ? (
+                renderRows()
+              ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-[#575757]">
                     No hay datos para los filtros seleccionados
