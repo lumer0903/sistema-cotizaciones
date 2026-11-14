@@ -468,12 +468,12 @@ export function ReportesView() {
             <TabsTrigger
               key={tipo}
               value={tipo}
-              className="inline-flex items-center gap-2 pb-3 text-sm font-medium transition-colors cursor-pointer no-underline"
+              className="flex flex-row items-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer no-underline"
             >
               <span
                 className={tipoReporte === (tipo as string)
-                  ? 'text-[11px] font-semibold text-[#F8B602] no-underline border-b-2 border-[#F8B602] outline-none focus:outline-none cursor-pointer'
-                  : 'text-[11px] font-medium text-slate-600 hover:text-slate-900 no-underline border-b-2 border-transparent outline-none focus:outline-none transition-colors cursor-pointer'}
+                  ? 'text-[11px] font-semibold text-[#F8B602] bg-white rounded-t-lg border-b-2 border-[#F8B602] -mb-px outline-none focus:outline-none cursor-pointer'
+                  : 'text-[11px] font-medium text-slate-600 hover:text-slate-900 bg-white rounded-t-lg border-b-2 border-transparent -mb-px outline-none focus:outline-none transition-colors cursor-pointer'}
                 >
                 {REPORTE_CONFIG[tipo].icon}
                 {REPORTE_CONFIG[tipo].label}
