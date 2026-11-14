@@ -38,6 +38,8 @@ apps/api/uploads/
 uploads/
 storage/
 *.pdf
+.minio-data/
+.bin/
 
 # Playwright
 apps/web/test-results/
