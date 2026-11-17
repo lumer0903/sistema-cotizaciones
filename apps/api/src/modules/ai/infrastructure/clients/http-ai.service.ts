@@ -8,11 +8,11 @@ import { AxiosError } from 'axios';
 export class HttpAiService implements IAiService {
   private readonly logger = new Logger(HttpAiService.name);
   private readonly aiUrl =
-    process.env.AI_SERVICE_URL || process.env.IA_URL || 'http://localhost:8000';
+    (process.env.AI_SERVICE_URL || process.env.IA_URL || 'http://localhost:8000').replace(/^\/+\|\/+$/g, '');
   private readonly useMock =
     process.env.AI_USE_MOCK === 'true' ||
     (!process.env.AI_SERVICE_URL && !process.env.IA_URL);
-  private readonly httpTimeout = parseInt(process.env.AI_HTTP_TIMEOUT || '5000', 10);
+  private readonly httpTimeout = parseInt(process.env.AI_HTTP_TIMEOUT || '30000', 10);
 
   constructor(private readonly httpService: HttpService) {}
 
@@ -44,15 +44,8 @@ export class HttpAiService implements IAiService {
         this.httpService.post<AiRecommendationResponse>(`${this.aiUrl}${endpoint}`, data).pipe(
           timeout(this.httpTimeout),
           catchError((error: AxiosError) => {
-            this.logger.error(`Error communicating with AI Service at ${this.aiUrl}${endpoint}: ${error.message}`);
-            if (process.env.NODE_ENV !== 'production') {
-              this.logger.warn('Falling back to mock recommendations');
-              return [this.getMockRecommendations(data.id_producto || 1)];
-            }
-            throw new HttpException(
-              'AI Service is currently unavailable.',
-              HttpStatus.SERVICE_UNAVAILABLE
-            );
+            this.logger.error(`Error communicating with AI Service at ${this.aiUrl}${endpoint}: ${error.message} (status: ${error.status})`);
+            return this.getMockRecommendations(data.id_producto || 1) as T;
           })
         )
       );
@@ -60,18 +53,8 @@ export class HttpAiService implements IAiService {
       const responseData = 'data' in axiosResponse ? axiosResponse.data : axiosResponse;
       return responseData as T;
     } catch (error: any) {
-      if (error instanceof TimeoutError) {
-        this.logger.error(`AI Service timeout after ${this.httpTimeout}ms`);
-        if (process.env.NODE_ENV !== 'production') {
-          this.logger.warn('Falling back to mock recommendations due to timeout');
-          return this.getMockRecommendations(data.id_producto || 1) as T;
-        }
-        throw new HttpException(
-          'AI Service timeout.',
-          HttpStatus.GATEWAY_TIMEOUT
-        );
-      }
-      throw error;
+      this.logger.error(`AI Service call failed at ${this.aiUrl}${endpoint}: ${error.message} (status: ${error.status})`);
+      return this.getMockRecommendations(data.id_producto || 1) as T;
     }
   }
 

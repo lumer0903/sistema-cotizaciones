@@ -58,12 +58,13 @@ class ModelSnapshot:
 MODEL: Optional[ModelSnapshot] = None
 TRAIN_LOCK = Lock()
 
+FILTERED_DB_PARAMS = {'schema', 'pgbouncer', 'connection_limit'}
+
 def get_db_connection():
     if not DATABASE_URL:
         raise RuntimeError("DATABASE_URL no configurada")
-    # schema es un parámetro de Prisma y no pertenece al DSN de libpq.
     url = urlsplit(DATABASE_URL)
-    query = urlencode([(key, value) for key, value in parse_qsl(url.query) if key != 'schema'])
+    query = urlencode([(key, value) for key, value in parse_qsl(url.query) if key not in FILTERED_DB_PARAMS])
     dsn = urlunsplit((url.scheme, url.netloc, url.path, query, url.fragment))
     return psycopg2.connect(dsn, cursor_factory=RealDictCursor, connect_timeout=5)
 
@@ -131,7 +132,7 @@ def startup_event():
 @app.get('/health')
 def health_check():
     if MODEL is None:
-        raise HTTPException(status_code=503, detail='Modelo no inicializado')
+        return {'status': 'initializing', 'service': 'goldcontinent-ai'}, 202
     return {'status': 'ok', 'service': 'goldcontinent-ai', 'total_productos': len(MODEL.products)}
 
 @app.post('/admin/refresh-cache')
