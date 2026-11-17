@@ -29,12 +29,12 @@ export function PreciosView() {
   });
 
   const [filters, setFilters] = useState({ search: '', stock_status: '', id_categoria: '' });
-  const [tipoCliente, setTipoCliente] = useState<'distribuidor' | 'tienda'>('distribuidor');
+  const [tipoCliente, setTipoCliente] = useState<'distribuidor' | 'tienda' | ''>('');
   const [page, setPage] = useState(1), [limit, setLimit] = useState(8);
   const [selected, setSelected] = useState<{ id: string; codigo: string } | null>(null);
   const search = useDebounce(filters.search, 300);
 
-  const tieneFiltrosActivos = Boolean(filters.search || filters.stock_status || filters.id_categoria || tipoCliente !== 'distribuidor');
+  const tieneFiltrosActivos = Boolean(filters.search || filters.stock_status || filters.id_categoria || tipoCliente !== '');
 
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   Object.entries({ ...filters, search }).forEach(([k, v]) => { if (v !== '') params.set(k, v); });
@@ -54,8 +54,8 @@ export function PreciosView() {
         <Input variant="filter" icon={<Search className="h-4 w-4 text-[#F8B602]" strokeWidth={2} />} label="Buscar código/descripción" placeholder="Buscar por código o descripción…" value={filters.search} onChange={e => update('search', e.target.value)} />
       </div>
       <div className="flex-1 min-w-[140px] max-w-[195px]">
-        <Select variant="filter" label="Tipo de cliente" value={tipoCliente} onChange={e => setTipoCliente(e.target.value === 'tienda' ? 'tienda' : 'distribuidor')} options={[
-          { label: 'Distribuidor', value: 'distribuidor' }, { label: 'Tienda', value: 'tienda' }]} />
+        <Select variant="filter" label="Tipo de cliente" value={tipoCliente} onChange={e => setTipoCliente((e.target.value || '').toString() as 'distribuidor' | 'tienda' | '')} options={[
+          { label: 'Seleccionar', value: '' }, { label: 'Distribuidor', value: 'distribuidor' }, { label: 'Tienda', value: 'tienda' }]} />
       </div>
       <div className="flex-1 min-w-[140px] max-w-[195px]">
         <Select variant="filter" label="Stock" value={filters.stock_status} onChange={e => update('stock_status', String(e.target.value))} options={[{ label: 'Bajo', value: 'bajo' }, { label: 'Todos', value: '' }, { label: 'Disponible', value: 'disponible' }]} />
@@ -111,12 +111,12 @@ export function PreciosView() {
           </span>
         )}
 
-        {tipoCliente !== 'distribuidor' && (
+        {tipoCliente && (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent-selection text-brand-subtitle text-xs font-medium rounded-full border border-accent-primary/40 shadow-sm">
             <span className="font-bold">Tipo cliente:</span>
-            {tipoCliente === 'tienda' ? 'Tienda' : 'Distribuidor'}
+            {tipoCliente === 'tienda' ? 'Tienda' : tipoCliente === 'distribuidor' ? 'Distribuidor' : 'Seleccionar'}
             <button
-              onClick={() => setTipoCliente('distribuidor')}
+              onClick={() => setTipoCliente('')}
               className="hover:bg-slate-200/75 rounded-full p-0.5 transition-colors"
               aria-label="Limpiar tipo de cliente"
             >

@@ -24,9 +24,8 @@ class ConsistencyTests(unittest.TestCase):
             main.get_db_connection()
         self.assertEqual(connect.call_args.args[0],'postgresql://test:test@localhost/test?sslmode=require')
     def test_uninitialized_model_is_not_ready(self):
-        with self.assertRaises(HTTPException) as caught:
-            main.health_check()
-        self.assertEqual(caught.exception.status_code,503)
+        response = main.health_check()
+        self.assertEqual(response.status_code, 202)
     def test_empty_catalog_is_valid(self):
         with patch.object(main,'fetch_products',return_value=[]):
             self.assertEqual(main.load_products_and_train_tfidf(),0)

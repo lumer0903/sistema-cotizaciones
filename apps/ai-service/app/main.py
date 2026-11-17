@@ -8,6 +8,7 @@ from contextlib import closing
 from dataclasses import dataclass
 from threading import Lock
 from typing import Any, Literal, Optional
+from fastapi.responses import JSONResponse
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -132,7 +133,7 @@ def startup_event():
 @app.get('/health')
 def health_check():
     if MODEL is None:
-        return {'status': 'initializing', 'service': 'goldcontinent-ai'}, 202
+        return JSONResponse(status_code=202, content={'status': 'initializing', 'service': 'goldcontinent-ai'})
     return {'status': 'ok', 'service': 'goldcontinent-ai', 'total_productos': len(MODEL.products)}
 
 @app.post('/admin/refresh-cache')

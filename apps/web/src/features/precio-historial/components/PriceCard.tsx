@@ -27,9 +27,67 @@ export const PriceCard: React.FC<PriceCardProps> = ({
   const tieneStock = (producto?.stock ?? 0) > 0;
   const distribuidor = producto.precioDistribuidor;
   const tienda = producto.precioTienda;
+  const mostrarDistribuidor = tipoPrecio !== 'tienda';
+  const mostrarTienda = tipoPrecio !== 'distribuidor';
+  
+  const bloqueDistribuidor = mostrarDistribuidor && (
+    <div className="w-full rounded-md bg-[#FFF3E4] border border-[#FEDEBA] px-2 py-1 flex flex-col items-center gap-0.5">
+      <span className="text-[8px] font-black tracking-wide text-[#9D3A19] uppercase">
+        PRECIO DISTRIBUIDOR
+      </span>
+      <div className="w-full grid grid-cols-3 gap-0.5 text-center">
+        <div className="flex flex-col items-center">
+          <span className="text-[7px] font-bold text-black uppercase">UNIDAD</span>
+          <span className="text-[11px] font-extrabold text-[#9D3A19] tabular-nums whitespace-nowrap">
+            {formatAmount(distribuidor?.unidad)}
+          </span>
+        </div>
+        <div className="flex flex-col items-center">
+          <span className="text-[7px] font-bold text-black uppercase">DOCENA</span>
+          <span className="text-[11px] font-extrabold text-[#9D3A19] tabular-nums whitespace-nowrap">
+            {formatAmount(distribuidor?.docena)}
+          </span>
+        </div>
+        <div className="flex flex-col items-center">
+          <span className="text-[7px] font-bold text-black uppercase">MAYOR</span>
+          <span className="text-[11px] font-extrabold text-[#9D3A19] tabular-nums whitespace-nowrap">
+            {formatAmount(distribuidor?.mayor)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 
-return (
-     <div className="w-full bg-white rounded-xl shadow-2xs p-3 flex flex-col gap-2 overflow-hidden transition-transform hover:-translate-y-0.5">
+  const bloqueTienda = mostrarTienda && (
+    <div className="w-full rounded-md bg-[#E8F2FE] border border-[#C4DEFE] px-2 py-1 flex flex-col items-center gap-0.5">
+      <span className="text-[8px] font-black tracking-wide text-[#1F41AF] uppercase">
+        PRECIO TIENDA
+      </span>
+      <div className="w-full grid grid-cols-3 gap-0.5 text-center">
+        <div className="flex flex-col items-center">
+          <span className="text-[7px] font-bold text-black uppercase">UNIDAD</span>
+          <span className="text-[11px] font-extrabold text-[#1F41AF] tabular-nums whitespace-nowrap">
+            {formatAmount(tienda?.unidad)}
+          </span>
+        </div>
+        <div className="flex flex-col items-center">
+          <span className="text-[7px] font-bold text-black uppercase">DOCENA</span>
+          <span className="text-[11px] font-extrabold text-[#1F41AF] tabular-nums whitespace-nowrap">
+            {formatAmount(tienda?.docena)}
+          </span>
+        </div>
+        <div className="flex flex-col items-center">
+          <span className="text-[7px] font-bold text-black uppercase">MAYOR</span>
+          <span className="text-[11px] font-extrabold text-[#1F41AF] tabular-nums whitespace-nowrap">
+            {formatAmount(tienda?.mayor)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="w-full bg-white rounded-xl shadow-2xs p-3 flex flex-col gap-2 overflow-hidden transition-transform hover:-translate-y-0.5">
       {/* 1. Bloque superior: Imagen / Placeholder + Acción rápida de Historial */}
       <div className="relative h-24 w-full rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden">
         {producto.imagenUrl ? (
@@ -92,63 +150,10 @@ return (
       </div>
 
       {/* 3. Bloque(s) de precios */}
-      {/* Bloque 1: PRECIO DISTRIBUIDOR */}
-      {tipoPrecio !== 'tienda' && (
-        <div className="w-full rounded-md bg-[#FFF3E4] border border-[#FEDEBA] px-2 py-1 flex flex-col items-center gap-0.5">
-          <span className="text-[8px] font-black tracking-wide text-[#9D3A19] uppercase">
-            PRECIO DISTRIBUIDOR
-          </span>
-          <div className="w-full grid grid-cols-3 gap-0.5 text-center">
-            <div className="flex flex-col items-center">
-              <span className="text-[7px] font-bold text-black uppercase">UNIDAD</span>
-              <span className="text-[11px] font-extrabold text-[#9D3A19] tabular-nums whitespace-nowrap">
-                {formatAmount(distribuidor?.unidad)}
-              </span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-[7px] font-bold text-black uppercase">DOCENA</span>
-              <span className="text-[11px] font-extrabold text-[#9D3A19] tabular-nums whitespace-nowrap">
-                {formatAmount(distribuidor?.docena)}
-              </span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-[7px] font-bold text-black uppercase">MAYOR</span>
-              <span className="text-[11px] font-extrabold text-[#9D3A19] tabular-nums whitespace-nowrap">
-                {formatAmount(distribuidor?.mayor)}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bloque 2: PRECIO TIENDA */}
-      {tipoPrecio !== 'distribuidor' && (
-        <div className="w-full rounded-md bg-[#E8F2FE] border border-[#C4DEFE] px-2 py-1 flex flex-col items-center gap-0.5">
-          <span className="text-[8px] font-black tracking-wide text-[#1F41AF] uppercase">
-            PRECIO TIENDA
-          </span>
-          <div className="w-full grid grid-cols-3 gap-0.5 text-center">
-            <div className="flex flex-col items-center">
-              <span className="text-[7px] font-bold text-black uppercase">UNIDAD</span>
-              <span className="text-[11px] font-extrabold text-[#1F41AF] tabular-nums whitespace-nowrap">
-                {formatAmount(tienda?.unidad)}
-              </span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-[7px] font-bold text-black uppercase">DOCENA</span>
-              <span className="text-[11px] font-extrabold text-[#1F41AF] tabular-nums whitespace-nowrap">
-                {formatAmount(tienda?.docena)}
-              </span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-[7px] font-bold text-black uppercase">MAYOR</span>
-              <span className="text-[11px] font-extrabold text-[#1F41AF] tabular-nums whitespace-nowrap">
-                {formatAmount(tienda?.mayor)}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="w-full">
+        {bloqueDistribuidor}
+        {bloqueTienda}
+      </div>
     </div>
   );
 };
