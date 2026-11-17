@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { Eye, Pencil, Trash2, PackageSearch, Loader2, MapPin } from 'lucide-react';
+import { Eye, Pencil, Trash2, PackageSearch, Loader2, MapPin, ChevronDown } from 'lucide-react';
 import { ProductoInventario } from '@goldcontinent/shared/types/inventario';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui';
 import { DetalleProductoModal } from './DetalleProductoModal';
@@ -76,6 +76,7 @@ export function InventarioTable({
   footer,
 }: InventarioTableProps) {
   const [detalleProducto, setDetalleProducto] = useState<ProductoInventario | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleVerDetalle = async (prod: ProductoInventario) => {
     setDetalleProducto(prod);
@@ -183,7 +184,7 @@ export function InventarioTable({
                         <Eye className="size-4 text-[#F8B600]" strokeWidth={1.75} />
                       </button>
                     </Can>
-                    <Can modulo="productos" nivel="edicion">
+<Can modulo="productos" nivel="edicion">
                       <button
                         type="button"
                         onClick={() => id !== undefined && onEliminar(id)}
@@ -194,6 +195,11 @@ export function InventarioTable({
                         <Trash2 className="size-4 text-red-500" strokeWidth={1.75} />
                       </button>
                     </Can>
+                    <ChevronDown
+                      className="size-4 ms-2 hover:text-[#F8B600] cursor-pointer"
+                      aria-hidden="true"
+                      onClick={() => setExpandedId(prod.codigo)}
+                    />
                   </div>
                 </TableCell>
               </TableRow>

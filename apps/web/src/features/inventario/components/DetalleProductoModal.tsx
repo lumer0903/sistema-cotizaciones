@@ -84,10 +84,10 @@ export function DetalleProductoModal({
                             </div>
                         </div>
 
-                        {/* DESCRIPCIÓN DESTACADA */}
+                        {/* DESCRIPCIÓN DESTACADA - colapsable */}
                         <div className="pt-1">
                             <p className="text-sm font-semibold text-zinc-800 leading-snug">
-                                {prod.nombre_producto || prod.descripcion_autogenerada || prod.descripcion || 'Sin descripción disponible'}
+                                {showDetails ? (prod.nombre_producto || prod.descripcion_autogenerada || prod.descripcion || 'Sin descripción disponible') : (prod.descripcion ? `${prod.descripcion.substring(0, 200)}...` : `${prod.nombre_producto || ''} — ${prod.descripcion_autogenerada || ''}`)}
                             </p>
                         </div>
 
