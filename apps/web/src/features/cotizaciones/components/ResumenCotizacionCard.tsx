@@ -89,8 +89,8 @@ export function ResumenCotizacionCard({
               </p>
             </div>
 
-            {/* Total con botón acción primaria en misma línea */}
-            <div className="flex items-center justify-between">
+            {/* Total */}
+            <div className="flex items-center justify-between pt-2 border-t border-border-default">
               <span className="text-sm font-bold text-brand-options">Total</span>
               <span className="text-xl font-bold text-accent-ink">S/ {total.toFixed(2)}</span>
             </div>
@@ -106,7 +106,7 @@ export function ResumenCotizacionCard({
                 Continúa
               </Button>
             </div>
-          </>
+          </div>
         </>
       )}
     </Card>

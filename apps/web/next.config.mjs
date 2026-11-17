@@ -41,13 +41,12 @@ const nextConfig = {
   transpilePackages: ['@goldcontinent/shared'],
   // Imagen mínima para producción (Docker/Fly): standalone + assets copiados aparte.
   output: 'standalone',
-  images: {
+images: {
     // Imágenes de productos/avatares servidas por la API (hostname variable
     // según entorno) y placeholders externos (placehold.co).
     remotePatterns: imageRemotePatterns,
-    unoptimized: process.env.NODE_ENV === 'development',
+    unoptimized: true,
     dangerouslyAllowLocalIP: true,
-    // Logos del login son SVG locales: next/image exige habilitarlo.
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
