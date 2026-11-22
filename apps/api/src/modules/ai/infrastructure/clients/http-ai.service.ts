@@ -1,7 +1,7 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { IAiService, AiRecommendationResponse, AiRecommendationItem } from '../../domain/contracts/ai-service.interface';
-import { firstValueFrom, timeout, catchError, TimeoutError } from 'rxjs';
+import { firstValueFrom, timeout, catchError, of, TimeoutError } from 'rxjs';
 import { AxiosError } from 'axios';
 
 @Injectable()
@@ -45,7 +45,7 @@ export class HttpAiService implements IAiService {
           timeout(this.httpTimeout),
           catchError((error: AxiosError) => {
             this.logger.error(`Error communicating with AI Service at ${this.aiUrl}${endpoint}: ${error.message} (status: ${error.status})`);
-            return this.getMockRecommendations(data.id_producto || 1) as T;
+            return of(this.getMockRecommendations(data.id_producto || 1));
           })
         )
       );

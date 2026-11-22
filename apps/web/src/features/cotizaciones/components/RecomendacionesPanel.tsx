@@ -146,13 +146,21 @@ export function useRecomendaciones(
         setLoading(true);
         setError(null);
         try {
+            // Validación estricta: evitar enviar NaN/undefined como null por JSON.stringify
+            const pid = Number(baseId);
+            if (!Number.isInteger(pid) || pid <= 0) {
+                if (resetWhenEmpty) setRecomendaciones({ similar: [], upsell: [], equilibrio: [] });
+                setError('El producto no tiene un ID válido para obtener recomendaciones');
+                setLoading(false);
+                return;
+            }
             const request: RecomendarItemRequest = {
-                id_producto_base: baseId,
-                id_cliente: idCliente,
-                id_almacen: idAlmacen,
+                id_producto_base: pid,
+                id_cliente: idCliente != null && Number.isInteger(Number(idCliente)) ? Number(idCliente) : undefined,
+                id_almacen: idAlmacen != null && Number.isInteger(Number(idAlmacen)) ? Number(idAlmacen) : undefined,
                 tipo_precio: tipoPrecioCliente === 'DISTRIBUIDOR' ? 'distribuidor' : 'normal',
                 tipo_venta: productoBase?.tipo_venta,
-                ...(idCotizacion != null ? { id_cotizacion: idCotizacion } : {}),
+                ...(idCotizacion != null && Number.isInteger(Number(idCotizacion)) ? { id_cotizacion: Number(idCotizacion) } : {}),
             };
             const data = await obtenerRecomendacionesItem(request);
             if (seqRef.current !== seq) return;
